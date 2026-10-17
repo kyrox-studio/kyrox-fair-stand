@@ -15,6 +15,11 @@ export function resolveViewKeyboardShortcut(event = {}) {
   if (key === 'r' && shift && !ctrlOrMeta && !alt) {
     return Object.freeze({ type: 'rotate', direction: 'clockwise' });
   }
+  // Tasarım geçmişi: Ctrl/Cmd+Z geri al; Ctrl/Cmd+Y ve Ctrl/Cmd+Shift+Z ileri al.
+  if (ctrlOrMeta && !alt) {
+    if (key === 'z') return Object.freeze({ type: shift ? 'redo' : 'undo' });
+    if (key === 'y' && !shift) return Object.freeze({ type: 'redo' });
+  }
   if (ctrlOrMeta || shift || alt) return null;
 
   const shortcuts = {

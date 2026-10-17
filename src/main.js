@@ -57,6 +57,8 @@ import {
 } from './projectNaming.js';
 import { buildSaveAsClone } from './projectSaveAs.js';
 import { createAutosaveController } from './autosaveController.js';
+import { createDesignHistory } from './designHistory.js';
+import { isEditableKeyboardTarget, resolveViewKeyboardShortcut } from './viewKeyboardShortcuts.js';
 import {
   MODULE_LOCKED_MESSAGE,
   guardPlanAgainstLocks,
@@ -163,6 +165,8 @@ const viewportToolbar = document.querySelector('#viewport-toolbar');
 const viewportToolbarToggle = document.querySelector('#viewport-toolbar-toggle');
 const toggleProductionBomButton = document.querySelector('#toggle-production-bom');
 const renderCurrentViewButton = document.querySelector('#render-current-view');
+const designUndoButton = document.querySelector('#design-undo');
+const designRedoButton = document.querySelector('#design-redo');
 const standTypeButtons = [...document.querySelectorAll('[data-stand-type]')];
 const standSizeXInput = document.querySelector('#stand-size-x');
 const standSizeYInput = document.querySelector('#stand-size-y');
@@ -1541,6 +1545,7 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan }) {
     `${label} · ${setup.xCm} × ${setup.yCm} cm aktif alan · ${setup.sceneWidthM} × ${setup.sceneDepthM} m toplam sahne`,
   );
   syncFloorAreaControls();
+  resetDesignHistory();
   return true;
 }
 
@@ -1998,6 +2003,64 @@ const autosaveController = createAutosaveController({
   onError: (error) => console.warn('Otomatik kayıt başarısız:', error),
 });
 
+// Geri al / İleri al. Tasarım imzası (stand + modüller) karşılaştırılır; sahnenin
+// kendi içinde yaptığı değişiklikler de yakalanır. Geçmiş kaydedilmez.
+function floorDefaultColorHex(itemKey) {
+  const value = getFloorItem(itemKey)?.defaultColor;
+  if (Number.isInteger(value)) return `#${value.toString(16).padStart(6, '0')}`;
+  return typeof value === 'string' ? value : null;
+}
+
+function applyDesignSnapshot(snapshot) {
+  const design = JSON.parse(snapshot);
+  currentModules = design.modules ?? [];
+  if (currentStand && design.stand) {
+    currentStand = design.stand;
+    scene3d.setFloorType(currentStand.itemKey);
+    const floorColor = currentStand.floorColor ?? floorDefaultColorHex(currentStand.itemKey);
+    if (floorColor) scene3d.setFloorColor(floorColor);
+    scene3d.setFloorArea(currentStand.floorArea ?? null);
+    syncFloorTypeSelect(currentStand.itemKey);
+    syncFloorAreaControls();
+  }
+  moduleContextMenu.close();
+  moduleContextMenu.closePicker();
+  scene3d.clearSelection();
+  rebuildWall({ resetView: false });
+}
+
+function syncDesignHistoryButtons({ canUndo, canRedo }) {
+  if (designUndoButton) designUndoButton.disabled = !canUndo;
+  if (designRedoButton) designRedoButton.disabled = !canRedo;
+}
+
+const designHistory = createDesignHistory({
+  readSnapshot: designSignature,
+  applySnapshot: applyDesignSnapshot,
+  onChange: syncDesignHistoryButtons,
+});
+
+function runDesignHistory(direction) {
+  const done = direction === 'undo' ? designHistory.undo() : designHistory.redo();
+  if (direction === 'undo') {
+    selectionInfo.textContent = done
+      ? 'Geri alındı. İleri almak için Ctrl+Y.'
+      : 'Geri alınacak adım yok.';
+  } else {
+    selectionInfo.textContent = done
+      ? 'İleri alındı.'
+      : 'İleri alınacak adım yok.';
+  }
+  return done;
+}
+
+// Proje açılınca, yeni proje kurulunca veya sahne temizlenince geçmiş baştan başlar.
+// Geçmiş revizyon görünümünde geri alma kapalıdır.
+function resetDesignHistory({ enabled = true } = {}) {
+  designHistory.setEnabled(enabled);
+  designHistory.reset();
+}
+
 async function refreshProjectList(selectedId = activeProjectId) {
   const projects = await listCachedProjects();
   projectSelect.innerHTML = '';
@@ -2151,6 +2214,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
       revisions: project.revisions || revisionSession.revisions,
     });
     renderRevisionList();
+    resetDesignHistory({ enabled: false });
     projectStatus.textContent = `Geçmiş revizyon R${historicalRevisionNumber} · salt okunur`;
     return;
   }
@@ -2163,6 +2227,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
   if (sessionRevisionNumber != null) noteRevisionCreated(revisionSession, sessionRevisionNumber);
   renderRevisionList();
   autosaveController.enableFromCurrentState();
+  resetDesignHistory();
   projectStatus.textContent = 'Açıldı: ' + (project.name || 'Adsız Proje');
 }
 
@@ -2257,6 +2322,7 @@ function resetToFirstOpenState() {
   productionBomPanel.close();
   updateStageCreateState();
   syncColorEditorFromHex('#ffffff');
+  resetDesignHistory();
   selectionInfo.textContent = DEFAULT_SELECTION_HINT;
   beginLiveSession(revisionSession, { projectId: null, designSignature: null });
   renderRevisionList();
@@ -2322,6 +2388,10 @@ async function requestDeleteImageAsset(assetId) {
     clearImageAssetReferences(currentModules, assetId);
     clearImageAssetReferences(currentStand, assetId);
   }
+  // Silinen görsele geri dönülemez: o an kullanılmasa da eski adımlar ona bağlı olabilir
+  // ve geri alınınca boş yüzey gösterirdi. Geçmiş burada baştan başlar.
+  resetDesignHistory();
+  selectionInfo.textContent = 'Görsel silindiği için geri alma geçmişi sıfırlandı.';
 
   try {
     // Kayıtlı projede önce referansları kalıcılaştır; ardından blob'u sil.
@@ -2791,6 +2861,31 @@ window.addEventListener('keydown', (event) => {
   event.stopImmediatePropagation();
   void requestDeleteImageAsset(assetId);
 }, { capture: true });
+
+// Geri al / İleri al kısayolları. Metin kutularında tarayıcının kendi geri alması çalışır.
+function onDesignHistoryKeyDown(event) {
+  if (isEditableKeyboardTarget(event.target)) return;
+  const shortcut = resolveViewKeyboardShortcut(event);
+  if (shortcut?.type !== 'undo' && shortcut?.type !== 'redo') return;
+  if (!currentStand) return;
+  event.preventDefault();
+  runDesignHistory(shortcut.type);
+}
+window.addEventListener('keydown', onDesignHistoryKeyDown);
+
+designUndoButton?.addEventListener('click', () => runDesignHistory('undo'));
+designRedoButton?.addEventListener('click', () => runDesignHistory('redo'));
+
+// Bir kullanıcı işlemi bittiğinde (bırakma, menü komutu, tuş bırakma, form değişikliği)
+// tasarım değiştiyse tek adım olarak kaydedilir. Diğer handler'lar bitsin diye bir tur beklenir.
+// Gözden kaçan değişiklikleri saniyede bir çalışan izleyici yakalar.
+function scheduleDesignHistoryCapture() {
+  window.setTimeout(() => designHistory.capture(), 0);
+}
+window.addEventListener('pointerup', scheduleDesignHistoryCapture);
+window.addEventListener('keyup', scheduleDesignHistoryCapture);
+document.addEventListener('change', scheduleDesignHistoryCapture);
+const designHistoryWatch = setInterval(() => designHistory.capture(), 1000);
 
 async function initializeAssetLibrary() {
   try {
@@ -3321,6 +3416,11 @@ const historicalEditWatch = setInterval(() => {
 
   return function stopFairStandConfigurator() {
     clearInterval(historicalEditWatch);
+    clearInterval(designHistoryWatch);
+    window.removeEventListener('keydown', onDesignHistoryKeyDown);
+    window.removeEventListener('pointerup', scheduleDesignHistoryCapture);
+    window.removeEventListener('keyup', scheduleDesignHistoryCapture);
+    document.removeEventListener('change', scheduleDesignHistoryCapture);
     autosaveController?.disable?.();
     productionBomPanel?.destroy?.();
     window.removeEventListener('fair-stand:delete-selected-module', onDeleteSelectedModule);

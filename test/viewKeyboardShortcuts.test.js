@@ -24,6 +24,17 @@ test('unrelated modified view keys do not trigger camera shortcuts', () => {
   assert.equal(resolveViewKeyboardShortcut({ key: 'f', altKey: true }), null);
 });
 
+test('Ctrl/Cmd+Z geri al; Ctrl/Cmd+Y ve Ctrl/Cmd+Shift+Z ileri al', () => {
+  assert.deepEqual(resolveViewKeyboardShortcut({ key: 'z', ctrlKey: true }), { type: 'undo' });
+  assert.deepEqual(resolveViewKeyboardShortcut({ key: 'Z', metaKey: true }), { type: 'undo' });
+  assert.deepEqual(resolveViewKeyboardShortcut({ key: 'Z', ctrlKey: true, shiftKey: true }), { type: 'redo' });
+  assert.deepEqual(resolveViewKeyboardShortcut({ key: 'y', ctrlKey: true }), { type: 'redo' });
+  assert.deepEqual(resolveViewKeyboardShortcut({ key: 'y', metaKey: true }), { type: 'redo' });
+  assert.equal(resolveViewKeyboardShortcut({ key: 'z' }), null, 'tek başına Z geri almaz');
+  assert.equal(resolveViewKeyboardShortcut({ key: 'z', ctrlKey: true, altKey: true }), null);
+  assert.equal(resolveViewKeyboardShortcut({ key: 'y', ctrlKey: true, shiftKey: true }), null);
+});
+
 test('editable target guard covers form and contenteditable fields', () => {
   assert.equal(isEditableKeyboardTarget({ tagName: 'INPUT' }), true);
   assert.equal(isEditableKeyboardTarget({ tagName: 'textarea' }), true);
