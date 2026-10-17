@@ -41,9 +41,12 @@ function listGuideSections() {
         <tr><th>Shift + R</th><td>Seçili modülü saat yönünde döndürür. Sürükleme sırasında da kullanılabilir.</td></tr>
         <tr><th>↑ ↓ ← →</th><td>Seçili modülü kendi snap adımına göre ekranda görülen yöne taşır.</td></tr>
         <tr><th>Delete</th><td>Sahnede tek modül seçiliyse modülü siler (kilitli değilse). Görsel kütüphanesinde bir görsel seçili/odaktaysa görsel silme uyarısını açar.</td></tr>
+        <tr><th>Ctrl/Cmd + Z</th><td>Tasarımdaki son değişikliği geri alır: taşıma, döndürme, ekleme, silme, çoğaltma, renk, görsel, cam, separatör, kumaş, kilit ve zemin. Üst banttaki <strong>Geri al</strong> düğmesi de aynı işi yapar.</td></tr>
+        <tr><th>Ctrl/Cmd + Y veya Ctrl/Cmd + Shift + Z</th><td>Geri alınanı ileri alır. Üst banttaki <strong>İleri al</strong> düğmesi de aynı işi yapar.</td></tr>
         <tr><th>Esc</th><td>Açık sağ tık menüsü, katalog veya yardım penceresini kapatır.</td></tr>
         <tr><th>Enter</th><td>X/Y alanlarında uygunsa sahne oluşturmayı; proje adı popupında onaylamayı tetikler.</td></tr>
       </tbody></table>
+      <p class="help-guide-note">Geri al: Her işlem tek adımdır. Sürükleme sırasındaki ara konumlar ve basılı tutulan ok tuşu tek adım sayılır. Son 50 adım tutulur. Geçmiş kaydedilmez; proje açılınca, yeni proje kurulunca veya sayfa yenilenince sıfırlanır. Görsel kütüphanesinden bir görsel silinince de sıfırlanır, çünkü silinen görsele geri dönülemez. Geçmiş revizyon görünümünde geri alma kapalıdır. Metin kutularında Ctrl+Z yalnız yazıyı geri alır.</p>
       <p class="help-guide-note">Not: Döndürme adımı modüle göre değişebilir. Standart modüllerde çoğunlukla 90°, bazı banko ve ürünlerde 45° kullanılabilir.</p>
       <p>ViewCube yüzüne tıklamak o görünüşe geçer; klavyede olmayan arka ve alt da buradadır. ⌂ ve H aynı home görünüşüdür: L Stand Sağ sol-ön, diğer tipler sağ-ön. Sahne ilk açıldığında kamera sağ-ön köşededir. Küpü sürüklemek kamerayı döndürür.</p>
     `,
