@@ -33,6 +33,22 @@ export function remapImageAssetReferences(value, idMap) {
 }
 
 
+export function collectImageAssetReferenceIds(value, ids = new Set()) {
+  if (value == null || typeof value !== 'object') return ids;
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectImageAssetReferenceIds(item, ids));
+    return ids;
+  }
+  Object.entries(value).forEach(([key, item]) => {
+    if (IMAGE_ASSET_REFERENCE_KEYS.has(key)) {
+      if (typeof item === 'string' && item) ids.add(item);
+      return;
+    }
+    collectImageAssetReferenceIds(item, ids);
+  });
+  return ids;
+}
+
 export function countImageAssetReferences(value, assetId) {
   let count = 0;
   walkImageAssetReferences(value, assetId, () => { count += 1; });

@@ -4754,7 +4754,22 @@ export function createStandScene(
     }
 
     const assetId = mesh.userData.surfaceState?.imageAssetId;
-    if (assetId) loadImageOnSurface(mesh, assetId);
+    if (!assetId) return;
+    // Görsel dosyası bulunamadıysa (ör. sunucuda eksik) yüzey beyaz kalmaz; kendi rengiyle çizilir.
+    // Bağlantı projede korunur; görsel geri gelirse sonraki açılışta görünür.
+    if (!getAssetUrl(assetId)) {
+      applyMissingImageFallback(mesh);
+      return;
+    }
+    loadImageOnSurface(mesh, assetId);
+  }
+
+  function applyMissingImageFallback(mesh) {
+    if (!mesh?.material?.color) return;
+    const state = mesh.userData.surfaceState;
+    mesh.material.map = null;
+    mesh.material.color.set(state?.isGlass ? GLASS_APPEARANCE.color : (state?.color ?? '#ffffff'));
+    mesh.material.needsUpdate = true;
   }
 
   function imageLayoutItems(meshes) {

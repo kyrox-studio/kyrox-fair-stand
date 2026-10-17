@@ -259,9 +259,9 @@ function listGuideSections() {
         <li><strong>Otomatik kayıt:</strong> Kayıtlı/açılmış projede değişiklik, Kaydet düğmelerinin altındaki <strong>Otomatik kayıt</strong> listesinde seçilen süre içinde kaydedilir: <strong>3, 5, 7 veya 10 dk</strong> (varsayılan 3 dk). Sürekli düzenlemede de en geç bu süre dolunca kaydedilir. <strong>Kapalı (Otomatik Kayıt Kapalı)</strong> seçilirse süreli kayıt yapılmaz; durum satırında “Kaydedilmemiş değişiklik var” yazar ve <strong>Kaydet</strong> ile elle kaydedilir. Seçim bu tarayıcıda hatırlanır, projeye yazılmaz.</li>
         <li><strong>Kaydedilmemiş değişiklik koruması:</strong> Kayıtlı projede kaydedilmemiş değişiklik varken sekme gizlenir veya editörden çıkılırsa değişiklik hemen kaydedilir; otomatik kayıt kapalı olsa da bu koruma çalışır. Sayfa kapatılmak veya yenilenmek istenirse tarayıcı uyarı gösterir.</li>
         <li><strong>Müşteri adı:</strong> Açık projenin bağlı olduğu müşterinin adı, proje adının üstünde görünür. Başka projeler bu ekranda listelenmez; yalnız açık proje üzerinde çalışılır.</li>
-        <li><strong>Aç:</strong> Açık projeyi görselleriyle birlikte yeniden yükler.</li>
+        <li><strong>Aç:</strong> Açık projeyi görselleriyle birlikte yeniden yükler. Bir görselin dosyası bulunamazsa proje yine açılır; o yüzey kendi rengiyle gösterilir ve durum satırında kaç görselin bulunamadığı yazar. Görsel bağlantısı projede kalır, dosya geri gelirse görsel yeniden görünür.</li>
         <li><strong>Dışarı Aktar:</strong> Proje ve görselleri ZIP dosyasına paketler.</li>
-        <li><strong>İçe Aktar:</strong> Uyumlu proje ZIP paketini sisteme alır.</li>
+        <li><strong>İçe Aktar:</strong> Uyumlu proje ZIP paketini sisteme alır. Her proje bir müşteriye bağlıdır: paket müşteri bilgisi taşımıyorsa ve editör müşterisiz açıldıysa içe aktarma yapılmaz; Müşteriler → müşteri → Yeni Proje ile açılan editörde İçe Aktar kullanılır.</li>
         <li><strong>Sil:</strong> Projeyi ve projeye ait görselleri onay sonrası kaldırır. Silinen proje açıksa sayfa yenilenmez; sahne ilk açılıştaki boş duruma döner.</li>
       </ul>
     `,

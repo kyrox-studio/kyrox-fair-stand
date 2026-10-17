@@ -30,14 +30,18 @@ test('listCachedProjects reads only the local project cache', () => {
   assert.doesNotMatch(cachedList, /apiFetch/);
 });
 
-test('opening one project downloads its assets together', () => {
+test('opening one project downloads its assets together and tolerates a missing one', () => {
   const start = remoteSource.indexOf('async function cacheProjectAndAssets');
   const end = remoteSource.indexOf('export async function listProjects', start);
   assert.ok(start >= 0 && end > start);
   const cacheSource = remoteSource.slice(start, end);
-  assert.match(cacheSource, /const cached = await Promise\.all\(assets\.map\(async \(asset\) => \{/);
+  assert.match(cacheSource, /const results = await Promise\.allSettled\(assets\.map\(async \(asset\) => \{/);
+  assert.doesNotMatch(cacheSource, /Promise\.all\(/);
   assert.match(cacheSource, /return saveImportedImageAsset\(detail\.id,/);
+  assert.match(cacheSource, /if \(result\.status === 'fulfilled'\)/);
+  assert.match(cacheSource, /missingAssetIds\.push\(assets\[index\]\.id\)/);
   assert.match(cacheSource, /markProjectAssetsSynced\(detail\.id, cached\)/);
+  assert.match(cacheSource, /return missingAssetIds\.length \? \{ \.\.\.local, missingAssetIds \} : local;/);
   assert.doesNotMatch(cacheSource, /for \(const asset of assets\)/);
 });
 
