@@ -1,11 +1,20 @@
-export const DEFAULT_AUTOSAVE_DELAY_MS = 30000;
-export const DEFAULT_AUTOSAVE_MAX_WAIT_MS = 60000;
+// Otomatik kayıt süresi kullanıcı tarafından dakika olarak seçilir (bkz. autosaveSettings.js).
+// 0 dakika "Kapalı" demektir: değişiklik izlenir ve durum yazısı gösterilir, zamanlayıcı kurulmaz.
+// Kapalıyken de `isEnabled()` true kalır; bu bayrak "proje en az bir kez kaydedildi" anlamını taşır.
+export const DEFAULT_AUTOSAVE_DELAY_MS = 180000;
+export const DEFAULT_AUTOSAVE_MAX_WAIT_MS = 180000;
 export const DEFAULT_AUTOSAVE_WATCH_INTERVAL_MS = 1000;
 
 let activeAutosaveController = null;
 
 export function getActiveAutosaveController() {
   return activeAutosaveController;
+}
+
+function formatWait(waitMs) {
+  const seconds = Math.max(1, Math.round(waitMs / 1000));
+  if (seconds < 60) return `${seconds} sn`;
+  return `${Math.ceil(seconds / 60)} dk`;
 }
 
 export function createAutosaveController({
@@ -36,7 +45,10 @@ export function createAutosaveController({
   let maxWaitDueAt = null;
   let watchTimer = null;
   let observedSignature = null;
+  let savedSignature = null;
   let flushPromise = null;
+  let currentDelayMs = delayMs;
+  let currentMaxWaitMs = maxWaitMs;
 
   function clearPending() {
     if (pendingTimer !== null) clearTimeoutFn(pendingTimer);
@@ -52,6 +64,11 @@ export function createAutosaveController({
     return observedSignature;
   }
 
+  function markCurrentStateSaved() {
+    savedSignature = markCurrentState();
+    return savedSignature;
+  }
+
   async function runScheduledPersist() {
     pendingTimer = null;
     if (!enabled) return;
@@ -59,7 +76,7 @@ export function createAutosaveController({
     setStatus('Kaydediliyor…');
     try {
       await persist({ quiet: true });
-      markCurrentState();
+      markCurrentStateSaved();
       setStatus('Kaydedildi · Otomatik');
     } catch (error) {
       onError(error);
@@ -67,13 +84,21 @@ export function createAutosaveController({
     }
   }
 
+  function isAutoSaveOff() {
+    return currentDelayMs <= 0;
+  }
+
   function schedule() {
     if (!enabled) return false;
     clearPending();
-    if (maxWaitDueAt == null) maxWaitDueAt = now() + maxWaitMs;
-    const waitMs = Math.max(0, Math.min(delayMs, maxWaitDueAt - now()));
-    const seconds = Math.max(1, Math.round(waitMs / 1000));
-    setStatus(`Değişiklik var · ${seconds} sn içinde otomatik kaydedilecek…`);
+    if (isAutoSaveOff()) {
+      resetMaxWait();
+      setStatus('Kaydedilmemiş değişiklik var · otomatik kayıt kapalı');
+      return false;
+    }
+    if (maxWaitDueAt == null) maxWaitDueAt = now() + currentMaxWaitMs;
+    const waitMs = Math.max(0, Math.min(currentDelayMs, maxWaitDueAt - now()));
+    setStatus(`Değişiklik var · ${formatWait(waitMs)} içinde otomatik kaydedilecek…`);
     pendingTimer = setTimeoutFn(runScheduledPersist, waitMs);
     return true;
   }
@@ -100,7 +125,7 @@ export function createAutosaveController({
   function enableFromCurrentState() {
     clearPending();
     resetMaxWait();
-    markCurrentState();
+    markCurrentStateSaved();
     enabled = true;
     startWatching();
   }
@@ -110,17 +135,39 @@ export function createAutosaveController({
     clearPending();
     resetMaxWait();
     observedSignature = null;
+    savedSignature = null;
     stopWatching();
   }
 
   function markSavedState() {
     clearPending();
     resetMaxWait();
-    return markCurrentState();
+    return markCurrentStateSaved();
   }
 
   function isEnabled() {
     return enabled;
+  }
+
+  function hasUnsavedChanges() {
+    if (!enabled) return false;
+    return getSignature() !== savedSignature;
+  }
+
+  // Dakika: 0 kapalı; pozitif değer hem son değişiklikten sonraki bekleme hem de
+  // sürekli düzenlemede en uzun bekleme olur.
+  function setDelayMinutes(minutes) {
+    const value = Number(minutes);
+    if (!Number.isFinite(value) || value < 0) throw new RangeError('Autosave minutes must be a non-negative number.');
+    currentDelayMs = value * 60000;
+    currentMaxWaitMs = value * 60000;
+    clearPending();
+    resetMaxWait();
+    if (enabled && observedSignature !== savedSignature) schedule();
+  }
+
+  function getDelayMinutes() {
+    return currentDelayMs / 60000;
   }
 
   async function flush({ quiet = true } = {}) {
@@ -141,15 +188,41 @@ export function createAutosaveController({
     }
   }
 
+  // Sekme gizlenirken veya editör kapanırken: yalnız kaydedilmemiş değişiklik varsa kaydeder.
+  // Otomatik kayıt kapalı olsa da çalışır; denetleyiciyi yeniden açmaz.
+  async function saveNowIfDirty() {
+    if (!hasUnsavedChanges()) return false;
+    if (flushPromise) {
+      await flushPromise;
+      return true;
+    }
+    clearPending();
+    resetMaxWait();
+    try {
+      await persist({ quiet: true });
+      if (enabled) markCurrentStateSaved();
+      setStatus('Kaydedildi · Otomatik');
+      return true;
+    } catch (error) {
+      onError(error);
+      setStatus('Otomatik kayıt başarısız.');
+      return false;
+    }
+  }
+
   const controller = Object.freeze({
     checkForChanges,
     clearPending,
     disable,
     enableFromCurrentState,
     flush,
+    getDelayMinutes,
+    hasUnsavedChanges,
     isEnabled,
     markSavedState,
+    saveNowIfDirty,
     schedule,
+    setDelayMinutes,
   });
   activeAutosaveController = controller;
   return controller;
