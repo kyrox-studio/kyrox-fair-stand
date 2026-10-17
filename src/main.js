@@ -57,6 +57,7 @@ import {
 } from './projectNaming.js';
 import { buildSaveAsClone } from './projectSaveAs.js';
 import { createAutosaveController } from './autosaveController.js';
+import { readAutosaveMinutes, writeAutosaveMinutes } from './autosaveSettings.js';
 import { createDesignHistory } from './designHistory.js';
 import { isEditableKeyboardTarget, resolveViewKeyboardShortcut } from './viewKeyboardShortcuts.js';
 import {
@@ -239,6 +240,7 @@ const importProjectButton = document.querySelector('#import-project');
 const importProjectFileInput = document.querySelector('#import-project-file');
 const deleteProjectButton = document.querySelector('#delete-project');
 const projectStatus = document.querySelector('#project-status');
+const autosaveIntervalSelect = document.querySelector('#autosave-interval');
 const projectRevisions = document.querySelector('#project-revisions');
 const projectRevisionList = document.querySelector('#project-revision-list');
 const revisionSession = createRevisionSession();
@@ -2003,6 +2005,16 @@ const autosaveController = createAutosaveController({
   onError: (error) => console.warn('Otomatik kayıt başarısız:', error),
 });
 
+// Otomatik kayıt süresi: tarayıcıda saklanan dakika seçimi; 0 = kapalı.
+function applyAutosaveInterval(minutes) {
+  autosaveController.setDelayMinutes(minutes);
+  if (autosaveIntervalSelect) autosaveIntervalSelect.value = String(minutes);
+}
+applyAutosaveInterval(readAutosaveMinutes());
+autosaveIntervalSelect?.addEventListener('change', () => {
+  applyAutosaveInterval(writeAutosaveMinutes(autosaveIntervalSelect.value));
+});
+
 // Geri al / İleri al. Tasarım imzası (stand + modüller) karşılaştırılır; sahnenin
 // kendi içinde yaptığı değişiklikler de yakalanır. Geçmiş kaydedilmez.
 function floorDefaultColorHex(itemKey) {
@@ -3369,12 +3381,29 @@ clearTextureButton.addEventListener('click', () => {
   selectionInfo.textContent = 'Seçili panel veya panel bloğundaki görsel kaldırıldı.';
 });
 
-window.addEventListener('beforeunload', () => {
+// Kaydedilmemiş değişiklik varken sayfa kapatılırsa tarayıcı uyarı gösterir.
+function onBeforeUnloadWarnUnsaved(event) {
+  if (!autosaveController.hasUnsavedChanges()) return;
+  event.preventDefault();
+  event.returnValue = '';
+}
+
+function onPageHide() {
   autosaveController.disable();
   imageAssets.forEach((asset) => {
     if (asset.url) URL.revokeObjectURL(asset.url);
   });
-});
+}
+
+// Sekme gizlenince (başka sekme, pencere küçültme, kapatma öncesi) bekleyen değişiklik kaydedilir.
+function onVisibilityChangeSave() {
+  if (document.visibilityState !== 'hidden') return;
+  void autosaveController.saveNowIfDirty();
+}
+
+window.addEventListener('beforeunload', onBeforeUnloadWarnUnsaved);
+window.addEventListener('pagehide', onPageHide);
+document.addEventListener('visibilitychange', onVisibilityChangeSave);
 
 setStandEditingEnabled(false);
 updateStageCreateState();
@@ -3421,6 +3450,11 @@ const historicalEditWatch = setInterval(() => {
     window.removeEventListener('pointerup', scheduleDesignHistoryCapture);
     window.removeEventListener('keyup', scheduleDesignHistoryCapture);
     document.removeEventListener('change', scheduleDesignHistoryCapture);
+    window.removeEventListener('beforeunload', onBeforeUnloadWarnUnsaved);
+    window.removeEventListener('pagehide', onPageHide);
+    document.removeEventListener('visibilitychange', onVisibilityChangeSave);
+    // CRM içinde başka sayfaya geçilirken bekleyen değişiklik arka planda kaydedilir.
+    void autosaveController?.saveNowIfDirty?.().catch(() => {});
     autosaveController?.disable?.();
     productionBomPanel?.destroy?.();
     window.removeEventListener('fair-stand:delete-selected-module', onDeleteSelectedModule);

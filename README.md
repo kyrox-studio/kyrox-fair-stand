@@ -17,6 +17,7 @@ Repository ilk MVP taslağının ötesindedir. Mevcut uygulama aşağıdaki ana 
 - Renk, görsel ve editable surface state altyapısı.
 - Öğe kilidi: kilitli öğe taşınmaz, döndürülmez, silinmez ve zincir kaydırmasıyla oynamaz. Shift+tık ile toplu seçip toplu kilitleme yapılır (`src/moduleLock.js`).
 - Geri al / İleri al (Ctrl+Z / Ctrl+Y, üst bant düğmeleri): tasarımın son 50 adımı; kaydedilmez (`src/designHistory.js`).
+- Otomatik kayıt süresi (Proje kartı → Otomatik kayıt): Kapalı / 3 / 5 / 7 / 10 dk, varsayılan 3 dk; seçim tarayıcıda (`localStorage` `fairStand.autosaveMinutes`) tutulur (`src/autosaveSettings.js`). Kaydedilmemiş değişiklik sekme gizlenince veya editörden çıkılınca kaydedilir; sayfa kapatılırken tarayıcı uyarır.
 - Recipe / production-parts tabanlı BOM ve üretim verisi altyapısı.
 - Proje ve asset yönetimi için ayrı state/storage katmanları.
 - Module/feature contract altyapısı, universal system change gate ve full-system impact sweep.

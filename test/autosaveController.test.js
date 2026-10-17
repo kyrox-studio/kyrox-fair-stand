@@ -42,9 +42,9 @@ function createFakeClock() {
   };
 }
 
-test('autosave constants preserve the 30s debounce, 60s max wait, and 1s watch', () => {
-  assert.equal(DEFAULT_AUTOSAVE_DELAY_MS, 30000);
-  assert.equal(DEFAULT_AUTOSAVE_MAX_WAIT_MS, 60000);
+test('autosave constants use the 3 minute default, 3 minute max wait, and 1s watch', () => {
+  assert.equal(DEFAULT_AUTOSAVE_DELAY_MS, 180000);
+  assert.equal(DEFAULT_AUTOSAVE_MAX_WAIT_MS, 180000);
   assert.equal(DEFAULT_AUTOSAVE_WATCH_INTERVAL_MS, 1000);
 });
 
@@ -105,8 +105,8 @@ test('changed state schedules one debounce and a later change replaces it', () =
   assert.notEqual(firstTimerId, secondTimerId);
   assert.deepEqual(clock.clearedTimeouts, [firstTimerId]);
   assert.equal(clock.timeouts.size, 1);
-  assert.equal([...clock.timeouts.values()][0].delay, 30000);
-  assert.equal(statuses.at(-1), 'Değişiklik var · 30 sn içinde otomatik kaydedilecek…');
+  assert.equal([...clock.timeouts.values()][0].delay, 180000);
+  assert.equal(statuses.at(-1), 'Değişiklik var · 3 dk içinde otomatik kaydedilecek…');
 });
 
 test('scheduled persist uses quiet mode and marks the persisted signature as observed', async () => {
@@ -255,6 +255,8 @@ test('edits at 0s, 10s, and 20s autosave 30s after the last edit', () => {
     getSignature: () => signature,
     persist: async () => {},
     now: () => nowMs,
+    delayMs: 30000,
+    maxWaitMs: 60000,
     ...clock,
   });
   controller.enableFromCurrentState();
@@ -283,6 +285,8 @@ test('continuous edits autosave when the 60s max wait arrives, then open a new w
     getSignature: () => signature,
     persist: async () => { persistCount += 1; },
     now: () => nowMs,
+    delayMs: 30000,
+    maxWaitMs: 60000,
     ...clock,
   });
   controller.enableFromCurrentState();
@@ -315,6 +319,8 @@ test('a manual save clears the max-wait window', () => {
     getSignature: () => signature,
     persist: async () => {},
     now: () => nowMs,
+    delayMs: 30000,
+    maxWaitMs: 60000,
     ...clock,
   });
   controller.enableFromCurrentState();
@@ -327,4 +333,136 @@ test('a manual save clears the max-wait window', () => {
   controller.checkForChanges();
 
   assert.equal(scheduledDelay(clock), 30000);
+});
+
+test('setDelayMinutes(0) keeps watching but never schedules a timer', () => {
+  const clock = createFakeClock();
+  const statuses = [];
+  let signature = 'saved';
+  const controller = createAutosaveController({
+    getSignature: () => signature,
+    persist: async () => {},
+    setStatus: (value) => statuses.push(value),
+    ...clock,
+  });
+  controller.enableFromCurrentState();
+  controller.setDelayMinutes(0);
+
+  signature = 'dirty';
+  assert.equal(controller.checkForChanges(), true);
+
+  assert.equal(controller.isEnabled(), true);
+  assert.equal(clock.intervals.size, 1);
+  assert.equal(clock.timeouts.size, 0);
+  assert.equal(controller.getDelayMinutes(), 0);
+  assert.equal(controller.hasUnsavedChanges(), true);
+  assert.equal(statuses.at(-1), 'Kaydedilmemiş değişiklik var · otomatik kayıt kapalı');
+});
+
+test('setDelayMinutes changes debounce and max wait, and reschedules pending changes', () => {
+  const clock = createFakeClock();
+  const statuses = [];
+  let signature = 'saved';
+  const controller = createAutosaveController({
+    getSignature: () => signature,
+    persist: async () => {},
+    setStatus: (value) => statuses.push(value),
+    ...clock,
+  });
+  controller.enableFromCurrentState();
+  controller.setDelayMinutes(0);
+  signature = 'dirty';
+  controller.checkForChanges();
+  assert.equal(clock.timeouts.size, 0);
+
+  controller.setDelayMinutes(7);
+
+  assert.equal(scheduledDelay(clock), 420000);
+  assert.equal(statuses.at(-1), 'Değişiklik var · 7 dk içinde otomatik kaydedilecek…');
+});
+
+test('setDelayMinutes rejects negative and non-numeric values', () => {
+  const controller = createAutosaveController({
+    getSignature: () => 'x',
+    persist: async () => {},
+    ...createFakeClock(),
+  });
+  assert.throws(() => controller.setDelayMinutes(-1), RangeError);
+  assert.throws(() => controller.setDelayMinutes('abc'), RangeError);
+});
+
+test('hasUnsavedChanges is false before first save and after scheduled autosave', async () => {
+  const clock = createFakeClock();
+  let signature = 'a';
+  const controller = createAutosaveController({
+    getSignature: () => signature,
+    persist: async () => {},
+    ...clock,
+  });
+  signature = 'b';
+  assert.equal(controller.hasUnsavedChanges(), false);
+
+  controller.enableFromCurrentState();
+  signature = 'c';
+  controller.checkForChanges();
+  assert.equal(controller.hasUnsavedChanges(), true);
+
+  await [...clock.timeouts.values()][0].callback();
+  assert.equal(controller.hasUnsavedChanges(), false);
+});
+
+test('saveNowIfDirty persists unsaved changes even when autosave is off', async () => {
+  const clock = createFakeClock();
+  const persistCalls = [];
+  let signature = 'saved';
+  const controller = createAutosaveController({
+    getSignature: () => signature,
+    persist: async (options) => { persistCalls.push(options); },
+    ...clock,
+  });
+  controller.enableFromCurrentState();
+  controller.setDelayMinutes(0);
+
+  assert.equal(await controller.saveNowIfDirty(), false);
+  assert.deepEqual(persistCalls, []);
+
+  signature = 'dirty';
+  controller.checkForChanges();
+  assert.equal(await controller.saveNowIfDirty(), true);
+
+  assert.deepEqual(persistCalls, [{ quiet: true }]);
+  assert.equal(controller.hasUnsavedChanges(), false);
+  assert.equal(controller.isEnabled(), true);
+});
+
+test('saveNowIfDirty does nothing for a project that was never saved', async () => {
+  let persistCount = 0;
+  const controller = createAutosaveController({
+    getSignature: () => 'unsaved-project',
+    persist: async () => { persistCount += 1; },
+    ...createFakeClock(),
+  });
+  assert.equal(await controller.saveNowIfDirty(), false);
+  assert.equal(persistCount, 0);
+});
+
+test('saveNowIfDirty reports failures and keeps changes unsaved', async () => {
+  const errors = [];
+  const statuses = [];
+  let signature = 'saved';
+  const failure = new Error('offline');
+  const controller = createAutosaveController({
+    getSignature: () => signature,
+    persist: async () => { throw failure; },
+    setStatus: (value) => statuses.push(value),
+    onError: (error) => errors.push(error),
+    ...createFakeClock(),
+  });
+  controller.enableFromCurrentState();
+  signature = 'dirty';
+
+  assert.equal(await controller.saveNowIfDirty(), false);
+  assert.deepEqual(errors, [failure]);
+  assert.equal(statuses.at(-1), 'Otomatik kayıt başarısız.');
+  assert.equal(controller.hasUnsavedChanges(), true);
 });
