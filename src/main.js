@@ -19,7 +19,7 @@ import {
   moduleWidths,
 } from './designState.js';
 import { deleteImageAsset, loadImageAssets, saveImageAsset, saveImportedImageAsset } from './assetStore.js';
-import { clearImageAssetReferences, countImageAssetReferences, remapImageAssetReferences } from './imageAssetReferences.js';
+import { clearImageAssetReferences, collectImageAssetReferenceIds, countImageAssetReferences, remapImageAssetReferences } from './imageAssetReferences.js';
 import { createProjectId, deleteProjectWithAssets, listCachedProjects, loadProject, loadProjectRevision, saveProject, exportProjectZip, isProjectRemoteEnabled, deleteProjectAsset, markAssetDirty, loadCustomerDisplayName } from './projectRemote.js';
 import {
   beginHistoricalView,
@@ -230,6 +230,7 @@ const projectNameInput = document.querySelector('#project-name');
 const projectNameDisplay = document.querySelector('#project-name-display');
 const projectCustomerDisplay = document.querySelector('#project-customer-display');
 const TEMPORARY_CUSTOMER_LABEL = 'Geçici bağ';
+const IMPORT_REQUIRES_CUSTOMER_MESSAGE = 'İçe aktarmak için proje bir müşteriye bağlı olmalı: Müşteriler → müşteri → Yeni Proje ile editörü açıp orada İçe Aktar düğmesini kullanın.';
 const renameProjectButton = document.querySelector('#rename-project');
 const projectSelect = document.querySelector('#project-select');
 const saveProjectButton = document.querySelector('#save-project');
@@ -2153,6 +2154,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
   // Sahne yeniden kurulmadan önce proje görsel URL'leri hazır olmalı.
   // Yoksa kayıtlı imageAssetId ilk açılışta çözülemez.
   await loadAssetsForActiveProject();
+  const missingImageCount = countMissingImageReferences();
 
   if (currentStand) {
     selectedStandType = currentStand.standType;
@@ -2227,7 +2229,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     });
     renderRevisionList();
     resetDesignHistory({ enabled: false });
-    projectStatus.textContent = `Geçmiş revizyon R${historicalRevisionNumber} · salt okunur`;
+    projectStatus.textContent = `Geçmiş revizyon R${historicalRevisionNumber} · salt okunur${missingImageNotice(missingImageCount)}`;
     return;
   }
 
@@ -2240,7 +2242,17 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
   renderRevisionList();
   autosaveController.enableFromCurrentState();
   resetDesignHistory();
-  projectStatus.textContent = 'Açıldı: ' + (project.name || 'Adsız Proje');
+  projectStatus.textContent = 'Açıldı: ' + (project.name || 'Adsız Proje') + missingImageNotice(missingImageCount);
+}
+
+// Projede bağlantısı olup dosyası yüklenemeyen görseller (ör. sunucuda dosya eksik).
+function countMissingImageReferences() {
+  const referenced = collectImageAssetReferenceIds([currentModules, currentStand]);
+  return [...referenced].filter((assetId) => !getAssetUrl(assetId)).length;
+}
+
+function missingImageNotice(count) {
+  return count > 0 ? ` · ${count} görsel bulunamadı, ilgili yüzeyler kendi rengiyle gösteriliyor` : '';
 }
 
 async function selectRevision(revisionNumber) {
@@ -3217,6 +3229,12 @@ importProjectFileInput.addEventListener('change', async () => {
     const manifest = JSON.parse(await manifestEntry.async('text'));
     const manifestCheck = validateProjectArchiveManifest(manifest);
     if (!manifestCheck.ok) throw new Error(manifestCheck.message);
+
+    // Sunucu her projeyi bir müşteriye bağlar. Paket ve açık editör müşterisizse ham API hatası yerine yol gösterilir.
+    if (isProjectRemoteEnabled() && !(manifest.project.customerId || activeCustomerId)) {
+      projectStatus.textContent = IMPORT_REQUIRES_CUSTOMER_MESSAGE;
+      return;
+    }
 
     const manifestAssets = manifest.assets || [];
     importedProjectId = createProjectId();

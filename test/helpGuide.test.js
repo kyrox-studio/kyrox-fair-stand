@@ -27,6 +27,8 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /<strong>3, 5, 7 veya 10 dk<\/strong> \(varsayılan 3 dk\)/);
   assert.match(guideSource, /Kapalı \(Otomatik Kayıt Kapalı\)/);
   assert.match(guideSource, /Kaydedilmemiş değişiklik koruması/);
+  assert.match(guideSource, /Bir görselin dosyası bulunamazsa proje yine açılır/);
+  assert.match(guideSource, /Her proje bir müşteriye bağlıdır/);
   assert.match(guideSource, /<strong>Farklı Kaydet:<\/strong> sahne varken aktiftir/);
   assert.match(guideSource, /müşteri aynı kalır/);
   assert.match(guideSource, /Sahne yokken kapalıdır/);

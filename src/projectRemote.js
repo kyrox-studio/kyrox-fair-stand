@@ -209,7 +209,9 @@ async function cacheProjectAndAssets(detail) {
   const local = toLocalProject(detail);
   await saveLocalProject(local);
   const assets = Array.isArray(detail.assets) ? detail.assets : [];
-  const cached = await Promise.all(assets.map(async (asset) => {
+  // Görseller birlikte indirilir. İnemeyen görsel (ör. sunucuda dosya eksik) projeyi açmayı
+  // engellemez; atlanır ve missingAssetIds ile bildirilir. Proje içindeki bağlantı silinmez.
+  const results = await Promise.allSettled(assets.map(async (asset) => {
     const response = await apiFetch(`/${detail.id}/assets/${asset.id}`);
     const blob = await response.blob();
     return saveImportedImageAsset(detail.id, {
@@ -220,10 +222,20 @@ async function cacheProjectAndAssets(detail) {
       createdAt: asset.createdAt || Date.now(),
     });
   }));
+  const cached = [];
+  const missingAssetIds = [];
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      cached.push(result.value);
+      return;
+    }
+    missingAssetIds.push(assets[index].id);
+    console.warn('Proje görseli indirilemedi:', assets[index].id, result.reason);
+  });
   // Server copy is authoritative — skip re-upload on autosave.
   clearProjectAssetSyncState(detail.id);
   markProjectAssetsSynced(detail.id, cached);
-  return local;
+  return missingAssetIds.length ? { ...local, missingAssetIds } : local;
 }
 
 export async function listCachedProjects() {

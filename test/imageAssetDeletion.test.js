@@ -1,7 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { clearImageAssetReferences, countImageAssetReferences, remapImageAssetReferences } from '../src/imageAssetReferences.js';
+import {
+  clearImageAssetReferences,
+  collectImageAssetReferenceIds,
+  countImageAssetReferences,
+  remapImageAssetReferences,
+} from '../src/imageAssetReferences.js';
+
+test('collectImageAssetReferenceIds lists every referenced panel and fabric asset once', () => {
+  const state = [
+    [
+      { strips: [{ imageAssetId: 'asset-a' }, { imageAssetId: null }, { imageAssetId: 'asset-b' }] },
+      { strips: [{ fabricImageAssetId: 'asset-a' }, { fabricImageAssetId: 'asset-c' }] },
+    ],
+    { floorArea: null },
+  ];
+  assert.deepEqual([...collectImageAssetReferenceIds(state)].sort(), ['asset-a', 'asset-b', 'asset-c']);
+  assert.equal(collectImageAssetReferenceIds(null).size, 0);
+});
 
 test('image asset reference helper finds normal panel and fabric assignments', () => {
   const state = {
