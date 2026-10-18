@@ -137,4 +137,14 @@ test('multi-selection and group member frames use Kyrox copper; single selection
   assert.match(sceneSource, /next\.forEach\(\(moduleId\) => setModuleSelectionVisual\(moduleId, true, GROUP_SELECTION_COLOR\)\);/);
   assert.match(sceneSource, /multiSelectedModuleIds\.forEach\(\(id\) => setModuleSelectionVisual\(id, true, GROUP_SELECTION_COLOR\)\);/);
   assert.match(sceneSource, /selectedModuleId = moduleId \?\? null;\n {4}setModuleSelectionVisual\(selectedModuleId, true\);/);
+  // Modül seçim çerçevesi panel seçimi gibi hemen yeniden çizilmeli.
+  assert.match(sceneSource, /frame\.visible = Boolean\(selected\);\n {4}\/\/ Shift\+tık yalnız bunu günceller[\s\S]*?requestEditorRender\(\);/);
+});
+
+test('multi-selection context menu survives a right-click that misses a selected module', () => {
+  // ≥2 toplu seçimde sağ tık selectOnly çağırmaz; menü seçimdeki bütün öğelere açılır.
+  assert.match(sceneSource, /if \(multiSelectedModuleIds\.size < 2\n {6}&& context\.surfaceId\n {6}&& !multiSelectedModuleIds\.has\(context\.moduleId\)\) \{/);
+  assert.match(mainSource, /\/\/ Toplu seçim varken menü her zaman bütün seçime uygulanır/);
+  assert.match(mainSource, /if \(selectedIds\.length > 1\) \{\n {4}moduleContextMenu\.open\(\{/);
+  assert.doesNotMatch(mainSource, /selectedIds\.length > 1 && selectedIds\.includes\(context\.moduleId\)/);
 });

@@ -72,6 +72,7 @@ export function createModuleGroupPanel({ list, empty, document = globalThis.docu
         createButton(document, group.locked ? 'Kilidi aç' : 'Kilitle', 'group-lock'),
         createButton(document, 'Adlandır', 'group-rename'),
         createButton(document, 'Çoğalt', 'group-duplicate'),
+        createButton(document, 'Şablon olarak kaydet', 'group-save-template'),
         createButton(document, 'Çöz', 'group-dissolve', { disabled: group.locked, title: group.locked ? lockedTitle : '' }),
         createButton(document, 'Sil', 'group-delete', { danger: true, disabled: group.locked, title: group.locked ? lockedTitle : '' }),
       );

@@ -1041,7 +1041,7 @@ export function normalizeModuleItemState(moduleState) {
       moduleState.itemKey = item.itemKey;
       moduleState.depthCm = requireSceneDimension(item, 'depthCm');
     }
-    if (moduleState.placement) {
+    if (moduleState.placement && Number.isFinite(Number(moduleState.placement.zCm))) {
       moduleState.placement = {
         ...moduleState.placement,
         zCm: clampFloorRelativeBottomZCm(moduleState.placement.zCm, Number(moduleState.depthCm) || 0),
@@ -1054,7 +1054,7 @@ export function normalizeModuleItemState(moduleState) {
     const item = moduleState.itemKey ? getItem(moduleState.itemKey) : null;
     if (item?.type === 'box-block') moduleState.itemKey = item.itemKey;
     ensureBoxBlockFaces(moduleState, item);
-    if (moduleState.placement) {
+    if (moduleState.placement && Number.isFinite(Number(moduleState.placement.zCm))) {
       moduleState.placement = {
         ...moduleState.placement,
         zCm: clampFloorRelativeBottomZCm(moduleState.placement.zCm, Number(moduleState.heightCm) || 0),

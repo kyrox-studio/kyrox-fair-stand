@@ -1551,3 +1551,4 @@ button[aria-busy="true"]::after {
 .module-group-members li { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .module-group-members .module-group-action { min-width: 0; padding: 3px 6px; font-size: 11px; }
 .module-group-members .module-group-member { flex: 1 1 auto; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.module-template-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
