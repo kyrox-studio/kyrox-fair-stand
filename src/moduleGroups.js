@@ -11,7 +11,8 @@
 // - Bir öğe aynı anda tek grupta olur. Grupta 1 parça kalırsa grup çözülür.
 // - Grup kilidi bütün üyeleri kilitli sayar (bkz. moduleLock.isModuleLocked).
 
-import { isVerticalModuleRotation, validateModulePlacement } from './modulePlacement.js';
+import { isVerticalModuleRotation } from './modulePlacement.js';
+import { STAND_DIMENSIONS } from './standDimensions.js';
 import { usesWallBackboneCollisionDepth } from './moduleBehavior.js';
 
 export const GROUP_MOVE_STEP_CM = 10;
@@ -214,21 +215,31 @@ export function setGroupLocked(modules = [], groupId, locked) {
   return { ok: true, count: members.length, locked: locked === true };
 }
 
+// Duvar kalınlığı kadar ince öğeler (panel, kapı) kenar çizgisine ortalanır; motor da
+// (modulePlacement.hasStrictDepthBounds) bu öğelerde derinliği sınıra katmaz.
+function standWallDepthCm() {
+  return Math.max(0, Number(STAND_DIMENSIONS.depth) * 100 || 0);
+}
+
 function boundaryDepthCm(moduleState) {
   if (usesWallBackboneCollisionDepth(moduleState)) return null;
   const depth = Number(moduleState?.depthCm);
-  return Number.isFinite(depth) && depth > 0 ? depth : null;
+  if (!Number.isFinite(depth) || depth <= standWallDepthCm() + EPSILON_CM) return null;
+  return depth;
 }
 
+// Tek kısıt: öğenin dönmüş kaplama alanı aktif stand alanında kalmalı. Taşıma,
+// döndürme ve çoğaltma aynı kuralı kullanır (45° panel kenardan taşamaz).
 function memberInsideStand(moduleState, placement, stand) {
-  return validateModulePlacement({
-    placement: { ...placement, wallId: 'free' },
-    widthCm: moduleState.widthCm,
-    depthCm: boundaryDepthCm(moduleState),
-    standType: stand?.standType,
-    standXCm: stand?.standXCm,
-    standYCm: stand?.standYCm,
-  }).ok;
+  const xLimit = Number(stand?.standXCm);
+  const yLimit = Number(stand?.standYCm);
+  if (!Number.isFinite(xLimit) || !Number.isFinite(yLimit)) return false;
+  const center = memberCenterCm(moduleState, placement);
+  const { halfX, halfY } = memberHalfExtentsCm(moduleState, placement?.rotationZDeg);
+  return center.xCm - halfX >= -EPSILON_CM
+    && center.xCm + halfX <= xLimit + EPSILON_CM
+    && center.yCm - halfY >= -EPSILON_CM
+    && center.yCm + halfY <= yLimit + EPSILON_CM;
 }
 
 function translatePlacement(placement, dxCm, dyCm) {
@@ -337,8 +348,6 @@ export function planPlacementsRotate(members = [], deltaDeg, stand) {
   const radians = (Number(deltaDeg) || 0) * Math.PI / 180;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
-  const xLimit = Number(stand?.standXCm);
-  const yLimit = Number(stand?.standYCm);
   const placements = new Map();
   for (let index = 0; index < placed.length; index += 1) {
     const moduleState = placed[index];
@@ -347,18 +356,11 @@ export function planPlacementsRotate(members = [], deltaDeg, stand) {
     const centerX = roundCm(pivotX + dx * cos + dy * sin);
     const centerY = roundCm(pivotY - dx * sin + dy * cos);
     const rotationZDeg = normalizeRotation(Number(moduleState.placement.rotationZDeg) + (Number(deltaDeg) || 0));
-    const { halfX, halfY } = memberHalfExtentsCm(moduleState, rotationZDeg);
-    if (
-      !Number.isFinite(xLimit) || !Number.isFinite(yLimit)
-      || centerX - halfX < -EPSILON_CM || centerX + halfX > xLimit + EPSILON_CM
-      || centerY - halfY < -EPSILON_CM || centerY + halfY > yLimit + EPSILON_CM
-    ) {
+    const next = placementFromMemberCenter(moduleState, moduleState.placement, centerX, centerY, rotationZDeg);
+    if (!memberInsideStand(moduleState, next, stand)) {
       return { ok: false, message: GROUP_ROTATE_OUTSIDE_STAND_MESSAGE, placements: new Map() };
     }
-    placements.set(
-      moduleState.id,
-      placementFromMemberCenter(moduleState, moduleState.placement, centerX, centerY, rotationZDeg),
-    );
+    placements.set(moduleState.id, next);
   }
   return { ok: true, placements, pivot: { xCm: pivotX, yCm: pivotY } };
 }

@@ -308,3 +308,37 @@ test('group bounds use the engine center rule for 45-degree members', () => {
   assert.ok(Math.abs((bounds.minX + bounds.maxX) / 2 - 150) < 0.01);
   assert.ok(Math.abs((bounds.minY + bounds.maxY) / 2 - 100) < 0.01);
 });
+
+test('a rotated thin wall panel cannot be dragged out of the stand (user project regression)', () => {
+  // elikon-L_Sag_900_500, "Grup 2": two 200 cm panels at 315°; the first one's center sat 9.3 cm
+  // from the back edge, so its diagonal stuck ~64 cm outside. Translation now uses the rotated footprint.
+  const stand = { standType: 'l-right', standXCm: 900, standYCm: 500 };
+  const panel = (id, xCm, yCm) => ({
+    id,
+    type: 'flat-panel',
+    itemKey: 'wall_200_350',
+    widthCm: 200,
+    depthCm: 10,
+    heightCm: 350,
+    placement: { xCm, yCm, zCm: 0, rotationZDeg: 315, wallId: 'free' },
+  });
+  const modules = [panel('p1', 259.3, 150), panel('p2', 400.7, 291.4)];
+  const { group } = createGroup(modules, ['p1', 'p2']);
+  // Moving the group so p1's center reaches y = 9.3 (the saved position) is refused.
+  const outside = planGroupTranslate(modules, group.id, 0, -140.7, stand);
+  assert.equal(outside.ok, false);
+  assert.equal(outside.message, GROUP_OUTSIDE_STAND_MESSAGE);
+  // A move that keeps the whole diagonal inside is accepted.
+  assert.equal(planGroupTranslate(modules, group.id, 0, -70, stand).ok, true);
+});
+
+test('thin wall panels on the stand edge stay movable along the edge (thickness not counted)', () => {
+  const stand = { standType: 'l-right', standXCm: 900, standYCm: 500 };
+  const modules = [
+    { id: 'w1', type: 'flat-panel', itemKey: 'wall_200_350', widthCm: 200, depthCm: 10, heightCm: 350, placement: { xCm: 0, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' } },
+    { id: 'w2', type: 'flat-panel', itemKey: 'wall_200_350', widthCm: 200, depthCm: 10, heightCm: 350, placement: { xCm: 200, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' } },
+  ];
+  const { group } = createGroup(modules, ['w1', 'w2']);
+  assert.equal(planGroupTranslate(modules, group.id, 100, 0, stand).ok, true);
+  assert.equal(planGroupTranslate(modules, group.id, 0, -10, stand).ok, false);
+});
