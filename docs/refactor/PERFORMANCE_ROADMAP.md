@@ -1,10 +1,34 @@
-# Fair Stand — performans yol haritası
+# Fair Stand — performans + ürün yol haritası
 
-**Durum:** Backlog (henüz uygulanmadı).  
-**Kaynak:** Prod gözlem (2026-09-24, fuar.kyrox.studio) + kod incelemesi.  
-**Hedef ölçek:** Eşzamanlı **~100 aktif stand tasarımı** (100 proje / 100 eşzamanlı kullanıcı senaryosu — ikisi de sunucu yükünü artırır).
+**Durum:** Aktif plan (kod bu belgede backlog; uygulama ayrı PR).  
+**Kaynak:** Prod gözlem (2026-09-24) + kod + rakip tarayıcı analizi (2026-10-18).  
+**Hedef ölçek:** Eşzamanlı ~100 aktif stand tasarımı.
 
-İlgili audit notu (bundle/render): [`audit/evidence/A17_PERFORMANCE_BUNDLE_RENDER_LIFECYCLE.md`](../../audit/evidence/A17_PERFORMANCE_BUNDLE_RENDER_LIFECYCLE.md).
+**İzlenen rakipler (canlı app):**
+
+| Ürün | Firma / ekosistem | App URL |
+|---|---|---|
+| Booth Designer | Exphora | https://boothdesign.app/app/ |
+| Stand Builder | AetherEx | https://www.standbuilder.app/app |
+
+Detaylı stack / ürün / performans analizi → **§ 7 (belge sonu)**.
+
+İlgili: [`audit/evidence/A17_PERFORMANCE_BUNDLE_RENDER_LIFECYCLE.md`](../../audit/evidence/A17_PERFORMANCE_BUNDLE_RENDER_LIFECYCLE.md), `PENDING_ITEM_DECISIONS.md` B.3b.
+
+---
+
+## 0. Teşhis (rakip vs biz)
+
+Rakip hızlı çünkü **transform in-place** + **düşük kalite varsayılanı** + daha az üretim state’i.  
+Biz hantal çünkü birçok UI aksiyonunda `disposeWall` + tam `buildWall`. Stack aynı aile (Three.js) — sorun güncelleme yolu.
+
+| Konu | BoothDesign | StandBuilder | Kyrox | Alınacak |
+|---|---|---|---|---|
+| Sahne update | Taşı = mesh UUID reuse | R3F demand render | Sık full rebuild | Incremental (P3) |
+| Kalite | Varsayılan FAST | Hafif satış sahnesi | PCF 2048 | `low` / `balanced` / `high` (P1) |
+| Ürün | Modüler sistem + BOM + quote | Planlama + fiyat | Üretim konfigüratörü | Derinliği koru; hız katmanı |
+
+**Bilinçli erteleme:** R3F rewrite yok. Unity yok. Dimension gizmo P3 sonrası.
 
 ---
 
@@ -12,127 +36,170 @@
 
 | Belirti | Şiddet | Not |
 |---|---|---|
-| Site ilk açılış (`fuar.kyrox.studio`) | Normal | CRM SPA + Fair Stand iframe ilk mount |
-| **Kayıtlı projeyi sahneye açma** | **5–10 sn** (değişken) | En acil UX sorunu |
-| Modül sürükleme | Ara sıra takılma | Snap + placement ana thread |
-| Sahneyi döndürme (orbit) | **Genelde takılma** | GPU gölge + render throttle |
-| Nedensiz donma | Bazen | Muhtemelen arka planda `rebuildWall` / kayıt / texture |
+| Kayıtlı projeyi sahneye açma | **5–10 sn** | En acil UX (P0) |
+| Sahneyi döndürme (orbit) | Takılma | Gölge + render throttle (P1) |
+| Modül sürükleme | Ara sıra spike | Snap + rebuild çakışması (P2) |
+| Nedensiz donma | Bazen | Arka plan `rebuildWall` / texture |
 
 ---
 
-## 2. Kök nedenler (kod)
+## 2. Kök nedenler (özet)
 
-### 2.1 Proje açma pipeline’ı
+1. **Proje açma:** sıralı asset HTTP + tam `buildWall`.  
+2. **Orbit:** `shadowMap` 2048 + çok mesh cast/receive.  
+3. **UI:** `main.js` → sık `rebuildWall()` (dispose + tüm fabrikalar).  
+4. CRM iframe / bundle: ikincil.
 
-Sıra: `openStoredProject` → `loadProject` → `restoreProject` → `loadAssetsForActiveProject` → `createStage` → **`rebuildWall` / `buildWall` (tüm modüller sıfırdan)**.
+### 2.1 Proje açma pipeline (detay)
+
+Sıra: `openStoredProject` → `loadProject` → `restoreProject` → `loadAssetsForActiveProject` → `createStage` → **`rebuildWall` / `buildWall`**.
 
 | Katman | Dosya / fonksiyon | Sorun |
 |---|---|---|
-| Remote proje + görseller | `projectRemote.js` → `cacheProjectAndAssets` | Her açılışta API; **görseller sıralı HTTP** (`for` + `await`), IndexedDB’de olsa bile yeniden indirme |
+| Remote proje + görseller | `projectRemote.js` → `cacheProjectAndAssets` | Her açılışta API; görseller sıralı HTTP |
 | Görsel kayıt | `main.js` → `registerAsset` | Her asset için `createObjectURL` |
-| Sahne rebuild | `scene3d.js` → `buildWall` | `disposeWall` + tüm modül fabrikası; modül sayısı ile süre artar |
-| Panel texture | `scene3d.js` → `applyStoredImage` / `loadSingleImageOnSurface` | `TextureLoader` + `createFittedCanvas` (cover/contain) **ana thread** |
-| GLB | `loadGltfScene` / `loadItemModel` | İlk açılışta parse; cache sonrası daha iyi |
+| Sahne rebuild | `scene3d.js` → `buildWall` | `disposeWall` + tüm modül fabrikası |
+| Panel texture | `applyStoredImage` / `createFittedCanvas` | Ana thread |
+| GLB | `loadGltfScene` / `loadItemModel` | İlk parse pahalı |
 
-### 2.2 Orbit (kamera döndürme)
+### 2.2 Orbit
 
-| Ayar | Konum | Etki |
-|---|---|---|
-| PCF shadow, 2048 map | `scene3d.js` renderer + keyLight | GPU maliyeti yüksek |
-| Çok mesh `castShadow` / `receiveShadow` | Modül oluşturma | Her frame shadow pass |
-| Render cap ~50 fps aktif / ~4 fps idle | `setAnimationLoop` | Yüksek Hz monitörde orbit “atlamalı”; damping ile senkron |
-| Antialias + tone mapping | WebGLRenderer | Ek GPU |
+| Ayar | Etki |
+|---|---|
+| PCF shadow, 2048 map | GPU maliyeti yüksek |
+| Çok mesh cast/receiveShadow | Her frame shadow pass |
+| Render cap ~50 fps aktif / ~4 fps idle | Orbit atlamalı hissedilebilir |
 
-### 2.3 Sürükleme ve “ara sıra” spike
+### 2.3 Sürükleme / rebuild
 
-- `pointermove`: snap, ghost, duvar hattı (`scene3d.js` drag session).
-- Birçok UI aksiyonu `main.js` → **`rebuildWall()`** (tam sahne yeniden kurulumu); orbit/sürükle ile çakışınca donma.
-
-### 2.4 CRM bundle (ikincil)
-
-- Vite uyarısı: `mountFairStand` ~1 MB + `index` ~1 MB — **ilk Fair Stand route** yavaş olabilir; proje açma 5–10 sn’nin ana nedeni değil.
-- Stand ayrı **iframe** + ikinci document → bellek baskısı (100 eşzamanlı sekme = 100 iframe).
+- `pointermove`: snap, ghost, duvar hattı.  
+- Birçok UI aksiyonu → **`rebuildWall()`**; orbit/sürükle ile çakışınca donma.
 
 ---
 
-## 3. Ölçek: ~100 eşzamanlı stand tasarımı
+## 3. Fazlar (sıra sert)
 
-**Not:** “100 stand” = 100 kayıtlı proje değil, **aynı anda** tasarım yapan oturum sayısı varsayımı. Her oturum:
+### P0 — Proje açma (hedef tipik &lt; 2–3 sn)
 
-| Bileşen | 100× etki | Risk |
-|---|---|---|
-| Fair Stand API (bootstrap) | 100 oturum × 1 bootstrap/refresh | JSON büyük; CDN/cache yoksa CPU + bant genişliği |
-| Proje GET + **N asset GET / açılış** | 100 × (1 + N) istek | **N büyükse sunucu ve disk I/O tıkanır** (bugün sıralı indirme hem client hem sunucuyu yorar) |
-| PostgreSQL `fair_stand_projects` | 100 okuma/yazma | Payload JSONB boyutu; index yeterli |
-| Disk asset kökü | 100 proje × görsel sayısı | WebP depolama büyür; yedekleme süresi |
-| Tarayıcı | 100 WebGL sahne | **İstemci başına** GPU/RAM; sunucu RAM’i değil |
-| Core auth / CRM proxy | 100 session | Mevcut stack; izleme gerekir |
+1. Asset cache: `updatedAt` + metadata aynıysa HTTP yok.  
+2. Paralel indirme (concurrency 4–6).  
+3. Aşamalı overlay.  
+4. `performance.mark` (loadProject / cacheAssets / buildWall).
 
-**Sunucu tarafı ilk koruma:** Asset indirmeyi azalt (etag/version cache), paralel limit, bootstrap HTTP cache header (revision hash ile).
+**Kod:** `projectRemote.js`, `main.js`. **Durum:** BACKLOG.
 
----
+### P1 — Orbit / kalite profili
 
-## 4. Öncelikli iş paketleri
+1. Profiller: `high` / `balanced` (shadow 1024) / `low` (gölge kapalı).  
+2. Varsayılan **`balanced`**.  
+3. Orbit sırasında `balanced`/`low` için gölge geçici kapalı.  
+4. UI: sahne köşesinde Hızlı / Denge / Yüksek.
 
-### P0 — Proje açma (hedef: tipik proje &lt; 2–3 sn)
+**Kod:** `visualQuality` + `scene3d.js`. **Durum:** BACKLOG.
 
-1. **Asset cache sözleşmesi:** Proje `updatedAt` + asset listesi (`id`, `byteSize`, `mimeType`) değişmediyse **sunucudan tekrar indirme yok**; IndexedDB + memory URL kullan.
-2. **Paralel asset indirme:** `cacheProjectAndAssets` — sıralı `for` yerine sınırlı concurrency (ör. 4–6).
-3. **Aşamalı UI:** Overlay metinleri — “Proje yükleniyor”, “Görseller 3/12”, “Sahne kuruluyor”.
-4. **Ölçüm:** `performance.mark` — `loadProject`, `cacheAssets`, `buildWall`, modül sayısı, asset sayısı; prod’da opsiyonel debug flag.
+### P2 — `rebuildWall` budama
 
-**Kod:** `src/projectRemote.js`, `src/main.js` (`restoreProject`), isteğe bağlı API (asset metadata-only endpoint).
+1. Aynı frame’de debounce (rAF coalesce).  
+2. Sonra: renk / glass kısmi update (tam build yok).  
+3. Drag snap throttle.
 
-### P1 — Orbit akıcılığı
+**Kod:** `main.js` (+ sonra scene3d). **Durum:** BACKLOG.
 
-1. **Kalite profilleri:** `high` (mevcut) / `balanced` (shadow 1024) / `low` (gölge kapalı).
-2. Orbit veya damping aktifken **render throttle gevşet** (her rAF render veya 60 fps cap).
-3. Modül sayısı &gt; eşik → otomatik `balanced`.
+### P3 — Incremental scene graph
 
-**Kod:** `src/scene3d.js` (renderer, animation loop).
+Ekle / sil / taşı = tek modül grubu; `disposeWall` yalnız stand tipi / hard reset. Instancing, Draco.
 
-### P2 — Sürükleme ve rebuild
+**Durum:** BACKLOG (P2 partial sonrası).
 
-1. **`rebuildWall` debounce** — aynı frame’de birden çok çağrı tek rebuild.
-2. Renk / cam / tek yüzey güncellemelerinde **kısmi update** (tam `buildWall` yok) — pilot: renk + glass.
-3. Drag sırasında snap hesabını **throttle** (ör. 32 ms) — UX test gerekir.
+### P4 — Ürün / veri (paralel)
 
-**Kod:** `src/main.js`, `src/scene3d.js`.
-
-### P3 — Yapısal (uzun vadeli)
-
-1. **Incremental scene graph:** Ekle / sil / taşı = tek modül grubu; `disposeWall` yalnızca stand tipi/zemin değişince.
-2. Tekrarlayan panel geometry **instancing**.
-3. GLB: meshopt/Draco; paylaşılan geometry clone azaltma.
-4. CRM: Fair Stand route **lazy** `import()` — ilk CRM daha hafif.
-
-### P4 — 100 eşzamanlı oturum (ops)
-
-1. Bootstrap: `revision` ile **Cache-Control** / nginx micro-cache (org başına dikkat).
-2. Asset download: rate limit + CDN veya nginx `X-Accel-Redirect` static.
-3. Fair Stand API worker sayısı / uvicorn workers; Postgres connection pool gözden geçir.
-4. İzleme: p95 `GET project`, p95 asset download, bootstrap boyutu.
+| Madde | Not |
+|---|---|
+| B.3b Z clamp → tip davranışı (DB) | Lamba mount-bottom şimdilik kodda (PR #291) |
+| PENDING §A adım 1 | scene_dimensions + yüzey/BOM |
+| B.3 mount vs `default_z_cm` | Araştırma |
+| CRM lazy Fair Stand route | Bundle; sahne takılmasını çözmez |
 
 ---
 
-## 5. Doğrulama checklist’i (PR sonrası)
+## 4. 4 haftalık iskelet
 
-- [ ] Proje 0 görsel: açılış &lt; 1 sn (lokal prod benzeri)
-- [ ] Proje 20 görsel (~20 MB toplam): açılış &lt; 3 sn (ikinci açılış cache hit ile &lt; 1.5 sn)
-- [ ] 30 modül: `buildWall` &lt; 500 ms (Chrome Performance Long Task)
-- [ ] Orbit: 60 fps hissi (balanced profil, orta GPU)
-- [ ] Network: ikinci proje açılışında **0 gereksiz asset GET**
-- [ ] Yük testi (ops): 50 eşzamanlı bootstrap + 20 eşzamanlı proje açma — p95 &lt; hedef
-
----
-
-## 6. Bilinçli erteleme
-
-- Vite chunk uyarısı (500 KB): P3 lazy route ile; tek başına sahne takılması çözmez.
-- Sunucu kernel reboot: deploy ile ilgili değil; bakım penceresi.
+| Hafta | Odak | Başarı |
+|---:|---|---|
+| 1 | P0 asset cache + paralel | 20 görsel 2. açılış &lt; 1.5 sn |
+| 2 | P1 kalite + orbit | balanced/low’da akıcı orbit |
+| 3 | P2 partial renk/glass | Renkte `buildWall` yok |
+| 4 | P2 genişletme veya P3 spike | rebuild çağrı sayısı ↓ |
 
 ---
 
-## 7. Güncelleme kuralı
+## 5. Doğrulama kapısı
 
-Performans PR’ı merge edilince: bu dosyada ilgili P* maddesini **YAPILDI** + tarih + kısa not; `REFACTOR.md` günlüğüne bir satır.
+- [ ] Proje 0 görsel: açılış &lt; 1 sn  
+- [ ] Proje 20 görsel: 2. açılış &lt; 1.5 sn; gereksiz asset GET yok  
+- [ ] Kalite profili UI + unit test  
+- [ ] `rebuildWall` aynı frame coalesce  
+- [ ] Orbit: balanced’ta akıcı his  
+- [ ] 30 modül: hâlâ full yol varsa `buildWall` &lt; 500 ms  
+
+**Ölçek (ops, P4+):** 50 eşzamanlı bootstrap + 20 eşzamanlı proje açma p95 hedefe uyum; asset CDN / rate limit.
+
+---
+
+## 6. Güncelleme kuralı
+
+Performans PR merge → ilgili P* **YAPILDI** + tarih; `REFACTOR.md` bir satır.
+
+---
+
+## 7. Rakip analizi (2026-10-18)
+
+Tarayıcıda canlı app + bundle / runtime incelemesi. Tahmin yazılmaz; gözlemlenenler aşağıda.  
+Yeniden doğrulama: URL’ler değişirse bu bölüm güncellenir.
+
+### 7.1. Booth Designer — Exphora
+
+- **URL:** https://boothdesign.app/app/  
+- **Marka / sürüm ipucu:** “Booth Designer · Exphora”, UI’da `v17.10`.  
+- **Ürün tipi:** Modüler fuar sistemi konfigüratörü (Aluvision, beMatrix, Octanorm, Maxima, Canopy…). Inline / Corner / Peninsula / Island; ölçü ft↔m; panel / kaplama / zemin / tavan / kapı / raf-TV / depo; kg özet; BOM; artwork / print list; quote; Operation sekmeleri.  
+- **Katalog:** Exphora furniture API — Displays2go, IKEA, T-EXO, Amazon vb. GLB (`files.exphora.app`). Ürün ölçüsü gerçek SKU; düzenlenemez; fiyat/SKU paneli.  
+- **Stack (gözlem):**
+  - Vanilla JS (React/Vue fiber yok; `#app`)
+  - Three.js **r169** CDN `importmap` (jsDelivr) + OrbitControls, GLTFLoader, DRACOLoader, **USDZExporter** (AR)
+  - Uygulama çekirdeği: `/api/js/core.*.js` (token’lı; dışarıdan 403)
+  - Backend/katalog: `exphora.com` REST; analytics GA + Facebook Pixel
+  - TR kod izleri (hata/event alan adları, fonksiyon isimleri)
+- **Performans gözlemi:**
+  - Visual quality varsayılan **FAST** (gölge / AA kapalı; “High” seçilebilir)
+  - Transform (pozisyon): mesh UUID **%100 reuse** — sahne yıkılmıyor
+  - Booth tipi / sistem değişimi: kısmi yenileme (~60 ms sync tıklama; mesh sayısı değişir, bir kısmı reuse)
+  - Ağır sahne mümkün (~3M+ üçgen, çok texture) ama FAST + incremental his
+- **Çıktılar:** BOM / CSV, artwork list, quote, AR (QR), snapshot, turntable video, share link, PDF/print (Tools menüsü).
+- **Bizim için ders:** Incremental graph + varsayılan düşük kalite; üretim derinliğini kopyalamadan hız katmanı.
+
+### 7.2. Stand Builder — AetherEx
+
+- **URL:** https://www.standbuilder.app/app  
+- **Marka:** AetherEx / StandBuilder; pazarlama: planlama, anlık fiyat, şablon.  
+- **Ürün tipi:** Satış / erken planlama aracı — booth boyutu, duvar, mobilya, storage, TV setleri, fiyat (€); üretim panel şeridi / ilişki BOM yok.  
+- **Stack (gözlem):**
+  - React SPA (`#root`, `createRoot`) + **Vite** hashed assets (`/assets/index-*.js`)
+  - **Three.js r165** + **React Three Fiber** (`@react-three/fiber`; canvas’ta `gl` / `camera` props)
+  - GLB modeller + Google Draco 1.5.5
+  - i18next, Redux izi, leva, postprocessing, react-helmet
+  - Backend: **Supabase** (`api.aetherex.app/rest/v1/...`)
+  - Host: **Vercel** (`_vercel/insights`, speed-insights); Sentry; GA
+- **Performans gözlemi:** Hazır GLB + hafif sahne + R3F demand render; full dispose/rebuild modeli yok. “Hızlı his” büyük ölçüde ürün kapsamından (satış sahnesi) gelir.
+- **Bizim için ders:** R3F zorunlu değil (BoothDesign vanilla ile de hızlı). Kapsam sadeleştirmesi ≠ hedefimiz; biz üretim state’ini koruyup update yolunu düzeltiriz.
+
+### 7.3. Üçlü özet
+
+| | BoothDesign | StandBuilder | Kyrox Fair Stand |
+|---|---|---|---|
+| Odak | Modüler sistem + quote | Erken planlama + fiyat | Üretim konfigüratörü |
+| 3D | Three vanilla CDN | Three + R3F + Vite | Three (scene3d monolit) |
+| Update | In-place / kısmi | Demand render | Sık `rebuildWall` |
+| Kalite varsayılan | FAST | Hafif sahne | Yüksek gölge (hedef: balanced) |
+| BOM | Sistem + satır | Sepet / fiyat | Panel / ilişki / üretim |
+
+**Sonuç (ürün kararı değil, hız stratejisi):** Rakibi kopyalamıyoruz. P0 asset cache, P1 kalite/orbit, P2 rebuild budama, P3 incremental — § 3 sırası geçerli.
