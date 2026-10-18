@@ -78,6 +78,7 @@
       "e2e/module-group.spec.mjs",
       "e2e/plastic-trash-bin-asset.spec.mjs",
       "e2e/plastic-trash-bin-module.spec.mjs",
+      "e2e/project-open-wait-scene.spec.mjs",
       "e2e/project-revision-session.spec.mjs",
       "e2e/smoke.spec.mjs",
       "e2e/wall-separator-items-contract.spec.mjs",
