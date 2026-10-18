@@ -76,6 +76,7 @@ import {
   snapPlacementToStand,
   snapPlacementToModules,
   stepPanelSeamOverlayPlacement,
+  clampFloorRelativeBottomZCm,
   stepTulleFabricZCm,
   stepWallShortFloorZCm,
   validatePlacementAgainstModules,
@@ -303,7 +304,16 @@ function isTopFixtureType(type) {
 }
 
 function withItemZ(moduleState, placement, overlayZCm = null) {
-  return applyItemPlacementZCm(moduleState, placement, { overlayZCm });
+  const next = applyItemPlacementZCm(moduleState, placement, { overlayZCm });
+  if (!next || overlayZCm != null) return next;
+  // Yerden taban Z: tepe stand tavanını geçemez (tül kalınlığı depthCm, kutu/wall-short heightCm).
+  if (moduleState?.type === 'tulle-fabric') {
+    return { ...next, zCm: clampFloorRelativeBottomZCm(next.zCm, Number(moduleState.depthCm) || 0) };
+  }
+  if (moduleState?.type === 'box-block' || isWallShortFamilyDescriptor(moduleState)) {
+    return { ...next, zCm: clampFloorRelativeBottomZCm(next.zCm, Number(moduleState.heightCm) || 0) };
+  }
+  return next;
 }
 
 let deleteShortcutLatched = false;
@@ -5689,11 +5699,18 @@ export function createStandScene(
       if (moduleState.type === 'tulle-fabric') {
         if (pressedKey !== 'arrowup' && pressedKey !== 'arrowdown') return;
         const stepCm = getModulePlacementSnapCm(moduleState.type);
+        const currentZCm = Number(moduleState.placement.zCm || 0);
+        // Tül dikey kalınlığı depthCm; tepe stand tavanını geçemez.
         const nextZCm = stepTulleFabricZCm(
-          moduleState.placement.zCm,
+          currentZCm,
           pressedKey === 'arrowup' ? 'up' : 'down',
           stepCm,
+          Number(moduleState.depthCm) || 0,
         );
+        if (nextZCm === currentZCm) {
+          showPlacementFeedback('Tül bu yönde stand sınırına ulaştı.', { durationMs: 900 });
+          return;
+        }
         const nextPlacement = { ...moduleState.placement, zCm: nextZCm };
         moduleState.placement = nextPlacement;
         moduleGroup.userData.placement = { ...nextPlacement };

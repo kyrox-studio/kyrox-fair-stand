@@ -225,7 +225,7 @@ Yeni **`fair_stand_item_type.key`** aç; tüm zorunlu kolonları doldur (CRM for
 
 | Alan | Tablo | Ne işe yarar | Ne değildir |
 |---|---|---|---|
-| `fair_stand_dimensions.height_cm` | Stand zarfı | **Max tavan** — modül H `clampHeightToStandCeilingCm` ile aşılmaz | Ürünü otomatik uzatmaz |
+| `fair_stand_dimensions.height_cm` | Stand zarfı | **Max tavan** — modül H `clampHeightToStandCeilingCm` ile aşılmaz; yerden taban Z için tepe (`zCm + dikey ölçü`) `clampFloorRelativeBottomZCm` ile aşılmaz (tül/kutu/wall-short) | Ürünü otomatik uzatmaz |
 | Item `height_cm` / scene `height_cm` | Item | Ürünün kendi yüksekliği (ör. `wall_200` ≈ 350) | Stand zarfı değil |
 | Recipe `quantity` (panel child) | BOM | Düz panel **şerit adedi** otoritesi; sessiz tavan kısaltması yok | Soft-warning admin ayrı (PENDING B.7) |
 | `panel_rail_height_cm` | Stand zarfı | İki panel bandı arası **ince ray** (seed 0.4 cm) | `wall_gap_cm` (strafor–duvar) değil; pitch 50 değil |
