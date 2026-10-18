@@ -1,4 +1,5 @@
 import { getFairStandHostWindow } from './hostDocument.js';
+import { beginProjectOpenStep, noteProjectOpenAssets, timeProjectOpenStep } from './projectOpenTiming.js';
 import {
   deleteProject as deleteLocalProject,
   deleteProjectWithAssets as deleteLocalProjectWithAssets,
@@ -211,6 +212,7 @@ async function cacheProjectAndAssets(detail) {
   const assets = Array.isArray(detail.assets) ? detail.assets : [];
   // Görseller birlikte indirilir. İnemeyen görsel (ör. sunucuda dosya eksik) projeyi açmayı
   // engellemez; atlanır ve missingAssetIds ile bildirilir. Proje içindeki bağlantı silinmez.
+  const endAssetsDownload = beginProjectOpenStep('assets-download');
   const results = await Promise.allSettled(assets.map(async (asset) => {
     const response = await apiFetch(`/${detail.id}/assets/${asset.id}`);
     const blob = await response.blob();
@@ -222,6 +224,7 @@ async function cacheProjectAndAssets(detail) {
       createdAt: asset.createdAt || Date.now(),
     });
   }));
+  endAssetsDownload();
   const cached = [];
   const missingAssetIds = [];
   results.forEach((result, index) => {
@@ -231,6 +234,11 @@ async function cacheProjectAndAssets(detail) {
     }
     missingAssetIds.push(assets[index].id);
     console.warn('Proje görseli indirilemedi:', assets[index].id, result.reason);
+  });
+  noteProjectOpenAssets({
+    count: assets.length,
+    bytes: cached.reduce((sum, asset) => sum + (Number(asset?.blob?.size) || 0), 0),
+    missing: missingAssetIds.length,
   });
   // Server copy is authoritative — skip re-upload on autosave.
   clearProjectAssetSyncState(detail.id);
@@ -285,9 +293,9 @@ export async function listProjects() {
 
 export async function loadProject(projectId) {
   if (!remoteEnabled()) {
-    return loadLocalProject(projectId);
+    return timeProjectOpenStep('project-read-local', () => loadLocalProject(projectId));
   }
-  const detail = await apiFetch(`/${projectId}`);
+  const detail = await timeProjectOpenStep('project-fetch', () => apiFetch(`/${projectId}`));
   return cacheProjectAndAssets(detail);
 }
 

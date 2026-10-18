@@ -133,7 +133,8 @@ test('scene keeps the shared textureLoader for normal panel images', () => {
   const sceneStart = source.indexOf('export function createStandScene');
   const surfaceStart = source.indexOf('let surfaceMeshes', sceneStart);
   const setupSource = source.slice(sceneStart, surfaceStart);
-  assert.match(setupSource, /const textureLoader = new THREE\.TextureLoader\(\)/);
+  // Ortak yükleyici proje açılış ölçümü için sayaçla sarılır; altındaki yine tek bir THREE.TextureLoader.
+  assert.match(setupSource, /const textureLoader = trackSceneTextureLoader\(new THREE\.TextureLoader\(\)\)/);
 });
 
 test('TV texture loads from a real public JPEG asset', () => {
