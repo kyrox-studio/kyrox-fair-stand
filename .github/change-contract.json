@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "fair-stand-project-open-timing-v1",
   "kind": "feature",
-  "summary": "Proje açma ölçümü (PERFORMANCE_ROADMAP P0 adım 1): projectOpenTiming.js CRM Düzenle işaretinden (fs:editor-route) itibaren editör kodu yükleme, katalog, editör başlatma; proje verisi, görsel indirme, görsel hazırlama, sahne kurulumu adımlarını performance.mark/measure ile kaydeder ve konsola yazar. Sahne kurulduktan sonra tek tek gelen yüzey görselleri (scene3d textureLoader sarmalayıcısı) ve 3D modeller (loadItemModel) sayılır; hepsi gelince sahne tamamen hazır satırı yazılır. Davranış, kayıt, BOM ve sahne değişmez; ölçüm hatası açılışı bozmaz.",
+  "summary": "Proje açma ölçümü (PERFORMANCE_ROADMAP P0 adım 1): projectOpenTiming.js CRM Düzenle işaretinden (fs:editor-route) itibaren editör kodu yükleme, katalog, editör başlatma; proje verisi, görsel indirme, görsel hazırlama, sahne kurulumu adımlarını performance.mark/measure ile kaydeder ve konsola yazar. Sahne kurulduktan sonra tek tek gelen yüzey görselleri (scene3d textureLoader sarmalayıcısı) ve 3D modeller (loadItemModel) sayılır; son görsel ve son modelin geliş zamanı ile görsel geri çağrılarının ana iş parçacığı süresi ayrı yazılır; hepsi gelince sahne tamamen hazır satırı yazılır. Ağ kayıt tamponu 3000 kayda büyütülür. Davranış, kayıt, BOM ve sahne değişmez; ölçüm hatası açılışı bozmaz.",
   "owners": [
     "src/projectOpenTiming.js"
   ],
@@ -85,6 +85,7 @@
       "test/fabricModuleOwnership.test.js",
       "test/glassShelfItemContract.test.js",
       "test/glassTableContract.test.js",
+      "test/glbNameContract.test.js",
       "test/globalSilhouetteGhost.test.js",
       "test/gltfLoadCache.test.js",
       "test/groundLayout.test.js",
