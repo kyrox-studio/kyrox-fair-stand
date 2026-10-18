@@ -1,11 +1,20 @@
 # Fair Stand — Tam Sistem Audit Bulgu Defteri
 
+> **Açık audit bulgularının kanonik defteri.** Yeni F-* burada açılır/kapanır.
+>
+> Okuma sırası (açık iş):
+> 1. Özet harita → `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md`
+> 2. Bu dosya → açık / kapalı F-*
+> 3. Ertelenmiş karar → `docs/refactor/PENDING_ITEM_DECISIONS.md`
+>
+> **Bakma (bayat sayaç):** `SYSTEM_AUDIT_CHECKLIST.md`, `audit/FULL_SWEEP_STATE.md`, eski `audit/evidence/*` OPEN satırları.
+
 Güncel ürün okuması: `audit/SISTEM_MUTABAKAT_RAPORU.md` (2026-09-12, Version2).  
 Tarihî audit tabanı (A00–A24 kanıt SHA): `ROG e7647326668ab25c96f3a3139f0d855c03176325` — o taramanın mühürü; bugünkü katalog/E2E/Item kimliği için kullanılmaz.
 
 Mod: **AUDIT TAMAM / DEFTER KODA EŞİTLENDİ (A) / ÜRÜN REMEDİASYONU DEVAM**
 
-Ayrıntılı tarihî kanıt `audit/evidence/` altındadır. Remediasyon kapanış kanıtı `audit/remediation/` altındadır. `SYSTEM_AUDIT_CHECKLIST.md` ikinci kopyadır; oturum oradan başlamaz.
+Ayrıntılı tarihî kanıt `audit/evidence/` altındadır. Remediasyon kapanış kanıtı `audit/remediation/` altındadır.
 
 ## Özet
 

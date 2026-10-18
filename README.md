@@ -203,6 +203,16 @@ Bir feature birden fazla modülü/domaini koordine ediyorsa `src/featureContract
 
 ## Repository belgeleri
 
+### Açık iş — tek kaynak (oturum buradan başlar)
+
+Dağınık not / bayat sayaç karışıklığını önlemek için:
+
+1. **Özet harita** — `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md` (iş kuyruğu değil; harita)
+2. **Açık audit bulguları** — `audit/FINDINGS.md` (F-* aç/kapa yalnız burada)
+3. **Ertelenmiş kararlar** — `docs/refactor/PENDING_ITEM_DECISIONS.md`
+
+**Bakma (tarihî / ikinci kopya):** `SYSTEM_AUDIT_CHECKLIST.md`, `audit/FULL_SWEEP_STATE.md`, eski `audit/evidence/*` OPEN satırları. Bunlardaki OPEN/IN_PROGRESS sayaçları güncel backlog değildir.
+
 ### Canonical bugün
 
 - `PROJECT_RULES.md` — global product invariant'ları.
@@ -212,9 +222,10 @@ Bir feature birden fazla modülü/domaini koordine ediyorsa `src/featureContract
 - `SYSTEM_DEVELOPMENT_CONTRACT.md` — module/feature/core geliştirme sözleşmesi.
 - `MODULE_BEHAVIOR_STANDARD.md` — module behavior registry sözleşmesi.
 - `SYSTEM_MODULE_CATALOG.md` — runtime catalog/contracts ile test edilen okunabilir katalog indeksi; runtime source-of-truth değildir.
-- `SYSTEM_AUDIT_CHECKLIST.md` — A00–A24 audit metodolojisi/checklist'i.
-- `audit/FINDINGS.md` — full-system audit finding ledger'ı.
-- `audit/FULL_SWEEP_STATE.md` — audit/remediation resume state'i.
+- `audit/FINDINGS.md` — açık/kapalı audit bulgu defteri (kanonik).
+- `docs/refactor/PENDING_ITEM_DECISIONS.md` — ertelenmiş Item/zarf kararları (kanonik).
+- `SYSTEM_AUDIT_CHECKLIST.md` — A00–A24 tarihî metodoloji şablonu; açık iş takipçisi değil.
+- `audit/FULL_SWEEP_STATE.md` — A00–A24 tarihî mühür; açık iş takipçisi değil.
 
 ### Plan / gelecek
 

@@ -1,9 +1,17 @@
 # Fair Stand — A00–A24 Tam Audit Tarama Durumu
 
-> **TARİHÎ MÜHÜR.** Bu dosya A00–A24 taramasının (`ROG` SHA `e764732…`) durum defteridir. Güncel ürün okuması `audit/SISTEM_MUTABAKAT_RAPORU.md` ve `audit/FINDINGS.md`. Aşağıdaki “13 kapalı / A04 / 17 modül / sonraki F-014” sayaçları o SHA’ya aittir; bugünkü katalog 51 / 29 recipe / 4 self / 18 decision-required.
+> **TARİHÎ MÜHÜR — OTURUM BURADAN BAŞLAMAZ. AÇIK İŞ TAKİPÇİSİ DEĞİL.**
+>
+> Bu dosya A00–A24 taramasının (`ROG` SHA `e764732…`) durum defteridir.
+> - Açık bulgu: `audit/FINDINGS.md`
+> - Ertelenmiş karar: `docs/refactor/PENDING_ITEM_DECISIONS.md`
+> - Özet harita: `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md`
+> - Mutabakat: `audit/SISTEM_MUTABAKAT_RAPORU.md`
+>
+> Aşağıdaki “13 kapalı / A04 / 17 modül / sonraki F-014” sayaçları o SHA’ya aittir; bugünkü katalog/E2E için kullanılmaz.
 
-Audit modu: **ÖNCE AUDIT / SONRA DÜZELT**
-Güncel faz: **TARİHÎ — canlı ilerleme için FINDINGS + MUTABAKAT**
+Audit modu: **ÖNCE AUDIT / SONRA DÜZELT** (tarihî)
+Güncel faz: **TARİHÎ — canlı ilerleme için FINDINGS + PENDING + OPEN_WORK_INVENTORY**
 
 ## Yöneten kural
 
