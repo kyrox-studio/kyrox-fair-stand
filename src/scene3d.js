@@ -233,6 +233,9 @@ function listFloorTypeKeys() {
 }
 const FLOOR_TOP_EPSILON_M = 0.006;
 const SELECTION_COLOR = 0x2563eb;
+// Küme seçimi (Shift+tık toplu seçim, grup üyeleri): Kyrox bakırı (kyrox-brand --kyrox-copper #C47A3A).
+// Tek öğe ve panel seçimi mavi kalır.
+const GROUP_SELECTION_COLOR = 0xc47a3a;
 const PLACEMENT_VALID_COLOR = 0x16a34a;
 const PLACEMENT_INVALID_COLOR = 0xdc2626;
 const PLACEMENT_GHOST_OPACITY = 0.3;
@@ -1428,13 +1431,15 @@ export function createStandScene(
     return frame;
   }
 
-  function setModuleSelectionVisual(moduleId, selected) {
+  function setModuleSelectionVisual(moduleId, selected, color = SELECTION_COLOR) {
     const moduleGroup = findModuleGroupById(moduleId);
     if (!moduleGroup) return;
     const frame = selected
       ? ensureModuleSelectionFrame(moduleGroup)
       : moduleGroup.userData?.moduleSelectionFrame;
-    if (frame) frame.visible = Boolean(selected);
+    if (!frame) return;
+    if (selected) frame.material?.color?.setHex(color);
+    frame.visible = Boolean(selected);
   }
 
   function setSelectionVisual(mesh, selected) {
@@ -1470,7 +1475,7 @@ export function createStandScene(
         setModuleSelectionVisual(moduleId, false);
       }
     });
-    next.forEach((moduleId) => setModuleSelectionVisual(moduleId, true));
+    next.forEach((moduleId) => setModuleSelectionVisual(moduleId, true, GROUP_SELECTION_COLOR));
     groupHighlightIds = next;
   }
 
@@ -1489,7 +1494,7 @@ export function createStandScene(
     }
     clearSelection({ notify: false });
     ids.forEach((moduleId) => multiSelectedModuleIds.add(moduleId));
-    multiSelectedModuleIds.forEach((moduleId) => setModuleSelectionVisual(moduleId, true));
+    multiSelectedModuleIds.forEach((moduleId) => setModuleSelectionVisual(moduleId, true, GROUP_SELECTION_COLOR));
     notifySelection();
     return ids.length;
   }
@@ -1561,7 +1566,7 @@ export function createStandScene(
     } else {
       multiSelectedModuleIds.add(moduleId);
     }
-    multiSelectedModuleIds.forEach((id) => setModuleSelectionVisual(id, true));
+    multiSelectedModuleIds.forEach((id) => setModuleSelectionVisual(id, true, GROUP_SELECTION_COLOR));
     selectedModuleId = multiSelectedModuleIds.size === 1 ? [...multiSelectedModuleIds][0] : null;
     notifySelection();
   }
