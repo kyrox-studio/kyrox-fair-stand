@@ -1356,19 +1356,47 @@ export function createStandScene(
     return found;
   }
 
+  /** Modül grubunun kendi (yerel) koordinatlarında görünen mesh'lerinin kutusu. */
+  function computeModuleLocalBounds(moduleGroup) {
+    moduleGroup.updateMatrixWorld(true);
+    const toLocal = new THREE.Matrix4().copy(moduleGroup.matrixWorld).invert();
+    const bounds = new THREE.Box3();
+    const meshBounds = new THREE.Box3();
+    const meshToLocal = new THREE.Matrix4();
+    moduleGroup.traverse((object) => {
+      if (!object.isMesh || !object.geometry || object.userData?.isModuleSelectionVisual) return;
+      if (!object.geometry.boundingBox) object.geometry.computeBoundingBox();
+      meshBounds.copy(object.geometry.boundingBox).applyMatrix4(meshToLocal.multiplyMatrices(toLocal, object.matrixWorld));
+      bounds.union(meshBounds);
+    });
+    return bounds.isEmpty() ? null : bounds;
+  }
+
   function ensureModuleSelectionFrame(moduleGroup) {
     if (!moduleGroup) return null;
     if (moduleGroup.userData?.moduleSelectionFrame) return moduleGroup.userData.moduleSelectionFrame;
 
     const selectionBounds = moduleGroup.userData?.selectionBounds ?? null;
-    const widthM = Number(selectionBounds?.widthM ?? (Number(moduleGroup.userData?.widthCm) / 100));
-    const depthM = Number(selectionBounds?.depthM ?? (Number(moduleGroup.userData?.depthCm) / 100));
-    const heightM = Number(selectionBounds?.heightM ?? (Number(moduleGroup.userData?.heightCm) / 100));
-    if (!(widthM > 0) || !(depthM > 0) || !(heightM > 0)) return null;
-
-    const centerX = Number(selectionBounds?.centerX);
-    const centerY = Number(selectionBounds?.centerY);
-    const centerZ = Number(selectionBounds?.centerZ);
+    let widthM = Number(selectionBounds?.widthM ?? (Number(moduleGroup.userData?.widthCm) / 100));
+    let depthM = Number(selectionBounds?.depthM ?? (Number(moduleGroup.userData?.depthCm) / 100));
+    let heightM = Number(selectionBounds?.heightM ?? (Number(moduleGroup.userData?.heightCm) / 100));
+    let centerX = Number(selectionBounds?.centerX);
+    let centerY = Number(selectionBounds?.centerY);
+    let centerZ = Number(selectionBounds?.centerZ);
+    // Ölçüsü kayıtlı olmayan öğelerde (panel, lamba, TV…) çerçeve görünen 3B şeklinden
+    // hesaplanır; yoksa Shift+tık toplu seçimde bu öğeler işaretsiz kalıyordu.
+    if (!(widthM > 0) || !(depthM > 0) || !(heightM > 0)) {
+      const local = computeModuleLocalBounds(moduleGroup);
+      if (!local) return null;
+      const size = local.getSize(new THREE.Vector3());
+      const center = local.getCenter(new THREE.Vector3());
+      widthM = Math.max(size.x, 0.01);
+      heightM = Math.max(size.y, 0.01);
+      depthM = Math.max(size.z, 0.01);
+      centerX = center.x;
+      centerY = center.y;
+      centerZ = center.z;
+    }
 
     const paddingM = 0.02;
     const frame = new THREE.LineSegments(
