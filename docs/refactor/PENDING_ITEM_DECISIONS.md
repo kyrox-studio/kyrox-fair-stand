@@ -1,5 +1,8 @@
 # Fair Stand — Ertelenmiş kararlar ve backlog
 
+> **Ertelenmiş Item / zarf / davranış kararlarının kanonik listesi.** Audit F-* burada tutulmaz → `audit/FINDINGS.md`.
+> Özet harita: `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md`.
+
 Henüz çözülmemiş veya bilinçli ertelenmiş **Item property**, **stand zarfı / DB**, **runtime davranış** ve **pose/tavan–şerit** işlerinin tek takip listesi.
 
 - Kaynak: ürün kararı + `DATABASE.md`, `ITEMS.md`, `SCENE_POSE.md`, mevcut kod. Tahmin yazılmaz.

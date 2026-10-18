@@ -5,7 +5,9 @@ Taban: lokal `Version2` ağacı (`a2c6a75` + bu belge). Kod yazılmadı.
 Kaynak: bu makinedeki MD + `src/` + `test/` + `e2e/` + `scripts/` + `index.html` + `.github/workflows/ci.yml`.  
 **Kapsam dışı (senin ürün kodun değil):** GitHub ruleset, dal koruması, uzak dal listesi, F-041, F-044. Bu dosyada acil iş sayılmaz.
 
-Bu dosya tek kanonik toparlama belgesidir. Önceki çift rapor (`SISTEM_MUTABAKAT` + `SISTEM_TOPARLAMA`) birleştirildi; ruleset/dal iddiaları atıldı; lokal tarama ile düzeltilen sapmalar işlendi.
+> **2026-10-18 — açık iş okuma sırası:** özet `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md` → `audit/FINDINGS.md` → `docs/refactor/PENDING_ITEM_DECISIONS.md`. Checklist / FULL_SWEEP bayat sayaçtır; oturum oradan başlamaz.
+
+Bu dosya 2026-09-12 mutabakat mühürüdür. Önceki çift rapor (`SISTEM_MUTABAKAT` + `SISTEM_TOPARLAMA`) birleştirildi; ruleset/dal iddiaları atıldı; lokal tarama ile düzeltilen sapmalar işlendi.
 
 ---
 

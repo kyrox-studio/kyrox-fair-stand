@@ -25,6 +25,16 @@ Her değişiklikten önce işin kapsamına göre aşağıdaki canonical belgeler
 6. **`ITEM_CONTRACT.md`** — fiziksel ürün, zemin, malzeme, BOM, üretim, maliyet, katalog, runtime item/module, context-menu behavior veya item state ile ilgili her işte zorunludur.
 7. `MODULE_BEHAVIOR_STANDARD.md` — type bazlı editor/runtime davranışı etkileniyorsa zorunludur. Sahne Z dönüşü için ayrıca `docs/refactor/ROTATION.md`.
 
+## Açık iş haritası (dağıntı yok)
+
+“Ne açık / ne ertelendi?” sorusunda:
+
+1. Özet → `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md`
+2. Audit F-* → `audit/FINDINGS.md`
+3. Ertelenmiş karar → `docs/refactor/PENDING_ITEM_DECISIONS.md`
+
+`SYSTEM_AUDIT_CHECKLIST.md` ve `audit/FULL_SWEEP_STATE.md` tarihîdir; oturum oradan başlamaz, OPEN sayaçları backlog değildir.
+
 ## Item gate
 
 Aksine açık bir ürün kararı yoksa BOM, üretim veya maliyet hesabına girebilen her fiziksel öğe `Item` kabul edilir.

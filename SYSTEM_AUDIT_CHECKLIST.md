@@ -1,8 +1,13 @@
 # Fair Stand — Full System Audit Checklist
 
-> **İKİNCİ KOPYA — OTURUM BURADAN BAŞLAMAZ.**
-> A00–A24 maddeleri tarihî denetim şablonudur. Güncel durum ve sıra: `audit/SISTEM_MUTABAKAT_RAPORU.md` + `audit/FINDINGS.md`.
-> Resume bloğundaki A03.01 / F-001…009 OPEN / IN_PROGRESS **bayat**; A00–A24 incelendi (`audit/evidence/A24_FINAL_CLOSURE.md`). Bu dosyayı kanonik tracker sanma.
+> **İKİNCİ KOPYA — OTURUM BURADAN BAŞLAMAZ. AÇIK İŞ TAKİPÇİSİ DEĞİL.**
+>
+> - Açık bulgu: yalnız `audit/FINDINGS.md`
+> - Ertelenmiş karar: yalnız `docs/refactor/PENDING_ITEM_DECISIONS.md`
+> - Özet harita: `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md`
+> - Mutabakat: `audit/SISTEM_MUTABAKAT_RAPORU.md`
+>
+> A00–A24 maddeleri tarihî denetim şablonudur. Resume bloğundaki A03.01 / F-001…009 OPEN / IN_PROGRESS **bayat**; A00–A24 incelendi (`audit/evidence/A24_FINAL_CLOSURE.md`). Bu dosyadaki OPEN/IN_PROGRESS satırlarını güncel backlog sanma.
 
 ---
 
