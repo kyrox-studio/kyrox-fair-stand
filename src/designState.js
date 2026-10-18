@@ -599,13 +599,16 @@ export function createPlasticTrashBinModuleState() {
   return createCommercialModuleState('plastic-trash-bin');
 }
 
-export const BOX_BLOCK_FACE_SLOTS = Object.freeze(['front', 'right', 'back', 'left']);
+// Kutu blok yüzleri: 4 yan yüz ve üst yüz. Üst yüz yataydır; ölçüsü en × derinlik.
+// Eski projelerde eksik yüz (ör. top) proje açılırken ensureBoxBlockFaces ile eklenir.
+export const BOX_BLOCK_FACE_SLOTS = Object.freeze(['front', 'right', 'back', 'left', 'top']);
 
 function boxBlockFaceSizeCm(moduleState, slot) {
+  const widthCm = Math.max(1, Number(moduleState?.widthCm) || 100);
+  const depthCm = Math.max(1, Number(moduleState?.depthCm) || 50);
   const heightCm = Math.max(1, Number(moduleState?.heightCm) || 50);
-  const spanCm = slot === 'right' || slot === 'left'
-    ? Math.max(1, Number(moduleState?.depthCm) || 50)
-    : Math.max(1, Number(moduleState?.widthCm) || 100);
+  if (slot === 'top') return { widthCm, heightCm: depthCm };
+  const spanCm = slot === 'right' || slot === 'left' ? depthCm : widthCm;
   return { widthCm: spanCm, heightCm };
 }
 

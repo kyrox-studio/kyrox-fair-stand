@@ -294,6 +294,9 @@ function assertFamily(type, fabricKeys) {
     'faces.left.heightCm': 'heightCm',
     'faces.right.widthCm': 'depthCm',
     'faces.right.heightCm': 'heightCm',
+    // Üst yüz yataydır: en × derinlik.
+    'faces.top.widthCm': 'widthCm',
+    'faces.top.heightCm': 'depthCm',
   };
   for (const path of classification.derived) {
     if (type === 'box-block' && boxFaceSizeSource[path]) {

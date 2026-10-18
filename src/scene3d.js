@@ -4385,9 +4385,12 @@ export function createStandScene(
       const height = maxV - minV;
       if (width <= 0 || height <= 0) return;
 
+      // Kutu blok yüzünde bez yüz düzlemine oturur: alttaki yüz renk/derinlik yazmadığı için
+      // titreşmez, kenarda komşu yüzle sıfır açıklıkla kavuşur. Panellerde 6 mm önde kalır.
+      const overlayOffsetM = surfaces.every((surface) => surface.userData?.moduleType === 'box-block') ? 0 : 0.006;
       const centerWorld = right.clone().multiplyScalar((minU + maxU) / 2)
         .add(up.clone().multiplyScalar((minV + maxV) / 2))
-        .add(normal.clone().multiplyScalar(planeN + 0.006));
+        .add(normal.clone().multiplyScalar(planeN + overlayOffsetM));
 
       const fabricState = first.userData.surfaceState ?? {};
       const fabricType = fabricState.fabricType === 'mesh' ? 'mesh' : 'lightbox';
@@ -6407,8 +6410,12 @@ function createBoxBlockModule(moduleState, moduleIndex, onSurfaceReady) {
     heightCm,
   };
 
+  // Yüz plakaları kutunun dış sınırına tam oturur (6 yüz, açıklık sıfır). Gövde aynı düzlemde
+  // titreşmesin diye yanlardan ve üstten bodyInsetM kadar içeridedir; taban zeminde kalır.
+  const bodyInsetM = 0.002;
+  const bodyHeightM = Math.max(0.001, heightM - bodyInsetM);
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(widthM, heightM, depthM),
+    new THREE.BoxGeometry(Math.max(0.001, widthM - bodyInsetM * 2), bodyHeightM, Math.max(0.001, depthM - bodyInsetM * 2)),
     new THREE.MeshStandardMaterial({
       color,
       roughness: 0.88,
@@ -6419,7 +6426,7 @@ function createBoxBlockModule(moduleState, moduleIndex, onSurfaceReady) {
     }),
   );
   // Placement-center pivot: ±W/2 ±D/2, H taban 0 (baza ile aynı).
-  mesh.position.set(0, heightM / 2, 0);
+  mesh.position.set(0, bodyHeightM / 2, 0);
   mesh.castShadow = opacity >= 0.2;
   mesh.receiveShadow = true;
   mesh.userData = {
@@ -6442,16 +6449,15 @@ function createBoxBlockModule(moduleState, moduleIndex, onSurfaceReady) {
   group.add(mesh);
 
   ensureBoxBlockFaces(moduleState);
-  const faceGapM = 0.002;
-  // Yan plakalar gövdeden faceGapM kadar dışarıdadır; uçlarından da aynı kadar uzatılır ki
-  // köşede birbirine kavuşsun. Aksi halde her dikey köşede gövde rengi ince bir çizgi
-  // olarak görünür. Yalnız çizimdir: ölçü, kayıt ve BOM değişmez.
-  const faceSpanM = faceGapM * 2;
+  // Plakalar kutunun tam ölçüsündedir ve dış sınırında durur: kenarlarda birbirine sıfır
+  // açıklıkla kavuşur, gövde rengi hiçbir köşede görünmez. Ölçü, kayıt ve BOM değişmez.
   const faceLayouts = [
-    { slot: 'front', stripIndex: 0, width: widthM + faceSpanM, height: heightM, position: [0, heightM / 2, depthM / 2 + faceGapM], rotationY: 0 },
-    { slot: 'right', stripIndex: 1, width: depthM + faceSpanM, height: heightM, position: [widthM / 2 + faceGapM, heightM / 2, 0], rotationY: Math.PI / 2 },
-    { slot: 'back', stripIndex: 2, width: widthM + faceSpanM, height: heightM, position: [0, heightM / 2, -depthM / 2 - faceGapM], rotationY: Math.PI },
-    { slot: 'left', stripIndex: 3, width: depthM + faceSpanM, height: heightM, position: [-widthM / 2 - faceGapM, heightM / 2, 0], rotationY: -Math.PI / 2 },
+    { slot: 'front', stripIndex: 0, width: widthM, height: heightM, position: [0, heightM / 2, depthM / 2], rotationY: 0 },
+    { slot: 'right', stripIndex: 1, width: depthM, height: heightM, position: [widthM / 2, heightM / 2, 0], rotationY: Math.PI / 2 },
+    { slot: 'back', stripIndex: 2, width: widthM, height: heightM, position: [0, heightM / 2, -depthM / 2], rotationY: Math.PI },
+    { slot: 'left', stripIndex: 3, width: depthM, height: heightM, position: [-widthM / 2, heightM / 2, 0], rotationY: -Math.PI / 2 },
+    // Üst yüz: yatay plaka, kutunun tepesinde. Plakanın "yukarısı" arkaya bakar; önden bakınca görsel düz okunur.
+    { slot: 'top', stripIndex: 4, width: widthM, height: depthM, position: [0, heightM, 0], rotationX: -Math.PI / 2, rotationY: 0 },
   ];
   const faceCapabilities = surfaceCapabilityUserData(moduleState.itemKey);
   const faces = faceLayouts.map((layout) => {
@@ -6470,7 +6476,7 @@ function createBoxBlockModule(moduleState, moduleIndex, onSurfaceReady) {
       }),
     );
     face.position.set(...layout.position);
-    face.rotation.y = layout.rotationY;
+    face.rotation.set(layout.rotationX ?? 0, layout.rotationY, 0);
     const selectionFrame = createSelectionFrame(layout.width, layout.height);
     selectionFrame.visible = false;
     face.add(selectionFrame);
