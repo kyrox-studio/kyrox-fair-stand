@@ -25,6 +25,8 @@ test('F-028 feature reset keeps locks and never deletes a locked illuminated foa
   const end = main.indexOf('function applyActiveColorToSelection', start);
   const handler = main.slice(start, end);
   assert.match(handler, /module\?\.type === 'illuminated-foam' && !isModuleLocked\(module\)/);
-  assert.match(handler, /if \(isModuleLocked\(module\)\) resetModules\[index\]\.locked = true;/);
+  // Own lock stays an own lock; group membership (and group lock) is carried over unchanged.
+  assert.match(handler, /if \(module\.locked === true\) resetModules\[index\]\.locked = true;/);
+  assert.match(handler, /if \(module\.group\) resetModules\[index\]\.group = \{ \.\.\.module\.group \};/);
   assert.match(handler, /\(isModuleLocked\(module\) \? module : null\)/);
 });

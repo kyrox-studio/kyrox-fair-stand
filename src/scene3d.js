@@ -84,7 +84,14 @@ import {
   planContinuousModuleInsert,
   planContinuousModuleMove,
 } from './moduleMove.js';
-import { MODULE_LOCKED_MESSAGE, guardPlanAgainstLocks, isModuleLocked } from './moduleLock.js';
+import { MODULE_LOCKED_MESSAGE, describeLockedBlock, guardPlanAgainstLocks, isModuleLocked } from './moduleLock.js';
+import {
+  GROUP_MOVE_STEP_CM,
+  GROUP_ROTATE_MESSAGE,
+  getGroupMembers,
+  getModuleGroupId,
+  planGroupTranslate,
+} from './moduleGroups.js';
 import { getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, requiresShortUpJointSnap, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
 
@@ -1416,8 +1423,47 @@ export function createStandScene(
     }
   }
 
+  // Gruptaki bir öğe seçiliyken grubun diğer üyelerinde modül çerçevesi görünür.
+  let groupHighlightIds = new Set();
+
+  function refreshGroupHighlight() {
+    const next = new Set();
+    if (!multiSelectedModuleIds.size) {
+      const selectedState = getSingleSelectedModuleGroup()?.userData?.moduleState;
+      const groupId = getModuleGroupId(selectedState);
+      if (groupId) {
+        getGroupMembers(getRenderedModuleStates(), groupId).forEach((member) => {
+          if (member.id !== selectedState.id) next.add(member.id);
+        });
+      }
+    }
+    groupHighlightIds.forEach((moduleId) => {
+      if (!next.has(moduleId) && !multiSelectedModuleIds.has(moduleId) && moduleId !== selectedModuleId) {
+        setModuleSelectionVisual(moduleId, false);
+      }
+    });
+    next.forEach((moduleId) => setModuleSelectionVisual(moduleId, true));
+    groupHighlightIds = next;
+  }
+
   function notifySelection() {
+    refreshGroupHighlight();
     onSurfaceSelected?.([...selectedSurfaces], getSelectedModuleIds());
+  }
+
+  /** Panelden: verilen öğeleri seçer (bir tane ise tek seçim, fazlası toplu seçim). */
+  function selectModulesById(moduleIds = []) {
+    const ids = moduleIds.filter((moduleId) => findModuleGroupById(moduleId));
+    if (ids.length <= 1) {
+      if (ids.length) selectModuleOnly(ids[0]);
+      else clearSelection();
+      return ids.length;
+    }
+    clearSelection({ notify: false });
+    ids.forEach((moduleId) => multiSelectedModuleIds.add(moduleId));
+    multiSelectedModuleIds.forEach((moduleId) => setModuleSelectionVisual(moduleId, true));
+    notifySelection();
+    return ids.length;
   }
 
   function setFloorAreaHighlight(selected) {
@@ -2744,6 +2790,11 @@ export function createStandScene(
       return { handled: true, ok: false, message: MODULE_LOCKED_MESSAGE };
     }
 
+    if (getModuleGroupId(moduleState)) {
+      showPlacementFeedback(GROUP_ROTATE_MESSAGE, { durationMs: 1800 });
+      return { handled: true, ok: false, message: GROUP_ROTATE_MESSAGE };
+    }
+
     if (getFabricMoveLock(moduleState.id)) {
       const message = 'Bu modül tek parça Lightbox/Mesh kaplamasına bağlı. Döndürmek için önce kaplamayı kaldır.';
       showPlacementFeedback(message, { durationMs: 1800 });
@@ -3283,6 +3334,11 @@ export function createStandScene(
       return;
     }
 
+    if (dragSession.groupId) {
+      updateGroupDrag(event);
+      return;
+    }
+
     dragSession.dragging = true;
     dragSession.lastClientX = event.clientX;
     dragSession.lastClientY = event.clientY;
@@ -3655,8 +3711,129 @@ export function createStandScene(
     });
   }
 
+  function groupStandLimits() {
+    if (!stageLayout) return null;
+    return { standType: stageLayout.standType, standXCm: stageLayout.widthCm, standYCm: stageLayout.depthCm };
+  }
+
+  function snapGroupStepCm(value) {
+    return Math.round((Number(value) || 0) / GROUP_MOVE_STEP_CM) * GROUP_MOVE_STEP_CM;
+  }
+
+  /** Grup taşıma planı; kendi kilidi olan bir üye varsa grup taşınmaz. */
+  function planRenderedGroupTranslate(groupId, dxCm, dyCm) {
+    const modules = getRenderedModuleStates();
+    const ownLocked = getGroupMembers(modules, groupId).filter((member) => member.locked === true);
+    if (ownLocked.length) return { ok: false, message: describeLockedBlock(ownLocked), placements: new Map() };
+    return planGroupTranslate(modules, groupId, dxCm, dyCm, groupStandLimits());
+  }
+
+  function showGroupPlacements(placements) {
+    placements.forEach((placement, moduleId) => {
+      const moduleGroup = findModuleGroupById(moduleId);
+      const moduleState = moduleGroup?.userData?.moduleState;
+      if (moduleGroup && moduleState) applyPlacementToGroup(moduleGroup, placement, moduleState.widthCm);
+    });
+    requestEditorRender();
+  }
+
+  function commitGroupPlacements(placements) {
+    placements.forEach((placement, moduleId) => {
+      const moduleGroup = findModuleGroupById(moduleId);
+      const moduleState = moduleGroup?.userData?.moduleState;
+      if (!moduleGroup || !moduleState) return;
+      moduleState.placement = { ...placement };
+      moduleGroup.userData.placement = { ...placement };
+      applyPlacementToGroup(moduleGroup, placement, moduleState.widthCm);
+    });
+    requestEditorRender();
+  }
+
+  function restoreGroupPlacements(groupId) {
+    getGroupMembers(getRenderedModuleStates(), groupId).forEach((member) => {
+      const moduleGroup = findModuleGroupById(member.id);
+      if (moduleGroup && member.placement) applyPlacementToGroup(moduleGroup, member.placement, member.widthCm);
+    });
+    requestEditorRender();
+  }
+
+  // Grup sürükleme: üyeler gerçek yerinde canlı kayar; stand dışına çıkan adım
+  // uygulanmaz, grup son geçerli konumda kalır ve uyarı gösterilir.
+  function updateGroupDrag(event) {
+    const session = dragSession;
+    session.dragging = true;
+    session.lastClientX = event.clientX;
+    session.lastClientY = event.clientY;
+    const point = getDragPlanePoint(event.clientX, event.clientY, session.dragPlaneY);
+    if (!session.groupStartPoint) session.groupStartPoint = point;
+    if (!point || !session.groupStartPoint) return;
+    const dxCm = snapGroupStepCm(point.xCm - session.groupStartPoint.xCm);
+    const dyCm = snapGroupStepCm(point.yCm - session.groupStartPoint.yCm);
+    const plan = planRenderedGroupTranslate(session.groupId, dxCm, dyCm);
+    if (!plan.ok) {
+      if (session.groupFeedback !== plan.message) {
+        session.groupFeedback = plan.message;
+        showPlacementFeedback(plan.message, { clientX: event.clientX, clientY: event.clientY, durationMs: 1800 });
+      }
+      return;
+    }
+    session.groupFeedback = null;
+    session.groupPreview = plan;
+    clearPlacementFeedback();
+    showGroupPlacements(plan.placements);
+  }
+
+  function finishGroupDrag(session, event) {
+    const wasDragging = session.dragging;
+    if (wasDragging && session.groupPreview?.ok) {
+      commitGroupPlacements(session.groupPreview.placements);
+      clearSelection();
+    } else if (wasDragging) {
+      restoreGroupPlacements(session.groupId);
+    }
+    dragSession = null;
+    controls.enabled = true;
+    disposeDragBadge();
+    try {
+      renderer.domElement.releasePointerCapture(event.pointerId);
+    } catch {
+      // Pointer capture may already be released by the browser.
+    }
+    return wasDragging;
+  }
+
+  /** Ok tuşu: grubu ekran yönüne en yakın stand ekseninde bir adım kaydırır. */
+  function moveGroupByArrow(moduleGroup, moduleState, arrowScreenDirection) {
+    const groupId = getModuleGroupId(moduleState);
+    const origin = new THREE.Vector3();
+    moduleGroup.getWorldPosition(origin);
+    const projectedOrigin = origin.clone().project(camera);
+    const axes = [
+      { dxCm: GROUP_MOVE_STEP_CM, dyCm: 0, world: new THREE.Vector3(0.5, 0, 0) },
+      { dxCm: -GROUP_MOVE_STEP_CM, dyCm: 0, world: new THREE.Vector3(-0.5, 0, 0) },
+      { dxCm: 0, dyCm: GROUP_MOVE_STEP_CM, world: new THREE.Vector3(0, 0, 0.5) },
+      { dxCm: 0, dyCm: -GROUP_MOVE_STEP_CM, world: new THREE.Vector3(0, 0, -0.5) },
+    ];
+    const best = axes
+      .map((axis) => {
+        const projected = origin.clone().add(axis.world).project(camera);
+        const delta = new THREE.Vector2(projected.x - projectedOrigin.x, projected.y - projectedOrigin.y);
+        return { ...axis, score: delta.lengthSq() > 1e-12 ? delta.normalize().dot(arrowScreenDirection) : -Infinity };
+      })
+      .sort((a, b) => b.score - a.score)[0];
+    if (!best || !Number.isFinite(best.score)) return;
+    const plan = planRenderedGroupTranslate(groupId, best.dxCm, best.dyCm);
+    if (!plan.ok) {
+      showPlacementFeedback(plan.message, { durationMs: 1800 });
+      return;
+    }
+    clearPlacementFeedback();
+    commitGroupPlacements(plan.placements);
+  }
+
   function finishPlacementDrag(event) {
     if (!dragSession) return false;
+    if (dragSession.groupId) return finishGroupDrag(dragSession, event);
 
     const session = dragSession;
     const wasDragging = session.dragging;
@@ -5391,6 +5568,11 @@ export function createStandScene(
       // Kilitli modülde oturum yalnız tıklamayı ve uyarıyı yönetir; taşıma başlamaz.
       locked: isModuleLocked(moduleState),
       lockedWarned: false,
+      // Gruptaki öğe sürüklenince bütün grup aynı kaydırmayla taşınır.
+      groupId: getModuleGroupId(moduleState),
+      groupStartPoint: dragStartPoint,
+      groupPreview: null,
+      groupFeedback: null,
     };
 
     renderer.domElement.setPointerCapture?.(event.pointerId);
@@ -5439,6 +5621,10 @@ export function createStandScene(
       event.preventDefault();
       if (isModuleLocked(moduleState)) {
         showPlacementFeedback(MODULE_LOCKED_MESSAGE, { durationMs: 1800 });
+        return;
+      }
+      if (getModuleGroupId(moduleState)) {
+        moveGroupByArrow(moduleGroup, moduleState, arrowScreenDirection);
         return;
       }
       if (moduleState.type === 'tulle-fabric') {
@@ -6063,6 +6249,7 @@ export function createStandScene(
     setFloorAreaDrawArmed,
     isFloorAreaSelected: () => floorAreaSelected,
     getSelectedModuleIds,
+    selectModulesById,
     showPlacementFeedback,
     buildWall,
     clearWall,

@@ -8,8 +8,10 @@ const PLACEMENT_EPSILON_CM = 0.001;
 
 export const MODULE_LOCKED_MESSAGE = 'Bu öğe kilitli. Değiştirmek için önce sağ tık > Kilidi aç.';
 
+// Öğe kendi kilidiyle ya da kilitli bir grubun üyesi olarak kilitli sayılır
+// (grup bilgisi: moduleGroups.js).
 export function isModuleLocked(moduleState) {
-  return moduleState?.locked === true;
+  return moduleState?.locked === true || moduleState?.group?.locked === true;
 }
 
 /** Modülleri kilitler ya da kilidini açar; değişen modül sayısını döndürür. */

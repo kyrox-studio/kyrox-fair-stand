@@ -33,6 +33,7 @@ export function createModuleContextMenu({
   getShelfLightingState,
   onShelfLightingChange,
   onLockChange,
+  onGroupAction,
 }) {
   const document = getFairStandHostDocument();
   const window = getFairStandHostWindow();
@@ -49,6 +50,15 @@ export function createModuleContextMenu({
   menu.setAttribute('aria-label', 'Modül işlemleri');
   menu.innerHTML = `
     <div class="module-context-title"></div>
+    <button type="button" role="menuitem" data-module-action="group-create" hidden>Grup oluştur…</button>
+    <button type="button" role="menuitem" data-module-action="group-add" hidden>Gruba ekle</button>
+    <button type="button" role="menuitem" data-module-action="group-rename" hidden>Grubu yeniden adlandır…</button>
+    <button type="button" role="menuitem" data-module-action="group-lock" hidden>Grubu kilitle</button>
+    <button type="button" role="menuitem" data-module-action="group-duplicate" hidden>Grubu çoğalt</button>
+    <button type="button" role="menuitem" data-module-action="group-remove-member" hidden>Bu parçayı gruptan çıkar</button>
+    <button type="button" role="menuitem" data-module-action="group-dissolve" hidden>Grubu çöz</button>
+    <button type="button" role="menuitem" data-module-action="group-delete" class="danger" hidden>Grubu sil</button>
+    <div class="module-context-separator module-context-group-separator" hidden></div>
     <button type="button" role="menuitem" data-module-action="toggle-lock">Kilitle</button>
     <button type="button" role="menuitem" data-module-action="lock-selection" hidden>Seçilenleri kilitle</button>
     <button type="button" role="menuitem" data-module-action="unlock-selection" hidden>Seçilenlerin kilidini aç</button>
@@ -115,14 +125,54 @@ export function createModuleContextMenu({
   const unlockSelectionButton = menu.querySelector('[data-module-action="unlock-selection"]');
   const deleteButton = menu.querySelector('[data-module-action="delete"]');
   const duplicateButtons = [...menu.querySelectorAll('[data-module-action^="duplicate-"]')];
-  const separator = menu.querySelector('.module-context-separator');
+  const separator = menu.querySelector('.module-context-separator:not(.module-context-group-separator)');
+  const groupSeparator = menu.querySelector('.module-context-group-separator');
+  const groupButtons = Object.fromEntries(
+    [...menu.querySelectorAll('[data-module-action^="group-"]')].map((button) => [button.dataset.moduleAction, button]),
+  );
   const LOCKED_HINT = 'Kilitli öğe: önce kilidi açın.';
+  const GROUP_LOCKED_HINT = 'Grup kilitli: önce grubun kilidini açın.';
 
-  function setDisabled(button, disabled) {
+  function setDisabled(button, disabled, hint = LOCKED_HINT) {
     button.disabled = Boolean(disabled);
     button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-    if (disabled) button.title = LOCKED_HINT;
+    if (disabled) button.title = hint;
     else button.removeAttribute('title');
+  }
+
+  function hideGroupButtons() {
+    Object.values(groupButtons).forEach((button) => {
+      button.hidden = true;
+      setDisabled(button, false);
+    });
+    groupSeparator.hidden = true;
+  }
+
+  // Tek öğe: öğe bir gruptaysa grup komutları en üstte gösterilir.
+  function showSingleGroupSection(group) {
+    hideGroupButtons();
+    if (!group) return;
+    const locked = group.locked === true;
+    ['group-rename', 'group-lock', 'group-duplicate', 'group-remove-member', 'group-dissolve', 'group-delete']
+      .forEach((action) => { groupButtons[action].hidden = false; });
+    groupButtons['group-lock'].textContent = locked ? 'Grubun kilidini aç' : 'Grubu kilitle';
+    ['group-remove-member', 'group-dissolve', 'group-delete']
+      .forEach((action) => setDisabled(groupButtons[action], locked, GROUP_LOCKED_HINT));
+    groupSeparator.hidden = false;
+  }
+
+  // Toplu seçim: grup kurma ve tek bir gruba ekleme.
+  function showMultiGroupSection(options) {
+    hideGroupButtons();
+    if (!options) return;
+    groupButtons['group-create'].hidden = options.canCreate !== true;
+    const target = options.addTarget;
+    groupButtons['group-add'].hidden = !target;
+    if (target) {
+      groupButtons['group-add'].textContent = `Gruba ekle: ${target.name}`;
+      setDisabled(groupButtons['group-add'], target.locked === true, GROUP_LOCKED_HINT);
+    }
+    groupSeparator.hidden = groupButtons['group-create'].hidden && groupButtons['group-add'].hidden;
   }
 
   // Toplu seçim menüsü: yalnız toplu kilit komutları; tek öğe komutları gizlenir.
@@ -136,6 +186,7 @@ export function createModuleContextMenu({
     separator.hidden = true;
     lockSelectionButton.hidden = lockedCount >= ids.length;
     unlockSelectionButton.hidden = lockedCount === 0;
+    showMultiGroupSection(context.groupOptions);
   }
   const pickerTitle = pickerBackdrop.querySelector('#module-picker-title');
   const pickerContext = pickerBackdrop.querySelector('.module-picker-context');
@@ -432,8 +483,12 @@ export function createModuleContextMenu({
     }
 
     const locked = Boolean(context.locked);
+    const group = context.group ?? null;
+    showSingleGroupSection(group);
     lockButton.hidden = false;
     lockButton.textContent = locked ? 'Kilidi aç' : 'Kilitle';
+    // Grup kilidi öğe kilidinden açılamaz.
+    setDisabled(lockButton, group?.locked === true && context.ownLocked !== true, GROUP_LOCKED_HINT);
     lockSelectionButton.hidden = true;
     unlockSelectionButton.hidden = true;
     deleteButton.hidden = false;
@@ -443,7 +498,8 @@ export function createModuleContextMenu({
     const panelSuffix = context.supportsGlass && Number.isInteger(context.stripNumber)
       ? ` · Panel ${context.stripNumber}`
       : '';
-    title.textContent = `Modül ${context.moduleIndex + 1} · ${describeModule(context)}${panelSuffix}${locked ? ' · Kilitli' : ''}`;
+    const groupSuffix = group ? ` · Grup: ${group.name}` : '';
+    title.textContent = `Modül ${context.moduleIndex + 1} · ${describeModule(context)}${panelSuffix}${groupSuffix}${locked ? ' · Kilitli' : ''}`;
     glassModeButton.hidden = !context.supportsGlass;
     glassModeButton.textContent = context.isGlass
       ? 'Normal Panele Çevir'
@@ -510,6 +566,12 @@ export function createModuleContextMenu({
     const action = button.dataset.moduleAction;
     const context = activeContext;
     if (button.disabled) return;
+
+    if (action.startsWith('group-')) {
+      close();
+      onGroupAction?.(action, context);
+      return;
+    }
 
     if (action === 'toggle-lock') {
       close();

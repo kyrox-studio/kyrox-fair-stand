@@ -74,6 +74,26 @@ function listGuideSections() {
     `,
   },
   {
+    title: 'Gruplar',
+    html: `
+      <p>Grup, istediğin öğeleri tek bir isimli küme yapar: duvar paneli, profil, lamba, logo, TV, kutu blok, masa, sandalye; türü fark etmez. Grup BOM'a ve maliyete girmez; parçalar bugünkü gibi girer.</p>
+      <ul>
+        <li><strong>Grup oluştur:</strong> Shift+tık ile en az 2 öğe seç, birinin üstünde sağ tık → <strong>Grup oluştur…</strong> → isim ver. Stand kenarına bağlı duvar parçaları gruplanınca kenardan ayrılır; yerleri değişmez ve grup her yöne taşınabilir.</li>
+        <li><strong>Gruba ekle:</strong> Bir grubun parçasıyla birlikte grupsuz öğeleri Shift+tık ile seç, sağ tık → <strong>Gruba ekle: &lt;grup&gt;</strong>.</li>
+        <li><strong>Bir öğe tek grupta olur:</strong> Başka gruptaki bir öğeyi eklemek istersen önce sorulur: “Bu gruptan çıkarılıp … grubuna eklensin mi?” Hayır dersen hiçbir şey değişmez.</li>
+        <li><strong>Taşıma:</strong> Gruptaki herhangi bir öğeyi sürükle ya da ok tuşuna bas: bütün grup aynı mesafe kayar. Tek kısıt: hiçbir parça stand alanının dışına çıkamaz; grup kenarda durur. Başka öğelerle üst üste gelme engellenmez. Gruptaki öğe tek başına döndürülemez (Shift+R).</li>
+        <li><strong>Tık:</strong> Bugünkü gibi paneli seçer (renk ve görsel verilebilir); grubun diğer parçaları çerçeveyle gösterilir.</li>
+        <li><strong>Sağ tık menüsü (gruptaki öğe):</strong> Grubu yeniden adlandır, Grubu kilitle / kilidini aç, Grubu çoğalt, Bu parçayı gruptan çıkar, Grubu çöz, Grubu sil.</li>
+        <li><strong>Grubu kilitle:</strong> Bütün parçalar kilitli olur: taşınamaz, döndürülemez, boyutlandırılamaz ve silinemez. Kilitli gruptaki tek parçanın kilidi açılamaz; önce grubun kilidi açılır. Kilitliyken adlandırma ve çoğaltma yapılabilir.</li>
+        <li><strong>Grubu çoğalt:</strong> Bütün parçalar renk ve görselleriyle kopyalanır; kopya “… (kopya)” adıyla yeni, kilitsiz bir grup olur ve grubun yanına (sağ, sol, ön veya arka) konur. Standda yer yoksa uyarı verilir ve hiçbir şey eklenmez.</li>
+        <li><strong>Grubu sil:</strong> “Grubun tamamı silinecek (N parça)” onayı istenir. Delete tuşu yalnız seçili parçayı siler.</li>
+        <li><strong>Grubu çöz / gruptan çıkar:</strong> Parçalar yerinde kalır. Kenardan ayrılmış duvar parçası hâlâ aynı kenar çizgisindeyse kenara geri bağlanır. Grupta tek parça kalırsa grup kendiliğinden çözülür.</li>
+        <li><strong>Gruplar kartı:</strong> Kenar çubuğunda grupları, parça sayısını ve kilidi listeler. Seç, Kilitle, Adlandır, Çoğalt, Çöz, Sil düğmeleri ve parça listesi buradadır; parçaya tıklayınca sahnede seçilir.</li>
+        <li><strong>Kayıt ve geri alma:</strong> Gruplar projeyle kaydedilir, içe/dışa aktarılır; Ctrl+Z grup işlemlerini de geri alır. Kenardan ayrılan duvar parçaları duvar kapasitesi hesabına ve otomatik duvar lambası dizisine girmez.</li>
+      </ul>
+    `,
+  },
+  {
     title: 'Panel Seçimi ve Çoklu Seçim',
     html: `
       <p>Tek panel için normal sol tık kullanılır. Çoklu seçimde önce başlangıç panelini seç, ardından <strong>Ctrl/Cmd + tık</strong> ile diğer sınır paneline tıkla.</p>
