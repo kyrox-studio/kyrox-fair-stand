@@ -77,6 +77,8 @@ import {
   snapPlacementToModules,
   stepPanelSeamOverlayPlacement,
   clampFloorRelativeBottomZCm,
+  clampMountBottomZCm,
+  stepMountBottomZCm,
   stepTulleFabricZCm,
   stepWallShortFloorZCm,
   validatePlacementAgainstModules,
@@ -312,6 +314,10 @@ function withItemZ(moduleState, placement, overlayZCm = null) {
   }
   if (moduleState?.type === 'box-block' || isWallShortFamilyDescriptor(moduleState)) {
     return { ...next, zCm: clampFloorRelativeBottomZCm(next.zCm, Number(moduleState.heightCm) || 0) };
+  }
+  // Üst montaj (projektör): taban 0…tavan; gövde yüksekliği max’ı düşürmez.
+  if (isTopFixtureType(moduleState?.type) || isTopPlacementModule(moduleState)) {
+    return { ...next, zCm: clampMountBottomZCm(next.zCm) };
   }
   return next;
 }
@@ -2726,9 +2732,12 @@ export function createStandScene(
   }
 
   function snapTopFixturePlacement(basePlacement, ground, widthCm, moduleState) {
+    const rawZCm = Number.isFinite(Number(basePlacement?.zCm))
+      ? Number(basePlacement.zCm)
+      : resolveItemDefaultZCm(moduleState);
     const placement = {
       ...basePlacement,
-      zCm: resolveItemDefaultZCm(moduleState),
+      zCm: clampMountBottomZCm(rawZCm),
     };
     if (!stageLayout || !ground) return placement;
 
@@ -2757,8 +2766,15 @@ export function createStandScene(
     }
 
     const anchored = snapPlacementToItemAnchor(moduleState, placement, getRenderedModuleStates());
-    if (anchored) return anchored;
-    placement.zCm = resolveItemDefaultZCm(moduleState);
+    if (anchored) {
+      return {
+        ...anchored,
+        zCm: clampMountBottomZCm(
+          Number.isFinite(Number(anchored.zCm)) ? Number(anchored.zCm) : rawZCm,
+        ),
+      };
+    }
+    placement.zCm = clampMountBottomZCm(rawZCm);
     return placement;
   }
 
@@ -3512,11 +3528,14 @@ export function createStandScene(
       const currentWallId = dragSession.preview?.placement?.wallId
         ?? moduleState.placement?.wallId
         ?? 'back';
+      const dragZCm = Number.isFinite(Number(moduleState.placement?.zCm))
+        ? Number(moduleState.placement.zCm)
+        : resolveItemDefaultZCm(moduleState);
       const wallPoint = getTopFixtureDragPoint(
         event.clientX,
         event.clientY,
         currentWallId,
-        resolveItemDefaultZCm(moduleState),
+        clampMountBottomZCm(dragZCm),
       );
       if (!wallPoint) {
         disposePlacementGhost();
@@ -5989,9 +6008,85 @@ export function createStandScene(
         return;
       }
 
-      const stepCm = isTopFixtureType(moduleState.type)
-        ? 20
-        : getModulePlacementSnapCm(moduleState.type);
+      if (isTopFixtureType(moduleState.type)) {
+        const stepCm = getModulePlacementSnapCm(moduleState.type) || 20;
+        const moduleWorldPosition = new THREE.Vector3();
+        moduleGroup.getWorldPosition(moduleWorldPosition);
+        const projectedOrigin = moduleWorldPosition.clone().project(camera);
+        const worldStepM = stepCm / 100;
+        const candidates = [
+          { kind: 'x', deltaCm: stepCm, world: new THREE.Vector3(worldStepM, 0, 0) },
+          { kind: 'x', deltaCm: -stepCm, world: new THREE.Vector3(-worldStepM, 0, 0) },
+          { kind: 'y', deltaCm: stepCm, world: new THREE.Vector3(0, 0, worldStepM) },
+          { kind: 'y', deltaCm: -stepCm, world: new THREE.Vector3(0, 0, -worldStepM) },
+          { kind: 'z', deltaCm: stepCm, world: new THREE.Vector3(0, worldStepM, 0) },
+          { kind: 'z', deltaCm: -stepCm, world: new THREE.Vector3(0, -worldStepM, 0) },
+        ];
+        const bestArrowMove = candidates
+          .map((candidate) => {
+            const projectedTarget = moduleWorldPosition.clone().add(candidate.world).project(camera);
+            const screenDelta = new THREE.Vector2(
+              projectedTarget.x - projectedOrigin.x,
+              projectedTarget.y - projectedOrigin.y,
+            );
+            const lengthSq = screenDelta.lengthSq();
+            const score = lengthSq > 1e-12
+              ? screenDelta.normalize().dot(arrowScreenDirection)
+              : -Infinity;
+            return { ...candidate, score };
+          })
+          .sort((a, b) => b.score - a.score)[0];
+        if (!bestArrowMove || !Number.isFinite(bestArrowMove.score)) return;
+
+        if (bestArrowMove.kind === 'z') {
+          const currentZCm = Number(moduleState.placement.zCm || 0);
+          const nextZCm = stepMountBottomZCm(currentZCm, bestArrowMove.deltaCm);
+          if (nextZCm === currentZCm) {
+            showPlacementFeedback('Projektör bu yönde stand sınırına ulaştı.', { durationMs: 900 });
+            return;
+          }
+          const liftedPlacement = { ...moduleState.placement, zCm: nextZCm };
+          moduleState.placement = { ...liftedPlacement };
+          moduleGroup.userData.placement = { ...liftedPlacement };
+          applyPlacementToGroup(moduleGroup, liftedPlacement, moduleState.widthCm);
+          clearPlacementFeedback();
+          return;
+        }
+
+        const desiredTopPlacement = createModulePlacement({
+          ...moduleState.placement,
+          xCm: Number(moduleState.placement.xCm || 0) + (bestArrowMove.kind === 'x' ? bestArrowMove.deltaCm : 0),
+          yCm: Number(moduleState.placement.yCm || 0) + (bestArrowMove.kind === 'y' ? bestArrowMove.deltaCm : 0),
+          wallId: moduleState.placement.wallId || 'free',
+        });
+        desiredTopPlacement.zCm = clampMountBottomZCm(Number(moduleState.placement.zCm || 0));
+        const topRendered = getRenderedModuleStates();
+        const topValidation = validatePlacementAgainstModules({
+          placement: desiredTopPlacement,
+          widthCm: moduleState.widthCm,
+          depthCm: moduleState.depthCm,
+          moduleId: moduleState.id,
+          moduleType: moduleState.type,
+          itemKey: moduleState.itemKey,
+          heightCm: moduleState.heightCm,
+          shape: moduleState.shape,
+          modules: topRendered,
+          standType: stageLayout.standType,
+          standXCm: stageLayout.widthCm,
+          standYCm: stageLayout.depthCm,
+        });
+        if (!topValidation.ok) {
+          showPlacementFeedback(topValidation.message ?? 'Projektör bu yönde hareket edemez.', { durationMs: 900 });
+          return;
+        }
+        moduleState.placement = { ...desiredTopPlacement };
+        moduleGroup.userData.placement = { ...desiredTopPlacement };
+        applyPlacementToGroup(moduleGroup, desiredTopPlacement, moduleState.widthCm);
+        clearPlacementFeedback();
+        return;
+      }
+
+      const stepCm = getModulePlacementSnapCm(moduleState.type);
       const moduleWorldPosition = new THREE.Vector3();
       moduleGroup.getWorldPosition(moduleWorldPosition);
       const projectedOrigin = moduleWorldPosition.clone().project(camera);

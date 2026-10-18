@@ -111,8 +111,11 @@ test('createBoxBlockModule renderer keeps the body and adds four outward side fa
   assert.match(body, /slot:\s*'back'/);
   assert.match(body, /slot:\s*'left'/);
   assert.match(body, /slot:\s*'top'[^\n]*rotationX:\s*-Math\.PI \/ 2/);
-  const moveStart = source.indexOf("if (moduleState.type === 'box-block')");
-  const moveEnd = source.indexOf('const stepCm = isTopFixtureType', moveStart);
+  const moveMarker = "Kutu bu yönde stand sınırına ulaştı.";
+  const moveMarkerAt = source.indexOf(moveMarker);
+  assert.ok(moveMarkerAt >= 0);
+  const moveStart = source.lastIndexOf("if (moduleState.type === 'box-block')", moveMarkerAt);
+  const moveEnd = source.indexOf('if (isTopFixtureType(moduleState.type))', moveMarkerAt);
   assert.ok(moveStart >= 0 && moveEnd > moveStart);
   const move = source.slice(moveStart, moveEnd);
   assert.match(move, /stepWallShortFloorZCm\(currentZCm, bestArrowMove\.deltaCm, moduleState\.heightCm\)/);
