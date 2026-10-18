@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import {
   GROUP_LOCKED_MESSAGE,
   GROUP_OUTSIDE_STAND_MESSAGE,
+  GROUP_ROTATE_OUTSIDE_STAND_MESSAGE,
+  GROUP_ROTATE_STEP_DEG,
   addToGroup,
   createGroup,
   dissolveGroup,
@@ -13,6 +15,7 @@ import {
   listGroups,
   nextGroupName,
   planGroupDuplicate,
+  planGroupRotate,
   planGroupTranslate,
   pruneGroups,
   removeFromGroup,
@@ -224,4 +227,118 @@ test('validateModuleGroups accepts valid groups and rejects malformed or inconsi
     { id: 'x', group: { id: 'g', name: 'G', locked: false } },
     { id: 'y', group: { id: 'g', name: 'Başka', locked: false } },
   ]).ok, false);
+});
+
+function centerOf(moduleState, placement = moduleState.placement) {
+  const vertical = placement.rotationZDeg === 90 || placement.rotationZDeg === 270;
+  return {
+    x: placement.xCm + (vertical ? 0 : moduleState.widthCm / 2),
+    y: placement.yCm + (vertical ? moduleState.widthCm / 2 : 0),
+  };
+}
+
+function applyPlan(modules, plan) {
+  plan.placements.forEach((placement, id) => { modules.find((m) => m.id === id).placement = placement; });
+}
+
+test('group rotation turns every member by 45 degrees around the group and keeps distances', () => {
+  const modules = [box('wall', 200, 150, { widthCm: 200, depthCm: 10 }), box('tv', 250, 170), box('chair', 260, 260, { widthCm: 50 })];
+  const { group } = createGroup(modules, ['wall', 'tv', 'chair']);
+  const before = modules.map((m) => centerOf(m));
+  const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const plan = planGroupRotate(modules, group.id, GROUP_ROTATE_STEP_DEG, STAND);
+  assert.equal(plan.ok, true);
+  applyPlan(modules, plan);
+  assert.deepEqual(modules.map((m) => m.placement.rotationZDeg), [45, 45, 45]);
+  const after = modules.map((m) => centerOf(m));
+  assert.ok(Math.abs(distance(before[0], before[1]) - distance(after[0], after[1])) < 0.05);
+  assert.ok(Math.abs(distance(before[1], before[2]) - distance(after[1], after[2])) < 0.05);
+  // The pivot (mean of member centers) stays in place.
+  const mean = (list) => ({ x: list.reduce((s, c) => s + c.x, 0) / list.length, y: list.reduce((s, c) => s + c.y, 0) / list.length });
+  assert.ok(Math.abs(mean(before).x - mean(after).x) < 0.05);
+  assert.ok(Math.abs(mean(before).y - mean(after).y) < 0.05);
+});
+
+test('eight 45-degree rotations bring the group back to its start', () => {
+  const modules = [box('a', 200, 150), box('b', 320, 200, { widthCm: 60 })];
+  const { group } = createGroup(modules, ['a', 'b']);
+  const start = modules.map((m) => ({ ...m.placement }));
+  for (let step = 0; step < 8; step += 1) {
+    const plan = planGroupRotate(modules, group.id, 45, STAND);
+    assert.equal(plan.ok, true, `step ${step}`);
+    applyPlan(modules, plan);
+  }
+  modules.forEach((m, index) => {
+    assert.equal(m.placement.rotationZDeg, start[index].rotationZDeg);
+    assert.ok(Math.abs(m.placement.xCm - start[index].xCm) < 0.1);
+    assert.ok(Math.abs(m.placement.yCm - start[index].yCm) < 0.1);
+  });
+});
+
+test('rotation follows the scene yaw direction: +90 moves a member from the right side to the back (smaller y), same as the member own yaw', () => {
+  // Pivot is the mean of centers; "right" member at +x turns to -y (x' = x cos + y sin, y' = -x sin + y cos).
+  const modules = [box('left', 150, 200), box('right', 350, 200)];
+  const { group } = createGroup(modules, ['left', 'right']);
+  const plan = planGroupRotate(modules, group.id, 90, STAND);
+  applyPlan(modules, plan);
+  const right = centerOf(modules[1]);
+  const left = centerOf(modules[0]);
+  assert.ok(Math.abs(right.x - left.x) < 0.05);
+  assert.ok(right.y < left.y);
+});
+
+test('rotation is refused when a member would leave the stand or the group is locked', () => {
+  const edge = [box('a', 0, 0, { widthCm: 300, depthCm: 50 }), box('b', 300, 0, { widthCm: 300, depthCm: 50 })];
+  const edgeGroup = createGroup(edge, ['a', 'b']).group;
+  const refused = planGroupRotate(edge, edgeGroup.id, 45, STAND);
+  assert.equal(refused.ok, false);
+  assert.equal(refused.message, GROUP_ROTATE_OUTSIDE_STAND_MESSAGE);
+  assert.equal(refused.placements.size, 0);
+
+  const modules = [box('a', 200, 150), box('b', 320, 200)];
+  const { group } = createGroup(modules, ['a', 'b']);
+  setGroupLocked(modules, group.id, true);
+  assert.equal(planGroupRotate(modules, group.id, 45, STAND).message, GROUP_LOCKED_MESSAGE);
+});
+
+test('group bounds use the engine center rule for 45-degree members', () => {
+  const member = box('a', 100, 100, { widthCm: 100, depthCm: 0.0001, rotationZDeg: 45 });
+  const bounds = getGroupBounds([member]);
+  // 45° is not a vertical anchor: center is (x + w/2, y) = (150, 100).
+  assert.ok(Math.abs((bounds.minX + bounds.maxX) / 2 - 150) < 0.01);
+  assert.ok(Math.abs((bounds.minY + bounds.maxY) / 2 - 100) < 0.01);
+});
+
+test('a rotated thin wall panel cannot be dragged out of the stand (user project regression)', () => {
+  // elikon-L_Sag_900_500, "Grup 2": two 200 cm panels at 315°; the first one's center sat 9.3 cm
+  // from the back edge, so its diagonal stuck ~64 cm outside. Translation now uses the rotated footprint.
+  const stand = { standType: 'l-right', standXCm: 900, standYCm: 500 };
+  const panel = (id, xCm, yCm) => ({
+    id,
+    type: 'flat-panel',
+    itemKey: 'wall_200_350',
+    widthCm: 200,
+    depthCm: 10,
+    heightCm: 350,
+    placement: { xCm, yCm, zCm: 0, rotationZDeg: 315, wallId: 'free' },
+  });
+  const modules = [panel('p1', 259.3, 150), panel('p2', 400.7, 291.4)];
+  const { group } = createGroup(modules, ['p1', 'p2']);
+  // Moving the group so p1's center reaches y = 9.3 (the saved position) is refused.
+  const outside = planGroupTranslate(modules, group.id, 0, -140.7, stand);
+  assert.equal(outside.ok, false);
+  assert.equal(outside.message, GROUP_OUTSIDE_STAND_MESSAGE);
+  // A move that keeps the whole diagonal inside is accepted.
+  assert.equal(planGroupTranslate(modules, group.id, 0, -70, stand).ok, true);
+});
+
+test('thin wall panels on the stand edge stay movable along the edge (thickness not counted)', () => {
+  const stand = { standType: 'l-right', standXCm: 900, standYCm: 500 };
+  const modules = [
+    { id: 'w1', type: 'flat-panel', itemKey: 'wall_200_350', widthCm: 200, depthCm: 10, heightCm: 350, placement: { xCm: 0, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' } },
+    { id: 'w2', type: 'flat-panel', itemKey: 'wall_200_350', widthCm: 200, depthCm: 10, heightCm: 350, placement: { xCm: 200, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' } },
+  ];
+  const { group } = createGroup(modules, ['w1', 'w2']);
+  assert.equal(planGroupTranslate(modules, group.id, 100, 0, stand).ok, true);
+  assert.equal(planGroupTranslate(modules, group.id, 0, -10, stand).ok, false);
 });

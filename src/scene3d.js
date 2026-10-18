@@ -87,9 +87,10 @@ import {
 import { MODULE_LOCKED_MESSAGE, describeLockedBlock, guardPlanAgainstLocks, isModuleLocked } from './moduleLock.js';
 import {
   GROUP_MOVE_STEP_CM,
-  GROUP_ROTATE_MESSAGE,
+  GROUP_ROTATE_STEP_DEG,
   getGroupMembers,
   getModuleGroupId,
+  planGroupRotate,
   planGroupTranslate,
 } from './moduleGroups.js';
 import { getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, requiresShortUpJointSnap, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
@@ -2823,9 +2824,17 @@ export function createStandScene(
       return { handled: true, ok: false, message: MODULE_LOCKED_MESSAGE };
     }
 
+    // Gruptaki öğede Shift+R bütün grubu grup merkezi etrafında 45° döndürür.
     if (getModuleGroupId(moduleState)) {
-      showPlacementFeedback(GROUP_ROTATE_MESSAGE, { durationMs: 1800 });
-      return { handled: true, ok: false, message: GROUP_ROTATE_MESSAGE };
+      const groupDeltaDeg = Number(deltaDeg) < 0 ? -GROUP_ROTATE_STEP_DEG : GROUP_ROTATE_STEP_DEG;
+      const plan = planRenderedGroupRotate(getModuleGroupId(moduleState), groupDeltaDeg);
+      if (!plan.ok) {
+        showPlacementFeedback(plan.message, { durationMs: 1800 });
+        return { handled: true, ok: false, message: plan.message };
+      }
+      clearPlacementFeedback();
+      commitGroupPlacements(plan.placements);
+      return { handled: true, ok: true };
     }
 
     if (getFabricMoveLock(moduleState.id)) {
@@ -3759,6 +3768,13 @@ export function createStandScene(
     const ownLocked = getGroupMembers(modules, groupId).filter((member) => member.locked === true);
     if (ownLocked.length) return { ok: false, message: describeLockedBlock(ownLocked), placements: new Map() };
     return planGroupTranslate(modules, groupId, dxCm, dyCm, groupStandLimits());
+  }
+
+  function planRenderedGroupRotate(groupId, deltaDeg) {
+    const modules = getRenderedModuleStates();
+    const ownLocked = getGroupMembers(modules, groupId).filter((member) => member.locked === true);
+    if (ownLocked.length) return { ok: false, message: describeLockedBlock(ownLocked), placements: new Map() };
+    return planGroupRotate(modules, groupId, deltaDeg, groupStandLimits());
   }
 
   function showGroupPlacements(placements) {

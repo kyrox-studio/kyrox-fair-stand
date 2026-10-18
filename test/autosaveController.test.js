@@ -90,6 +90,9 @@ test('changed state schedules one debounce and a later change replaces it', () =
     getSignature: () => signature,
     persist: async () => {},
     setStatus: (value) => statuses.push(value),
+    // Sabit saat: 3 dk bekleme ile 3 dk üst sınır eşit olduğundan gerçek saatte
+    // iki çağrı arasındaki 1 ms beklemeyi 179999'a düşürüyordu.
+    now: () => 0,
     ...clock,
   });
 
