@@ -167,6 +167,36 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
     expect(module.placement.xCm + module.widthCm).toBeLessThanOrEqual(600);
   }
 
+  // Shift+R gruptaki öğede bütün grubu 45° döndürür; parçalar arası mesafe korunur, Ctrl+Z geri alır.
+  const centerOf = (module) => {
+    const rotation = ((Number(module.placement.rotationZDeg) % 360) + 360) % 360;
+    const vertical = rotation === 90 || rotation === 270;
+    return {
+      x: module.placement.xCm + (vertical ? 0 : module.widthCm / 2),
+      y: module.placement.yCm + (vertical ? module.widthCm / 2 : 0),
+    };
+  };
+  const gap = (list) => {
+    const [a, b] = list.map(centerOf);
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
+  const beforeRotate = clamped;
+  const rotatePoints = await boxScreenPoints(page);
+  await page.mouse.click(rotatePoints[first.id].x, rotatePoints[first.id].y);
+  await page.keyboard.press('Shift+R');
+  const rotated = boxes(await storedModules(page));
+  // Yön tek öğedeki Shift+R ile aynıdır; bütün üyeler aynı 45° kadar döner.
+  const turns = rotated.map((module) => {
+    const original = beforeRotate.find((m) => m.id === module.id);
+    return (((Number(module.placement.rotationZDeg) - Number(original.placement.rotationZDeg)) % 360) + 360) % 360;
+  });
+  expect([45, 315]).toContain(turns[0]);
+  expect(new Set(turns).size).toBe(1);
+  expect(Math.abs(gap(rotated) - gap(beforeRotate))).toBeLessThan(0.5);
+  await page.keyboard.press('Control+z');
+  const undone = boxes(await storedModules(page));
+  expect(undone.map((m) => m.placement.rotationZDeg)).toEqual(beforeRotate.map((m) => m.placement.rotationZDeg));
+
   // Kilitli grup taşınmaz.
   await row.locator('summary').click();
   await row.locator('[data-group-action="group-lock"]').click();

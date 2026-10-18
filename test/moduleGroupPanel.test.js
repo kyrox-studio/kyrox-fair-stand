@@ -125,7 +125,10 @@ test('scene moves the whole group on drag and arrows, and refuses Shift+R for me
   assert.match(sceneSource, /if \(dragSession\.groupId\) \{\n {6}updateGroupDrag\(event\);/);
   assert.match(sceneSource, /if \(dragSession\.groupId\) return finishGroupDrag\(dragSession, event\);/);
   assert.match(sceneSource, /moveGroupByArrow\(moduleGroup, moduleState, arrowScreenDirection\);/);
-  assert.match(sceneSource, /showPlacementFeedback\(GROUP_ROTATE_MESSAGE/);
+  // Faz 4: Shift+R on a group member rotates the whole group by 45 degrees.
+  assert.match(sceneSource, /const groupDeltaDeg = Number\(deltaDeg\) < 0 \? -GROUP_ROTATE_STEP_DEG : GROUP_ROTATE_STEP_DEG;/);
+  assert.match(sceneSource, /const plan = planRenderedGroupRotate\(getModuleGroupId\(moduleState\), groupDeltaDeg\);/);
+  assert.doesNotMatch(sceneSource, /GROUP_ROTATE_MESSAGE/);
 });
 
 test('multi-selection and group member frames use Kyrox copper; single selection stays blue', () => {

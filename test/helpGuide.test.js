@@ -32,6 +32,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /title: 'Gruplar'/);
   assert.match(guideSource, /Tek kısıt: hiçbir parça stand alanının dışına çıkamaz/);
   assert.match(guideSource, /Grubun tamamı silinecek \(N parça\)/);
+  assert.match(guideSource, /Shift\+R bütün grubu grubun ortası etrafında 45° döndürür/);
   assert.match(guideSource, /<strong>Farklı Kaydet:<\/strong> sahne varken aktiftir/);
   assert.match(guideSource, /müşteri aynı kalır/);
   assert.match(guideSource, /Sahne yokken kapalıdır/);

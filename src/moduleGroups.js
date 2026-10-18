@@ -11,16 +11,18 @@
 // - Bir öğe aynı anda tek grupta olur. Grupta 1 parça kalırsa grup çözülür.
 // - Grup kilidi bütün üyeleri kilitli sayar (bkz. moduleLock.isModuleLocked).
 
-import { validateModulePlacement } from './modulePlacement.js';
+import { isVerticalModuleRotation, validateModulePlacement } from './modulePlacement.js';
 import { usesWallBackboneCollisionDepth } from './moduleBehavior.js';
 
 export const GROUP_MOVE_STEP_CM = 10;
+// Shift+R gruptaki öğede bütün grubu bu kadar döndürür (kullanıcı kararı, Faz 4).
+export const GROUP_ROTATE_STEP_DEG = 45;
+export const GROUP_ROTATE_OUTSIDE_STAND_MESSAGE = 'Grup bu açıda stand alanına sığmıyor.';
 export const GROUP_NAME_MAX_LENGTH = 80;
 export const GROUP_ID_MAX_LENGTH = 64;
 export const GROUP_EDGE_WALL_IDS = Object.freeze(['back', 'left', 'right']);
 export const GROUP_OUTSIDE_STAND_MESSAGE = 'Grup stand alanının dışına taşınamaz.';
 export const GROUP_LOCKED_MESSAGE = 'Bu grup kilitli. Değiştirmek için önce grubun kilidini açın.';
-export const GROUP_ROTATE_MESSAGE = 'Gruptaki öğe tek başına döndürülemez. Önce gruptan çıkarın.';
 
 const EPSILON_CM = 0.001;
 const COPY_SUFFIX = ' (kopya)';
@@ -261,6 +263,38 @@ export function planGroupTranslate(modules = [], groupId, dxCm, dyCm, stand) {
   return planPlacementsTranslate(members, dxCm, dyCm, stand);
 }
 
+// Öğenin plan merkezi: motorla aynı kural (yalnız 90/270 "dikey" çapadır; 45° yatay sayılır).
+function memberCenterCm(moduleState, placement = moduleState?.placement) {
+  const width = Number(moduleState?.widthCm) || 0;
+  const vertical = isVerticalModuleRotation(placement?.rotationZDeg);
+  return {
+    xCm: (Number(placement?.xCm) || 0) + (vertical ? 0 : width / 2),
+    yCm: (Number(placement?.yCm) || 0) + (vertical ? width / 2 : 0),
+  };
+}
+
+function placementFromMemberCenter(moduleState, template, centerXCm, centerYCm, rotationZDeg) {
+  const width = Number(moduleState?.widthCm) || 0;
+  const vertical = isVerticalModuleRotation(rotationZDeg);
+  return {
+    ...template,
+    xCm: vertical ? centerXCm : centerXCm - width / 2,
+    yCm: vertical ? centerYCm - width / 2 : centerYCm,
+    rotationZDeg,
+    wallId: 'free',
+  };
+}
+
+// Dönmüş kaplama alanının yarı ölçüleri (en × derinlik).
+function memberHalfExtentsCm(moduleState, rotationZDeg) {
+  const width = Number(moduleState?.widthCm) || 0;
+  const depth = boundaryDepthCm(moduleState) ?? 0;
+  const radians = normalizeRotation(rotationZDeg) * Math.PI / 180;
+  const cos = Math.abs(Math.cos(radians));
+  const sin = Math.abs(Math.sin(radians));
+  return { halfX: (cos * width + sin * depth) / 2, halfY: (sin * width + cos * depth) / 2 };
+}
+
 /** Grubun zemindeki kapsayıcı dikdörtgeni (cm). */
 export function getGroupBounds(members = []) {
   let minX = Infinity;
@@ -270,23 +304,70 @@ export function getGroupBounds(members = []) {
   members.forEach((moduleState) => {
     const placement = moduleState?.placement;
     if (!placement) return;
-    const width = Number(moduleState.widthCm) || 0;
-    const depth = boundaryDepthCm(moduleState) ?? 0;
-    const radians = normalizeRotation(placement.rotationZDeg) * Math.PI / 180;
-    const cos = Math.abs(Math.cos(radians));
-    const sin = Math.abs(Math.sin(radians));
-    const vertical = Math.abs(Math.sin(radians)) > 0.5;
-    const centerX = (Number(placement.xCm) || 0) + (vertical ? 0 : width / 2);
-    const centerY = (Number(placement.yCm) || 0) + (vertical ? width / 2 : 0);
-    const halfX = (cos * width + sin * depth) / 2;
-    const halfY = (sin * width + cos * depth) / 2;
-    minX = Math.min(minX, centerX - halfX);
-    maxX = Math.max(maxX, centerX + halfX);
-    minY = Math.min(minY, centerY - halfY);
-    maxY = Math.max(maxY, centerY + halfY);
+    const center = memberCenterCm(moduleState, placement);
+    const { halfX, halfY } = memberHalfExtentsCm(moduleState, placement.rotationZDeg);
+    minX = Math.min(minX, center.xCm - halfX);
+    maxX = Math.max(maxX, center.xCm + halfX);
+    minY = Math.min(minY, center.yCm - halfY);
+    maxY = Math.max(maxY, center.yCm + halfY);
   });
   if (!Number.isFinite(minX)) return null;
   return { minX, minY, maxX, maxY, widthCm: maxX - minX, depthCm: maxY - minY };
+}
+
+const ROTATION_ROUND_CM = 100; // 0,01 cm hassasiyet
+
+function roundCm(value) {
+  return Math.round(value * ROTATION_ROUND_CM) / ROTATION_ROUND_CM;
+}
+
+/**
+ * Grubu döndürme planı. Merkez, üye merkezlerinin ortalamasıdır; bu nokta dönüşte
+ * sabit kaldığı için art arda döndürmede grup kaymaz (8 × 45° başa döner).
+ * Her üyenin konumu merkez etrafında çevrilir ve açısına aynı derece eklenir
+ * (sahne: rotationZDeg Three.js world-Y yaw; x' = x cos + y sin, y' = -x sin + y cos).
+ * Tek kısıt: döndürülmüş her üye aktif stand alanında kalmalı; tür kuralları aranmaz.
+ */
+export function planPlacementsRotate(members = [], deltaDeg, stand) {
+  const placed = members.filter((moduleState) => moduleState?.placement);
+  if (!placed.length) return { ok: false, message: 'Grup bulunamadı.', placements: new Map() };
+  const centers = placed.map((moduleState) => memberCenterCm(moduleState));
+  const pivotX = centers.reduce((sum, center) => sum + center.xCm, 0) / centers.length;
+  const pivotY = centers.reduce((sum, center) => sum + center.yCm, 0) / centers.length;
+  const radians = (Number(deltaDeg) || 0) * Math.PI / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const xLimit = Number(stand?.standXCm);
+  const yLimit = Number(stand?.standYCm);
+  const placements = new Map();
+  for (let index = 0; index < placed.length; index += 1) {
+    const moduleState = placed[index];
+    const dx = centers[index].xCm - pivotX;
+    const dy = centers[index].yCm - pivotY;
+    const centerX = roundCm(pivotX + dx * cos + dy * sin);
+    const centerY = roundCm(pivotY - dx * sin + dy * cos);
+    const rotationZDeg = normalizeRotation(Number(moduleState.placement.rotationZDeg) + (Number(deltaDeg) || 0));
+    const { halfX, halfY } = memberHalfExtentsCm(moduleState, rotationZDeg);
+    if (
+      !Number.isFinite(xLimit) || !Number.isFinite(yLimit)
+      || centerX - halfX < -EPSILON_CM || centerX + halfX > xLimit + EPSILON_CM
+      || centerY - halfY < -EPSILON_CM || centerY + halfY > yLimit + EPSILON_CM
+    ) {
+      return { ok: false, message: GROUP_ROTATE_OUTSIDE_STAND_MESSAGE, placements: new Map() };
+    }
+    placements.set(
+      moduleState.id,
+      placementFromMemberCenter(moduleState, moduleState.placement, centerX, centerY, rotationZDeg),
+    );
+  }
+  return { ok: true, placements, pivot: { xCm: pivotX, yCm: pivotY } };
+}
+
+export function planGroupRotate(modules = [], groupId, deltaDeg, stand) {
+  const members = getGroupMembers(modules, groupId);
+  if (!members.length) return { ok: false, message: 'Grup bulunamadı.', placements: new Map() };
+  if (members.some(isGroupLocked)) return { ok: false, message: GROUP_LOCKED_MESSAGE, placements: new Map() };
+  return planPlacementsRotate(members, deltaDeg, stand);
 }
 
 /**
