@@ -176,12 +176,13 @@ export function clampWallOverlayZCm(
   return Math.min(maxZCm, Math.max(minZCm, value));
 }
 
-// Wall Short placement.zCm is the floor-relative bottom, not the TV center offset.
+// Yerden taban Z (wall-short, kutu, tül…): taban ≥ 0, tepe (taban + dikey ölçü) ≤ stand tavanı.
+// Overlay merkez-ofset Z bu kurala girmez.
 export function getWallShortFloorZBoundsCm(heightCm, standHeightCm = getStandDimensions().heightCm) {
   const bodyCm = Number(heightCm);
   const ceilingCm = Number(standHeightCm);
   if (!Number.isFinite(bodyCm) || bodyCm < 0 || !Number.isFinite(ceilingCm) || ceilingCm < 0) {
-    throw new TypeError('Wall Short Z bounds require heightCm and stand heightCm.');
+    throw new TypeError('Floor-relative Z bounds require heightCm and stand heightCm.');
   }
   return Object.freeze({
     minZCm: 0,
@@ -189,8 +190,29 @@ export function getWallShortFloorZBoundsCm(heightCm, standHeightCm = getStandDim
   });
 }
 
-/** Tül Z adımı. Tavan kısmaz; adım çağıran yerin moveSnapCm değeridir. */
-export function stepTulleFabricZCm(currentZCm, direction, stepCm) {
+/** Yerden taban Z’yi stand tavanına sıkıştırır: hiçbir şey tavanı aşamaz. */
+export function clampFloorRelativeBottomZCm(
+  zCm,
+  verticalExtentCm,
+  standHeightCm = getStandDimensions().heightCm,
+) {
+  const { minZCm, maxZCm } = getWallShortFloorZBoundsCm(verticalExtentCm, standHeightCm);
+  const value = Number(zCm);
+  if (!Number.isFinite(value)) return minZCm;
+  return Math.min(maxZCm, Math.max(minZCm, value));
+}
+
+/**
+ * Tül Z adımı. Dikey ölçü levha kalınlığıdır (`depthCm`); tepe tavanı geçemez.
+ * Adım çağıran yerin moveSnapCm değeridir.
+ */
+export function stepTulleFabricZCm(
+  currentZCm,
+  direction,
+  stepCm,
+  verticalExtentCm,
+  standHeightCm = getStandDimensions().heightCm,
+) {
   const step = Number(stepCm);
   if (!Number.isFinite(step) || step <= 0) {
     throw new TypeError('Tulle Z step requires moveSnapCm.');
@@ -198,8 +220,8 @@ export function stepTulleFabricZCm(currentZCm, direction, stepCm) {
   const current = Number(currentZCm);
   const base = Number.isFinite(current) ? current : 0;
   const sign = direction === 'up' ? 1 : direction === 'down' ? -1 : 0;
-  if (!sign) return base;
-  return base + sign * step;
+  if (!sign) return clampFloorRelativeBottomZCm(base, verticalExtentCm, standHeightCm);
+  return clampFloorRelativeBottomZCm(base + sign * step, verticalExtentCm, standHeightCm);
 }
 
 export function stepWallShortFloorZCm(
@@ -208,12 +230,12 @@ export function stepWallShortFloorZCm(
   heightCm,
   standHeightCm = getStandDimensions().heightCm,
 ) {
-  const { minZCm, maxZCm } = getWallShortFloorZBoundsCm(heightCm, standHeightCm);
   const current = Number(currentZCm);
   const delta = Number(deltaCm);
+  const { minZCm } = getWallShortFloorZBoundsCm(heightCm, standHeightCm);
   const base = Number.isFinite(current) ? current : minZCm;
   const shift = Number.isFinite(delta) ? delta : 0;
-  return Math.min(maxZCm, Math.max(minZCm, base + shift));
+  return clampFloorRelativeBottomZCm(base + shift, heightCm, standHeightCm);
 }
 
 export function getPanelSeamSnapWindowCm() {

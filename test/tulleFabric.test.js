@@ -14,7 +14,8 @@ import {
   listRegisteredItems,
 } from '../src/items.js';
 import { getModuleMoveSnapCm } from '../src/moduleBehavior.js';
-import { stepTulleFabricZCm } from '../src/modulePlacement.js';
+import { clampFloorRelativeBottomZCm, stepTulleFabricZCm } from '../src/modulePlacement.js';
+import { getStandDimensions } from '../src/standDimensions.js';
 import { resolveProjectBom } from '../src/projectBom.js';
 
 const PANEL = { itemKey: 'panel_98', widthCm: 98, heightCm: 47 };
@@ -84,22 +85,36 @@ test('first placement uses item default Z', () => {
 
 test('arrow Z steps come from moveSnapCm and leave the plan size alone', () => {
   const stepCm = getModuleMoveSnapCm('tulle-fabric');
+  const thicknessCm = 0.4;
   const source = readFileSync(new URL('../src/scene3d.js', import.meta.url), 'utf8');
   const start = source.indexOf("pressedKey !== 'arrowup' && pressedKey !== 'arrowdown'");
-  const branch = source.slice(start - 80, start + 360);
+  const branch = source.slice(start - 80, start + 720);
   assert.match(branch, /getModulePlacementSnapCm\(moduleState\.type\)/);
   assert.match(branch, /stepTulleFabricZCm/);
+  assert.match(branch, /moduleState\.depthCm/);
+  assert.match(branch, /Tül bu yönde stand sınırına ulaştı/);
   assert.doesNotMatch(branch, /\b50\b/);
   assert.match(branch, /pressedKey !== 'arrowup' && pressedKey !== 'arrowdown'/);
 
-  let zCm = 350;
-  zCm = stepTulleFabricZCm(zCm, 'up', stepCm);
-  assert.equal(zCm, 400);
-  zCm = stepTulleFabricZCm(zCm, 'up', stepCm);
-  assert.equal(zCm, 450);
-  zCm = stepTulleFabricZCm(zCm, 'down', stepCm);
-  assert.equal(zCm, 400);
-  assert.equal(stepTulleFabricZCm(350, 'up', 25), 375);
+  let zCm = 200;
+  zCm = stepTulleFabricZCm(zCm, 'up', stepCm, thicknessCm);
+  assert.equal(zCm, 250);
+  zCm = stepTulleFabricZCm(zCm, 'up', stepCm, thicknessCm);
+  assert.equal(zCm, 300);
+  zCm = stepTulleFabricZCm(zCm, 'down', stepCm, thicknessCm);
+  assert.equal(zCm, 250);
+  assert.equal(stepTulleFabricZCm(200, 'up', 25, thicknessCm), 225);
+});
+
+test('tulle Z never lets the plate top pass the stand ceiling', () => {
+  const ceilingCm = getStandDimensions().heightCm;
+  const thicknessCm = 0.4;
+  const maxZCm = ceilingCm - thicknessCm;
+  assert.equal(clampFloorRelativeBottomZCm(ceilingCm + 80, thicknessCm), maxZCm);
+  assert.equal(stepTulleFabricZCm(maxZCm, 'up', 50, thicknessCm), maxZCm);
+  assert.equal(stepTulleFabricZCm(0, 'down', 50, thicknessCm), 0);
+  // defaultZ 350 + kalınlık, tavan 350 iken sıkışır.
+  assert.equal(clampFloorRelativeBottomZCm(350, thicknessCm), maxZCm);
 });
 
 test('600 by 150 is 9 m2 and is not also one piece', () => {
@@ -192,15 +207,20 @@ test('save and load keep width, height, thickness, and Z', () => {
     rotationZDeg: 0,
     wallId: 'free',
   });
-  state.placement = { ...state.placement, zCm: stepTulleFabricZCm(state.placement.zCm, 'up', getModuleMoveSnapCm(state.type)) };
+  const thicknessCm = state.depthCm;
+  state.placement = {
+    ...state.placement,
+    zCm: stepTulleFabricZCm(200, 'up', getModuleMoveSnapCm(state.type), thicknessCm),
+  };
   const payload = JSON.parse(JSON.stringify({ stand: { widthCm: 600 }, modules: [state] }));
   const loaded = payload.modules[0];
   loaded.depthCm = 8;
+  loaded.placement.zCm = getStandDimensions().heightCm + 120;
   normalizeModuleItemState(loaded);
   assert.equal(loaded.widthCm, 600);
   assert.equal(loaded.heightCm, 150);
   assert.equal(loaded.depthCm, 0.4);
-  assert.equal(loaded.placement.zCm, 400);
+  assert.equal(loaded.placement.zCm, getStandDimensions().heightCm - loaded.depthCm);
   assert.equal(loaded.placement.xCm, 120);
   assert.equal(loaded.placement.yCm, 80);
 });

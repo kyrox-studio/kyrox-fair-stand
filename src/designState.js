@@ -21,6 +21,7 @@ import {
 } from './items.js';
 import { getItemSurfaceCapabilities } from './itemCapabilities.js';
 import { resolveWallPanelBandPitchCm } from './wallPanelBand.js';
+import { clampFloorRelativeBottomZCm } from './modulePlacement.js';
 
 function separatorDefaultColor(widthCm) {
   const itemKey = Number(widthCm) === 50 ? 'separator_panel_48_5' : 'separator_panel_98';
@@ -1040,6 +1041,12 @@ export function normalizeModuleItemState(moduleState) {
       moduleState.itemKey = item.itemKey;
       moduleState.depthCm = requireSceneDimension(item, 'depthCm');
     }
+    if (moduleState.placement) {
+      moduleState.placement = {
+        ...moduleState.placement,
+        zCm: clampFloorRelativeBottomZCm(moduleState.placement.zCm, Number(moduleState.depthCm) || 0),
+      };
+    }
     return moduleState;
   }
 
@@ -1047,6 +1054,12 @@ export function normalizeModuleItemState(moduleState) {
     const item = moduleState.itemKey ? getItem(moduleState.itemKey) : null;
     if (item?.type === 'box-block') moduleState.itemKey = item.itemKey;
     ensureBoxBlockFaces(moduleState, item);
+    if (moduleState.placement) {
+      moduleState.placement = {
+        ...moduleState.placement,
+        zCm: clampFloorRelativeBottomZCm(moduleState.placement.zCm, Number(moduleState.heightCm) || 0),
+      };
+    }
     return moduleState;
   }
 
