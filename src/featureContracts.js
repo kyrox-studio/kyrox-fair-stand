@@ -104,6 +104,39 @@ export const FEATURE_CONTRACTS = Object.freeze({
       build: 'required',
     }),
   }),
+  moduleGroup: Object.freeze({
+    id: 'module-group',
+    kind: 'scene-composition',
+    owner: 'src/moduleGroups.js',
+    trigger: Object.freeze({
+      mode: 'explicit-shift-selection-context-menu',
+    }),
+    inputs: Object.freeze([
+      'moduleIds',
+      'group.name',
+      'standType',
+      'standXCm',
+      'standYCm',
+    ]),
+    // Grup yeni öğe üretmez; mevcut öğeleri isimli bir kümede birleştirir. Grup çoğaltma
+    // üyeleri tek öğe çoğaltmasıyla (designState.duplicateModuleState) kopyalar.
+    creates: Object.freeze({
+      structuralKinds: Object.freeze([]),
+    }),
+    placement: Object.freeze({
+      owner: 'src/moduleGroups.js',
+      rule: 'same-offset-for-every-member-inside-active-stand-edge-members-detached-to-free',
+    }),
+    persistence: Object.freeze({
+      mode: 'group-id-name-lock-on-each-member-module',
+    }),
+    tests: Object.freeze({
+      contract: 'required',
+      regressionFiles: Object.freeze(['test/moduleGroups.test.js', 'test/moduleGroupPanel.test.js']),
+      fullSuite: 'required',
+      build: 'required',
+    }),
+  }),
 });
 
 export function getFeatureContract(featureId) {

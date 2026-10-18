@@ -18,6 +18,7 @@ const CREATE_STAND_SCENE_PUBLIC_METHODS = Object.freeze([
   'setFloorAreaDrawArmed',
   'isFloorAreaSelected',
   'getSelectedModuleIds',
+  'selectModulesById',
   'showPlacementFeedback',
   'buildWall',
   'clearWall',

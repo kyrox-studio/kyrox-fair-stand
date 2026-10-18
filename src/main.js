@@ -66,6 +66,23 @@ import {
   isModuleLocked,
   setModulesLocked,
 } from './moduleLock.js';
+import {
+  GROUP_LOCKED_MESSAGE,
+  addToGroup,
+  createGroup,
+  dissolveGroup,
+  getGroupMembers,
+  getModuleGroup,
+  listGroups,
+  nextGroupName,
+  planGroupDuplicate,
+  pruneGroups,
+  removeFromGroup,
+  renameGroup,
+  setGroupLocked,
+} from './moduleGroups.js';
+import { createModuleGroupPanel } from './moduleGroupPanel.js';
+import { getModuleCatalogLabel } from './catalog.js';
 import { createProjectLoadingController, setButtonBusy, setSaveProjectEnabled } from './projectUi.js';
 import { formatProjectSwitchMessage, shouldConfirmProjectSwitch } from './projectSwitch.js';
 import { observeSelectionFeedback, observeStatusTones } from './uiFeedback.js';
@@ -295,6 +312,8 @@ const WALL_LABELS = Object.freeze({
 
 let currentModules = [];
 let currentStand = null;
+// Kenar çubuğundaki Gruplar kartı (aşağıda kurulur; rebuildWall her yeniden çizimde günceller).
+let moduleGroupPanel = null;
 const productionBomPanel = createProductionBomPanel();
 productionBomPanel.setModulesSource(() => currentModules);
 productionBomPanel.setStandSource(() => currentStand);
@@ -475,13 +494,27 @@ function validateCurrentAxisCapacity(
   return result;
 }
 
+// Grup işlemlerinin stand sınırı ve kenar bilgisi.
+function getGroupStand() {
+  if (!currentStand) return null;
+  return { standType: currentStand.standType, standXCm: currentStand.xCm, standYCm: currentStand.yCm };
+}
+
+function renderModuleGroupPanel() {
+  moduleGroupPanel?.render(currentStand ? currentModules : []);
+}
+
 function rebuildWall({ resetView = true } = {}) {
   if (!currentStand) {
+    renderModuleGroupPanel();
     renderWallResult('Önce stand alanını oluştur.', true);
     return;
   }
 
+  // Silme, sıfırlama veya geri yükleme sonrası tek üyesi kalan grup çözülür.
+  pruneGroups(currentModules, getGroupStand());
   scene3d.buildWall(currentModules, { resetView });
+  renderModuleGroupPanel();
   renderCurrentWallResult();
   if (productionBomPanel.isOpen()) productionBomPanel.refresh();
 }
@@ -1175,6 +1208,20 @@ const moduleContextMenu = createModuleContextMenu({
   getShelfLightingState: getContextShelfLightingState,
   onShelfLightingChange: changeContextShelfLighting,
   onLockChange: changeModuleLock,
+  onGroupAction: (action, context) => handleGroupAction(action, {
+    groupId: context?.group?.id ?? null,
+    moduleId: context?.moduleId ?? null,
+    moduleIds: context?.multiModuleIds ?? null,
+    addTarget: context?.groupOptions?.addTarget ?? null,
+  }),
+});
+
+moduleGroupPanel = createModuleGroupPanel({
+  list: document.querySelector('#module-groups-list'),
+  empty: document.querySelector('#module-groups-empty'),
+  document,
+  describeModule: (moduleState) => (moduleState ? getModuleCatalogLabel(moduleState) : '—'),
+  onAction: (action, { groupId, moduleId }) => handleGroupAction(action, { groupId, moduleId }),
 });
 
 // Seçim bilgisine kilit durumu: tek kilitli öğede " · Kilitli", toplu seçimde sayılar.
@@ -1192,6 +1239,20 @@ function describeModuleLockSelection(message, selectedModuleIds = []) {
 // Kilit yalnız proje örneğinin durumudur: sahne yeniden kurulmaz, otomatik kayıt
 // modül imzasındaki değişikliği görüp kaydeder.
 function changeModuleLock(moduleIds, locked) {
+  // Kilitli grubun üyesi tek başına açılamaz; grup kilidi gruptan açılır.
+  if (!locked) {
+    const byId = new Map(currentModules.map((module) => [module.id, module]));
+    const groupLockedIds = moduleIds.filter((id) => getModuleGroup(byId.get(id))?.locked === true
+      && byId.get(id)?.locked !== true);
+    if (groupLockedIds.length) {
+      moduleIds = moduleIds.filter((id) => !groupLockedIds.includes(id));
+      if (!moduleIds.length) {
+        selectionInfo.textContent = GROUP_LOCKED_MESSAGE;
+        scene3d.showPlacementFeedback(GROUP_LOCKED_MESSAGE, { durationMs: 2200 });
+        return 0;
+      }
+    }
+  }
   const changed = setModulesLocked(currentModules, moduleIds, locked);
   const count = moduleIds.length;
   const subject = count > 1 ? `${count} öğe` : 'Öğe';
@@ -1215,10 +1276,172 @@ function openModuleContextMenu(context) {
       ...context,
       multiModuleIds: selectedIds,
       multiLockedCount: selectedIds.filter((id) => isModuleLocked(byId.get(id))).length,
+      groupOptions: describeSelectionGroupOptions(selectedIds, byId),
     });
     return;
   }
-  moduleContextMenu.open({ ...context, locked: isModuleLocked(byId.get(context.moduleId)) });
+  const moduleState = byId.get(context.moduleId);
+  const group = getModuleGroup(moduleState);
+  moduleContextMenu.open({
+    ...context,
+    locked: isModuleLocked(moduleState),
+    ownLocked: moduleState?.locked === true,
+    group: group
+      ? { id: group.id, name: group.name, locked: group.locked === true, count: getGroupMembers(currentModules, group.id).length }
+      : null,
+  });
+}
+
+// Toplu seçimde grup komutları: her zaman "Grup oluştur"; seçim tek bir grubun
+// parçalarını ve grupsuz/başka öğeleri içeriyorsa "Gruba ekle: <grup>".
+function describeSelectionGroupOptions(selectedIds, byId) {
+  const groups = new Map();
+  selectedIds.forEach((id) => {
+    const group = getModuleGroup(byId.get(id));
+    if (group) groups.set(group.id, group);
+  });
+  let addTarget = null;
+  if (groups.size === 1) {
+    const [group] = groups.values();
+    const outsiders = selectedIds.filter((id) => getModuleGroup(byId.get(id))?.id !== group.id);
+    if (outsiders.length) addTarget = { id: group.id, name: group.name, locked: group.locked === true };
+  }
+  return { canCreate: selectedIds.length >= 2, addTarget };
+}
+
+function reportGroupResult(message, isError = false) {
+  selectionInfo.textContent = message;
+  if (isError) scene3d.showPlacementFeedback(message, { durationMs: 2200 });
+}
+
+// Bir öğe aynı anda tek grupta olur: başka gruptaki öğe sorularak taşınır.
+function confirmGroupMove(conflicts, targetName) {
+  const names = [...new Set(conflicts.map((conflict) => `“${conflict.groupName}”`))].join(', ');
+  const subject = conflicts.length > 1 ? `${conflicts.length} öğe` : 'Bu öğe';
+  return window.confirm(`${subject} şu an ${names} grubunda. Bu gruptan çıkarılıp “${targetName}” grubuna eklensin mi?`);
+}
+
+function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds = null, addTarget = null } = {}) {
+  if (!currentStand) return;
+  const stand = getGroupStand();
+  const group = groupId ? listGroups(currentModules).find((candidate) => candidate.id === groupId) : null;
+
+  if (action === 'group-create') {
+    const ids = moduleIds ?? [];
+    if (ids.length < 2) {
+      reportGroupResult('Grup için Shift+tık ile en az 2 öğe seçin.', true);
+      return;
+    }
+    const name = window.prompt('Grup adı', nextGroupName(currentModules));
+    if (name === null) return;
+    let result = createGroup(currentModules, ids, { name, stand });
+    if (!result.ok && result.reason === 'conflict') {
+      if (!confirmGroupMove(result.conflicts, name.trim() || nextGroupName(currentModules))) return;
+      result = createGroup(currentModules, ids, { name, stand, moveFromOtherGroups: true });
+    }
+    if (!result.ok) {
+      reportGroupResult(result.message ?? 'Grup oluşturulamadı.', true);
+      return;
+    }
+    rebuildWall({ resetView: false });
+    const detached = getGroupMembers(currentModules, result.group.id).filter((member) => member.group?.fromWallId).length;
+    reportGroupResult(`“${result.group.name}” grubu oluşturuldu · ${result.group.moduleIds.length} parça.`
+      + (detached ? ` ${detached} duvar parçası kenardan ayrıldı; grup her yöne taşınabilir.` : ''));
+    return;
+  }
+
+  if (action === 'group-add') {
+    if (!addTarget) return;
+    const ids = (moduleIds ?? []).filter((id) => getModuleGroup(currentModules.find((m) => m.id === id))?.id !== addTarget.id);
+    let result = addToGroup(currentModules, addTarget.id, ids, { stand });
+    if (!result.ok && result.reason === 'conflict') {
+      if (!confirmGroupMove(result.conflicts, addTarget.name)) return;
+      result = addToGroup(currentModules, addTarget.id, ids, { stand, moveFromOtherGroups: true });
+    }
+    if (!result.ok) {
+      reportGroupResult(result.message ?? 'Gruba eklenemedi.', true);
+      return;
+    }
+    rebuildWall({ resetView: false });
+    reportGroupResult(`${result.added} öğe “${addTarget.name}” grubuna eklendi.`);
+    return;
+  }
+
+  if (!group) return;
+
+  if (action === 'group-select') {
+    scene3d.selectModulesById(group.moduleIds);
+    return;
+  }
+  if (action === 'group-select-member') {
+    if (moduleId) scene3d.selectModulesById([moduleId]);
+    return;
+  }
+  if (action === 'group-rename') {
+    const name = window.prompt('Grubun yeni adı', group.name);
+    if (name === null) return;
+    const result = renameGroup(currentModules, group.id, name);
+    renderModuleGroupPanel();
+    reportGroupResult(`Grubun adı “${result.name}” oldu.`);
+    return;
+  }
+  if (action === 'group-lock') {
+    const locked = !group.locked;
+    setGroupLocked(currentModules, group.id, locked);
+    renderModuleGroupPanel();
+    reportGroupResult(locked
+      ? `“${group.name}” grubu kilitlendi · ${group.moduleIds.length} parça taşınamaz, döndürülemez ve silinemez.`
+      : `“${group.name}” grubunun kilidi açıldı.`);
+    return;
+  }
+  if (action === 'group-duplicate') {
+    const result = planGroupDuplicate(currentModules, group.id, stand, { duplicateModule: duplicateModuleState });
+    if (!result.ok) {
+      reportGroupResult(result.message, true);
+      return;
+    }
+    currentModules.push(...result.clones);
+    rebuildWall({ resetView: false });
+    reportGroupResult(`“${group.name}” çoğaltıldı · yeni grup “${result.group.name}”, ${result.clones.length} parça.`);
+    return;
+  }
+  if (action === 'group-remove-member') {
+    const result = removeFromGroup(currentModules, moduleId ? [moduleId] : [], { stand });
+    if (!result.ok) {
+      reportGroupResult(result.message, true);
+      return;
+    }
+    rebuildWall({ resetView: false });
+    reportGroupResult(result.dissolved.length
+      ? `Parça gruptan çıkarıldı; grupta tek parça kaldığı için “${group.name}” çözüldü.`
+      : `Parça “${group.name}” grubundan çıkarıldı.`);
+    return;
+  }
+  if (action === 'group-dissolve') {
+    const result = dissolveGroup(currentModules, group.id, { stand });
+    if (!result.ok) {
+      reportGroupResult(result.message, true);
+      return;
+    }
+    rebuildWall({ resetView: false });
+    reportGroupResult(`“${group.name}” grubu çözüldü; parçalar yerinde kaldı.`);
+    return;
+  }
+  if (action === 'group-delete') {
+    if (group.locked) {
+      reportGroupResult(GROUP_LOCKED_MESSAGE, true);
+      return;
+    }
+    const confirmed = window.confirm(
+      `“${group.name}” grubunun tamamı silinecek (${group.moduleIds.length} parça). `
+        + 'Bu parçalardaki renk ve görsel düzenlemeleri de kaybolacak. Devam edilsin mi?',
+    );
+    if (!confirmed) return;
+    const ids = new Set(group.moduleIds);
+    currentModules = currentModules.filter((module) => !ids.has(module.id));
+    rebuildWall({ resetView: false });
+    reportGroupResult(`“${group.name}” grubu silindi · ${ids.size} parça.`);
+  }
 }
 
 moduleDragSidebar = createModuleDragSidebar({
@@ -1790,7 +2013,9 @@ resetModuleFeaturesButton.addEventListener('click', () => {
 
   const resetBySourceId = new Map();
   resetCandidates.forEach((module, index) => {
-    if (isModuleLocked(module)) resetModules[index].locked = true;
+    // Kilit ve grup özellik değildir; korunur. Grup kilidi öğe kilidine çevrilmez.
+    if (module.locked === true) resetModules[index].locked = true;
+    if (module.group) resetModules[index].group = { ...module.group };
     resetBySourceId.set(module.id, resetModules[index]);
   });
   currentModules = currentModules

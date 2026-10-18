@@ -1112,6 +1112,8 @@ export function duplicateModuleState(moduleState) {
   duplicate.id = createId('module');
   // Kilit yerinde sabitlenmiş bu örneğe aittir; kopya kilitsiz doğar.
   clearDuplicateLock(duplicate);
+  // Tek öğe kopyası gruba girmez; grup çoğaltma kopyaları yeni gruba kendisi alır.
+  delete duplicate.group;
   if (Array.isArray(duplicate.strips)) {
     duplicate.strips = duplicate.strips.map((strip, stripIndex) => ({
       ...strip,

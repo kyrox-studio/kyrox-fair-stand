@@ -1,6 +1,7 @@
 import { MODULE_STATE_TYPES } from './designState.js';
 import { validateFloorArea } from './floorArea.js';
 import { getFloorItem, resolveStandFloorItemKey } from './items.js';
+import { validateModuleGroups } from './moduleGroups.js';
 import { validateStandSetup } from './standSetup.js';
 
 export const PROJECT_ARCHIVE_VERSION = 1;
@@ -79,6 +80,8 @@ export function validateImportedProjectState(project) {
     const moduleCheck = validateImportedModuleState(moduleState);
     if (!moduleCheck.ok) return moduleCheck;
   }
+  const groupCheck = validateModuleGroups(project.modules);
+  if (!groupCheck.ok) return groupCheck;
   if (project.stand != null) {
     const standCheck = validateImportedStandState(project.stand);
     if (!standCheck.ok) return standCheck;

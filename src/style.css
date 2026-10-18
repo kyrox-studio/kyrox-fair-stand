@@ -1538,3 +1538,16 @@ button[aria-busy="true"]::after {
     padding: 0 8px !important;
   }
 }
+
+/* Gruplar kartı (moduleGroupPanel.js) */
+.module-groups-list { display: grid; gap: 8px; }
+.module-group-row details { border: 1px solid #e2e7ed; border-radius: 10px; background: #f8fafc; padding: 6px 8px; }
+.module-group-row summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; font-size: 12px; }
+.module-group-name { font-weight: 700; color: #1f2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.module-group-meta { flex: 0 0 auto; color: #667085; font-size: 11px; }
+.module-group-actions { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 6px; }
+.module-group-actions .module-group-action { min-width: 0; padding: 4px 8px; font-size: 11px; }
+.module-group-members { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.module-group-members li { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.module-group-members .module-group-action { min-width: 0; padding: 3px 6px; font-size: 11px; }
+.module-group-members .module-group-member { flex: 1 1 auto; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
