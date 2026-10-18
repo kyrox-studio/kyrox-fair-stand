@@ -44,7 +44,7 @@ Item bootstrap alanları mapper’dan: `snapRequiresRuleId` + denorm `snapRequir
 
 ### 1.2 Tablo envanteri (ürün şeması)
 
-`models.py` + Alembic head **`0066_metal_separator_area`**. `0043` / `0044` kolon eklemez; cam panel SKU satırıdır. `0065_metal_separator` gizli `metal_separator` kalemini ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve maliyet bayrağını açar. Katalogda görünmez. Junction’lar ayrı tablo sayılır.
+`models.py` + Alembic head **`0067_group_templates`**. `0067_group_templates` organizasyon grup şablonlarını (`fair_stand_group_templates`) ekler. `0043` / `0044` kolon eklemez; cam panel SKU satırıdır. `0065_metal_separator` gizli `metal_separator` kalemini ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve maliyet bayrağını açar. Katalogda görünmez. Junction’lar ayrı tablo sayılır.
 
 | Tablo | Rol |
 |---|---|
@@ -59,6 +59,7 @@ Item bootstrap alanları mapper’dan: `snapRequiresRuleId` + denorm `snapRequir
 | `fair_stand_item_*` | Ölçü, recipe, asset, vitrin parçaları… |
 | `fair_stand_dimensions` / `fair_stand_settings` | Stand zarfı + runtime UI |
 | `fair_stand_projects` / `fair_stand_project_assets` | Müşteri projesi |
+| `fair_stand_group_templates` | Organizasyon grup şablonu (Item değil; görsel/kumaş yok) |
 | `alembic_version` | Migrasyon kilidi (ürün değil) |
 
 ---
@@ -137,6 +138,7 @@ Sahne davranışının büyük kısmı **Item tipi** (`fair_stand_item_type`) ve
 | Items | `fair_stand_items` + child tablolar | SKU, tip, snap, ölçü, recipe; **Kopyala**; 3D montaj (pose + kilit grubu) |
 | Temel ayarlar | `fair_stand_dimensions`, `fair_stand_settings` | Stand zarfı (tavan, derinlik, çerçeve, **panel ray**) + upload/import butonları |
 | Projeler (stand) | `fair_stand_projects`, `fair_stand_project_assets` | Müşteri tasarımı (ayrı akış; “Farklı Kaydet” = proje, item clone değil) |
+| Grup şablonları | `fair_stand_group_templates` | Org kataloğu; Item değil; renk/cam/metal var, görsel/kumaş yok |
 
 Form ipuçları: fair-crm `adminLabels` (`fairStandItemTypesField*`, `fairStandItemsFieldSnap*`).
 
@@ -1899,7 +1901,32 @@ Seed (varsayılan): tavan 350 / derinlik 10 / çerçeve 5.5×10 / panel ray **0.
 
 ---
 
-### 5.22 `alembic_version`
+### 5.22 `fair_stand_group_templates`
+
+Organizasyonun **grup şablonu** kataloğu (sahne editörü Faz 5). Proje payload’ı değildir; `organization_id` ile izole edilir. **Item değildir** — BOM, birim, fiyat yok. Sahneye yerleştirilince normal modüllere + yeni gruba açılır.
+
+#### `payload` (JSONB)
+
+| | |
+|---|---|
+| **Ne** | `{ version: 1, members: […] }`. Üye: `itemKey`, tip, ölçü, göreli konum/açı, **renk**, **cam** (`isGlass`), **metal separatör** (`isMetalSeparator`, `metalSeparatorGroupId`). |
+| **Neden** | Sık kullanılan seti projeler arası yeniden kullanmak |
+| **Nasıl** | Gruplar kartı → Şablon olarak kaydet; Şablonlarım → Yerleştir / Adlandır / Sil |
+| **Saklanmaz** | `id`, `group`, `locked`, `imageAssetId`, Lightbox/Mesh kumaş alanları (`fabricGroupId`, `fabricType`, …). Görseller proje başınadır. |
+| **Kod** | `backend/.../group_templates.py`, `src/groupTemplates.js`, `src/groupTemplateRemote.js` |
+| **API** | `/api/v1/fair-stand/group-templates` (proje yetkileri: read / create|update / delete) |
+
+#### `name` / `member_count` / `organization_id` / tarihler
+
+| | |
+|---|---|
+| **Ne** | Kullanıcı adı (≤80), parça sayısı, org UUID, `created_by`, `created_at`, `updated_at` |
+| **Neden** | Liste özeti ve org izolasyonu |
+| **Kod** | Migration `0067_group_templates` |
+
+---
+
+### 5.23 `alembic_version`
 
 #### `version_num`
 
@@ -1949,6 +1976,7 @@ Kaynak: `fair_stand_projects.payload` (sunucu); tarayıcı IndexedDB önbellek.
 | Pasif item’ı bootstrap’ta görmek | `is_active=false` → listede yok; `catalog_visible` sadece katalog UI |
 | `ruleTypes` JSON’u stand’da registry | Kurallar `rules[]` içinde `ruleTypeKey`; ayrı JS registry yok |
 | Proje **Farklı Kaydet** = item **Kopyala** | Farklı Kaydet = yeni proje UUID; Kopyala = yeni `item_key` + shallow child satırlar |
+| Grup şablonu = Item / proje kopyası | Hayır — `fair_stand_group_templates` org kataloğu; Item değil. Renk/cam/metal taşır; görsel ve Lightbox/Mesh taşımaz. Yerleştirince normal modüller + yeni grup olur |
 | Admin köşe snap = prod `fair_stand_rule` | Admin AABB köşe; prod magnetic / top-rail / shelf-rail kuralları ayrı |
 | Kilit = oturum-only | Hayır — `lock_group_id` DB’de; **Montajı kaydet** şart |
 | Clone = deep BOM tree | Hayır — shallow; leaf `child_item_key` paylaşılır; asset path paylaşılır |
@@ -1960,7 +1988,7 @@ Kaynak: `fair_stand_projects.payload` (sunucu); tarayıcı IndexedDB önbellek.
 
 | Kontrol | Komut / dosya |
 |---|---|
-| Alembic head | `backend/alembic/versions/0066_metal_separator_area.py`. `0065_metal_separator` gizli kalemi ekler. `0043` / `0044` cam panel SKU satırıdır, yeni kolon değildir |
+| Alembic head | `backend/alembic/versions/0067_group_templates.py`. `0067` organizasyon grup şablonlarını ekler. `0065_metal_separator` gizli kalemi ekler; `0066` birimini `metre_kare` yapar. `0043` / `0044` cam panel SKU satırıdır, yeni kolon değildir |
 | Tip seed parity | `pytest backend/tests/modules/fair_stand/test_item_type_behavior.py` |
 | Stand zarf + panel ray | `test/standDimensions.test.js`; CRM Temel Ayarlar |
 | Bootstrap şekli | `get_catalog_bootstrap.py`, `routes.py` `/catalog/bootstrap` |

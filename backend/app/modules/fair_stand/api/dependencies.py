@@ -24,6 +24,7 @@ from app.modules.fair_stand.application.admin_units import AdminUnitsService
 from app.modules.fair_stand.application.get_catalog_bootstrap import GetCatalogBootstrapUseCase
 from app.modules.fair_stand.application.get_item import GetItemUseCase
 from app.modules.fair_stand.application.cost_items import CostItemService
+from app.modules.fair_stand.application.group_templates import GroupTemplateService
 from app.modules.fair_stand.application.projects import ProjectService
 from app.modules.fair_stand.infrastructure.catalog_repository import SqlAlchemyFairStandCatalogRepository
 
@@ -91,6 +92,10 @@ def get_admin_units_service(db: Session = Depends(get_db)) -> AdminUnitsService:
 
 def get_cost_item_service(db: Session = Depends(get_db)) -> CostItemService:
     return CostItemService(db)
+
+
+def get_group_template_service(db: Session = Depends(get_db)) -> GroupTemplateService:
+    return GroupTemplateService(db)
 
 
 def get_project_service(db: Session = Depends(get_db)) -> ProjectService:

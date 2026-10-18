@@ -1441,6 +1441,9 @@ export function createStandScene(
     if (!frame) return;
     if (selected) frame.material?.color?.setHex(color);
     frame.visible = Boolean(selected);
+    // Shift+tık yalnız bunu günceller; render istenmezse çerçeve bir sonraki
+    // kamera/tık çizimine kadar görünmez kalıyordu.
+    requestEditorRender();
   }
 
   function setSelectionVisual(mesh, selected) {
@@ -2376,7 +2379,8 @@ export function createStandScene(
     const moduleState = moduleGroup.userData.moduleState ?? {};
     return {
       moduleIndex: moduleGroup.userData.moduleIndex,
-      moduleId: moduleGroup.userData.moduleId,
+      // Shift+tık moduleState.id ile seçer; sağ tık aynı kimliği kullanmalı.
+      moduleId: moduleState.id ?? moduleGroup.userData.moduleId,
       itemKey: moduleState.itemKey ?? null,
       type: moduleState.type ?? moduleGroup.userData.type,
       widthCm: moduleState.widthCm ?? moduleGroup.userData.widthCm,
@@ -5443,8 +5447,12 @@ export function createStandScene(
     event.preventDefault();
     event.stopPropagation();
 
-    // Toplu seçimdeki bir modüle sağ tık seçimi bozmaz; menü bütün seçime uygulanır.
-    if (context.surfaceId && !multiSelectedModuleIds.has(context.moduleId)) {
+    // Toplu seçim (≥2) varken sağ tık seçimi asla bozmaz: komşu panele kaymış
+    // tıklama 6–7 öğelik seçimi tek öğeye düşürüp "Grup oluştur"u kaçırıyordu.
+    // Tek seçimde eski davranış: sağ tıklanan yüzeye geç.
+    if (multiSelectedModuleIds.size < 2
+      && context.surfaceId
+      && !multiSelectedModuleIds.has(context.moduleId)) {
       const contextSurface = surfaceMeshes.find(
         (surface) => surface.userData.surfaceId === context.surfaceId,
       );
@@ -5526,7 +5534,9 @@ export function createStandScene(
     if (event.button !== 0 || !event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
     if (!stageLayout || floorAreaDrawArmed) return;
     const picked = pickModuleAt(event.clientX, event.clientY);
-    const moduleId = picked?.moduleGroup?.userData?.moduleState?.id ?? null;
+    const moduleId = picked?.moduleGroup?.userData?.moduleState?.id
+      ?? picked?.moduleGroup?.userData?.moduleId
+      ?? null;
     if (!moduleId) return;
     event.preventDefault();
     event.stopImmediatePropagation();

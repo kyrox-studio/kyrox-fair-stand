@@ -82,6 +82,17 @@ import {
   setGroupLocked,
 } from './moduleGroups.js';
 import { createModuleGroupPanel } from './moduleGroupPanel.js';
+import { createGroupTemplatePanel } from './groupTemplatePanel.js';
+import { buildGroupTemplatePayload, instantiateGroupTemplate } from './groupTemplates.js';
+import {
+  GROUP_TEMPLATES_REMOTE_REQUIRED_MESSAGE,
+  createGroupTemplate,
+  deleteGroupTemplate,
+  getGroupTemplate,
+  isGroupTemplateRemoteEnabled,
+  listGroupTemplates,
+  renameGroupTemplate,
+} from './groupTemplateRemote.js';
 import { getModuleCatalogLabel } from './catalog.js';
 import { createProjectLoadingController, setButtonBusy, setSaveProjectEnabled } from './projectUi.js';
 import { formatProjectSwitchMessage, shouldConfirmProjectSwitch } from './projectSwitch.js';
@@ -95,7 +106,7 @@ import { DEFAULT_SELECTION_HINT, describeFloorAreaSelection, describeFloorSelect
 import { createSidebarController } from './sidebarController.js';
 import { createViewportToolbarController } from './viewportToolbarController.js';
 import { formatCapacityPopup, renderStageResult as renderStageResultInto, renderWallResult } from './stageFeedback.js';
-import { getFloorItem, getFloorSelectLabel, getTopLightItemForType, listFloorItems, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey } from './items.js';
+import { getFloorItem, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
 import {
@@ -314,6 +325,9 @@ let currentModules = [];
 let currentStand = null;
 // Kenar çubuğundaki Gruplar kartı (aşağıda kurulur; rebuildWall her yeniden çizimde günceller).
 let moduleGroupPanel = null;
+// Şablonlarım kartı ve son okunan şablon listesi (sunucu, organizasyon kapsamlı).
+let groupTemplatePanel = null;
+let groupTemplates = [];
 const productionBomPanel = createProductionBomPanel();
 productionBomPanel.setModulesSource(() => currentModules);
 productionBomPanel.setStandSource(() => currentStand);
@@ -502,6 +516,35 @@ function getGroupStand() {
 
 function renderModuleGroupPanel() {
   moduleGroupPanel?.render(currentStand ? currentModules : []);
+  renderGroupTemplatePanel();
+}
+
+function renderGroupTemplatePanel() {
+  if (!groupTemplatePanel) return;
+  if (!isGroupTemplateRemoteEnabled()) {
+    groupTemplatePanel.showMessage(GROUP_TEMPLATES_REMOTE_REQUIRED_MESSAGE);
+    return;
+  }
+  groupTemplatePanel.render(groupTemplates, {
+    canPlace: Boolean(currentStand),
+    canRename: capabilities.canCreate || capabilities.canUpdate,
+    canDelete: capabilities.canDelete,
+  });
+}
+
+async function refreshGroupTemplates() {
+  if (!isGroupTemplateRemoteEnabled()) {
+    renderGroupTemplatePanel();
+    return;
+  }
+  try {
+    groupTemplates = await listGroupTemplates();
+  } catch (error) {
+    console.warn('Şablonlar okunamadı:', error);
+    groupTemplatePanel?.showMessage(`Şablonlar okunamadı: ${error.message}`);
+    return;
+  }
+  renderGroupTemplatePanel();
 }
 
 function rebuildWall({ resetView = true } = {}) {
@@ -1224,6 +1267,84 @@ moduleGroupPanel = createModuleGroupPanel({
   onAction: (action, { groupId, moduleId }) => handleGroupAction(action, { groupId, moduleId }),
 });
 
+groupTemplatePanel = createGroupTemplatePanel({
+  list: document.querySelector('#module-templates-list'),
+  empty: document.querySelector('#module-templates-empty'),
+  document,
+  onAction: (action, { templateId }) => void handleGroupTemplateAction(action, templateId),
+});
+
+// Kurumsal şablon: grubu organizasyon kataloğuna kaydet (Item değildir; görseller saklanmaz).
+async function saveGroupAsTemplate(group) {
+  if (!isGroupTemplateRemoteEnabled()) {
+    reportGroupResult(GROUP_TEMPLATES_REMOTE_REQUIRED_MESSAGE, true);
+    return;
+  }
+  if (!(capabilities.canCreate || capabilities.canUpdate)) {
+    reportGroupResult('Şablon kaydetmek için yetkiniz yok.', true);
+    return;
+  }
+  const built = buildGroupTemplatePayload(currentModules, group.id);
+  if (!built.ok) {
+    reportGroupResult(built.message, true);
+    return;
+  }
+  const name = window.prompt('Şablon adı', group.name);
+  if (name === null) return;
+  try {
+    const saved = await createGroupTemplate(name, built.payload);
+    await refreshGroupTemplates();
+    reportGroupResult(`“${saved.name}” şablonu kaydedildi · ${saved.memberCount} parça. Renk, cam ve metal separatör korunur; görseller ve kumaş şablona girmez.`);
+  } catch (error) {
+    reportGroupResult(`Şablon kaydedilemedi: ${error.message}`, true);
+  }
+}
+
+async function handleGroupTemplateAction(action, templateId) {
+  const template = groupTemplates.find((item) => item.id === templateId);
+  if (!template) return;
+  try {
+    if (action === 'template-place') {
+      if (!currentStand) {
+        reportGroupResult('Şablonu yerleştirmek için önce sahneyi oluşturun.', true);
+        return;
+      }
+      const detail = await getGroupTemplate(template.id);
+      const placed = instantiateGroupTemplate(detail.payload, {
+        name: template.name,
+        stand: getGroupStand(),
+        duplicateModule: duplicateModuleState,
+        hasItem: (itemKey) => Boolean(getItem(itemKey)),
+      });
+      if (!placed.ok) {
+        reportGroupResult(placed.message, true);
+        return;
+      }
+      currentModules.push(...placed.clones.map(normalizeModuleItemState));
+      rebuildWall({ resetView: false });
+      reportGroupResult(`“${template.name}” yerleştirildi · ${placed.clones.length} parça, yeni grup. Sürükleyerek yerine taşıyın.`
+        + (placed.skipped.length ? ` Katalogda olmayan ${placed.skipped.length} parça atlandı: ${placed.skipped.join(', ')}.` : ''));
+      return;
+    }
+    if (action === 'template-rename') {
+      const name = window.prompt('Şablonun yeni adı', template.name);
+      if (name === null) return;
+      const renamed = await renameGroupTemplate(template.id, name);
+      await refreshGroupTemplates();
+      reportGroupResult(`Şablonun adı “${renamed.name}” oldu.`);
+      return;
+    }
+    if (action === 'template-delete') {
+      if (!window.confirm(`“${template.name}” şablonu silinecek. Sahnedeki gruplar etkilenmez. Devam edilsin mi?`)) return;
+      await deleteGroupTemplate(template.id);
+      await refreshGroupTemplates();
+      reportGroupResult(`“${template.name}” şablonu silindi.`);
+    }
+  } catch (error) {
+    reportGroupResult(`Şablon işlemi başarısız: ${error.message}`, true);
+  }
+}
+
 // Seçim bilgisine kilit durumu: tek kilitli öğede " · Kilitli", toplu seçimde sayılar.
 function describeModuleLockSelection(message, selectedModuleIds = []) {
   if (!selectedModuleIds.length) return message;
@@ -1271,7 +1392,9 @@ function openModuleContextMenu(context) {
   }
   const byId = new Map(currentModules.map((module) => [module.id, module]));
   const selectedIds = scene3d.getSelectedModuleIds();
-  if (selectedIds.length > 1 && selectedIds.includes(context.moduleId)) {
+  // Toplu seçim varken menü her zaman bütün seçime uygulanır (sağ tık komşu
+  // öğeye kaymış olsa bile); aksi halde "Grup oluştur" görünmüyordu.
+  if (selectedIds.length > 1) {
     moduleContextMenu.open({
       ...context,
       multiModuleIds: selectedIds,
@@ -1371,6 +1494,10 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
 
   if (action === 'group-select') {
     scene3d.selectModulesById(group.moduleIds);
+    return;
+  }
+  if (action === 'group-save-template') {
+    void saveGroupAsTemplate(group);
     return;
   }
   if (action === 'group-select-member') {
@@ -3674,6 +3801,7 @@ syncSaveProjectButton();
 void showProjectCustomerName();
 
 void refreshProjectList().catch((error) => console.warn('Proje listesi açılamadı:', error));
+void refreshGroupTemplates();
 if (initialProjectId) {
   void openStoredProject(initialProjectId);
 }
