@@ -6443,11 +6443,15 @@ function createBoxBlockModule(moduleState, moduleIndex, onSurfaceReady) {
 
   ensureBoxBlockFaces(moduleState);
   const faceGapM = 0.002;
+  // Yan plakalar gövdeden faceGapM kadar dışarıdadır; uçlarından da aynı kadar uzatılır ki
+  // köşede birbirine kavuşsun. Aksi halde her dikey köşede gövde rengi ince bir çizgi
+  // olarak görünür. Yalnız çizimdir: ölçü, kayıt ve BOM değişmez.
+  const faceSpanM = faceGapM * 2;
   const faceLayouts = [
-    { slot: 'front', stripIndex: 0, width: widthM, height: heightM, position: [0, heightM / 2, depthM / 2 + faceGapM], rotationY: 0 },
-    { slot: 'right', stripIndex: 1, width: depthM, height: heightM, position: [widthM / 2 + faceGapM, heightM / 2, 0], rotationY: Math.PI / 2 },
-    { slot: 'back', stripIndex: 2, width: widthM, height: heightM, position: [0, heightM / 2, -depthM / 2 - faceGapM], rotationY: Math.PI },
-    { slot: 'left', stripIndex: 3, width: depthM, height: heightM, position: [-widthM / 2 - faceGapM, heightM / 2, 0], rotationY: -Math.PI / 2 },
+    { slot: 'front', stripIndex: 0, width: widthM + faceSpanM, height: heightM, position: [0, heightM / 2, depthM / 2 + faceGapM], rotationY: 0 },
+    { slot: 'right', stripIndex: 1, width: depthM + faceSpanM, height: heightM, position: [widthM / 2 + faceGapM, heightM / 2, 0], rotationY: Math.PI / 2 },
+    { slot: 'back', stripIndex: 2, width: widthM + faceSpanM, height: heightM, position: [0, heightM / 2, -depthM / 2 - faceGapM], rotationY: Math.PI },
+    { slot: 'left', stripIndex: 3, width: depthM + faceSpanM, height: heightM, position: [-widthM / 2 - faceGapM, heightM / 2, 0], rotationY: -Math.PI / 2 },
   ];
   const faceCapabilities = surfaceCapabilityUserData(moduleState.itemKey);
   const faces = faceLayouts.map((layout) => {
