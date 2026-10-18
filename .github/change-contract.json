@@ -1,13 +1,14 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-project-open-timing-v1",
+  "id": "fair-stand-open-wait-scene-v1",
   "kind": "feature",
-  "summary": "Proje açma ölçümü (PERFORMANCE_ROADMAP P0 adım 1): projectOpenTiming.js CRM Düzenle işaretinden (fs:editor-route) itibaren editör kodu yükleme, katalog, editör başlatma; proje verisi, görsel indirme, görsel hazırlama, sahne kurulumu adımlarını performance.mark/measure ile kaydeder ve konsola yazar. Sahne kurulduktan sonra tek tek gelen yüzey görselleri (scene3d textureLoader sarmalayıcısı) ve 3D modeller (loadItemModel) sayılır; son görsel ve son modelin geliş zamanı ile görsel geri çağrılarının ana iş parçacığı süresi ayrı yazılır; hepsi gelince sahne tamamen hazır satırı yazılır. Ağ kayıt tamponu 3000 kayda büyütülür. Davranış, kayıt, BOM ve sahne değişmez; ölçüm hatası açılışı bozmaz.",
+  "summary": "Proje açılışında yarım sahne gösterilmez: sceneAssetLoading.js sahnedeki görsel (ortak textureLoader) ve 3D model (loadItemModel) yüklemelerini sayar; openStoredProject, geçmiş revizyon, canlıya dönüş ve içe aktarma yükleme ekranını hepsi gelene kadar açık tutar, alt satırda ilerleme (45 / 73) yazar. Yüklenemeyen parça gelmiş sayılır; 30 sn dolarsa ekran yine kapanır ve durum satırına yazılır. Düzenle ile açılışta yükleme ekranı mountFairStand anında görünür. Ölçüm (projectOpenTiming) aynı sayacı kullanır; proje açıldı satırı sahne kurulunca biter. Kullanıcı rehberine Yükleme ekranı maddesi eklendi. Sahne kurulumu, yükleme mantığı, kayıt ve BOM değişmez.",
   "owners": [
-    "src/projectOpenTiming.js"
+    "src/sceneAssetLoading.js",
+    "src/main.js"
   ],
   "sourceOfTruth": [
-    "src/projectOpenTiming.js"
+    "src/sceneAssetLoading.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -23,7 +24,7 @@
     "storage": "affected",
     "importExport": "affected",
     "performance": "affected",
-    "accessibility": "not-applicable",
+    "accessibility": "affected",
     "architecture": "affected",
     "security": "affected",
     "tests": "affected"
@@ -39,13 +40,17 @@
       "scripts/archive/fix-tv-screen-face.py",
       "scripts/verify-change-contract.mjs",
       "src/automaticWall.js",
+      "src/configuratorMarkup.js",
+      "src/configuratorStyles.js",
       "src/groundLayout.js",
       "src/itemAdminPreview.js",
       "src/main.js",
       "src/moduleGroupPanel.js",
       "src/moduleMove.js",
       "src/mountFairStand.js",
+      "src/projectRemote.js",
       "src/scene3d.js",
+      "src/style.css",
       "src/systemChangeContract.js",
       "src/viewCube.js",
       "src/wallReflow.js"
@@ -58,6 +63,9 @@
       "e2e/missing-project-asset-open.spec.mjs",
       "e2e/module-group.spec.mjs",
       "e2e/project-open-timing.spec.mjs",
+      "e2e/project-open-wait-scene.spec.mjs",
+      "e2e/project-revision-session.spec.mjs",
+      "test/assetLibraryLayout.test.js",
       "test/automaticWall.test.js",
       "test/autosaveMainIntegration.test.js",
       "test/baseRenderStyle.test.js",
@@ -135,12 +143,14 @@
       "test/projectOpenTiming.test.js",
       "test/projectRemoteSync.test.js",
       "test/projectRevisionSession.test.js",
+      "test/projectUi.test.js",
       "test/projectUiMainIntegration.test.js",
       "test/raisedPlatform.test.js",
       "test/removedIndoorPlant2.test.js",
       "test/rightWallOrientation.test.js",
       "test/runtimeSettings.test.js",
       "test/scene3dPublicContract.test.js",
+      "test/sceneAssetLoading.test.js",
       "test/sceneSurroundSingleSource.test.js",
       "test/selectedModuleRotationCursor.test.js",
       "test/selectionFeedbackMainIntegration.test.js",
@@ -150,6 +160,7 @@
       "test/showcaseAppearance.test.js",
       "test/showcaseBodyColorRegression.test.js",
       "test/showcaseDepthDirection.test.js",
+      "test/sidebarController.test.js",
       "test/sidebarControllerMainIntegration.test.js",
       "test/sofaClassicPiecesContract.test.js",
       "test/stageFeedbackMainIntegration.test.js",
@@ -559,20 +570,25 @@
         "F-033"
       ]
     },
-    "notes": "Yalnız ölçüm eklenir; await sırası ve hata yolu aynı kalır (timeProjectOpenStep finally ile biter, hatayı geri fırlatır)."
+    "notes": "Toplam süre değişmez; yalnız yükleme ekranı sahne dolana kadar kalır."
   },
   "tests": {
     "targeted": [
-      "test/projectOpenTiming.test.js"
+      "test/helpGuide.test.js",
+      "test/projectOpenTiming.test.js",
+      "test/sceneAssetLoading.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/project-open-timing.spec.mjs"
+        "e2e/box-block-face-image-restore.spec.mjs",
+        "e2e/missing-project-asset-open.spec.mjs",
+        "e2e/project-open-timing.spec.mjs",
+        "e2e/project-open-wait-scene.spec.mjs"
       ],
-      "reason": "Gerçek Chromium ile proje kaydedilip yeniden açılır; konsolda ölçüm satırının adım süreleri, görsel ve modül sayısıyla yazıldığı ve açılışın eskisi gibi tamamlandığı doğrulanır."
+      "reason": "Gerçek Chromium ile 3D model indirmesi 2,5 sn geciktirilir; sahne kurulup durum Açıldı olduğunda yükleme ekranının açık kaldığı, ilerleme yazdığı ve ancak model geldikten sonra kapandığı doğrulanır. Bekleme kapatılınca test kırılır. Ölçüm, eksik görsel ve kutu yüz görseli senaryoları regresyon için çalışır."
     }
   },
   "risk": {
@@ -583,5 +599,5 @@
     "required": false,
     "notes": "Kayıt biçimi değişmez."
   },
-  "rollback": "projectOpenTiming.js çağrılarını main.js ve projectRemote.js içinden kaldır."
+  "rollback": "main.js içindeki waitForSceneToFill çağrılarını ve mountFairStand showInitialProjectLoading çağrısını kaldır."
 }

@@ -161,6 +161,7 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/rectImageLayout.js': frozenDomains('renderer', 'state'),
   'src/runtimeSettings.js': frozenDomains('architecture', 'catalog', 'assets', 'security', 'ui', 'importExport'),
   'src/rectSelection.js': frozenDomains('ui'),
+  'src/sceneAssetLoading.js': frozenDomains('performance', 'ui'),
   'src/scene3d.js': frozenDomains('renderer', 'state', 'placement', 'behavior', 'performance'),
   'src/sceneDimensions.js': frozenDomains('architecture', 'renderer', 'placement', 'composition'),
   'src/selectionFeedback.js': frozenDomains('ui'),

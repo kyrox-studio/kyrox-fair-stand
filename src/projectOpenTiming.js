@@ -4,6 +4,8 @@
 // geldiği için son satır ("sahne tamamen hazır") hepsi bitince yazılır. Davranış değişmez; ölçüm hatası açılışı
 // asla bozmaz.
 
+import { subscribeSceneAssets, waitForSceneAssets } from './sceneAssetLoading.js';
+
 const MARK_PREFIX = 'fs:';
 const MODEL_PATH = '/models/';
 // Hiç bitmeyen bir yükleme ölçümü sonsuza kadar açık tutmasın.
@@ -109,7 +111,7 @@ export function startProjectOpenTiming(projectId) {
     boot,
   };
   raiseResourceTimingBuffer();
-  sceneAssets.counts = { image: 0, model: 0 };
+  startSceneCounting();
   safeMark('project-open:start');
   return current;
 }
@@ -227,70 +229,36 @@ export function collectModelLoads(entries, startedAt) {
   };
 }
 
-// Sahnede bekleyen görsel ve model yüklemeleri. Sahne kurulunca görseller ve modeller tek tek
-// gelir; hepsi bitince "sahne tamamen hazır" yazılır.
-const sceneAssets = { pending: 0, waiters: [], counts: null };
+// Açılış süresince sahnedeki görsel/model yüklemeleri sayılır (sayaç: sceneAssetLoading.js).
+let sceneCounts = null;
+let stopSceneCounting = () => {};
 
-function beginSceneAsset(kind) {
-  sceneAssets.pending += 1;
-  const counts = sceneAssets.counts;
-  if (counts) counts[kind] = (counts[kind] ?? 0) + 1;
-  let done = false;
-  return () => {
-    if (done) return;
-    done = true;
+function startSceneCounting() {
+  stopSceneCounting();
+  const counts = { image: 0, model: 0, imageWorkMs: 0 };
+  sceneCounts = counts;
+  stopSceneCounting = subscribeSceneAssets((event) => {
+    if (event.type === 'begin') {
+      counts[event.kind] = (counts[event.kind] ?? 0) + 1;
+      return;
+    }
     // Bu türün son parçası ne zaman geldi: görseller mi modeller mi bekletiyor ayrılsın.
-    if (counts && sceneAssets.counts === counts) counts[`${kind}LastAt`] = nowMs();
-    sceneAssets.pending = Math.max(0, sceneAssets.pending - 1);
-    if (sceneAssets.pending === 0) sceneAssets.waiters.splice(0).forEach((resolve) => resolve());
-  };
+    counts[`${event.kind}LastAt`] = nowMs();
+    if (event.kind === 'image') counts.imageWorkMs += Number(event.workMs) || 0;
+  });
 }
 
-// scene3d yüzey görselleri için: TextureLoader.load geri çağrısı (tuvale çizim dahil) bitince sayılır.
-export function trackSceneTextureLoader(loader) {
-  return {
-    load(url, onLoad, onProgress, onError) {
-      const done = beginSceneAsset('image');
-      const counts = sceneAssets.counts;
-      return loader.load(
-        url,
-        (texture) => {
-          // Geri çağrı ana iş parçacığında çalışır (tuvale sığdırma + doku); süresi toplanır.
-          const startedAt = nowMs();
-          try {
-            onLoad?.(texture);
-          } finally {
-            if (counts) counts.imageWorkMs = (counts.imageWorkMs ?? 0) + (nowMs() - startedAt);
-            done();
-          }
-        },
-        onProgress,
-        (error) => {
-          try { onError?.(error); } finally { done(); }
-        },
-      );
-    },
-  };
-}
-
-export function trackSceneModel(promise) {
-  const done = beginSceneAsset('model');
-  Promise.resolve(promise).then(done, done);
-  return promise;
-}
-
-export function getPendingSceneAssetCount() {
-  return sceneAssets.pending;
+function endSceneCounting() {
+  stopSceneCounting();
+  stopSceneCounting = () => {};
+  const counts = sceneCounts ?? {};
+  sceneCounts = null;
+  return counts;
 }
 
 function watchSceneReady(record, log) {
-  const counts = sceneAssets.counts ?? {};
-  let reported = false;
-  const report = (timedOut) => {
-    if (reported) return;
-    reported = true;
-    clearTimeout(limitTimer);
-    if (sceneAssets.counts === counts) sceneAssets.counts = null;
+  void waitForSceneAssets({ timeoutMs: SCENE_WATCH_LIMIT_MS }).then(({ timedOut }) => {
+    const counts = endSceneCounting();
     const readyAt = nowMs();
     const scene = {
       sinceOpenMs: readyAt - record.startedAt,
@@ -305,15 +273,12 @@ function watchSceneReady(record, log) {
     };
     safeMark('scene-ready');
     if (lastResult?.projectId === record.projectId) lastResult = { ...lastResult, scene };
-    log(summarizeSceneReady(scene));
-  };
-  const limitTimer = setTimeout(() => report(true), SCENE_WATCH_LIMIT_MS);
-  if (sceneAssets.pending === 0) {
-    // Geri çağrılar aynı karede bitmiş olabilir; bir tur bekleyip raporla.
-    setTimeout(() => (sceneAssets.pending === 0 ? report(false) : sceneAssets.waiters.push(() => report(false))), 0);
-  } else {
-    sceneAssets.waiters.push(() => report(false));
-  }
+    try {
+      log(summarizeSceneReady(scene));
+    } catch {
+      // Konsol yoksa ölçüm sessizce atlanır.
+    }
+  });
 }
 
 export function finishProjectOpenTiming({ moduleCount = null, ok = true, log = (line) => console.info(line) } = {}) {
@@ -323,7 +288,7 @@ export function finishProjectOpenTiming({ moduleCount = null, ok = true, log = (
   safeMark('project-open:end');
   safeMeasure('project-open', 'project-open:start', 'project-open:end');
   if (!ok) {
-    sceneAssets.counts = null;
+    endSceneCounting();
     return null;
   }
   const finishedAt = nowMs();

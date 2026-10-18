@@ -124,6 +124,7 @@ import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument
 import { bootstrapFairStandCatalog } from './catalogBootstrap.js';
 import { bindProjectActionSaveGuard } from './projectActionSaveGuard.js';
 import { createProductionBomPanel } from './productionBomPanel.js';
+import { waitForSceneAssets } from './sceneAssetLoading.js';
 import { beginEditorBootStep, beginProjectOpenStep, discardEditorBootTiming, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
 
 let moduleDeleteConfirmOpen = false;
@@ -2645,6 +2646,7 @@ async function openHistoricalRevision(revisionNumber) {
       modules: Array.isArray(payload.modules) ? payload.modules : (snapshot?.modules || []),
       revisions: revisionSession.revisions,
     }, { historicalRevisionNumber: revisionNumber });
+    await waitForSceneToFill();
   } catch (error) {
     console.warn('Revizyon açılamadı:', error);
     projectStatus.textContent = 'Revizyon açılamadı.';
@@ -2666,6 +2668,7 @@ async function returnToLiveProject() {
       return;
     }
     await restoreProject(project);
+    await waitForSceneToFill();
   } catch (error) {
     console.warn('Revizyon açılamadı:', error);
     projectStatus.textContent = `${label} açılamadı.`;
@@ -3653,6 +3656,8 @@ importProjectFileInput.addEventListener('change', async () => {
       sessionRevisionNumber: importedNumber > 0 ? importedNumber : null,
     });
     projectStatus.textContent = `İçe aktarıldı · ${preparedAssets.length} görsel`;
+    // Hata fırlatmaz; içe aktarma başarılı sayıldıktan sonra yalnız sahnenin dolmasını bekler.
+    await waitForSceneToFill();
   } catch (error) {
     if (importStorageTouched && importedProjectId) {
       try {
@@ -3670,6 +3675,24 @@ importProjectFileInput.addEventListener('change', async () => {
   }
 });
 
+// Sahne kurulduktan sonra görseller ve 3D modeller tek tek gelir. Yükleme ekranı hepsi
+// gelene kadar açık kalır; yarım sahne gösterilmez. Takılan bir yükleme ekranı kilitlemesin
+// diye SCENE_FILL_TIMEOUT_MS sonra ekran yine kapanır.
+const SCENE_FILL_TIMEOUT_MS = 30000;
+
+async function waitForSceneToFill() {
+  const result = await waitForSceneAssets({
+    timeoutMs: SCENE_FILL_TIMEOUT_MS,
+    onProgress: ({ done, total }) => {
+      if (total > 0) projectLoading.setDetail(`Görseller ve 3D modeller yükleniyor… ${done} / ${total}`);
+    },
+  });
+  if (result.timedOut) {
+    projectStatus.textContent = `${projectStatus.textContent} · Bazı görsel/modeller hâlâ yükleniyor.`;
+  }
+  return result;
+}
+
 async function openStoredProject(projectId) {
   if (!projectId) {
     projectStatus.textContent = 'Açılacak kayıtlı proje yok.';
@@ -3680,7 +3703,7 @@ async function openStoredProject(projectId) {
   setButtonBusy(openProjectButton, true, 'Açılıyor');
   projectStatus.textContent = 'Proje yükleniyor…';
   startProjectOpenTiming(projectId);
-  let opened = false;
+  let timingFinished = false;
   try {
     const project = await loadProject(projectId);
     if (!project) {
@@ -3688,14 +3711,17 @@ async function openStoredProject(projectId) {
       return false;
     }
     await restoreProject(project);
-    opened = true;
+    // Ölçümde "proje açıldı" sahne kurulunca biter; sahnenin dolması ayrı satırda yazılır.
+    timingFinished = true;
+    finishProjectOpenTiming({ ok: true, moduleCount: currentModules.length });
+    await waitForSceneToFill();
     return true;
   } catch (error) {
     console.warn('Proje açılamadı:', error);
     projectStatus.textContent = 'Proje açılamadı.';
     return false;
   } finally {
-    finishProjectOpenTiming({ ok: opened, moduleCount: opened ? currentModules.length : null });
+    if (!timingFinished) finishProjectOpenTiming({ ok: false });
     projectLoading.hide();
     setButtonBusy(openProjectButton, false);
   }

@@ -33,5 +33,10 @@ export function createProjectLoadingController({
     if (overlay) overlay.hidden = true;
   }
 
-  return Object.freeze({ show, hide });
+  // Ekran açıkken yalnız alt satırı günceller (ör. "45 / 73" ilerlemesi).
+  function setDetail(detail) {
+    if (detailElement) detailElement.textContent = detail;
+  }
+
+  return Object.freeze({ show, hide, setDetail });
 }
