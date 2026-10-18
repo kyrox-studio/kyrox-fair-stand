@@ -4,10 +4,15 @@ import { test, expect } from '@playwright/test';
 async function exposeScene(page) {
   await page.route('**/src/scene3d.js*', async (route) => {
     const response = await route.fetch();
-    const body = (await response.text()).replace(
-      '  let surfaceMeshes = [];',
-      '  let surfaceMeshes = []; window.__sceneSurfaces = () => surfaceMeshes;',
-    );
+    const body = (await response.text())
+      .replace(
+        'const controls = new OrbitControls(camera, renderer.domElement);',
+        'const controls = new OrbitControls(camera, renderer.domElement); window.__sceneCamera = camera;',
+      )
+      .replace(
+        '  let surfaceMeshes = [];',
+        '  let surfaceMeshes = []; window.__sceneSurfaces = () => surfaceMeshes;',
+      );
     await route.fulfill({ response, body });
   });
 }
@@ -75,4 +80,73 @@ test('box block side faces meet at every vertical corner', async ({ page }) => {
   });
   // Negatif değer köşede açıklık demektir; plaka kenarı komşu düzleme en az ulaşmalı.
   for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(-1e-6);
+
+  // Üst yüz: yatay, yukarı bakar, yan plakaların üst kenarını örter ve renk alır.
+  const top = await page.evaluate(() => {
+    const faces = window.__sceneSurfaces().filter((mesh) => mesh.userData.moduleType === 'box-block' && mesh.userData.faceSlot);
+    const bySlot = Object.fromEntries(faces.map((face) => [face.userData.faceSlot, face]));
+    const face = bySlot.top;
+    if (!face) return null;
+    face.updateMatrixWorld(true);
+    const normal = face.getWorldDirection(face.position.clone());
+    const group = face.parent;
+    return {
+      normalY: normal.y,
+      width: face.geometry.parameters.width,
+      depth: face.geometry.parameters.height,
+      y: face.position.y,
+      bodyHeight: group.userData.heightCm / 100,
+      bodyWidth: group.userData.widthCm / 100,
+      bodyDepth: group.userData.depthCm / 100,
+      rightX: bySlot.right.position.x,
+      frontZ: bySlot.front.position.z,
+    };
+  });
+  expect(top).not.toBeNull();
+  expect(top.normalY).toBeGreaterThan(0.999);
+  expect(top.y).toBeGreaterThan(top.bodyHeight);
+  expect(top.width / 2).toBeGreaterThanOrEqual(top.rightX - 1e-6);
+  expect(top.depth / 2).toBeGreaterThanOrEqual(top.frontZ - 1e-6);
+
+  // Üstten görünümde üst yüze tıkla, renk ver; kayıtta faces.top.color değişir.
+  await page.locator('body').press('t');
+  await page.waitForTimeout(400);
+  const point = await page.evaluate(() => {
+    const top = window.__sceneSurfaces().find((mesh) => mesh.userData.faceSlot === 'top');
+    const canvas = document.querySelector('#viewport > canvas').getBoundingClientRect();
+    top.updateMatrixWorld(true);
+    const screen = top.getWorldPosition(top.position.clone()).project(window.__sceneCamera);
+    return {
+      x: canvas.left + ((screen.x + 1) / 2) * canvas.width,
+      y: canvas.top + ((1 - screen.y) / 2) * canvas.height,
+    };
+  });
+  await page.mouse.click(point.x, point.y);
+  const selectedSlot = await page.evaluate(() => window.__sceneSurfaces()
+    .find((mesh) => mesh.userData.faceSlot === 'top')?.userData.selectionFrame?.visible === true);
+  expect(selectedSlot).toBe(true);
+  const panel = page.locator('details', { has: page.locator('#apply-color') });
+  if (!(await panel.evaluate((el) => el.open))) await panel.locator(':scope > summary').click();
+  await page.locator('#color-hex').fill('#1E40AF');
+  await page.locator('#color-hex').press('Enter');
+  await page.locator('#apply-color').click();
+  await page.locator('#save-project').click();
+  await expect(page.locator('#project-status')).toContainText('Kaydedildi');
+  const storedTop = await page.evaluate(async () => {
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('fair-stand-configurator', 2);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const projects = await new Promise((resolve, reject) => {
+      const request = db.transaction('projects', 'readonly').objectStore('projects').getAll();
+      request.onsuccess = () => resolve(request.result ?? []);
+      request.onerror = () => reject(request.error);
+    });
+    db.close();
+    const project = projects.sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0))[0];
+    return project?.modules?.find((module) => module.type === 'box-block')?.faces?.top ?? null;
+  });
+  expect(storedTop).not.toBeNull();
+  expect(String(storedTop.color).toLowerCase()).toBe('#1e40af');
 });

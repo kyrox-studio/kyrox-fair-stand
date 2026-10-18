@@ -179,8 +179,8 @@ function listGuideSections() {
       <p><strong>Kutu blok</strong> katalogdan sahneye bırakılan serbest bir küptür. Duvara yapışmaz. Zeminde durur; istenirse yukarı kaldırılır.</p>
       <h4>Yerleştirme</h4>
       <p>Katalog kartını bırakınca <strong>W · Genişlik</strong>, <strong>D · Derinlik</strong>, <strong>H · Yükseklik</strong> ve <strong>Opacity (0–1)</strong> sorulur. Aynı pencere sonradan sağ tık <strong>Ölçü / opacity…</strong> ile açılır. Saydamlık kutunun tamamına uygulanır.</p>
-      <h4>Gövde ve dört yüz</h4>
-      <p>Üst ve alt yüze görsel, Lightbox veya Mesh uygulanmaz. Ön, sağ, arka ve sol yüz ayrıdır; kutu dönünce bu yüzler de döner. Bir yüze tıklayınca o yüz panellerdeki gibi mavi çerçeve ile seçilir. Gövdeye ya da üst ve alt kapağa tıklamak kutunun kendisini seçer.</p>
+      <h4>Gövde ve beş yüz</h4>
+      <p>Ön, sağ, arka, sol ve <strong>üst yüz</strong> ayrıdır; kutu dönünce bu yüzler de döner. Üst yüzün ölçüsü genişlik × derinliktir; üstten görünümde (T) kolay seçilir. Alt yüze görsel, Lightbox veya Mesh uygulanmaz. Bir yüze tıklayınca o yüz panellerdeki gibi mavi çerçeve ile seçilir. Gövdeye ya da alt kapağa tıklamak kutunun kendisini seçer.</p>
       <ul>
         <li>Gövde seçiliyken renk gövdeye gider. Yüz seçiliyken renk o yüze gider.</li>
         <li>Seçilen yüze görsel sürüklenebilir. Aynı yüze Lightbox veya Mesh de uygulanır. Bu üçü item satırındaki bayraklardan açılır. Cam uygulanmaz.</li>

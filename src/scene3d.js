@@ -6452,6 +6452,9 @@ function createBoxBlockModule(moduleState, moduleIndex, onSurfaceReady) {
     { slot: 'right', stripIndex: 1, width: depthM + faceSpanM, height: heightM, position: [widthM / 2 + faceGapM, heightM / 2, 0], rotationY: Math.PI / 2 },
     { slot: 'back', stripIndex: 2, width: widthM + faceSpanM, height: heightM, position: [0, heightM / 2, -depthM / 2 - faceGapM], rotationY: Math.PI },
     { slot: 'left', stripIndex: 3, width: depthM + faceSpanM, height: heightM, position: [-widthM / 2 - faceGapM, heightM / 2, 0], rotationY: -Math.PI / 2 },
+    // Üst yüz: yatay plaka, gövdenin faceGapM üstünde; kenarlardan taşar ki üst köşeler de kapansın.
+    // Plakanın "yukarısı" arkaya bakar; önden bakınca görsel düz okunur.
+    { slot: 'top', stripIndex: 4, width: widthM + faceSpanM, height: depthM + faceSpanM, position: [0, heightM + faceGapM, 0], rotationX: -Math.PI / 2, rotationY: 0 },
   ];
   const faceCapabilities = surfaceCapabilityUserData(moduleState.itemKey);
   const faces = faceLayouts.map((layout) => {
@@ -6470,7 +6473,7 @@ function createBoxBlockModule(moduleState, moduleIndex, onSurfaceReady) {
       }),
     );
     face.position.set(...layout.position);
-    face.rotation.y = layout.rotationY;
+    face.rotation.set(layout.rotationX ?? 0, layout.rotationY, 0);
     const selectionFrame = createSelectionFrame(layout.width, layout.height);
     selectionFrame.visible = false;
     face.add(selectionFrame);

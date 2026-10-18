@@ -51,7 +51,9 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /Kutunun tepesi stand tavanını geçmez/);
   assert.match(guideSource, /title: 'Kutu Blok'/);
   assert.match(guideSource, /Duvara yapışmaz/);
-  assert.match(guideSource, /Üst ve alt yüze görsel, Lightbox veya Mesh uygulanmaz/);
+  assert.match(guideSource, /Alt yüze görsel, Lightbox veya Mesh uygulanmaz/);
+  assert.match(guideSource, /Üst yüzün ölçüsü genişlik × derinliktir/);
+  assert.doesNotMatch(guideSource, /Üst ve alt yüze görsel/);
   assert.match(guideSource, /Adım 10 cm’dir/);
   assert.match(guideSource, /Kutuyu zeminde sürüklemek yüksekliği bozmaz/);
   assert.match(guideSource, /Shift\+R<\/strong> kutuyu 45° döndürür/);
