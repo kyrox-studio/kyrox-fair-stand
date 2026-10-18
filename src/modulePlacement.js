@@ -203,6 +203,42 @@ export function clampFloorRelativeBottomZCm(
 }
 
 /**
+ * Üst montaj (projektör `placement=top`): zCm = taban/montaj kotu.
+ * Taban 0…tavan arasındadır; gövde yüksekliği max’ı düşürmez (TV/kutu formülü değil).
+ * TODO(DB): z_frame / z_max tip davranışına taşınacak — şimdilik kodda `top`.
+ */
+export function getMountBottomZBoundsCm(standHeightCm = getStandDimensions().heightCm) {
+  const ceilingCm = Number(standHeightCm);
+  if (!Number.isFinite(ceilingCm) || ceilingCm < 0) {
+    throw new TypeError('Mount-bottom Z bounds require stand heightCm.');
+  }
+  return Object.freeze({
+    minZCm: 0,
+    maxZCm: ceilingCm,
+  });
+}
+
+export function clampMountBottomZCm(zCm, standHeightCm = getStandDimensions().heightCm) {
+  const { minZCm, maxZCm } = getMountBottomZBoundsCm(standHeightCm);
+  const value = Number(zCm);
+  if (!Number.isFinite(value)) return minZCm;
+  return Math.min(maxZCm, Math.max(minZCm, value));
+}
+
+export function stepMountBottomZCm(
+  currentZCm,
+  deltaCm,
+  standHeightCm = getStandDimensions().heightCm,
+) {
+  const current = Number(currentZCm);
+  const delta = Number(deltaCm);
+  const { minZCm } = getMountBottomZBoundsCm(standHeightCm);
+  const base = Number.isFinite(current) ? current : minZCm;
+  const shift = Number.isFinite(delta) ? delta : 0;
+  return clampMountBottomZCm(base + shift, standHeightCm);
+}
+
+/**
  * Tül Z adımı. Dikey ölçü levha kalınlığıdır (`depthCm`); tepe tavanı geçemez.
  * Adım çağıran yerin moveSnapCm değeridir.
  */
