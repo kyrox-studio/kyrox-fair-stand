@@ -11,11 +11,41 @@ async function exposeScene(page) {
         'const controls = new OrbitControls(camera, renderer.domElement); window.__sceneCamera = camera;',
       )
       .replace(
+        '  let fabricOverlayMeshes = [];',
+        '  let fabricOverlayMeshes = []; window.__sceneFabric = () => fabricOverlayMeshes;',
+      )
+      .replace(
         '  let surfaceMeshes = [];',
         '  let surfaceMeshes = []; window.__sceneSurfaces = () => surfaceMeshes;',
       );
     await route.fulfill({ response, body });
   });
+}
+
+async function faceScreenPoint(page, slot) {
+  return page.evaluate((faceSlot) => {
+    const face = window.__sceneSurfaces().find((mesh) => mesh.userData.faceSlot === faceSlot);
+    const canvas = document.querySelector('#viewport > canvas').getBoundingClientRect();
+    face.updateMatrixWorld(true);
+    const screen = face.getWorldPosition(face.position.clone()).project(window.__sceneCamera);
+    return {
+      x: canvas.left + ((screen.x + 1) / 2) * canvas.width,
+      y: canvas.top + ((1 - screen.y) / 2) * canvas.height,
+    };
+  }, slot);
+}
+
+async function applyLightboxToFace(page, slot, viewKey) {
+  await page.locator('body').press(viewKey);
+  await page.waitForTimeout(400);
+  const point = await faceScreenPoint(page, slot);
+  await page.mouse.click(point.x, point.y);
+  await expect.poll(() => page.evaluate((faceSlot) => window.__sceneSurfaces()
+    .find((mesh) => mesh.userData.faceSlot === faceSlot)?.userData.selectionFrame?.visible === true, slot)).toBe(true);
+  await page.mouse.click(point.x, point.y, { button: 'right' });
+  await page.locator('[data-module-action="toggle-fabric"]').click();
+  await expect.poll(() => page.evaluate((faceSlot) => Boolean(window.__sceneSurfaces()
+    .find((mesh) => mesh.userData.faceSlot === faceSlot)?.userData.surfaceState?.fabricGroupId), slot)).toBe(true);
 }
 
 test('box block side faces meet at every vertical corner', async ({ page }) => {
@@ -172,4 +202,47 @@ test('box block side faces meet at every vertical corner', async ({ page }) => {
   });
   expect(storedTop).not.toBeNull();
   expect(String(storedTop.color).toLowerCase()).toBe('#1e40af');
+
+  // Lightbox bezi yüz düzlemine oturur: kenarda komşu bezle sıfır açıklıkla kavuşur, kutudan taşmaz.
+  await applyLightboxToFace(page, 'top', 't');
+  await applyLightboxToFace(page, 'front', 'f');
+  const fabric = await page.evaluate(() => {
+    const overlays = window.__sceneFabric();
+    const faces = window.__sceneSurfaces().filter((mesh) => mesh.userData.moduleType === 'box-block' && mesh.userData.faceSlot);
+    const bySlot = Object.fromEntries(faces.map((face) => [face.userData.faceSlot, face]));
+    const group = bySlot.front.parent;
+    group.updateMatrixWorld(true);
+    const toGroup = group.matrixWorld.clone().invert();
+    const corners = (mesh) => {
+      mesh.updateMatrixWorld(true);
+      const { width, height } = mesh.geometry.parameters;
+      return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => mesh
+        .localToWorld(mesh.position.clone().set((sx * width) / 2, (sy * height) / 2, 0))
+        .applyMatrix4(toGroup));
+    };
+    return {
+      count: overlays.length,
+      overlays: overlays.map((overlay) => corners(overlay).map((p) => [p.x, p.y, p.z])),
+      box: { w: group.userData.widthCm / 100, d: group.userData.depthCm / 100, h: group.userData.heightCm / 100 },
+    };
+  });
+  expect(fabric.count).toBe(2);
+  const { w, d, h } = fabric.box;
+  const flat = fabric.overlays.flat();
+  // Hiçbir bez köşesi kutunun dış sınırını aşmaz.
+  for (const [x, y, z] of flat) {
+    expect(Math.abs(x)).toBeLessThan(w / 2 + 1e-6);
+    expect(Math.abs(z)).toBeLessThan(d / 2 + 1e-6);
+    expect(y).toBeLessThan(h + 1e-6);
+    expect(y).toBeGreaterThan(-1e-6);
+  }
+  // Üst bez tam tepede, ön bez tam ön düzlemde; ön-üst kenar iki bezde aynı çizgidir.
+  const topOverlay = fabric.overlays.find((corners) => corners.every(([, y]) => Math.abs(y - h) < 1e-6));
+  const frontOverlay = fabric.overlays.find((corners) => corners.every(([, , z]) => Math.abs(z - d / 2) < 1e-6));
+  expect(topOverlay).toBeTruthy();
+  expect(frontOverlay).toBeTruthy();
+  const topFrontEdge = topOverlay.filter(([, , z]) => Math.abs(z - d / 2) < 1e-6);
+  const frontTopEdge = frontOverlay.filter(([, y]) => Math.abs(y - h) < 1e-6);
+  expect(topFrontEdge.length).toBe(2);
+  expect(frontTopEdge.length).toBe(2);
 });

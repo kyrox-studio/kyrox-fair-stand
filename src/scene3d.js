@@ -4385,9 +4385,12 @@ export function createStandScene(
       const height = maxV - minV;
       if (width <= 0 || height <= 0) return;
 
+      // Kutu blok yüzünde bez yüz düzlemine oturur: alttaki yüz renk/derinlik yazmadığı için
+      // titreşmez, kenarda komşu yüzle sıfır açıklıkla kavuşur. Panellerde 6 mm önde kalır.
+      const overlayOffsetM = surfaces.every((surface) => surface.userData?.moduleType === 'box-block') ? 0 : 0.006;
       const centerWorld = right.clone().multiplyScalar((minU + maxU) / 2)
         .add(up.clone().multiplyScalar((minV + maxV) / 2))
-        .add(normal.clone().multiplyScalar(planeN + 0.006));
+        .add(normal.clone().multiplyScalar(planeN + overlayOffsetM));
 
       const fabricState = first.userData.surfaceState ?? {};
       const fabricType = fabricState.fabricType === 'mesh' ? 'mesh' : 'lightbox';
