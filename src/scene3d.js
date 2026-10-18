@@ -98,7 +98,7 @@ import {
 } from './moduleGroups.js';
 import { getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, requiresShortUpJointSnap, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
-import { trackSceneModel, trackSceneTextureLoader } from './projectOpenTiming.js';
+import { trackSceneModel, trackSceneTextureLoader } from './sceneAssetLoading.js';
 
 function frameColorForModule(moduleState) {
   const item = getItem(moduleState?.itemKey);

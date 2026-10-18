@@ -90,6 +90,16 @@ function publishHostValue(hostWindow, key, value) {
   globalThis[key] = value;
 }
 
+function showInitialProjectLoading(container) {
+  const overlay = container.querySelector('#project-loading-overlay');
+  if (!overlay) return;
+  const title = container.querySelector('#project-loading-title');
+  const detail = container.querySelector('#project-loading-detail');
+  if (title) title.textContent = 'Proje yükleniyor…';
+  if (detail) detail.textContent = 'Editör hazırlanıyor.';
+  overlay.hidden = false;
+}
+
 export function mountFairStand(container, options = {}) {
   if (!container) {
     throw new Error('Fair Stand mount container is required.');
@@ -108,6 +118,9 @@ export function mountFairStand(container, options = {}) {
   hostDocument.head.appendChild(style);
   container.replaceChildren();
   container.insertAdjacentHTML('beforeend', FAIR_STAND_MARKUP);
+  // Proje açarak gelindiyse (Düzenle) editör kodu ve katalog yüklenirken boş editör yerine
+  // yükleme ekranı görünür; proje açılışı ekranı devralır ve sahne dolunca kapatır.
+  if (options.initialProjectId) showInitialProjectLoading(container);
 
   setFairStandHostDocument(hostDocument);
   publishHostValue(hostWindow, '__FAIR_STAND_CATALOG_HEADERS__', options.catalogHeaders);

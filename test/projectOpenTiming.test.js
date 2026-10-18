@@ -14,13 +14,11 @@ import {
   isProjectOpenTimingActive,
   noteProjectOpenAssets,
   startProjectOpenTiming,
-  getPendingSceneAssetCount,
   summarizeSceneReady,
-  trackSceneModel,
-  trackSceneTextureLoader,
   summarizeProjectOpen,
   timeProjectOpenStep,
 } from '../src/projectOpenTiming.js';
+import { getPendingSceneAssetCount, trackSceneModel, trackSceneTextureLoader } from '../src/sceneAssetLoading.js';
 
 test('steps outside an open measurement run normally and record nothing', async () => {
   assert.equal(isProjectOpenTimingActive(), false);
@@ -107,7 +105,9 @@ test('project open path is wired to the measurement', () => {
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   const open = main.slice(main.indexOf('async function openStoredProject'), main.indexOf('function restoreProjectSelectToActiveProject'));
   assert.match(open, /startProjectOpenTiming\(projectId\)/);
-  assert.match(open, /finally \{\s*finishProjectOpenTiming\(\{ ok: opened/);
+  // Başarılı açılışta ölçüm sahne kurulunca biter; hata yolunda finally kapatır.
+  assert.ok(open.indexOf('await restoreProject(project)') < open.indexOf('finishProjectOpenTiming({ ok: true'));
+  assert.match(open, /finally \{\s*if \(!timingFinished\) finishProjectOpenTiming\(\{ ok: false \}\);/);
   const restore = main.slice(main.indexOf('async function restoreProject'), main.indexOf('async function restoreProject') + 4000);
   assert.match(restore, /timeProjectOpenStep\('assets-register'/);
   assert.ok(restore.indexOf("beginProjectOpenStep('scene-build')") < restore.indexOf('scene3d.createStage('));
