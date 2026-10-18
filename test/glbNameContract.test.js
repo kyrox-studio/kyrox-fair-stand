@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 // scene3d.js bazı GLB parçalarını adıyla bulur: sandalye oturağını boyamak, çöp kutusundan
 // fazlalığı silmek, koltuk parçalarını ayırmak gibi. Bir GLB yeniden dışa aktarılır,
@@ -131,3 +132,67 @@ test('scene3d.js içindeki her GLB ad karşılaştırması bu testin listesinde'
   assert.deepEqual(missing, [], `scene3d.js yeni bir GLB adına bağlandı; REQUIREMENTS listesine ekle: ${missing.join(', ')}`);
   assert.ok(literals.size >= 5, 'ad karşılaştırmaları bulunamadı; test kalıbı güncellenmeli');
 });
+
+// --- Tam malzeme listesi (main orijinali; meshopt-only sonrası birebir) ---
+// optimize/dedup/palette aynı renkteki malzemeleri birleştirip adları silebilir.
+
+const EXPECTED_MATERIALS_BY_FILE = Object.freeze({
+  '80s_avanti_mini_fridge.glb': Object.freeze(['material_atlas_40704_1']),
+  'bar_chair.glb': Object.freeze(['Burlington_Leather', 'Material.001']),
+  'bej_koltuk_1_ciftli_2_tekli.glb': Object.freeze(['tripo_mat_0691346e']),
+  'coat_rack.glb': Object.freeze(['Wood']),
+  'eames_chair.glb': Object.freeze(['Material1', 'onderstel', 'plastic_wit', 'skp_front_default']),
+  'indoor_plants.glb': Object.freeze([
+    'HOJA_1',
+    'HOJA_2',
+    'HOJA_3',
+    'MACETA',
+    'Poliigon_WoodVeneerOak_7760_2K',
+    'TALLO',
+    'TIERRA',
+  ]),
+  'kettle.glb': Object.freeze(['material_0']),
+  'plastic_trash_bin.glb': Object.freeze([
+    'erdfgter5ytjuhtrgr5e45ernmjuyrtyghr6tgh564',
+    'rtgrt545rr443t65546yr545646745yt6',
+    'wersgrht6y5tr5et45y45uj34t43',
+  ]),
+  'saksi_bitkili_100x30x30.glb': Object.freeze([
+    'M_Plant_Dirt',
+    'M_Plant_Leaves',
+    'M_Plant_Stems',
+    'Planter_White',
+  ]),
+  'saksi_bitkili_150x30x30.glb': Object.freeze([
+    'M_Plant_Dirt',
+    'M_Plant_Leaves',
+    'M_Plant_Stems',
+    'Planter_White',
+  ]),
+  'saksi_bitkili_200x30x30.glb': Object.freeze([
+    'M_Plant_Dirt',
+    'M_Plant_Leaves',
+    'M_Plant_Stems',
+    'Planter_White',
+  ]),
+  'wall_separator_100_sarmasik.glb': Object.freeze(['', 'FRAME_FIXED', 'SLATS_COLORABLE']),
+  'wall_separator_50_sarmasik.glb': Object.freeze(['', 'FRAME_FIXED', 'SLATS_COLORABLE']),
+});
+
+function allMaterialNames(gltf) {
+  return (gltf.materials ?? []).map((material) => material.name ?? '').sort();
+}
+
+test('public/models GLB envanteri beklenen dosyalarla örtüşür', () => {
+  const onDisk = readdirSync(fileURLToPath(MODELS))
+    .filter((name) => name.toLowerCase().endsWith('.glb'))
+    .sort();
+  assert.deepEqual(onDisk, Object.keys(EXPECTED_MATERIALS_BY_FILE).sort());
+});
+
+for (const [fileName, expectedMaterials] of Object.entries(EXPECTED_MATERIALS_BY_FILE)) {
+  test(`${fileName}: tam malzeme listesi main orijinaliyle aynı (meshopt birleştirmez)`, () => {
+    const gltf = readGlbJson(fileName);
+    assert.deepEqual(allMaterialNames(gltf), [...expectedMaterials].sort());
+  });
+}
