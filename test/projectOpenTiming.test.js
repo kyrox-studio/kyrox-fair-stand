@@ -193,8 +193,11 @@ test('scene ready waits until every tracked image and model has arrived', async 
   resolveModel('scene');
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.equal(getPendingSceneAssetCount(), 0);
-  assert.match(lines[1], /^\[Fair Stand ölçüm\] sahne tamamen hazır: açılıştan \+\d+ ms · 2 görsel yüzeyi · 1 model/);
-  assert.equal(getLastProjectOpenTiming().scene.imageCount, 2);
+  assert.match(lines[1], /^\[Fair Stand ölçüm\] sahne tamamen hazır: açılıştan \+\d+ ms · 2 görsel yüzeyi \(son \+\d+ ms, işleme \d+ ms\) · 1 model \(son \+\d+ ms, /);
+  const { scene } = getLastProjectOpenTiming();
+  assert.equal(scene.imageCount, 2);
+  assert.ok(scene.imageLastMs >= 0 && scene.modelLastMs >= scene.imageLastMs, 'model görselden sonra geldi');
+  assert.ok(scene.imageWorkMs >= 0);
 });
 
 test('scene ready is reported at once when nothing is pending', async () => {

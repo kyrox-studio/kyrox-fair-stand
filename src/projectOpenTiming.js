@@ -51,7 +51,23 @@ function latestRouteMarkTime() {
 }
 
 // mountFairStand başında çağrılır. CRM işareti varsa editör kodunun yükleme süresi de çıkar.
+// Tarayıcı varsayılan olarak 250 ağ kaydı tutar; lokal geliştirmede yüzlerce kod dosyası
+// tamponu doldurunca model indirmeleri kayda girmez. Ölçüm başlarken bir kez büyütülür.
+const RESOURCE_TIMING_BUFFER = 3000;
+let resourceBufferRaised = false;
+
+function raiseResourceTimingBuffer() {
+  if (resourceBufferRaised) return;
+  resourceBufferRaised = true;
+  try {
+    perf()?.setResourceTimingBufferSize?.(RESOURCE_TIMING_BUFFER);
+  } catch {
+    // Desteklenmiyorsa ölçüm model indirmelerini eksik sayabilir; açılış etkilenmez.
+  }
+}
+
 export function startEditorBootTiming() {
+  raiseResourceTimingBuffer();
   const mountedAt = nowMs();
   const routeAt = latestRouteMarkTime();
   editorBoot = {
@@ -92,6 +108,7 @@ export function startProjectOpenTiming(projectId) {
     moduleCount: null,
     boot,
   };
+  raiseResourceTimingBuffer();
   sceneAssets.counts = { image: 0, model: 0 };
   safeMark('project-open:start');
   return current;
@@ -184,9 +201,12 @@ export function summarizeProjectOpen(result) {
 export function summarizeSceneReady(scene) {
   const since = scene.sinceRouteMs != null ? ` (Düzenle'den ${formatMs(scene.sinceRouteMs)})` : '';
   const parts = [`açılıştan +${formatMs(scene.sinceOpenMs)}${since}`];
-  parts.push(`${scene.imageCount} görsel yüzeyi`);
+  const imageLast = scene.imageLastMs != null ? `, son +${formatMs(scene.imageLastMs)}` : '';
+  const imageWork = scene.imageCount ? `, işleme ${formatMs(scene.imageWorkMs ?? 0)}` : '';
+  parts.push(`${scene.imageCount} görsel yüzeyi${imageLast ? ` (${imageLast.slice(2)}${imageWork})` : ''}`);
+  const modelLast = scene.modelLastMs != null ? `son +${formatMs(scene.modelLastMs)}, ` : '';
   const cached = scene.models.cachedCount ? `, ${scene.models.cachedCount} önbellekten` : '';
-  parts.push(`${scene.modelCount} model (${scene.models.count} dosya ${formatMb(scene.models.transferBytes)} indirildi${cached})`);
+  parts.push(`${scene.modelCount} model (${modelLast}${scene.models.count} dosya ${formatMb(scene.models.transferBytes)} indirildi${cached})`);
   const label = scene.timedOut ? 'sahne hâlâ yükleniyor' : 'sahne tamamen hazır';
   return `[Fair Stand ölçüm] ${label}: ${parts.join(' · ')}`;
 }
@@ -213,11 +233,14 @@ const sceneAssets = { pending: 0, waiters: [], counts: null };
 
 function beginSceneAsset(kind) {
   sceneAssets.pending += 1;
-  if (sceneAssets.counts) sceneAssets.counts[kind] = (sceneAssets.counts[kind] ?? 0) + 1;
+  const counts = sceneAssets.counts;
+  if (counts) counts[kind] = (counts[kind] ?? 0) + 1;
   let done = false;
   return () => {
     if (done) return;
     done = true;
+    // Bu türün son parçası ne zaman geldi: görseller mi modeller mi bekletiyor ayrılsın.
+    if (counts && sceneAssets.counts === counts) counts[`${kind}LastAt`] = nowMs();
     sceneAssets.pending = Math.max(0, sceneAssets.pending - 1);
     if (sceneAssets.pending === 0) sceneAssets.waiters.splice(0).forEach((resolve) => resolve());
   };
@@ -228,10 +251,18 @@ export function trackSceneTextureLoader(loader) {
   return {
     load(url, onLoad, onProgress, onError) {
       const done = beginSceneAsset('image');
+      const counts = sceneAssets.counts;
       return loader.load(
         url,
         (texture) => {
-          try { onLoad?.(texture); } finally { done(); }
+          // Geri çağrı ana iş parçacığında çalışır (tuvale sığdırma + doku); süresi toplanır.
+          const startedAt = nowMs();
+          try {
+            onLoad?.(texture);
+          } finally {
+            if (counts) counts.imageWorkMs = (counts.imageWorkMs ?? 0) + (nowMs() - startedAt);
+            done();
+          }
         },
         onProgress,
         (error) => {
@@ -266,6 +297,9 @@ function watchSceneReady(record, log) {
       sinceRouteMs: record.boot?.routeAt != null ? readyAt - record.boot.routeAt : null,
       imageCount: counts.image ?? 0,
       modelCount: counts.model ?? 0,
+      imageLastMs: counts.imageLastAt != null ? counts.imageLastAt - record.startedAt : null,
+      modelLastMs: counts.modelLastAt != null ? counts.modelLastAt - record.startedAt : null,
+      imageWorkMs: counts.imageWorkMs ?? 0,
       models: collectModelLoads(perf()?.getEntriesByType?.('resource'), record.startedAt),
       timedOut,
     };
