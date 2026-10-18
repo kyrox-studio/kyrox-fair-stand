@@ -1,17 +1,14 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-open-work-single-source-v1",
-  "kind": "architecture",
-  "summary": "Açık iş tek kaynak okuma sırası: özet harita (kyrox-platform OPEN_WORK_INVENTORY), audit/FINDINGS.md, docs/refactor/PENDING_ITEM_DECISIONS.md. SYSTEM_AUDIT_CHECKLIST ve FULL_SWEEP tarihî/ikinci kopya — oturum oradan başlamaz. README, AGENTS ve ilgili bannerlar güncellendi; ürün kodu değişmedi.",
+  "id": "fair-stand-glb-name-contract-v1",
+  "kind": "tooling",
+  "summary": "GLB ad sözleşmesi testi: scene3d.js bazı GLB parçalarını adıyla bulur (Eames plastic_wit/Material1, bar taburesi Burlington_Leather, çöp kutusu Sphere_1/Object_5, bej koltuk BEIGE_SOFA_MESH, saksı planter, sarmaşık Vines_FIXED). Model yeniden dışa aktarılır veya sıkıştırılırsa bu adlar kaybolabilir ve sahnede yanlış renk/eksik parça çıkar (meshopt optimize sonrası Eames oturağı ahşap renginde kaldı). Test her adın ilgili GLB içinde durduğunu, Eames malzemelerinin ayrı parçalara bağlı kaldığını ve scene3d.js içindeki her ad karşılaştırmasının listede olduğunu kilitler. Yalnız test; runtime değişmez.",
   "owners": [
-    "README.md",
-    "AGENTS.md",
-    "SYSTEM_AUDIT_CHECKLIST.md",
-    "audit/FINDINGS.md"
+    "test/glbNameContract.test.js"
   ],
   "sourceOfTruth": [
-    "audit/FINDINGS.md",
-    "docs/refactor/PENDING_ITEM_DECISIONS.md"
+    "src/scene3d.js",
+    "public/models/"
   ],
   "impact": {
     "catalog": "not-applicable",
@@ -36,36 +33,34 @@
     "mode": "full-system",
     "affectedFiles": [],
     "affectedTests": [
-      "test/developerEntrypointDocs.test.js",
-      "test/systemChangeGate.test.js"
+      "test/glbNameContract.test.js"
     ],
     "affectedDocs": [],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": []
     },
-    "notes": "Yalnız belge yönlendirmesi. Runtime, BOM, katalog ve UI davranışı değişmez."
+    "notes": "Runtime dosyası değişmez; yalnız mevcut GLB adlarına bağımlılık testle kilitlenir."
   },
   "tests": {
     "targeted": [
-      "test/developerEntrypointDocs.test.js",
-      "test/systemChangeGate.test.js"
+      "test/glbNameContract.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": false,
       "targeted": [],
-      "reason": "Yalnız mimari belge yönlendirmesi; browser impact domain yok."
+      "reason": "Yalnız GLB JSON chunk okuyan unit test; tarayıcı davranışı değişmez."
     }
   },
   "risk": {
     "level": "low",
-    "notes": "Bayat checklist/FULL_SWEEP OPEN sayaçlarına bakılmaması netleştirildi."
+    "notes": "Yalnız test eklenir."
   },
   "migration": {
     "required": false,
-    "notes": "Veri/kayıt yok."
+    "notes": "Yok."
   },
-  "rollback": "README/AGENTS/checklist/FULL_SWEEP/FINDINGS/PENDING banner ve açık-iş okuma sırası paragraflarını geri al."
+  "rollback": "test/glbNameContract.test.js dosyasını kaldır."
 }
