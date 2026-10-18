@@ -124,6 +124,7 @@ import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument
 import { bootstrapFairStandCatalog } from './catalogBootstrap.js';
 import { bindProjectActionSaveGuard } from './projectActionSaveGuard.js';
 import { createProductionBomPanel } from './productionBomPanel.js';
+import { beginProjectOpenStep, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
 
 let moduleDeleteConfirmOpen = false;
 
@@ -2505,7 +2506,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
 
   // Sahne yeniden kurulmadan önce proje görsel URL'leri hazır olmalı.
   // Yoksa kayıtlı imageAssetId ilk açılışta çözülemez.
-  await loadAssetsForActiveProject();
+  await timeProjectOpenStep('assets-register', () => loadAssetsForActiveProject());
   const missingImageCount = countMissingImageReferences();
 
   if (currentStand) {
@@ -2522,6 +2523,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     if (autoDepotSizeSelect && currentStand.depot?.sizeKey) autoDepotSizeSelect.value = currentStand.depot.sizeKey;
     if (autoDepotContentsInput) autoDepotContentsInput.checked = Boolean(currentStand.depot?.includeContents);
     syncAutoDepotControls();
+    const endSceneBuild = beginProjectOpenStep('scene-build');
     const stage = scene3d.createStage({
       widthCm: currentStand.xCm,
       depthCm: currentStand.yCm,
@@ -2549,6 +2551,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     viewportToolbar.hidden = false;
     setStandEditingEnabled(true);
     rebuildWall({ resetView: true });
+    endSceneBuild();
     updateStageCreateState();
     const restoredSetup = validateStandSetup({
       standType: currentStand.standType,
@@ -3670,6 +3673,8 @@ async function openStoredProject(projectId) {
   projectLoading.show('Proje yükleniyor…', 'Görseller ve sahne hazırlanıyor.');
   setButtonBusy(openProjectButton, true, 'Açılıyor');
   projectStatus.textContent = 'Proje yükleniyor…';
+  startProjectOpenTiming(projectId);
+  let opened = false;
   try {
     const project = await loadProject(projectId);
     if (!project) {
@@ -3677,12 +3682,14 @@ async function openStoredProject(projectId) {
       return false;
     }
     await restoreProject(project);
+    opened = true;
     return true;
   } catch (error) {
     console.warn('Proje açılamadı:', error);
     projectStatus.textContent = 'Proje açılamadı.';
     return false;
   } finally {
+    finishProjectOpenTiming({ ok: opened, moduleCount: opened ? currentModules.length : null });
     projectLoading.hide();
     setButtonBusy(openProjectButton, false);
   }
