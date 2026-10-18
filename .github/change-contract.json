@@ -1,32 +1,33 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-box-block-top-v1",
-  "kind": "renderer-change",
-  "summary": "Kutu bloğun üst yüzü de renk, görsel ve Lightbox alabilir: BOX_BLOCK_FACE_SLOTS listesine top eklendi (ölçü en × derinlik, modül ölçüsünü izler; eski kayıtlarda yüklemede gövde rengiyle eklenir). Kutu tam kutu: beş yüz plakası kutunun tam ölçüsünde ve dış sınırında durur, her kenarda sıfır açıklıkla kavuşur; önceki 2 mm dış ofset ve uzatma kaldırıldı. Gövde aynı düzlemde titreşmesin diye yanlardan ve üstten 2 mm içeri alındı, taban zeminde kalır; gövde (alt yüz) rengi kenarlarda görünmez. Lightbox/Mesh bezi kutu blok yüzünde yüz düzlemine oturur (panellerdeki 6 mm ön ofset yok); kenarda komşu bezle kavuşur, kutudan taşmaz. BOM faces üzerinden döner; üst yüz görseli Dijital Baskıya, Lightbox Lightbox Bezine girer.",
+  "id": "fair-stand-floodlight-mount-bottom-z-v1",
+  "kind": "bugfix",
+  "summary": "LED projektör (placement=top) Z: zCm montaj/taban kotu; clampMountBottomZCm ile 0…stand height_cm. Gövde yüksekliği max’ı düşürmez (kutu/tül floor-relative değil). Drop/snap/drag mevcut Z’yi korur; ok ile XYZ (stepMountBottomZCm); normalize aynı kural. Geçici kod gömme — PENDING B.3b: z_frame/z_max tip davranışına (DB) taşınacak.",
   "owners": [
-    "src/designState.js",
-    "src/scene3d.js"
-  ],
-  "sourceOfTruth": [
+    "src/modulePlacement.js",
+    "src/scene3d.js",
     "src/designState.js"
   ],
+  "sourceOfTruth": [
+    "src/modulePlacement.js"
+  ],
   "impact": {
-    "catalog": "affected",
+    "catalog": "not-applicable",
     "behavior": "affected",
     "state": "affected",
     "placement": "affected",
     "renderer": "affected",
     "persistence": "affected",
-    "bom": "affected",
+    "bom": "not-applicable",
     "ui": "affected",
-    "composition": "affected",
-    "assets": "affected",
-    "storage": "affected",
-    "importExport": "affected",
+    "composition": "not-applicable",
+    "assets": "not-applicable",
+    "storage": "not-applicable",
+    "importExport": "not-applicable",
     "performance": "affected",
     "accessibility": "affected",
-    "architecture": "affected",
-    "security": "affected",
+    "architecture": "not-applicable",
+    "security": "not-applicable",
     "tests": "affected"
   },
   "impactAnalysis": {
@@ -94,7 +95,6 @@
       "e2e/box-block-corners.spec.mjs",
       "e2e/box-block-face-image-restore.spec.mjs",
       "e2e/camera-pointer-lifecycle.spec.mjs",
-      "e2e/color-image-capability.spec.mjs",
       "e2e/design-undo.spec.mjs",
       "e2e/duplicate-metal-separator.spec.mjs",
       "e2e/f010-module-construction.spec.mjs",
@@ -352,6 +352,7 @@
       "audit/evidence/A03_ARCHITECTURE.md",
       "audit/evidence/A04_CATALOG_MODULE_CONTRACTS.md",
       "audit/evidence/A05_MODULE_BEHAVIOR.md",
+      "audit/evidence/A06_PLACEMENT_MOVE_ROTATION_COLLISION_REFLOW.md",
       "audit/evidence/A07_STATE_MODEL_FACTORIES.md",
       "audit/evidence/A09_RENDERER_SCENE_RUNTIME.md",
       "audit/evidence/A13_STORAGE_ASSETS_REFERENCES.md",
@@ -475,12 +476,28 @@
       "docs/items/audit/properties/DEFAULT_OVERRIDE_CHAINS.md",
       "docs/items/audit/properties/FINAL_PROPERTY_AUDIT.md",
       "docs/items/audit/properties/PROPERTY_INDEX.md",
+      "docs/items/audit/properties/properties/behavior.allowSideInsert.md",
+      "docs/items/audit/properties/properties/behavior.boundarySnap.md",
+      "docs/items/audit/properties/properties/behavior.collision.md",
+      "docs/items/audit/properties/properties/behavior.collisionDepth.md",
+      "docs/items/audit/properties/properties/behavior.collisionHeight.md",
+      "docs/items/audit/properties/properties/behavior.collisionHeightRange.md",
+      "docs/items/audit/properties/properties/behavior.connectionEndpoint.md",
+      "docs/items/audit/properties/properties/behavior.defaultRotationDeg.md",
+      "docs/items/audit/properties/properties/behavior.endpointContact.md",
+      "docs/items/audit/properties/properties/behavior.explicitTypeEntry.md",
       "docs/items/audit/properties/properties/behavior.ghost.kind.md",
+      "docs/items/audit/properties/properties/behavior.ghost.opacity.md",
+      "docs/items/audit/properties/properties/behavior.ghost.renderer.md",
       "docs/items/audit/properties/properties/behavior.magneticSnap.md",
+      "docs/items/audit/properties/properties/behavior.moveSnapCm.md",
+      "docs/items/audit/properties/properties/behavior.overlapWithTypes.md",
       "docs/items/audit/properties/properties/behavior.placement.md",
       "docs/items/audit/properties/properties/behavior.rotationStepDeg.md",
+      "docs/items/audit/properties/properties/behavior.sideInsertRotation.md",
       "docs/items/audit/properties/properties/behavior.stripOccupancyResolved.md",
       "docs/items/audit/properties/properties/behavior.supportsWallOverlayMount.md",
+      "docs/items/audit/properties/properties/behavior.wallCapacity.md",
       "docs/items/audit/properties/properties/capabilities.color.md",
       "docs/items/audit/properties/properties/capabilities.glass.md",
       "docs/items/audit/properties/properties/capabilities.image.md",
@@ -579,6 +596,7 @@
       "docs/items/audit/properties/properties/static.sizeInch.md",
       "docs/items/audit/properties/properties/static.stripOccupancy.align.md",
       "docs/items/audit/properties/properties/static.stripOccupancy.stripCount.md",
+      "docs/items/audit/properties/properties/static.variant.md",
       "docs/items/audit/properties/properties/static.videoWall.cols.md",
       "docs/items/audit/properties/properties/static.videoWall.panelScreenHeightCm.md",
       "docs/items/audit/properties/properties/static.videoWall.panelScreenWidthCm.md",
@@ -687,6 +705,7 @@
       "docs/items/definitions/base_top_107_50.md",
       "docs/items/definitions/base_top_157_50.md",
       "docs/items/definitions/base_top_206_50.md",
+      "docs/items/definitions/connector_start.md",
       "docs/items/definitions/desk_banko_100.md",
       "docs/items/definitions/profile_140_5.md",
       "docs/items/definitions/profile_190.md",
@@ -719,34 +738,31 @@
         "F-033"
       ]
     },
-    "notes": "Üst yüz diğer yüzlerle aynı yüz state yapısını kullanır; görsel ve lightbox yerleşimi, seçim çerçevesi ve BOM aynı yoldan geçer."
+    "notes": "TV overlay / floor-relative kutu-tül ayrı. Şimdilik isTopFixtureType/placement=top kodda; yeni item için JS case açılmaz — DB z_frame."
   },
   "tests": {
     "targeted": [
-      "test/boxBlockModule.test.js",
-      "test/helpGuide.test.js",
-      "test/modulePersistenceRoundTrip.test.js",
-      "test/scene3dPublicContract.test.js"
+      "test/ledFloodlightModule.test.js",
+      "test/modulePlacement.test.js",
+      "test/lightingItemsContract.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/box-block-corners.spec.mjs",
-        "e2e/box-block-face-image-restore.spec.mjs",
-        "e2e/color-image-capability.spec.mjs"
+        "e2e/module-move-snap.spec.mjs"
       ],
-      "reason": "Gerçek Chromium ile kutu blok bırakılır; dikey köşelerde, üst kenarlarda ve tabanda plaka kenarının komşu plakanın düzlemine sıfır açıklıkla oturduğu, gövdenin plakaların içinde kaldığı ölçülür. Üstten görünümde üst yüze tıklanır, renk verilip kaydedilir ve IndexedDB içinde faces.top.color doğrulanır. Üst ve ön yüze sağ tık ile Lightbox atanır; bez köşelerinin kutu sınırını aşmadığı ve ön-üst kenarın iki bezde aynı çizgi olduğu ölçülür (eski 6 mm ofsetle 0,256 > 0,25 ölçülüp kırılır). Yüz görseli ve renk/görsel yetenek senaryoları regresyon için çalışır."
+      "reason": "Yerleşim/ok hareketi etkilendi; module-move-snap browser regresyonu."
     }
   },
   "risk": {
     "level": "low",
-    "notes": "Yalnız kutu blok çizimi ve yüz listesi değişir; diğer modüller değişmez."
+    "notes": "Yalnız top fixture Z clamp ve ok Z; floor-relative ve overlay yolları değişmez."
   },
   "migration": {
     "required": false,
-    "notes": "Eski kayıtlarda faces.top yüklemede normalizeModuleItemState ile eklenir; veritabanı göçü gerekmez."
+    "notes": "Eski floodlight kayıtları normalize ile tavana sıkışır; DB göçü yok."
   },
-  "rollback": "BOX_BLOCK_FACE_SLOTS içinden top, createBoxBlockModule içinden top yerleşimini ve bodyInsetM içeri alımını geri al."
+  "rollback": "clampMountBottomZCm / stepMountBottomZCm kaldır; withItemZ ve ok yolunu önceki XY-only top davranışına döndür."
 }

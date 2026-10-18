@@ -58,6 +58,17 @@ Her item kendi ölçü/BOM’unu taşır; stand tavanı yalnız **max zarf** (ö
 - **Kaynak:** `DATABASE.md` (`mount_height_cm` legacy); `ITEMS.md` `defaultZCm`.
 - **Yasak:** Biri diğerine alias yazılmadan biri silinmez.
 
+### B.3b. Z clamp politikası → tip davranışı (DB)
+
+- **Durum:** BACKLOG — şimdilik kodda (`2026-10-18`)
+- **Bugün kod:**
+  - Yerden taban + tepe tavanı aşmaz: kutu / tül / wall-short → `clampFloorRelativeBottomZCm` (max = tavan − gövde)
+  - Üst montaj tabanı tavana kadar: `placement=top` / projektör → `clampMountBottomZCm` (max = tavan; gövde düşürmez)
+  - Overlay merkez ofset: TV / raf → `clampWallOverlayZCm` (+ sabit 175)
+- **Hedef:** Tip scene behavior’da `z_frame` / `z_max` (veya eşdeğeri); motor tek; yeni item için JS özel case yok.
+- **Ürün (lamba):** taban 0…stand `height_cm`; tavanı geçmez; default 350 meşru.
+- **Yasak:** Her yeni item için sahneye yeni Z if-dalı açmak (geçici top case hariç, DB taşımasına kadar).
+
 ### B.4. `stripOccupancy.align`
 
 - **Durum:** KALDIRILACAK (§ A adım 4)

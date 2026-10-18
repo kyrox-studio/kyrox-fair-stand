@@ -21,7 +21,7 @@ import {
 } from './items.js';
 import { getItemSurfaceCapabilities } from './itemCapabilities.js';
 import { resolveWallPanelBandPitchCm } from './wallPanelBand.js';
-import { clampFloorRelativeBottomZCm } from './modulePlacement.js';
+import { clampFloorRelativeBottomZCm, clampMountBottomZCm } from './modulePlacement.js';
 
 function separatorDefaultColor(widthCm) {
   const itemKey = Number(widthCm) === 50 ? 'separator_panel_48_5' : 'separator_panel_98';
@@ -1035,6 +1035,12 @@ export function normalizeModuleItemState(moduleState) {
   if (moduleState.type === 'led-floodlight') {
     const item = getTopLightItemForType('led-floodlight');
     if (item) moduleState.itemKey = item.itemKey;
+    if (moduleState.placement && Number.isFinite(Number(moduleState.placement.zCm))) {
+      moduleState.placement = {
+        ...moduleState.placement,
+        zCm: clampMountBottomZCm(moduleState.placement.zCm),
+      };
+    }
     return moduleState;
   }
 
