@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 // Proje açma ölçümü: kayıtlı proje yeniden açılınca konsola adım süreleri yazılır,
-// ardından 3D model satırı gelir. Açılış eskisi gibi tamamlanır.
+// görseller ve modeller gelince "sahne tamamen hazır" satırı gelir. Açılış eskisi gibi tamamlanır.
 test('opening a saved project logs step timings and model loads', async ({ page }) => {
   const measurements = [];
   const pageErrors = [];
@@ -57,6 +57,6 @@ test('opening a saved project logs step timings and model loads', async ({ page 
   expect(opened).toMatch(/görsel hazırlama \d+ ms/);
   expect(opened).toMatch(/sahne kurulumu \d+ ms/);
   expect(opened).toMatch(/· 1 modül$/);
-  expect(models).toMatch(/^\[Fair Stand ölçüm\] 3D model: /);
+  expect(models).toMatch(/^\[Fair Stand ölçüm\] sahne tamamen hazır: açılıştan \+\d+ ms · \d+ görsel yüzeyi · \d+ model/);
   expect(pageErrors).toEqual([]);
 });

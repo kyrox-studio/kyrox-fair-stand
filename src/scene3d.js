@@ -98,6 +98,7 @@ import {
 } from './moduleGroups.js';
 import { getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, requiresShortUpJointSnap, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
+import { trackSceneModel, trackSceneTextureLoader } from './projectOpenTiming.js';
 
 function frameColorForModule(moduleState) {
   const item = getItem(moduleState?.itemKey);
@@ -281,7 +282,7 @@ function loadItemModel(itemOrKey) {
   if (!item?.modelFile) {
     throw new TypeError(`Missing canonical model asset for ${item?.itemKey ?? 'unknown'}.`);
   }
-  return loadGltfScene(import.meta.env.BASE_URL + 'models/' + item.modelFile);
+  return trackSceneModel(loadGltfScene(import.meta.env.BASE_URL + 'models/' + item.modelFile));
 }
 
 function createTvScreenTexture(itemOrKey) {
@@ -1235,7 +1236,8 @@ export function createStandScene(
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   // Shared loader for normal editable surface images. TV uses its own Blob/object-URL path.
-  const textureLoader = new THREE.TextureLoader();
+  // Sayılır: proje açılış ölçümü bütün yüzey görselleri gelince "sahne tamamen hazır" der.
+  const textureLoader = trackSceneTextureLoader(new THREE.TextureLoader());
   
   let surfaceMeshes = [];
   let fabricOverlayMeshes = [];

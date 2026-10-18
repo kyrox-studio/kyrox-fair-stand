@@ -124,7 +124,7 @@ import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument
 import { bootstrapFairStandCatalog } from './catalogBootstrap.js';
 import { bindProjectActionSaveGuard } from './projectActionSaveGuard.js';
 import { createProductionBomPanel } from './productionBomPanel.js';
-import { beginProjectOpenStep, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
+import { beginEditorBootStep, beginProjectOpenStep, discardEditorBootTiming, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
 
 let moduleDeleteConfirmOpen = false;
 
@@ -132,10 +132,16 @@ export function startFairStandConfigurator(options = {}) {
   let cancelled = false;
   let stopRuntime = () => {};
 
+  const endCatalog = beginEditorBootStep('catalog');
   const boot = bootstrapFairStandCatalog()
     .then(() => {
+      endCatalog();
       if (cancelled) return;
+      const endEditorStart = beginEditorBootStep('editor-start');
       stopRuntime = startFairStandConfiguratorRuntime(options);
+      endEditorStart();
+      // İlk proje açılışı runtime içinde başladıysa kayıt ona geçti; başlamadıysa atılır.
+      discardEditorBootTiming();
     })
     .catch((error) => {
       console.error('Fair Stand Item catalog bootstrap failed:', error);

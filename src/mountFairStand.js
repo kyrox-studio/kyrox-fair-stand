@@ -7,6 +7,7 @@ import { FAIR_STAND_MARKUP } from './configuratorMarkup.js';
 import { bindLiveTabShare } from './liveTabShare.js';
 import { setFairStandHostDocument } from './hostDocument.js';
 import { startFairStandConfigurator } from './main.js';
+import { startEditorBootTiming } from './projectOpenTiming.js';
 
 const TRASH_BIN_PREVIEW_CSS = `
 .module-drag-card[data-module-key="plastic_trash_bin"] .module-drag-panel,
@@ -93,6 +94,7 @@ export function mountFairStand(container, options = {}) {
   if (!container) {
     throw new Error('Fair Stand mount container is required.');
   }
+  startEditorBootTiming();
 
   const hostDocument = container.ownerDocument;
   const hostWindow = hostDocument?.defaultView;
