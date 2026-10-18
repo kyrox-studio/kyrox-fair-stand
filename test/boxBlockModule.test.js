@@ -95,9 +95,13 @@ test('createBoxBlockModule renderer keeps the body and adds four outward side fa
   const end = source.indexOf('function createIlluminatedFoamModule');
   assert.ok(start >= 0 && end > start);
   const body = source.slice(start, end);
-  assert.match(body, /new THREE\.BoxGeometry\(widthM, heightM, depthM\)/);
+  assert.match(body, /new THREE\.BoxGeometry\(Math\.max\(0\.001, widthM - bodyInsetM \* 2\), bodyHeightM, Math\.max\(0\.001, depthM - bodyInsetM \* 2\)\)/);
+  assert.match(body, /const bodyHeightM = Math\.max\(0\.001, heightM - bodyInsetM\)/);
   assert.match(body, /transparent:\s*opacity < 1/);
-  assert.match(body, /mesh\.position\.set\(0,\s*heightM \/ 2,\s*0\)/);
+  assert.match(body, /mesh\.position\.set\(0,\s*bodyHeightM \/ 2,\s*0\)/);
+  // Yüz plakaları kutunun tam ölçüsünde ve dış sınırında: kenarlarda sıfır açıklık.
+  assert.match(body, /slot:\s*'front'[^\n]*width:\s*widthM, height:\s*heightM, position:\s*\[0, heightM \/ 2, depthM \/ 2\]/);
+  assert.match(body, /slot:\s*'top'[^\n]*width:\s*widthM, height:\s*depthM, position:\s*\[0, heightM, 0\]/);
   assert.match(body, /acceptsLightbox:\s*false/);
   assert.match(body, /new THREE\.PlaneGeometry\(layout\.width, layout\.height\)/);
   assert.match(body, /selectionMode:\s*'panel'/);

@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "fair-stand-box-block-top-v1",
   "kind": "renderer-change",
-  "summary": "Kutu bloğun üst yüzü de renk, görsel ve Lightbox alabilir. BOX_BLOCK_FACE_SLOTS listesine top eklendi; ölçüsü en × derinliktir ve modül ölçüsünü izler. Üst yüz gövdeden faceGapM yukarıda yatay bir plakadır, iki yönde 2 × faceGapM uzatılıp yan plakaların üst kenarını örter. Eski kayıtlarda top yoksa yüklemede gövde rengiyle eklenir. BOM, faces üzerinden döndüğü için üst yüz görseli Dijital Baskıya, Lightbox Lightbox Bezine kendiliğinden girer. Alt yüz değişmez.",
+  "summary": "Kutu bloğun üst yüzü de renk, görsel ve Lightbox alabilir: BOX_BLOCK_FACE_SLOTS listesine top eklendi (ölçü en × derinlik, modül ölçüsünü izler; eski kayıtlarda yüklemede gövde rengiyle eklenir). Kutu tam kutu: beş yüz plakası kutunun tam ölçüsünde ve dış sınırında durur, her kenarda sıfır açıklıkla kavuşur; önceki 2 mm dış ofset ve uzatma kaldırıldı. Gövde aynı düzlemde titreşmesin diye yanlardan ve üstten 2 mm içeri alındı, taban zeminde kalır; gövde (alt yüz) rengi kenarlarda görünmez. BOM faces üzerinden döner; üst yüz görseli Dijital Baskıya, Lightbox Lightbox Bezine girer.",
   "owners": [
     "src/designState.js",
     "src/scene3d.js"
@@ -737,16 +737,16 @@
         "e2e/box-block-face-image-restore.spec.mjs",
         "e2e/color-image-capability.spec.mjs"
       ],
-      "reason": "Gerçek Chromium ile kutu blok bırakılır; üst yüzün yatay, yukarı bakan ve yan plakaları örten plaka olduğu ölçülür. Üstten görünümde üst yüze tıklanır, seçim çerçevesi görülür, renk verilir, kaydedilir ve IndexedDB içinde faces.top.color doğrulanır. Yüz görseli ve renk/görsel yetenek senaryoları regresyon için çalışır."
+      "reason": "Gerçek Chromium ile kutu blok bırakılır; dikey köşelerde, üst kenarlarda ve tabanda plaka kenarının komşu plakanın düzlemine sıfır açıklıkla oturduğu, gövdenin plakaların içinde kaldığı ölçülür. Üstten görünümde üst yüze tıklanır, renk verilip kaydedilir ve IndexedDB içinde faces.top.color doğrulanır. Yüz görseli ve renk/görsel yetenek senaryoları regresyon için çalışır."
     }
   },
   "risk": {
     "level": "low",
-    "notes": "Yalnız kutu bloğa beşinci yüz eklenir; diğer modüller değişmez."
+    "notes": "Yalnız kutu blok çizimi ve yüz listesi değişir; diğer modüller değişmez."
   },
   "migration": {
     "required": false,
     "notes": "Eski kayıtlarda faces.top yüklemede normalizeModuleItemState ile eklenir; veritabanı göçü gerekmez."
   },
-  "rollback": "BOX_BLOCK_FACE_SLOTS içinden top ve createBoxBlockModule içindeki top yerleşimini kaldır."
+  "rollback": "BOX_BLOCK_FACE_SLOTS içinden top, createBoxBlockModule içinden top yerleşimini ve bodyInsetM içeri alımını geri al."
 }

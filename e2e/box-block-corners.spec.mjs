@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// Kutu blok yan plakaları köşede birbirine kavuşur: gövde rengi köşede çizgi olarak görünmez.
+// Kutu blok yüz plakaları kutunun dış sınırına oturur ve her kenarda sıfır açıklıkla kavuşur:
+// gövde rengi hiçbir köşede çizgi olarak görünmez.
 async function exposeScene(page) {
   await page.route('**/src/scene3d.js*', async (route) => {
     const response = await route.fetch();
@@ -78,8 +79,8 @@ test('box block side faces meet at every vertical corner', async ({ page }) => {
       backZ - Math.min(...side(bySlot.left)),
     ];
   });
-  // Negatif değer köşede açıklık demektir; plaka kenarı komşu düzleme en az ulaşmalı.
-  for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(-1e-6);
+  // Negatif değer köşede açıklık, pozitif değer taşma demektir; ikisi de sıfır olmalı.
+  for (const gap of gaps) expect(Math.abs(gap)).toBeLessThan(1e-6);
 
   // Üst yüz: yatay, yukarı bakar, yan plakaların üst kenarını örter ve renk alır.
   const top = await page.evaluate(() => {
@@ -100,13 +101,35 @@ test('box block side faces meet at every vertical corner', async ({ page }) => {
       bodyDepth: group.userData.depthCm / 100,
       rightX: bySlot.right.position.x,
       frontZ: bySlot.front.position.z,
+      // Yan plakaların üst kenarı (yerel +H/2) üst plakanın düzlemine ulaşmalı.
+      sideTops: ['front', 'right', 'back', 'left'].map((slot) => {
+        const side = bySlot[slot];
+        side.updateMatrixWorld(true);
+        const edge = side.localToWorld(side.position.clone().set(0, side.geometry.parameters.height / 2, 0));
+        return edge.applyMatrix4(group.matrixWorld.clone().invert()).y;
+      }),
+      sideBottoms: ['front', 'right', 'back', 'left'].map((slot) => bySlot[slot].position.y - bySlot[slot].geometry.parameters.height / 2),
+      bodyBox: (() => {
+        const body = group.children.find((child) => child.userData?.selectionMode === 'module');
+        const p = body.geometry.parameters;
+        return { width: p.width, height: p.height, depth: p.depth, y: body.position.y };
+      })(),
     };
   });
   expect(top).not.toBeNull();
   expect(top.normalY).toBeGreaterThan(0.999);
-  expect(top.y).toBeGreaterThan(top.bodyHeight);
-  expect(top.width / 2).toBeGreaterThanOrEqual(top.rightX - 1e-6);
-  expect(top.depth / 2).toBeGreaterThanOrEqual(top.frontZ - 1e-6);
+  // Kutu tam ölçüdedir: üst plaka tepede, kenarları yan plakaların düzleminde.
+  expect(Math.abs(top.y - top.bodyHeight)).toBeLessThan(1e-6);
+  expect(Math.abs(top.width / 2 - top.rightX)).toBeLessThan(1e-6);
+  expect(Math.abs(top.depth / 2 - top.frontZ)).toBeLessThan(1e-6);
+  expect(Math.abs(top.rightX - top.bodyWidth / 2)).toBeLessThan(1e-6);
+  expect(Math.abs(top.frontZ - top.bodyDepth / 2)).toBeLessThan(1e-6);
+  for (const sideTop of top.sideTops) expect(Math.abs(sideTop - top.y)).toBeLessThan(1e-6);
+  for (const sideBottom of top.sideBottoms) expect(Math.abs(sideBottom)).toBeLessThan(1e-6);
+  // Gövde plakaların içinde kalır; aynı düzlemde titreşmez ve dışarı taşmaz.
+  expect(top.bodyBox.width).toBeLessThan(top.bodyWidth);
+  expect(top.bodyBox.depth).toBeLessThan(top.bodyDepth);
+  expect(top.bodyBox.y + top.bodyBox.height / 2).toBeLessThan(top.y);
 
   // Üstten görünümde üst yüze tıkla, renk ver; kayıtta faces.top.color değişir.
   await page.locator('body').press('t');
