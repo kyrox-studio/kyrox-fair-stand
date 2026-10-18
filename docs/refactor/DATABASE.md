@@ -6,7 +6,7 @@ Lokal / sunucu PostgreSQL `fair_stand` şemasının yaşayan envanteri. “Üç 
 
 **Doğrulama (2026-09-24, `models.py` + Alembic head + `item_mapper.py` + `src/`):**
 
-1. Şema — aşağıdaki envanter; kolon adları `models.py` ile aynı. Alembic head: **`0066_metal_separator_area`**. `0053_item_type_scene_behavior` sahne davranışını `fair_stand_item_type` satırından ayırır. `0043_panel_glass_family` ve `0044_panel_corner_glass_family` yeni kolon değildir; `panel_cam_*` / `panel_corner_cam_*` SKU satırıdır. `0057_foam_logo_item` gizli `foam_logo` production satırını ekler. `0061_drop_foam_logo_item` bu satırı siler. Strafor metrekare üretimi `illuminated-foam` kaydındadır. `0059_elektrik_panosu_item` gizli `elektrik_panosu` satırını yoksa ekler; proje listesi bunu modül reçetesinden ayrı, miktar 1 olarak yazar. `0064_tulle_fabric` görünen `tulle_fabric` sahne satırını ekler. Kalınlık item master `depth_cm` 0.4 değeridir. BOM miktarı en × boy / 10000 m² olarak aynı `itemKey` ile yazılır. `0065_metal_separator` gizli `metal_separator` satırını ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve `is_cost_enabled` açar. Katalogda görünmez. Ctrl ile seçilen tam dikdörtgen tek ölçü olur; Paneller satırı adet ve ölçüyü, Üretim satırı toplam m²’yi yazar.
+1. Şema — aşağıdaki envanter; kolon adları `models.py` ile aynı. Alembic head: **`0067_group_templates`**. `0067_group_templates` organizasyon grup şablonu tablosunu (`fair_stand_group_templates`) ekler; şablon Item değildir. `0053_item_type_scene_behavior` sahne davranışını `fair_stand_item_type` satırından ayırır. `0043_panel_glass_family` ve `0044_panel_corner_glass_family` yeni kolon değildir; `panel_cam_*` / `panel_corner_cam_*` SKU satırıdır. `0057_foam_logo_item` gizli `foam_logo` production satırını ekler. `0061_drop_foam_logo_item` bu satırı siler. Strafor metrekare üretimi `illuminated-foam` kaydındadır. `0059_elektrik_panosu_item` gizli `elektrik_panosu` satırını yoksa ekler; proje listesi bunu modül reçetesinden ayrı, miktar 1 olarak yazar. `0064_tulle_fabric` görünen `tulle_fabric` sahne satırını ekler. Kalınlık item master `depth_cm` 0.4 değeridir. BOM miktarı en × boy / 10000 m² olarak aynı `itemKey` ile yazılır. `0065_metal_separator` gizli `metal_separator` satırını ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve `is_cost_enabled` açar. Katalogda görünmez. Ctrl ile seçilen tam dikdörtgen tek ölçü olur; Paneller satırı adet ve ölçüyü, Üretim satırı toplam m²’yi yazar.
 2. `item_mapper.py` — her ürün kolonu JSON anahtarına (veya “bootstrap’a girmez”) bağlandı.
 3. Production `src/` grep — “Nerede” hücresi gerçek okuyucu dosyadır; okunmayan kolon **DATA / TEST_ONLY / SCHEMA_ONLY** yazılır.
 4. `ITEMS.md` (alan kuyruğu + onaylı şema), `CATALOG.md`, `ROTATION.md`, `SCENE_POSE.md`, `STAND_DIMENSIONS.md` — değer kopyalanmaz; işaret edilir.
@@ -70,7 +70,7 @@ Migrasyon kilidi. Ürün kodu okumaz. `alembic upgrade head` yazar.
 
 | Kolon | JSON | Nedir | Neden | Nerede |
 |---|---|---|---|---|
-| `version_num` | yok | Uygulanan Alembic revision | Şema sürümü | yalnız Alembic; head `0066_metal_separator_area` |
+| `version_num` | yok | Uygulanan Alembic revision | Şema sürümü | yalnız Alembic; head `0067_group_templates` |
 
 ---
 
@@ -458,6 +458,20 @@ Proje düzenleme oturumu anlık görüntüsü. Canlı 18 satır. `organization_i
 Index: `ix_fair_stand_project_revisions_project_id`.
 
 ---
+
+## `fair_stand_group_templates`
+
+Organizasyonun **grup şablonu** (sahne editörü Faz 5). Bir grubun parçalarını ve göreli dizilişini tutar. **Item değildir**; BOM, birim ve fiyat taşımaz. Sahneye yerleştirilince normal modüllere ve yeni bir gruba açılır; BOM parçalardan bugünkü gibi çıkar. API `/api/v1/fair-stand/group-templates`; yetkiler proje yetkileridir (okuma: liste ve yerleştirme, oluşturma/güncelleme: kaydet ve adlandır, silme: sil).
+
+| Kolon | JSON / API | Nedir | Neden | Nerede |
+|---|---|---|---|---|
+| `id` | `id` | Şablon UUID PK | Kimlik | API |
+| `organization_id` | `organizationId` | Core org UUID; yalnız oturumdan yazılır | Organizasyon izolasyonu; başka org 404 alır | index (`organization_id`, `updated_at`) |
+| `name` | `name` | En fazla 80 karakter, boş olamaz | Kullanıcı adı | Şablonlarım kartı |
+| `member_count` | `memberCount` | Parça sayısı (> 0) | Liste özeti | API |
+| `payload` | `payload` | `{ version: 1, members: […] }`; her üye `itemKey`, tip, ölçü, göreli `placement` (`xCm`/`yCm`/`zCm`/`rotationZDeg`, `wallId` yok), **renk**, **cam panel** (`isGlass`) ve **metal separatör** (`isMetalSeparator` / `metalSeparatorGroupId`) taşır. `id`, `group`, `locked`, görsel (`imageAssetId`) ve Lightbox/Mesh kumaş alanları taşınmaz. 2–200 parça; en fazla 512 KB; her `itemKey` katalogda olmalı | Yapı + yüzey ataması (görselsiz) | `group_templates.py`, `src/groupTemplates.js` |
+| `created_by` | — | Oluşturan kullanıcı UUID | İz | — |
+| `created_at` / `updated_at` | `createdAt` / `updatedAt` | Zaman | Sıralama | — |
 
 ## `fair_stand_project_assets`
 

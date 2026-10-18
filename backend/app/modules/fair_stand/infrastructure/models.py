@@ -853,3 +853,28 @@ class FairStandProjectAssetModel(Base):
     storage_key: Mapped[str] = mapped_column(String(1024), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     project: Mapped[FairStandProjectModel] = relationship(back_populates="assets")
+
+
+class FairStandGroupTemplateModel(Base):
+    """Organization group template: parts and their relative layout, not an Item.
+
+    Payload holds the members' itemKey, size, relative placement, colour and panel
+    features. Images are not stored (project assets are per project). Placing a
+    template expands it into normal modules and a new group; BOM comes from the parts.
+    """
+
+    __tablename__ = "fair_stand_group_templates"
+    __table_args__ = (
+        Index("ix_fair_stand_group_templates_organization_id_updated_at", "organization_id", "updated_at"),
+        CheckConstraint("length(trim(name)) > 0", name="ck_fair_stand_group_templates_name"),
+        CheckConstraint("member_count > 0", name="ck_fair_stand_group_templates_member_count"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    name: Mapped[str] = mapped_column(String(80), nullable=False)
+    member_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    payload: Mapped[dict] = mapped_column(PayloadJSON, nullable=False)
+    created_by: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
