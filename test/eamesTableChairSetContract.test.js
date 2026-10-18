@@ -42,14 +42,12 @@ test('original Eames GLB asset is present', async () => {
   assert.ok(payload.size > 50000);
   assert.ok(payload.size < 400000);
 
-  const { NodeIO } = await import('@gltf-transform/core');
-  const { ALL_EXTENSIONS } = await import('@gltf-transform/extensions');
-  const { MeshoptDecoder } = await import('meshoptimizer');
-  const io = new NodeIO()
-    .registerExtensions(ALL_EXTENSIONS)
-    .registerDependencies({ 'meshopt.decoder': MeshoptDecoder });
-  const doc = await io.read(glbPath);
-  const materials = new Set(doc.getRoot().listMaterials().map((m) => m.getName() || ''));
+  // Malzeme adları GLB'nin JSON bölümündedir; Meshopt yalnız geometri tamponlarını sıkıştırır.
+  const buffer = fs.readFileSync(glbPath);
+  assert.equal(buffer.toString('ascii', 0, 4), 'glTF');
+  const gltf = JSON.parse(buffer.toString('utf8', 20, 20 + buffer.readUInt32LE(12)));
+  assert.ok(gltf.extensionsUsed?.includes('EXT_meshopt_compression'), 'Eames GLB Meshopt ile sıkıştırılmış olmalı');
+  const materials = new Set((gltf.materials ?? []).map((m) => m.name || ''));
   assert.ok(materials.has('plastic_wit'), 'plastic_wit seat material must remain');
   assert.ok(materials.has('Material1'), 'Material1 leg material must remain');
   assert.ok(materials.has('skp_front_default'), 'skp_front_default must remain (optimize palette silmesin)');

@@ -3,6 +3,10 @@
  * `optimize` kullanılmaz: malzeme/mesh birleştirme, dedup, join, palette yok.
  *
  * Kullanım: npm run compress:models
+ *
+ * Araç projeye bağımlılık olarak eklenmez: @gltf-transform/cli, yüksek seviye güvenlik
+ * açığı olan braces/micromatch zincirini getirir ve CI'daki `npm audit` kapısını kırar.
+ * Yalnız model yeniden sıkıştırılırken npx ile sabit sürümden indirilip çalıştırılır.
  */
 import { spawnSync } from 'node:child_process';
 import { readdirSync, statSync, copyFileSync, mkdtempSync, rmSync, renameSync } from 'node:fs';
@@ -12,7 +16,21 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const modelsDir = path.join(root, 'public', 'models');
-const cli = path.join(root, 'node_modules', '@gltf-transform', 'cli', 'bin', 'cli.js');
+// Mevcut modeller bu sürümle sıkıştırıldı; aynı çıktıyı almak için sabit tutulur.
+const GLTF_TRANSFORM_CLI = '@gltf-transform/cli@4.5.1';
+
+// npx kabuk olmadan çalıştırılır (Windows'ta shell:true argümanları kaçışsız birleştirir).
+// `npm run compress:models` npm_execpath verir; npx-cli.js aynı klasördedir.
+function npxInvocation(args) {
+  const npmCli = process.env.npm_execpath;
+  if (npmCli && /npm-cli\.js$/i.test(npmCli)) {
+    return { command: process.execPath, args: [path.join(path.dirname(npmCli), 'npx-cli.js'), ...args] };
+  }
+  if (process.platform === 'win32') {
+    throw new Error("Windows'ta npm üzerinden çalıştır: npm run compress:models");
+  }
+  return { command: 'npx', args };
+}
 
 function listGlbs() {
   return readdirSync(modelsDir)
@@ -30,11 +48,8 @@ function formatMb(bytes) {
 }
 
 function compressOne(src, dest) {
-  const result = spawnSync(
-    process.execPath,
-    [cli, 'meshopt', src, dest, '--level', 'high'],
-    { encoding: 'utf8' },
-  );
+  const { command, args } = npxInvocation(['--yes', GLTF_TRANSFORM_CLI, 'meshopt', src, dest, '--level', 'high']);
+  const result = spawnSync(command, args, { encoding: 'utf8' });
   if (result.status !== 0) {
     const detail = [result.stderr, result.stdout].filter(Boolean).join('\n');
     throw new Error(`gltf-transform meshopt failed for ${path.basename(src)}:\n${detail}`);
@@ -42,11 +57,6 @@ function compressOne(src, dest) {
 }
 
 function main() {
-  if (!statSync(cli, { throwIfNoEntry: false })) {
-    console.error('Eksik: @gltf-transform/cli — npm install çalıştır.');
-    process.exit(1);
-  }
-
   const glbs = listGlbs();
   if (glbs.length === 0) {
     console.error('public/models altında .glb yok.');
