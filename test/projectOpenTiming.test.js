@@ -33,7 +33,7 @@ test('an open measurement records each step, assets and module count in one log 
   startProjectOpenTiming('p-1');
   await timeProjectOpenStep('project-fetch', async () => {});
   await timeProjectOpenStep('assets-download', async () => {});
-  noteProjectOpenAssets({ count: 5, bytes: 3 * 1024 * 1024, missing: 1 });
+  noteProjectOpenAssets({ count: 5, bytes: 3 * 1024 * 1024, missing: 1, reused: 2 });
   const endScene = beginProjectOpenStep('scene-build');
   endScene();
   endScene();
@@ -49,7 +49,7 @@ test('an open measurement records each step, assets and module count in one log 
   assert.match(lines[0], /proje verisi \d+ ms/);
   assert.match(lines[0], /görsel indirme \d+ ms/);
   assert.match(lines[0], /sahne kurulumu \d+ ms/);
-  assert.match(lines[0], /5 görsel \(3\.0 MB, 1 eksik\)/);
+  assert.match(lines[0], /5 görsel \(3\.0 MB indirildi, 2 önbellekten, 1 eksik\)/);
   assert.match(lines[0], /12 modül/);
 });
 

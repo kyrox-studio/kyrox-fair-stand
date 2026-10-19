@@ -285,6 +285,23 @@ function loadItemModel(itemOrKey) {
   return trackSceneModel(loadGltfScene(import.meta.env.BASE_URL + 'models/' + item.modelFile));
 }
 
+// Proje açılışı 3D modelleri sahne kurulmadan önce, proje verisi gelir gelmez başlatır:
+// görseller inerken modeller de iner ve ayrıştırılır. Aynı adres önbelleği (gltfSceneCache)
+// sahne kurulumunda tekrar kullanılır; model iki kez inmez. Dönen değer başlatılan dosya sayısıdır.
+export function prefetchModuleModels(modules) {
+  const files = new Set();
+  for (const moduleState of modules ?? []) {
+    const modelFile = moduleState?.modelFile
+      || (moduleState?.itemKey ? getItem(moduleState.itemKey)?.modelFile : null);
+    if (modelFile) files.add(modelFile);
+  }
+  for (const modelFile of files) {
+    // Hata loadGltfScene içinde bildirilir ve önbellekten düşer; sahne kurulumu yeniden dener.
+    loadItemModel({ modelFile }).catch(() => {});
+  }
+  return files.size;
+}
+
 function createTvScreenTexture(itemOrKey) {
   const item = typeof itemOrKey === 'string' ? getItem(itemOrKey) : itemOrKey;
   if (!item?.defaultScreenFile) {

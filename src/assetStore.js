@@ -105,6 +105,9 @@ export async function saveImportedImageAsset(projectId, asset) {
     blob: asset.blob,
     createdAt: Number(asset.createdAt) || Date.now(),
   };
+  // Sunucudan inen kopya hangi depolama anahtarından geldiğini bilir; aynı anahtar tekrar
+  // gelirse proje açılışı görseli yeniden indirmez.
+  if (asset.serverStorageKey) stored.serverStorageKey = asset.serverStorageKey;
   await new Promise((resolve, reject) => {
     const transaction = db.transaction(ASSET_STORE_NAME, 'readwrite');
     transaction.objectStore(ASSET_STORE_NAME).put(stored);

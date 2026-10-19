@@ -206,24 +206,83 @@ async function syncProjectAssets(projectId, mode = 'dirty') {
   }
 }
 
-async function cacheProjectAndAssets(detail) {
+// Aynı anda en fazla bu kadar görsel indirilir: sınırsız paralel istek sunucuyu ve tarayıcı
+// bağlantı kuyruğunu tıkar, ilk görseller de geç gelir.
+export const ASSET_DOWNLOAD_CONCURRENCY = 6;
+
+// Görevleri sırayı koruyarak en fazla `limit` tanesi aynı anda çalışacak şekilde yürütür;
+// sonuçlar Promise.allSettled biçimindedir (bir hata diğerlerini durdurmaz).
+export async function settleWithConcurrency(items, limit, run) {
+  const results = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      try {
+        results[index] = { status: 'fulfilled', value: await run(items[index], index) };
+      } catch (reason) {
+        results[index] = { status: 'rejected', reason };
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
+// Tarayıcıdaki kopya sunucudakiyle aynıysa (kimlik + depolama anahtarı + boyut) yeniden indirilmez.
+// Görsel içeriği kimlik başına değişmez: yeni yükleme yeni kimlik alır, aynı kimlikle yalnız aynı
+// içerik yeniden senkronlanır. Anahtar uzantı değişirse (ör. webp → jpg) değişir; boyut ek koruma.
+// Eski yerel kayıtta anahtar yoksa güvenli tarafta kalınır ve bir kez indirilir.
+export function isLocalAssetCurrent(localAsset, serverAsset) {
+  if (!localAsset?.blob || !serverAsset?.id || localAsset.id !== serverAsset.id) return false;
+  if (!serverAsset.storageKey || localAsset.serverStorageKey !== serverAsset.storageKey) return false;
+  const serverBytes = Number(serverAsset.byteSize);
+  return !Number.isFinite(serverBytes) || serverBytes <= 0 || localAsset.blob.size === serverBytes;
+}
+
+async function cacheProjectAndAssets(detail, { onAssetProgress } = {}) {
   const local = toLocalProject(detail);
   await saveLocalProject(local);
   const assets = Array.isArray(detail.assets) ? detail.assets : [];
-  // Görseller birlikte indirilir. İnemeyen görsel (ör. sunucuda dosya eksik) projeyi açmayı
-  // engellemez; atlanır ve missingAssetIds ile bildirilir. Proje içindeki bağlantı silinmez.
+  const localById = new Map((await loadImageAssets(detail.id)).map((asset) => [asset.id, asset]));
+  // İnemeyen görsel (ör. sunucuda dosya eksik) projeyi açmayı engellemez; atlanır ve
+  // missingAssetIds ile bildirilir. Proje içindeki bağlantı silinmez.
   const endAssetsDownload = beginProjectOpenStep('assets-download');
-  const results = await Promise.allSettled(assets.map(async (asset) => {
-    const response = await apiFetch(`/${detail.id}/assets/${asset.id}`);
-    const blob = await response.blob();
-    return saveImportedImageAsset(detail.id, {
-      id: asset.id,
-      name: asset.name || 'image',
-      type: asset.type || blob.type || 'application/octet-stream',
-      blob,
-      createdAt: asset.createdAt || Date.now(),
-    });
-  }));
+  let finished = 0;
+  let downloadedBytes = 0;
+  let reusedCount = 0;
+  const reportProgress = () => {
+    try {
+      onAssetProgress?.({ done: finished, total: assets.length });
+    } catch {
+      // İlerleme yazımı indirmeyi bozmaz.
+    }
+  };
+  reportProgress();
+  const results = await settleWithConcurrency(assets, ASSET_DOWNLOAD_CONCURRENCY, async (asset) => {
+    try {
+      const localAsset = localById.get(asset.id);
+      if (isLocalAssetCurrent(localAsset, asset)) {
+        reusedCount += 1;
+        return localAsset;
+      }
+      const response = await apiFetch(`/${detail.id}/assets/${asset.id}`);
+      const blob = await response.blob();
+      downloadedBytes += blob.size;
+      return await saveImportedImageAsset(detail.id, {
+        id: asset.id,
+        name: asset.name || 'image',
+        type: asset.type || blob.type || 'application/octet-stream',
+        blob,
+        createdAt: asset.createdAt || Date.now(),
+        serverStorageKey: asset.storageKey || null,
+      });
+    } finally {
+      finished += 1;
+      reportProgress();
+    }
+  });
   endAssetsDownload();
   const cached = [];
   const missingAssetIds = [];
@@ -237,8 +296,9 @@ async function cacheProjectAndAssets(detail) {
   });
   noteProjectOpenAssets({
     count: assets.length,
-    bytes: cached.reduce((sum, asset) => sum + (Number(asset?.blob?.size) || 0), 0),
+    bytes: downloadedBytes,
     missing: missingAssetIds.length,
+    reused: reusedCount,
   });
   // Server copy is authoritative — skip re-upload on autosave.
   clearProjectAssetSyncState(detail.id);
@@ -291,12 +351,26 @@ export async function listProjects() {
     .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
 }
 
-export async function loadProject(projectId) {
+// onProjectData: proje verisi gelir gelmez (görseller inmeden) modüllerle çağrılır; açılış
+// 3D modelleri bu anda başlatır. onAssetProgress: görsel indirme ilerlemesi ({ done, total }).
+export async function loadProject(projectId, { onProjectData, onAssetProgress } = {}) {
   if (!remoteEnabled()) {
-    return timeProjectOpenStep('project-read-local', () => loadLocalProject(projectId));
+    const project = await timeProjectOpenStep('project-read-local', () => loadLocalProject(projectId));
+    notifyProjectData(onProjectData, project);
+    return project;
   }
   const detail = await timeProjectOpenStep('project-fetch', () => apiFetch(`/${projectId}`));
-  return cacheProjectAndAssets(detail);
+  notifyProjectData(onProjectData, toLocalProject(detail));
+  return cacheProjectAndAssets(detail, { onAssetProgress });
+}
+
+function notifyProjectData(onProjectData, project) {
+  if (!project || !onProjectData) return;
+  try {
+    onProjectData(project);
+  } catch (error) {
+    console.warn('Proje verisi ön hazırlığı başarısız:', error);
+  }
 }
 
 export async function loadProjectRevision(projectId, revisionNumber) {

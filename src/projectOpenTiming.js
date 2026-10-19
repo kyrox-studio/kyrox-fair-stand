@@ -145,12 +145,13 @@ export async function timeProjectOpenStep(name, run) {
   }
 }
 
-export function noteProjectOpenAssets({ count = 0, bytes = 0, missing = 0 } = {}) {
+export function noteProjectOpenAssets({ count = 0, bytes = 0, missing = 0, reused = 0 } = {}) {
   if (!current) return;
   current.assets = {
     count: Number(count) || 0,
     bytes: Number(bytes) || 0,
     missing: Number(missing) || 0,
+    reused: Number(reused) || 0,
   };
 }
 
@@ -194,7 +195,8 @@ export function summarizeProjectOpen(result) {
   const parts = [`toplam ${formatMs(result.totalMs)}`, ...formatSteps(result.steps)];
   if (result.assets) {
     const missing = result.assets.missing ? `, ${result.assets.missing} eksik` : '';
-    parts.push(`${result.assets.count} görsel (${formatMb(result.assets.bytes)}${missing})`);
+    const reused = result.assets.reused ? `, ${result.assets.reused} önbellekten` : '';
+    parts.push(`${result.assets.count} görsel (${formatMb(result.assets.bytes)} indirildi${reused}${missing})`);
   }
   if (result.moduleCount != null) parts.push(`${result.moduleCount} modül`);
   return `[Fair Stand ölçüm] proje açıldı: ${parts.join(' · ')}`;
