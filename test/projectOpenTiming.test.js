@@ -89,6 +89,14 @@ test('model loads count only /models/ requests that started with this open', () 
     summarizeSceneReady({ sinceOpenMs: 60000, sinceRouteMs: null, imageCount: 0, modelCount: 0, models: collectModelLoads([], startedAt), timedOut: true }),
     /^\[Fair Stand ölçüm\] sahne hâlâ yükleniyor: açılıştan \+60000 ms · 0 görsel yüzeyi · 0 model/,
   );
+  // İlk kare maliyeti: açılıştaki kareler, en ağır kare, derlenen program ve yüklenen doku sayısı.
+  assert.match(
+    summarizeSceneReady({
+      sinceOpenMs: 4200, sinceRouteMs: null, imageCount: 0, modelCount: 0, models: collectModelLoads([], startedAt), timedOut: false,
+      render: { frames: 4, totalMs: 1830, heaviestMs: 1650, programs: 31, textures: 58 },
+    }),
+    / · çizim 4 kare 1830 ms, en ağır kare 1650 ms \(31 program derlendi, 58 doku yüklendi\)$/,
+  );
 });
 
 test('summary keeps step order and labels unknown steps by name', () => {

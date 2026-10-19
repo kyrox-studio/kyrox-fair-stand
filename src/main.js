@@ -885,9 +885,12 @@ function commitDroppedCatalogModule(moduleState, dropResult, catalogKey = null) 
   const previousModules = currentModules.slice();
   try {
     if (dropResult.plan?.placements instanceof Map && dropResult.plan?.orderedModuleIds?.length) {
-      // Şeride araya ekleme diğer modüllerin yerini değiştirir: tam kurulum.
+      // Şeride araya ekleme diğer modüllerin yerini değiştirir: onlar taşınır, yeni modül eklenir.
+      const capturedContent = captureModuleContent();
       applyContinuousInsertionPlan(dropResult.plan, [canonical]);
-      rebuildWall({ resetView: false });
+      moduleContextMenu.closePicker();
+      scene3d.clearSelection();
+      syncSceneAfterModuleChange(capturedContent);
     } else {
       canonical.placement = { ...dropResult.placement };
       currentModules.push(canonical);
@@ -1392,7 +1395,7 @@ async function handleGroupTemplateAction(action, templateId) {
         return;
       }
       currentModules.push(...placed.clones.map(normalizeModuleItemState));
-      rebuildWall({ resetView: false });
+      syncSceneToModules();
       reportGroupResult(`“${template.name}” yerleştirildi · ${placed.clones.length} parça, yeni grup. Sürükleyerek yerine taşıyın.`
         + (placed.skipped.length ? ` Katalogda olmayan ${placed.skipped.length} parça atlandı: ${placed.skipped.join(', ')}.` : ''));
       return;
@@ -1528,6 +1531,7 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
     }
     const name = window.prompt('Grup adı', nextGroupName(currentModules));
     if (name === null) return;
+    const capturedContent = captureModuleContent();
     let result = createGroup(currentModules, ids, { name, stand });
     if (!result.ok && result.reason === 'conflict') {
       if (!confirmGroupMove(result.conflicts, name.trim() || nextGroupName(currentModules))) return;
@@ -1537,7 +1541,7 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
       reportGroupResult(result.message ?? 'Grup oluşturulamadı.', true);
       return;
     }
-    rebuildWall({ resetView: false });
+    syncSceneAfterModuleChange(capturedContent);
     const detached = getGroupMembers(currentModules, result.group.id).filter((member) => member.group?.fromWallId).length;
     reportGroupResult(`“${result.group.name}” grubu oluşturuldu · ${result.group.moduleIds.length} parça.`
       + (detached ? ` ${detached} duvar parçası kenardan ayrıldı; grup her yöne taşınabilir.` : ''));
@@ -1547,6 +1551,7 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
   if (action === 'group-add') {
     if (!addTarget) return;
     const ids = (moduleIds ?? []).filter((id) => getModuleGroup(currentModules.find((m) => m.id === id))?.id !== addTarget.id);
+    const capturedContent = captureModuleContent();
     let result = addToGroup(currentModules, addTarget.id, ids, { stand });
     if (!result.ok && result.reason === 'conflict') {
       if (!confirmGroupMove(result.conflicts, addTarget.name)) return;
@@ -1556,7 +1561,7 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
       reportGroupResult(result.message ?? 'Gruba eklenemedi.', true);
       return;
     }
-    rebuildWall({ resetView: false });
+    syncSceneAfterModuleChange(capturedContent);
     reportGroupResult(`${result.added} öğe “${addTarget.name}” grubuna eklendi.`);
     return;
   }
@@ -1599,29 +1604,31 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
       return;
     }
     currentModules.push(...result.clones);
-    rebuildWall({ resetView: false });
+    syncSceneToModules();
     reportGroupResult(`“${group.name}” çoğaltıldı · yeni grup “${result.group.name}”, ${result.clones.length} parça.`);
     return;
   }
   if (action === 'group-remove-member') {
+    const capturedContent = captureModuleContent();
     const result = removeFromGroup(currentModules, moduleId ? [moduleId] : [], { stand });
     if (!result.ok) {
       reportGroupResult(result.message, true);
       return;
     }
-    rebuildWall({ resetView: false });
+    syncSceneAfterModuleChange(capturedContent);
     reportGroupResult(result.dissolved.length
       ? `Parça gruptan çıkarıldı; grupta tek parça kaldığı için “${group.name}” çözüldü.`
       : `Parça “${group.name}” grubundan çıkarıldı.`);
     return;
   }
   if (action === 'group-dissolve') {
+    const capturedContent = captureModuleContent();
     const result = dissolveGroup(currentModules, group.id, { stand });
     if (!result.ok) {
       reportGroupResult(result.message, true);
       return;
     }
-    rebuildWall({ resetView: false });
+    syncSceneAfterModuleChange(capturedContent);
     reportGroupResult(`“${group.name}” grubu çözüldü; parçalar yerinde kaldı.`);
     return;
   }
@@ -1637,7 +1644,8 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
     if (!confirmed) return;
     const ids = new Set(group.moduleIds);
     currentModules = currentModules.filter((module) => !ids.has(module.id));
-    rebuildWall({ resetView: false });
+    scene3d.clearSelection();
+    syncSceneToModules();
     reportGroupResult(`“${group.name}” grubu silindi · ${ids.size} parça.`);
   }
 }
@@ -2484,13 +2492,13 @@ function applyDesignSnapshot(snapshot) {
 
 // Sahneyi currentModules'e eşitler; grup temizliği bir modülü değiştirirse veya sahne
 // eşitleyemezse tam kurulum yapılır.
-function syncSceneToModules() {
+function syncSceneToModules({ rebuiltIds = null } = {}) {
   const beforeSignature = moduleLayoutSignature(currentModules);
   pruneGroups(currentModules, getGroupStand());
   const buildStartedAt = performance.now();
   if (moduleLayoutSignature(currentModules) !== beforeSignature
     || !currentStand
-    || !scene3d.syncModules(currentModules)) {
+    || !scene3d.syncModules(currentModules, { rebuiltIds })) {
     rebuildWall({ resetView: false });
     return;
   }
@@ -2498,6 +2506,26 @@ function syncSceneToModules() {
   renderModuleGroupPanel();
   renderCurrentWallResult();
   if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+}
+
+// Modülleri yerinde değiştiren işlemler (grup işlemleri, şeride araya ekleme) için: işlemden
+// önce her modülün içeriği (yer ve grup bilgisi hariç) kaydedilir. Sonra yalnız içeriği değişen
+// modül yeniden yaratılır, yalnız yeri değişen taşınır; grup bilgisini sahne canlı okur.
+function moduleContentSignature(moduleState) {
+  const { placement, group, ...content } = moduleState ?? {};
+  return JSON.stringify(content);
+}
+
+function captureModuleContent() {
+  return new Map(currentModules.map((moduleState) => [moduleState, moduleContentSignature(moduleState)]));
+}
+
+function syncSceneAfterModuleChange(capturedContent) {
+  const rebuiltIds = new Set(currentModules
+    .filter((moduleState) => capturedContent.has(moduleState)
+      && capturedContent.get(moduleState) !== moduleContentSignature(moduleState))
+    .map((moduleState) => moduleState.id));
+  syncSceneToModules({ rebuiltIds });
 }
 
 function syncDesignHistoryButtons({ canUndo, canRedo }) {

@@ -97,6 +97,13 @@ async function storedModules(page) {
   });
 }
 
+// Kutuların sahne nesneleri (modül kimliği → uuid). Grup işlemi sahneyi baştan kurmazsa aynı kalır.
+function bodyUuids(page) {
+  return page.evaluate(() => Object.fromEntries(window.__sceneSurfaces()
+    .filter((mesh) => mesh.userData.moduleType === 'box-block' && mesh.userData.selectionMode === 'module')
+    .map((mesh) => [mesh.userData.moduleId, mesh.uuid])));
+}
+
 function boxes(modules) {
   return modules.filter((module) => module.type === 'box-block');
 }
@@ -115,6 +122,8 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   const [first, second] = initial;
 
   // Shift+tık ile iki kutuyu seç, sağ tık > Grup oluştur.
+  const bodiesBeforeGroup = await bodyUuids(page);
+  expect(Object.keys(bodiesBeforeGroup)).toHaveLength(2);
   const points = await boxScreenPoints(page);
   await page.keyboard.down('Shift');
   await page.mouse.click(points[first.id].x, points[first.id].y);
@@ -130,6 +139,8 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   if (!(await groupsCard.evaluate((el) => el.open))) await groupsCard.locator(':scope > summary').click();
   const row = groupsCard.locator('.module-group-row', { hasText: 'Sağ duvar' });
   await expect(row.locator('.module-group-meta')).toHaveText('2 parça');
+  // Grup oluşturmak kutuları yeniden yaratmaz.
+  expect(await bodyUuids(page)).toEqual(bodiesBeforeGroup);
 
   let grouped = boxes(await storedModules(page));
   expect(grouped.every((module) => module.group?.name === 'Sağ duvar')).toBe(true);
@@ -215,11 +226,16 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   await expect(row.locator('.module-group-meta')).toHaveText('2 parça');
 
   // Çoğalt: yeni, kilitsiz kopya grup.
+  const bodiesBeforeDuplicate = await bodyUuids(page);
   await row.locator('[data-group-action="group-duplicate"]').click();
   await expect(page.locator('#selection-info')).toContainText('yeni grup “Sağ duvar (kopya)”');
   const copyRow = groupsCard.locator('.module-group-row', { hasText: 'Sağ duvar (kopya)' });
   await expect(copyRow.locator('.module-group-meta')).toHaveText('2 parça');
   expect(boxes(await storedModules(page))).toHaveLength(4);
+  // Kopyalar eklenir; asıl kutular aynı sahne nesnesi olarak kalır.
+  const bodiesAfterDuplicate = await bodyUuids(page);
+  expect(Object.keys(bodiesAfterDuplicate)).toHaveLength(4);
+  for (const [moduleId, uuid] of Object.entries(bodiesBeforeDuplicate)) expect(bodiesAfterDuplicate[moduleId]).toBe(uuid);
 
   // Sil: onaylı, kopya grubun bütün parçaları gider.
   page.once('dialog', (dialog) => {
@@ -230,12 +246,14 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   await copyRow.locator('[data-group-action="group-delete"]').click();
   await expect(copyRow).toHaveCount(0);
   expect(boxes(await storedModules(page))).toHaveLength(2);
+  expect(await bodyUuids(page)).toEqual(bodiesBeforeDuplicate);
 
   // Çöz: parçalar yerinde kalır, grup bilgisi silinir.
   const rowAgain = groupsCard.locator('.module-group-row', { hasText: 'Sağ duvar' });
   if (!(await rowAgain.locator('details').evaluate((el) => el.open))) await rowAgain.locator('summary').click();
   await rowAgain.locator('[data-group-action="group-dissolve"]').click();
   await expect(groupsCard.locator('.module-group-row')).toHaveCount(0);
+  expect(await bodyUuids(page)).toEqual(bodiesBeforeDuplicate);
   const dissolved = boxes(await storedModules(page));
   expect(dissolved.every((module) => !module.group)).toBe(true);
   expect(pageErrors).toEqual([]);

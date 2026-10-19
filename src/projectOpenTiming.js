@@ -211,6 +211,10 @@ export function summarizeSceneReady(scene) {
   const modelLast = scene.modelLastMs != null ? `son +${formatMs(scene.modelLastMs)}, ` : '';
   const cached = scene.models.cachedCount ? `, ${scene.models.cachedCount} önbellekten` : '';
   parts.push(`${scene.modelCount} model (${modelLast}${scene.models.count} dosya ${formatMb(scene.models.transferBytes)} indirildi${cached})`);
+  if (scene.render) {
+    parts.push(`çizim ${scene.render.frames} kare ${formatMs(scene.render.totalMs)}, en ağır kare ${formatMs(scene.render.heaviestMs)}`
+      + ` (${scene.render.programs} program derlendi, ${scene.render.textures} doku yüklendi)`);
+  }
   const label = scene.timedOut ? 'sahne hâlâ yükleniyor' : 'sahne tamamen hazır';
   return `[Fair Stand ölçüm] ${label}: ${parts.join(' · ')}`;
 }
@@ -237,9 +241,19 @@ let stopSceneCounting = () => {};
 
 function startSceneCounting() {
   stopSceneCounting();
-  const counts = { image: 0, model: 0, imageWorkMs: 0 };
+  const counts = { image: 0, model: 0, imageWorkMs: 0, frames: 0, renderMs: 0, heaviestFrameMs: 0, programs: 0, textures: 0 };
   sceneCounts = counts;
   stopSceneCounting = subscribeSceneAssets((event) => {
+    if (event.type === 'render') {
+      // İlk kare maliyeti: kareler ne kadar sürdü, kaç program derlendi, kaç doku yüklendi.
+      const durationMs = Number(event.durationMs) || 0;
+      counts.frames += 1;
+      counts.renderMs += durationMs;
+      counts.heaviestFrameMs = Math.max(counts.heaviestFrameMs, durationMs);
+      counts.programs += Math.max(0, Number(event.newPrograms) || 0);
+      counts.textures += Math.max(0, Number(event.newTextures) || 0);
+      return;
+    }
     if (event.type === 'begin') {
       counts[event.kind] = (counts[event.kind] ?? 0) + 1;
       return;
@@ -273,6 +287,13 @@ function watchSceneReady(record, log) {
       imageLastMs: counts.imageLastAt != null ? counts.imageLastAt - record.startedAt : null,
       modelLastMs: counts.modelLastAt != null ? counts.modelLastAt - record.startedAt : null,
       imageWorkMs: counts.imageWorkMs ?? 0,
+      render: counts.frames ? {
+        frames: counts.frames,
+        totalMs: counts.renderMs,
+        heaviestMs: counts.heaviestFrameMs,
+        programs: counts.programs,
+        textures: counts.textures,
+      } : null,
       models: collectModelLoads(perf()?.getEntriesByType?.('resource'), record.startedAt),
       timedOut,
     };
