@@ -17,15 +17,19 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ## 2026-10-19 — Editör performansı: ışık/gölge Render Al'da, tek modül güncelleme
 
-**Işık ve gölge:** Editörde ışık gölgesi (`shadowMap.enabled = false`), LED projektör ve raf altı spot ışıkları kapalı. Spot ışıklar `RENDER_ONLY_LIGHT_LAYER` katmanında, editör kamerası bu katmanı görmez; lens ve LED şerit parlamaya devam eder. Render Al (`captureCurrentViewPng`) gölgeyi ve katmanı açıp çizer, sonra kapatır; bu sırada yükleme ekranı gösterilir. Projektör camında `transmission` yok; tek bir `transmission` malzemesi bile sahneyi her karede iki kez çizdirir.
+**Işık ve gölge:** Editörde ışık gölgesi (`shadowMap.enabled = false`), LED projektör ve raf altı spot ışıkları kapalı. Spot ışıklar `RENDER_ONLY_LIGHT_LAYER` katmanında, editör kamerası bu katmanı görmez; lens ve LED şerit parlamaya devam eder. Render Al (`captureCurrentViewPng`) gölgeyi ve katmanı açıp çizer, sonra kapatır; bu sırada yükleme ekranı gösterilir. Projektör camında `transmission` yok; tek bir `transmission` malzemesi bile sahneyi her karede iki kez çizdirir. Cam masa (`TABLE_GLASS_APPEARANCE`) editörde kırılmasız düz camdır; Render Al çizerken `TABLE_GLASS_RENDER_TRANSMISSION` (0,32) açılır, sonra kapanır.
 
-**Tek modül güncelleme:** Katalogdan bırakma, katalog düğmesiyle ekleme ve çoğaltma, mevcut modüllerin yeri değişmiyorsa yeni modülü sahneye tek başına ekler (`scene3d.appendModule`, `main.commitModuleAddition`). Silme yalnız o modülü kaldırır ve sonraki modüllerin `moduleIndex` değerini yeniler (`scene3d.removeModule`, `main.commitModuleRemoval`). Şeride araya ekleme, grup temizliğinin başka modülü değiştirdiği silme ve kumaş kaplamalı modül tam kurulumda kalır. Taşıma ve döndürme zaten sahne içinde tek modül çalışıyordu.
+**Tek modül güncelleme:** Katalogdan bırakma, katalog düğmesiyle ekleme ve çoğaltma, mevcut modüllerin yeri değişmiyorsa yeni modülü sahneye tek başına ekler (`scene3d.appendModule`, `main.commitModuleAddition`). Silme yalnız o modülü kaldırır ve sonraki modüllerin `moduleIndex` değerini yeniler (`scene3d.removeModule`, `main.commitModuleRemoval`). Grup temizliğinin başka modülü değiştirdiği silme ve kumaş kaplamalı modül tam kurulumda kalır. Taşıma ve döndürme zaten sahne içinde tek modül çalışıyordu.
 
 **Program koruma:** `disposeWall` eski nesneleri yeni sahnenin ilk karesinden sonra dispose eder. three.js kullanıcısı kalmayan gölgelendirici programını siler; önceden her tam kurulumda bütün programlar baştan derleniyordu.
 
 **Geri al / ileri al:** `applyDesignSnapshot` kopyadaki modül içerik olarak şimdikiyle aynıysa mevcut nesneyi kullanır (`reuseUnchangedModules`; ekrandaki yüzeyler bu nesnelere bağlıdır) ve sahneyi tam kurulum yerine eşitler (`syncSceneToModules` → `scene3d.syncModules`): aynı nesneyle kalan modüle dokunulmaz, çıkan kaldırılır, yeni/değişen yaratılır; değişen modülde kumaş varsa kaplamalar yeniden kurulur.
 
-Lokal ölçüm (kullanıcı): projektör bırakma ilk kare 1291–4893 ms (+27–29 program) → 23–36 ms (+0). Konsol: `[Fair Stand ölçüm] sahne yenileme: kurulum · ilk kare · +N program`. Hâlâ tam kurulum yapanlar: grup işlemleri, şeride araya ekleme.
+**Grup işlemleri ve şeride araya ekleme:** Modülleri yerinde değiştiren bu işlemlerden önce her modülün içeriği (yer ve grup bilgisi hariç) kaydedilir (`captureModuleContent`); sonra `syncSceneAfterModuleChange` sahneyi eşitler. İçeriği değişen modül yeniden yaratılır (`syncModules(modules, { rebuiltIds })`), yalnız yeri değişen sahne nesnesi taşınır (`applyPlacementToGroup`), grup bilgisini sahne canlı okur. Kapsam: grup oluştur, gruba ekle, gruptan çıkar, çöz, çoğalt, sil, şablon yerleştir, şeride araya ekleme.
+
+**İlk kare ölçümü:** "sahne tamamen hazır" satırı açılıştaki çizimi de yazar: kare sayısı ve toplam süre, en ağır kare, derlenen program ve ekran kartına yüklenen doku sayısı. Doku boyutu sınırı gerekmedi: yüklenen görseller zaten 1536 piksele küçültülüyor (`MAX_IMAGE_LONG_EDGE_PX`), katalog GLB dokuları en çok 1024 piksel.
+
+Lokal ölçüm (kullanıcı): projektör bırakma ilk kare 1291–4893 ms (+27–29 program) → 23–36 ms (+0). Konsol: `[Fair Stand ölçüm] sahne yenileme: kurulum · ilk kare · +N program`.
 
 ---
 

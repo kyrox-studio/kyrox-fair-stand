@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   GLASS_APPEARANCE,
   TABLE_GLASS_APPEARANCE,
+  TABLE_GLASS_RENDER_TRANSMISSION,
   PANEL_GLASS_BACKING_APPEARANCE,
   getMaterialAppearance,
 } from '../src/theme.js';
@@ -33,7 +34,9 @@ test('table glass extends normal glass with explicit physical-render overrides',
   assert.equal(TABLE_GLASS_APPEARANCE.color, GLASS_APPEARANCE.color);
   assert.equal(TABLE_GLASS_APPEARANCE.opacity, 0.42);
   assert.equal(TABLE_GLASS_APPEARANCE.roughness, 0.10);
-  assert.equal(TABLE_GLASS_APPEARANCE.transmission, 0.32);
+  // Kırılma editörde kapalı, yalnız Render Al'da açılır (bkz. renderOnlyLights testi).
+  assert.equal(TABLE_GLASS_APPEARANCE.transmission, undefined);
+  assert.equal(TABLE_GLASS_RENDER_TRANSMISSION, 0.32);
   assert.equal(TABLE_GLASS_APPEARANCE.clearcoat, 0.65);
   assert.equal(Object.isFrozen(TABLE_GLASS_APPEARANCE), true);
   assert.match(scene, /createEamesTableChairSetModule[\s\S]*?\.\.\.TABLE_GLASS_APPEARANCE/);

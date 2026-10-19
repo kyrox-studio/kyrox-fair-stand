@@ -11,9 +11,12 @@ export const TABLE_GLASS_APPEARANCE = Object.freeze({
   ...GLASS_APPEARANCE,
   opacity: 0.42,
   roughness: 0.10,
-  transmission: 0.32,
   clearcoat: 0.65,
 });
+
+// Cam masanın kırılma (transmission) değeri yalnız Render Al'da açılır: editörde tek bir
+// transmission malzemesi bile sahneyi her karede ikinci kez çizdirir.
+export const TABLE_GLASS_RENDER_TRANSMISSION = 0.32;
 
 export const PANEL_GLASS_BACKING_APPEARANCE = Object.freeze({
   color: 0xc9dce1,

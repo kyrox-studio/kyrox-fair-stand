@@ -72,9 +72,10 @@ export function trackSceneModel(promise) {
 }
 
 // Editör karesi çizildi. Proje açılışı "sahne çizildi" anını bu sinyalle bekler; sahne yenileme
-// ölçümü kare süresini ve karede derlenen yeni gölgelendirici sayısını kullanır.
-export function noteSceneRender(durationMs = 0, newPrograms = 0) {
-  emit({ type: 'render', durationMs, newPrograms });
+// ölçümü kare süresini ve karede derlenen yeni gölgelendirici sayısını kullanır. newTextures:
+// karede ekran kartına yüklenen doku sayısı (açılışta ilk kare maliyetini ayırmak için).
+export function noteSceneRender(durationMs = 0, newPrograms = 0, newTextures = 0) {
+  emit({ type: 'render', durationMs, newPrograms, newTextures });
 }
 
 export function getPendingSceneAssetCount() {

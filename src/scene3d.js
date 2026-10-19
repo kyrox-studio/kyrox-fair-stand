@@ -7,7 +7,13 @@ import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 import { getModuleCatalogItem, getModuleCatalogLabel } from './catalog.js';
 import { STAND_DIMENSIONS } from './standDimensions.js';
 import { WALL_PANEL_BAND_PITCH_CM, resolveModuleBandPitchCm } from './wallPanelBand.js';
-import { GLASS_APPEARANCE, TABLE_GLASS_APPEARANCE, PANEL_GLASS_BACKING_APPEARANCE, getMaterialAppearance } from './theme.js';
+import {
+  GLASS_APPEARANCE,
+  TABLE_GLASS_APPEARANCE,
+  TABLE_GLASS_RENDER_TRANSMISSION,
+  PANEL_GLASS_BACKING_APPEARANCE,
+  getMaterialAppearance,
+} from './theme.js';
 import { surfaceCapabilityUserData } from './itemCapabilities.js';
 import {
   getCommercialItemForType,
@@ -2008,12 +2014,13 @@ export function createStandScene(
     return true;
   }
 
-  // Sahneyi verilen modül listesine eşitler (geri al / ileri al). Listede aynı nesneyle duran
-  // modülün sahne nesnesine dokunulmaz (görsel, logo, kumaş yeniden yüklenmez); listeden çıkan
-  // kaldırılır, yeni (veya değişmiş, yani yeni nesneyle gelen) modül yaratılır. Kumaş kaplaması
+  // Sahneyi verilen modül listesine eşitler (geri al / ileri al, grup işlemleri, araya ekleme).
+  // Listede aynı nesneyle duran modülün sahne nesnesine dokunulmaz (görsel, logo, kumaş yeniden
+  // yüklenmez); yalnız yeri değiştiyse taşınır. Listeden çıkan kaldırılır; yeni nesneyle gelen
+  // veya rebuiltIds içindeki (yerinde içeriği değişmiş) modül yeniden yaratılır. Kumaş kaplaması
   // olan bir modül değiştiyse kaplamalar yeniden kurulur. Yerleşimi olmayan modül varsa false
   // döner; çağıran tam kurulum yapar.
-  function syncModules(modules) {
+  function syncModules(modules, { rebuiltIds = null } = {}) {
     if (!Array.isArray(modules) || modules.some((moduleState) => !moduleState?.placement)) return false;
     clearPlacementDrag();
     const wanted = new Set(modules);
@@ -2021,8 +2028,13 @@ export function createStandScene(
     let fabricTouched = false;
     [...wallRoot.children].forEach((group) => {
       const state = group.userData?.moduleState;
-      if (state && wanted.has(state)) {
+      if (state && wanted.has(state) && !rebuiltIds?.has(state.id)) {
         present.add(state);
+        if (JSON.stringify(group.userData.placement ?? null) !== JSON.stringify(state.placement)) {
+          group.userData.placement = { ...state.placement };
+          applyPlacementToGroup(group, state.placement, Number(state.widthCm));
+          if (groupHasFabric(group)) fabricTouched = true;
+        }
         return;
       }
       if (groupHasFabric(group)) fabricTouched = true;
@@ -6503,10 +6515,15 @@ export function createStandScene(
     }
     const renderStartedAt = performance.now();
     const programsBefore = renderer.info.programs?.length ?? 0;
+    const texturesBefore = renderer.info.memory?.textures ?? 0;
     renderer.render(scene, camera);
     flushDeferredWallDisposal();
     // Proje açılışı "sahne çizildi" anını bekler; sahne yenileme ölçümü kare süresini kullanır.
-    noteSceneRender(performance.now() - renderStartedAt, (renderer.info.programs?.length ?? 0) - programsBefore);
+    noteSceneRender(
+      performance.now() - renderStartedAt,
+      (renderer.info.programs?.length ?? 0) - programsBefore,
+      (renderer.info.memory?.textures ?? 0) - texturesBefore,
+    );
     if (!controlsChanged && !activelyDragging) editorRenderRequested = false;
   });
 
@@ -6526,6 +6543,12 @@ export function createStandScene(
     const moduleSelectionFrame = findModuleGroupById(selectedModuleId)?.userData?.moduleSelectionFrame ?? null;
     const moduleSelectionVisibility = moduleSelectionFrame?.visible ?? false;
     const guideVisibility = activeWallGuides.map((guide) => guide.visible);
+    const renderTransmissionMaterials = new Set();
+    scene.traverse((object) => {
+      [object.material].flat().forEach((material) => {
+        if (material?.userData?.renderTransmission > 0) renderTransmissionMaterials.add(material);
+      });
+    });
 
     try {
       selectedFrames.forEach((frame) => { frame.visible = false; });
@@ -6539,6 +6562,7 @@ export function createStandScene(
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.needsUpdate = true;
       camera.layers.enable(RENDER_ONLY_LIGHT_LAYER);
+      renderTransmissionMaterials.forEach((material) => { material.transmission = material.userData.renderTransmission; });
       renderer.render(scene, camera);
 
       const blob = await new Promise((resolve) => {
@@ -6549,6 +6573,7 @@ export function createStandScene(
     } finally {
       renderer.shadowMap.enabled = false;
       camera.layers.disable(RENDER_ONLY_LIGHT_LAYER);
+      renderTransmissionMaterials.forEach((material) => { material.transmission = 0; });
       selectedFrames.forEach((frame, index) => { frame.visible = selectedVisibility[index]; });
       if (moduleSelectionFrame) moduleSelectionFrame.visible = moduleSelectionVisibility;
       activeWallGuides.forEach((guide, index) => { guide.visible = guideVisibility[index]; });
@@ -8015,6 +8040,7 @@ function addProceduralGlassTable(group, tableItem) {
   const tabletopMaterial = new THREE.MeshPhysicalMaterial({
     ...TABLE_GLASS_APPEARANCE,
     clearcoatRoughness: 0.08,
+    userData: { renderTransmission: TABLE_GLASS_RENDER_TRANSMISSION },
   });
 
   const top = new THREE.Mesh(new THREE.CylinderGeometry(radiusM, radiusM, 0.018, 64), tabletopMaterial);
@@ -8319,7 +8345,11 @@ function addClassicCoffeeTable(group, item, { x = 0, z = 0 } = {}) {
 
   const tableTop = new THREE.Mesh(
     new THREE.BoxGeometry(widthM, 0.018, depthM),
-    new THREE.MeshPhysicalMaterial({ ...TABLE_GLASS_APPEARANCE, clearcoatRoughness: 0.08 }),
+    new THREE.MeshPhysicalMaterial({
+      ...TABLE_GLASS_APPEARANCE,
+      clearcoatRoughness: 0.08,
+      userData: { renderTransmission: TABLE_GLASS_RENDER_TRANSMISSION },
+    }),
   );
   tableTop.position.set(x, heightM, z);
   tableTop.receiveShadow = true;
