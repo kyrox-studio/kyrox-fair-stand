@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-single-module-update-v1",
+  "id": "fair-stand-undo-sync-v1",
   "kind": "feature",
-  "summary": "Tek modül sahne güncellemesi (PERFORMANCE_ROADMAP P3 kısmi), editör ışık/gölge değişikliği (#302) üzerine: katalog düğmesiyle ekleme ve çoğaltma, mevcut modüllerin yeri/grubu değişmediyse yeni modülü tek başına ekler (main.commitModuleAddition + scene3d.appendModule); silme yalnız o modülü kaldırır ve sonraki modüllerin moduleIndex değerini yeniler (main.commitModuleRemoval + scene3d.removeModule). Grup temizliği başka modülü değiştirirse, kumaş kaplamalı modülde veya şeride araya eklemede tam kurulum yapılır. Kayıt biçimi ve BOM değişmez. REFACTOR.md güncellendi.",
+  "summary": "Geri al / ileri al tam kurulum yerine sahneyi eşitler: applyDesignSnapshot içerik olarak aynı modülde mevcut nesneyi kullanır (reuseUnchangedModules; renderer yüzey bağları korunur), syncSceneToModules grup temizliği bir modülü değiştirmediyse scene3d.syncModules ile yalnız çıkan modülü kaldırır, yeni/değişen modülü yaratır, moduleIndex yeniler; değişen modülde kumaş varsa kaplamalar yeniden kurulur. appendModule ortak addModuleGroup kullanır. Kayıt biçimi ve BOM değişmez.",
   "owners": [
     "src/scene3d.js",
     "src/main.js"
@@ -781,7 +781,7 @@
         "e2e/project-open-wait-scene.spec.mjs",
         "e2e/smoke.spec.mjs"
       ],
-      "reason": "Gerçek Chromium ile iki kutu bırakılır, birinci modülün sahne nesnesi aynı kalır; birinci silinince ikinci aynı nesne olarak kalır ve moduleIndex 0 olur. Işık, modül kurulumu, yarım sahne ve smoke regresyonları çalışır."
+      "reason": "Gerçek Chromium ile iki kutu bırakılır; geri al ikinci kutuyu kaldırır ve birincinin sahne nesnesi aynı kalır; ileri al ikinciyi geri getirir (moduleIndex 1), birinci yine aynı nesne. Bütün paket regresyon için çalışır."
     }
   },
   "risk": {
@@ -792,5 +792,5 @@
     "required": false,
     "notes": "Kayıt biçimi değişmez."
   },
-  "rollback": "commitModuleAddition/commitModuleRemoval yerine eski rebuildWall çağrılarına dön."
+  "rollback": "applyDesignSnapshot içinde reuseUnchangedModules ve syncSceneToModules yerine rebuildWall."
 }
