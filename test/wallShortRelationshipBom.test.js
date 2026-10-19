@@ -271,7 +271,8 @@ test('WS1 and WS2 end-to-end with door use one double, not the full-height 3', (
 test('WS separator joints stay on the short band and keep separator panels', () => {
   assertStructuralEnd('wall_separator_100_350', 100, 'wall_100_short_1', 'upright_49_5', { single: 14, forbiddenDouble: 7 });
   assertStructuralEnd('wall_separator_100_350', 100, 'wall_100_short_2', 'upright_99', { single: 14, forbiddenDouble: 7 });
-  assertStructuralEnd('wall_separator_50_350_sarmasik', 50, 'wall_50_short_1', 'upright_49_5', { single: 8, forbiddenDouble: 7 });
+  // 0071: 50’lik sarmaşık 13 tekli; 100’lük ayırıcı ile aynı sonuç.
+  assertStructuralEnd('wall_separator_50_350_sarmasik', 50, 'wall_50_short_1', 'upright_49_5', { single: 14, forbiddenDouble: 7 });
   const corner = resolveProjectBom([
     short1('a', 'wall_100_short_1', { widthCm: 100 }),
     cornerPartner('b', 'wall_separator_100_350', 100, { xCm: 100, heightCm: 350 }),

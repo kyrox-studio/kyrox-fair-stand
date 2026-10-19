@@ -3738,10 +3738,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "panel_98",
                     "quantity": 3,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -3750,6 +3752,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 5,
+                    "per_band": 2,
                 },
                 {
                     "child_item_key": "door_leaf_100",
@@ -5344,10 +5347,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "separator_panel_48_5",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5355,7 +5360,8 @@ CATALOG_SEED = {
                 },
                 {
                     "child_item_key": "connector_single",
-                    "quantity": 7,
+                    "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -5411,10 +5417,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "separator_panel_98",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5423,6 +5431,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -5478,10 +5487,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "separator_panel_48_5",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5489,7 +5500,8 @@ CATALOG_SEED = {
                 },
                 {
                     "child_item_key": "connector_single",
-                    "quantity": 7,
+                    "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -5550,10 +5562,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "separator_panel_98",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5562,6 +5576,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -5622,10 +5637,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "panel_98",
                     "quantity": 5,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5634,6 +5651,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 9,
+                    "per_band": 2,
                 },
                 {
                     "child_item_key": "showcase_side_94_6_30",
@@ -5714,10 +5732,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "panel_98",
                     "quantity": 4,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5726,6 +5746,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 7,
+                    "per_band": 2,
                 },
                 {
                     "child_item_key": "showcase_side_143_5_30",

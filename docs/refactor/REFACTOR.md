@@ -27,7 +27,19 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 **Stand:** Stand kurulumunda "Duvar yüksekliği" (250–500, varsayılan 350). `currentStand.wallHeightCm` projeyle kaydedilir; eski projede alan yoksa 350. Otomatik duvar ve katalogdan eklenen düz duvar bu yüksekliği alır.
 
-**Kapsam dışı (350 kalır):** kapı, vitrin, ayırıcı, sarmaşık, kısa duvar; açılmış standın yüksekliğini sonradan değiştirmek; yeni dikmelerin fiyatı.
+**Kapı ve vitrin (`0069_door_showcase_band_recipe`):** Aynı kural: panel_98 per_band 1, tekli per_band 2, dikme height_matched; kapı kanadı, profil, başlangıç ve vitrin gövde parçaları sabit. Kapı kanadı 4 bant (200 cm), 2 gözlü vitrin 2, 3 gözlü 3 bant tutar; panel = B − tutulan bant. 250 cm: kapı 1 panel / 1 tekli, 2 gözlü 3 / 5, 3 gözlü 2 / 3 (ürün tablosu); 300 kapı 2 panel / 3 tekli. Bağlantıda B panel sayısıdır; 350’de eski sabitleri (kapı 3/5/2, 2 gözlü 5/9/4, 3 gözlü 4/7/3) verir. Kapı modülü panel sayısı ve BOM bant indeksleri bant sayısından; depo kapısı ve depo duvarı stand yüksekliğini alır.
+
+**Kısa duvar:** Standın duvar tepesine hizalanır. DB tabanı 350’ye göredir (short_2 250, short_1 300); `resolveItemDefaultZCm` aynı farkla kaydırır (250’de 150 / 200). Açık standın yüksekliği `setActiveWallLineHeightCm` ile items.js’e verilir.
+
+**Dikme serbest yerleşim:** `magnetic_snap = short-up-joint` (yalnız dikme tipi) artık reddetmez: dikme birleşime yakınsa yapışır, değilse sahneye serbest bırakılır. DB değeri değişmedi; davranış koddadır.
+
+**Ayırıcı 100 (`0070_separator_band_recipe`):** Düz ve sarmaşıklı 100’lük ayırıcı aynı kuralda (separator_panel_98 per_band 1, tekli per_band 2, dikme height_matched; sarmaşık parçası sabit). Kod son ek alır (`wall_separator_100_250_sarmasik`). Çizimde lata sayısı iç yüksekliğe orantılı (350’de 36); sarmaşık GLB 350’ye göre yapıldığı için dikeyde yükseklik / 350 oranında esner.
+
+**Tavan ve projektör:** Stand tavanı (`getStandDimensions().heightCm`) en az seçilen duvar yüksekliğidir (`setStandWallLineHeightCm`); 450 / 500’de modüller DB tavanına (350) kırpılmaz. Üst profil hattı (projektör) türetilmiş duvarda yükseklik farkı kadar kayar (`resolveVirtualTopRailZCm`). Baza host listesi türetilmiş duvarı ana koduyla tanır.
+
+**Ayırıcı 50 (`0071_separator_50_band_recipe`):** Ürün kararı: 50’lik ayırıcı (düz ve sarmaşık) 2 dikme, 2 × profile_41_5, bant başına 1 × separator_panel_48_5, 2 başlangıç, 2B − 1 tekli (250: 5 panel / 9 tekli). 350 reçetesi düzeltildi: tekli 7 → 13; sarmaşıklıda 98’lik paneller silindi, 7 × 48,5. 350’lik projelerde 50’lik ayırıcının üretim listesi değişir; eklem sonuçları 100’lük ayırıcıyla aynı olur.
+
+**Kapsam dışı:** Açık standın yüksekliğini sonradan değiştirmek (backlog, `PENDING_ITEM_DECISIONS.md` B.16); yeni dikmelerin fiyatı.
 
 ---
 

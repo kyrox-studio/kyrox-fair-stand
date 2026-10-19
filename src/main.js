@@ -106,7 +106,7 @@ import { DEFAULT_SELECTION_HINT, describeFloorAreaSelection, describeFloorSelect
 import { createSidebarController } from './sidebarController.js';
 import { createViewportToolbarController } from './viewportToolbarController.js';
 import { formatCapacityPopup, renderStageResult as renderStageResultInto, renderWallResult } from './stageFeedback.js';
-import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getFloorItem, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
+import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
 import {
@@ -1790,7 +1790,7 @@ function createAutomaticDepotStates(plan) {
   if (!plan?.ok) return [];
   return plan.specs.map((spec) => {
     if (spec.kind === 'door') {
-      const state = createModuleStateFromCatalogKey('wall_door_100_350');
+      const state = createModuleStateFromCatalogKey(resolveWallItemKeyForHeight('wall_door_100_350', activeWallHeightCm()));
       if (!state) return null;
       state.placement = { ...spec.placement };
       state.autoDepot = true;
@@ -1800,6 +1800,12 @@ function createAutomaticDepotStates(plan) {
       ...spec,
       type: spec.kind === 'wall' ? 'flat-panel' : spec.kind,
     };
+    // Depo duvarı da standın yüksekliğindeki düz duvardır.
+    if (descriptor.type === 'flat-panel') {
+      descriptor.itemKey = spec.itemKey
+        ? resolveWallItemKeyForHeight(spec.itemKey, activeWallHeightCm())
+        : resolveAutomaticWallFlatPanelItemKey(spec.widthCm, activeWallHeightCm());
+    }
     const state = createModuleStateFromDescriptor(descriptor);
     if (!state) return null;
     state.placement = { ...spec.placement };
@@ -1894,6 +1900,7 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan }) {
   moduleContextMenu.close();
   moduleContextMenu.closePicker();
 
+  setActiveWallLineHeightCm(setup.wallHeightCm);
   const stage = scene3d.createStage({
     widthCm: setup.xCm,
     depthCm: setup.yCm,
@@ -1906,6 +1913,7 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan }) {
   }
 
   currentStand = assignStandFloorItem({ ...setup, depot: depotConfig }, floorTypeSelect.value);
+  setActiveWallLineHeightCm(activeWallHeightCm());
   syncSaveProjectButton();
   scene3d.setFloorType(floorTypeSelect.value);
   viewportEmpty.hidden = true;
@@ -2496,6 +2504,7 @@ function applyDesignSnapshot(snapshot) {
   currentModules = reuseUnchangedModules(currentModules, design.modules ?? []);
   if (currentStand && design.stand) {
     currentStand = design.stand;
+    setActiveWallLineHeightCm(activeWallHeightCm());
     scene3d.setFloorType(currentStand.itemKey);
     const floorColor = currentStand.floorColor ?? floorDefaultColorHex(currentStand.itemKey);
     if (floorColor) scene3d.setFloorColor(floorColor);
@@ -2652,6 +2661,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
   setProjectName(project.name || 'Adsız Proje');
   currentModules = (cloneProjectState(project.modules) || []).map(normalizeModuleItemState);
   currentStand = cloneProjectState(project.stand);
+  setActiveWallLineHeightCm(activeWallHeightCm());
   syncSaveProjectButton();
   moduleContextMenu.close();
   moduleContextMenu.closePicker();
@@ -2833,6 +2843,7 @@ function resetToFirstOpenState() {
 
   currentModules = [];
   currentStand = null;
+  setActiveWallLineHeightCm(CATALOG_WALL_LINE_HEIGHT_CM);
   syncSaveProjectButton();
   selectedStandType = null;
   selectedFoamModuleId = null;

@@ -98,7 +98,9 @@ async function saveAndReadProject(page) {
   });
 }
 
-test('upright_346_5 keeps a red ghost when short-up-joint snap misses', async ({ page }) => {
+// Kural değişti (kullanıcı kararı 2026-10-19): dikme birleşime yakın değilse sahneye serbest
+// bırakılır; birleşime yakınsa yine yapışır.
+test('upright_346_5 drops freely when no short-up joint is near', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
 
@@ -109,17 +111,19 @@ test('upright_346_5 keeps a red ghost when short-up-joint snap misses', async ({
   await expect(viewport).toBeVisible();
   await previewCatalogDrag(page, 'upright_346_5', 0.52, 0.72);
 
-  await expect(scenePlacementCanvas(page)).toHaveAttribute('data-placement-ghost', 'invalid');
-  await expect(page.locator('body')).toContainText('Yalnız short-up, profil veya banko birleşimine yerleştirilir.');
+  await expect(scenePlacementCanvas(page)).toHaveAttribute('data-placement-ghost', 'valid');
+  await expect(page.locator('body')).not.toContainText('Yalnız short-up, profil veya banko birleşimine yerleştirilir.');
 
+  // Gerçek sürükle-bırak: birleşim yokken dikme zemine serbest yerleşir.
   const box = await viewport.boundingBox();
   expect(box).not.toBeNull();
-  await page.mouse.move(box.x + box.width * 0.52, box.y + box.height * 0.72);
-  await page.mouse.up();
+  await page.locator('.module-drag-card[data-module-key="upright_346_5"]').dragTo(viewport, {
+    targetPosition: { x: Math.round(box.width * 0.6), y: Math.round(box.height * 0.85) },
+  });
 
   const project = await saveAndReadProject(page);
   expect(project).not.toBeNull();
-  expect(project.modules.some((moduleState) => moduleState.itemKey === 'upright_346_5')).toBe(false);
+  expect(project.modules.filter((moduleState) => moduleState.itemKey === 'upright_346_5')).toHaveLength(1);
   expect(pageErrors).toEqual([]);
 });
 

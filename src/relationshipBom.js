@@ -30,7 +30,7 @@ export const END_TO_END_JOINT_DELTAS = Object.freeze({
 
 // Düz duvar her yükseklikte (wall_100_250 … wall_100_500; 0068 kuralı) aynı roldedir.
 const FULL_HEIGHT_FLAT_WALL_RE = /^wall_(50|100|150|200)_\d+$/;
-const SEPARATOR_RE = /^wall_separator_(50|100)_350(_sarmasik)?$/;
+const SEPARATOR_RE = /^wall_separator_(50|100)_\d+(_sarmasik)?$/;
 
 /** Singles a standard recipe converts on one end. Separator matches the wall face. */
 const FACE_YIELD = Object.freeze({
@@ -102,10 +102,11 @@ export function relationshipBomRole(module) {
   if (isWallShortFamilyDescriptor(item) || isWallShortFamilyDescriptor(module)) return null;
 
   if (FULL_HEIGHT_FLAT_WALL_RE.test(itemKey) && item.type === 'flat-panel') return 'wall';
-  if (itemKey === 'wall_door_100_350') return 'door';
+  const baseKey = item.wallHeightBaseItemKey ?? itemKey;
+  if (baseKey === 'wall_door_100_350') return 'door';
   if (SEPARATOR_RE.test(itemKey)) return 'separator';
-  if (itemKey === 'wall_showcase_100_2_350') return 'showcase-2';
-  if (itemKey === 'wall_showcase_100_3_350') return 'showcase-3';
+  if (baseKey === 'wall_showcase_100_2_350') return 'showcase-2';
+  if (baseKey === 'wall_showcase_100_3_350') return 'showcase-3';
   return null;
 }
 
@@ -253,9 +254,10 @@ function recipeSingleCount(itemKey) {
 
 /**
  * Duvar ve ayırıcıda sayılar reçetenin bant (panel) sayısından gelir: 350 cm'de 7 bant →
- * uç yüzey 7, standart tekli 13 (2B − 1), köşe aparatı 6 (B − 1). Kapı ve vitrin sabit kalır.
+ * uç yüzey 7, standart tekli 13 (2B − 1), köşe aparatı 6 (B − 1). Kapı ve vitrinde B panel
+ * sayısıdır (350'de kapı 3, 2 gözlü 5, 3 gözlü 4); aynı formüller eski sabitleri verir.
  */
-const BAND_ROLES = new Set(['wall', 'separator']);
+const BAND_ROLES = new Set(['wall', 'separator', 'door', 'showcase-2', 'showcase-3']);
 const recipeBandCache = new Map();
 
 function recipeBandCount(itemKey) {
@@ -344,11 +346,18 @@ function cornerCharge(participant, partners, point) {
 
 function cornerSide(role, singles, bands = 7) {
   const available = Math.max(0, Number(singles) || 0);
-  if (role === 'wall' || role === 'separator') {
-    const seams = Math.max(0, (Number(bands) || 7) - 1);
+  if (BAND_ROLES.has(role) && Number(bands) > 0) {
+    const seams = Math.max(0, Number(bands) - 1);
     return {
       singleRemove: Math.min(seams, Math.max(0, available - seams - 1)),
       cornerAdd: seams,
+      swapPanels: role !== 'separator',
+    };
+  }
+  if (role === 'wall' || role === 'separator') {
+    return {
+      singleRemove: Math.min(6, Math.max(0, available - 7)),
+      cornerAdd: 6,
       swapPanels: role === 'wall',
     };
   }
@@ -956,12 +965,14 @@ function panelBandIndexes(itemKey) {
   const item = getItem(itemKey);
   const eyeCount = Number(item?.eyeCount);
   let indexes;
-  if (itemKey === 'wall_door_100_350') {
-    indexes = [4, 5, 6];
+  // Duvarın bant sayısı (350 → 7, 250 → 5).
+  const lineBands = Math.max(0, Math.floor(Number(item?.sceneDimensions?.heightCm ?? 350) / WALL_PANEL_BAND_PITCH_CM));
+  if ((item?.wallHeightBaseItemKey ?? itemKey) === 'wall_door_100_350') {
+    indexes = Array.from({ length: Math.max(0, lineBands - 4) }, (_, index) => index + 4);
   } else if (eyeCount === 2 || eyeCount === 3) {
     const openingStart = eyeCount === 3 ? 1 : 2;
     indexes = [];
-    for (let band = 0; band < 7; band += 1) {
+    for (let band = 0; band < lineBands; band += 1) {
       if (band >= openingStart && band < openingStart + eyeCount) continue;
       indexes.push(band);
     }

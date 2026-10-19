@@ -103,7 +103,7 @@ import {
   planGroupRotate,
   planGroupTranslate,
 } from './moduleGroups.js';
-import { getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, requiresShortUpJointSnap, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
+import { getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
 import { noteSceneRender, trackSceneModel, trackSceneTextureLoader } from './sceneAssetLoading.js';
 
@@ -3457,16 +3457,7 @@ export function createStandScene(
       standXCm: stageLayout.widthCm,
       standYCm: stageLayout.depthCm,
     });
-    if (requiresShortUpJointSnap(moduleState) && !magneticSnap) {
-      const message = 'Yalnız short-up, profil veya banko birleşimine yerleştirilir.';
-      showPlacementGhost(moduleState, snapped.placement, false);
-      showPlacementFeedback(message, { clientX, clientY });
-      return {
-        ok: false,
-        message,
-        placement: withItemZ(moduleState, { ...snapped.placement }),
-      };
-    }
+    // short-up-joint (dikme): birleşime yakınsa yapışır, değilse sahneye serbest bırakılır.
     const desiredPlacement = withItemZ(moduleState, magneticSnap?.placement ?? snapped.placement);
 
     let plan;
@@ -3882,19 +3873,6 @@ export function createStandScene(
       standXCm: stageLayout.widthCm,
       standYCm: stageLayout.depthCm,
     });
-    if (requiresShortUpJointSnap(moduleState) && !magneticSnap) {
-      const message = 'Yalnız short-up, profil veya banko birleşimine yerleştirilir.';
-      showPlacementGhost(moduleState, snapped.placement, false);
-      showPlacementFeedback(message, { clientX: event.clientX, clientY: event.clientY });
-      dragSession.preview = {
-        placement: withItemZ(moduleState, snapped.placement),
-        valid: false,
-        message,
-        plan: { ok: false, message, placements: new Map() },
-        snap: null,
-      };
-      return;
-    }
     const desiredPlacement = withItemZ(moduleState, magneticSnap?.placement ?? snapped.placement);
 
     let plan;
@@ -9520,7 +9498,8 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
   const widthM = widthCm / 100;
   const stripHeight = WALL_PANEL_BAND_PITCH_CM / 100;
   const doorHeight = stripHeight * 4;
-  const upperPanelCount = 3;
+  // Kapı kanadı 4 bant; üstündeki her bant bir panel (350 → 3, 500 → 6).
+  const upperPanelCount = Math.max(0, Math.round(heightCm / WALL_PANEL_BAND_PITCH_CM) - 4);
   const railHeight = STAND_DIMENSIONS.panelRailHeight;
   const group = new THREE.Group();
   group.userData = {
@@ -9626,7 +9605,7 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
   handle.castShadow = true;
   group.add(handle);
 
-  // Üst bölüm: fiziksel olarak 4., 5. ve 6. strip indexlerine denk gelen 3 panel.
+  // Üst bölüm: kapı kanadının üstündeki bantlar (4. strip indexinden başlar).
   for (let index = 0; index < upperPanelCount; index += 1) {
     const surfaceState = moduleState.strips[index];
     if (!surfaceState) continue;
@@ -9750,7 +9729,8 @@ function createSeparatorModule(moduleState, moduleIndex) {
   const surfaceState = moduleState.surface;
   const innerWidth = Math.max(widthM - frameWidth * 2 - 0.012, 0.02);
   const innerHeight = height - frameWidth * 2;
-  const slatCount = 36;
+  // 350 cm’de 36 lata; diğer yüksekliklerde iç yüksekliğe orantılı (duvar yüksekliği kuralı).
+  const slatCount = Math.max(1, Math.round(36 * innerHeight / (3.5 - frameWidth * 2)));
   const slatHeight = 0.035;
   const slatGap = 0.06;
   const usedHeight = slatCount * slatHeight + (slatCount - 1) * slatGap;
@@ -9825,6 +9805,8 @@ function createSeparatorModule(moduleState, moduleIndex) {
         console.warn('Sarmaşık separatör GLB içinde Vines_FIXED mesh bulunamadı:', moduleState.modelFile);
         return;
       }
+      // Model 350 cm duvar için hazırlandı; başka yükseklikte dikeyde aynı oranda esner.
+      model.scale.y *= heightCm / 350;
       group.add(model);
     }).catch((error) => {
       console.warn('Sarmaşık separatör GLB modeli yüklenemedi:', moduleState.modelFile, error);

@@ -62,7 +62,9 @@ export function isBaseRunItemKey(itemKey) {
 }
 
 function hostWidthCm(itemKey) {
-  return HOST_WIDTH_CM[itemKey] ?? null;
+  // Türetilmiş duvar yüksekliği (wall_100_250 …) ana 350 koduyla aynı host'tur.
+  const baseKey = getItem(itemKey)?.wallHeightBaseItemKey ?? itemKey;
+  return HOST_WIDTH_CM[baseKey] ?? null;
 }
 
 function bazaFrame(module) {

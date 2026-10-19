@@ -18,10 +18,10 @@ test('2-eye wall showcase BASE recipe matches verified production data', () => {
   const recipe = getModuleRecipe('showcase-2', 100);
   assert.deepEqual(recipe.items, [
     { itemKey: 'profile_91', quantity: 4 },
-    { itemKey: 'upright_346_5', quantity: 2 },
-    { itemKey: 'panel_98', quantity: 5 },
+    { itemKey: 'upright_346_5', quantity: 2, heightMatched: true },
+    { itemKey: 'panel_98', quantity: 5, perBand: 1 },
     { itemKey: 'connector_start', quantity: 4 },
-    { itemKey: 'connector_single', quantity: 9 },
+    { itemKey: 'connector_single', quantity: 9, perBand: 2 },
     { itemKey: 'showcase_side_94_6_30', quantity: 2 },
     { itemKey: 'showcase_horizontal_87_4_30', quantity: 2 },
     { itemKey: 'glass_shelf', quantity: 1 },
@@ -32,10 +32,10 @@ test('3-eye wall showcase BASE recipe matches verified production data', () => {
   const recipe = getModuleRecipe('showcase-3', 100);
   assert.deepEqual(recipe.items, [
     { itemKey: 'profile_91', quantity: 4 },
-    { itemKey: 'upright_346_5', quantity: 2 },
-    { itemKey: 'panel_98', quantity: 4 },
+    { itemKey: 'upright_346_5', quantity: 2, heightMatched: true },
+    { itemKey: 'panel_98', quantity: 4, perBand: 1 },
     { itemKey: 'connector_start', quantity: 4 },
-    { itemKey: 'connector_single', quantity: 7 },
+    { itemKey: 'connector_single', quantity: 7, perBand: 2 },
     { itemKey: 'showcase_side_143_5_30', quantity: 2 },
     { itemKey: 'showcase_horizontal_87_4_30', quantity: 2 },
     { itemKey: 'glass_shelf', quantity: 2 },

@@ -266,8 +266,11 @@ export function createSeparatorModuleState(widthCmOrDescriptor, descriptor = {})
   return applySceneFootprint(state, item, ['widthCm', 'depthCm', 'heightCm']);
 }
 
-export function createShowcaseModuleState(type, widthCm = 100) {
-  const itemKey = getShowcaseItemKeyForType(type);
+export function createShowcaseModuleState(type, widthCm = 100, explicitItemKey = null) {
+  // Türetilmiş yükseklik (wall_showcase_100_2_250 …) aynı tipte ise o kullanılır.
+  const itemKey = explicitItemKey && getItem(explicitItemKey)?.type === type
+    ? explicitItemKey
+    : getShowcaseItemKeyForType(type);
   if (!itemKey) return null;
   const showcaseItem = getItem(itemKey);
   const canonicalWidthCm = resolveSceneDimensions(showcaseItem).widthCm;
@@ -303,8 +306,17 @@ export function createShowcaseModuleState(type, widthCm = 100) {
   return applySceneFootprint(state, showcaseItem, ['widthCm']);
 }
 
+function doorBandCount(doorItem) {
+  const pitchCm = Math.round(Number(resolveWallPanelBandPitchCm()));
+  return Math.max(0, Math.floor(Number(requireSceneDimension(doorItem, 'heightCm')) / pitchCm));
+}
+
 export function createDoorModuleState(widthCmOrDescriptor = 100) {
-  const doorItem = getItem('wall_door_100_350');
+  const explicitKey = typeof widthCmOrDescriptor === 'object' ? widthCmOrDescriptor?.itemKey : null;
+  // Türetilmiş yükseklik (wall_door_100_250 …) verilmişse o, yoksa 350 kapı.
+  const doorItem = explicitKey && getItem(explicitKey)?.type === 'door'
+    ? getItem(explicitKey)
+    : getItem('wall_door_100_350');
   if (!doorItem || doorItem.type !== 'door') return null;
   const canonicalWidthCm = resolveSceneDimensions(doorItem).widthCm;
   if (canonicalWidthCm == null || !Number.isFinite(Number(canonicalWidthCm))) return null;
@@ -319,8 +331,9 @@ export function createDoorModuleState(widthCmOrDescriptor = 100) {
     id: createId('module'),
     itemKey: doorItem.itemKey,
     type: doorItem.type,
+    // Kapı kanadı alttaki 4 bandı (200 cm) tutar; üstündeki her bant bir paneldir.
     strips: Array.from(
-      { length: 3 },
+      { length: Math.max(0, doorBandCount(doorItem) - 4) },
       (_, index) => createEditablePanelState(
         index + 4,
         recipeSurfaceColor(doorItem, ['panel', 'separator-panel']),
@@ -827,8 +840,8 @@ const MODULE_STATE_FACTORIES = Object.freeze({
   shelf: (descriptor) => createShelfModuleState(descriptor),
   'led-floodlight': () => createLedFloodlightModuleState(),
   door: (descriptor) => createDoorModuleState(descriptor),
-  'showcase-2': (descriptor) => createShowcaseModuleState(descriptor.type, descriptor.widthCm),
-  'showcase-3': (descriptor) => createShowcaseModuleState(descriptor.type, descriptor.widthCm),
+  'showcase-2': (descriptor) => createShowcaseModuleState(descriptor.type, descriptor.widthCm, descriptor.itemKey),
+  'showcase-3': (descriptor) => createShowcaseModuleState(descriptor.type, descriptor.widthCm, descriptor.itemKey),
   'illuminated-foam': (descriptor, options) => createIlluminatedFoamModuleState(
     options.imageAssetId ?? descriptor.imageAssetId ?? null,
     descriptor,

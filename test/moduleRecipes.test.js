@@ -216,10 +216,10 @@ test('100 cm door recipe matches verified production data', () => {
   const recipe = getModuleRecipe('door', 100);
   assert.deepEqual(recipe.items, [
     { itemKey: 'profile_91', quantity: 1 },
-    { itemKey: 'upright_346_5', quantity: 2 },
-    { itemKey: 'panel_98', quantity: 3 },
+    { itemKey: 'upright_346_5', quantity: 2, heightMatched: true },
+    { itemKey: 'panel_98', quantity: 3, perBand: 1 },
     { itemKey: 'connector_start', quantity: 2 },
-    { itemKey: 'connector_single', quantity: 5 },
+    { itemKey: 'connector_single', quantity: 5, perBand: 2 },
     { itemKey: 'door_leaf_100', quantity: 1 },
   ]);
 });

@@ -1,4 +1,4 @@
-import { getStandDimensions } from './standDimensions.js';
+import { getStandDimensions, setStandWallLineHeightCm } from './standDimensions.js';
 import { WALL_PANEL_BAND_PITCH_CM, resolveWallPanelBandPitchCm } from './wallPanelBand.js';
 
 // catalogVisible / categoryId / catalogItemIndex her Item'ın kendi katalog görünüm verisidir.
@@ -35,6 +35,15 @@ export const WALL_LINE_HEIGHTS_CM = Object.freeze([250, 300, 350, 400, 450, 500]
  * adet = quantity + perBand × bant farkı (50 cm), heightMatched parça (dikme) o yüksekliğin
  * dikmesiyle değişir. Türetilen ürün katalogda görünmez; stand yüksekliği seçer.
  */
+// Kodda yükseklik parçası: son "_350" (ardından yalnız "_sarmasik" gibi bir ek gelebilir).
+function wallHeightKeyPattern(itemKey, heightCm) {
+  return new RegExp(`_${heightCm}(_[a-z]+)?$`).test(itemKey);
+}
+
+function wallKeyForHeight(itemKey, fromHeightCm, toHeightCm) {
+  return itemKey.replace(new RegExp(`_${fromHeightCm}(_[a-z]+)?$`), (match, tail = '') => `_${toHeightCm}${tail}`);
+}
+
 function buildWallHeightVariants(registry) {
   const variants = Object.create(null);
   // Dikmenin gerçek boyu = duvar yüksekliği × 0,99 (ürün tablosu: 247,5 / 297 / 346,5 / 396 /
@@ -50,11 +59,10 @@ function buildWallHeightVariants(registry) {
     const rows = base?.composition?.mode === 'recipe' ? base.composition.items : null;
     if (!Array.isArray(rows) || !rows.some((row) => Number(row?.perBand) || row?.heightMatched)) continue;
     const baseHeight = Number(base.sceneDimensions?.heightCm);
-    const suffix = base.itemKey.match(/_(\d+)$/);
-    if (!Number.isFinite(baseHeight) || !suffix || Number(suffix[1]) !== baseHeight) continue;
+    if (!Number.isFinite(baseHeight) || !wallHeightKeyPattern(base.itemKey, baseHeight)) continue;
     for (const heightCm of WALL_LINE_HEIGHTS_CM) {
       if (heightCm === baseHeight) continue;
-      const itemKey = `${base.itemKey.slice(0, -suffix[0].length)}_${heightCm}`;
+      const itemKey = wallKeyForHeight(base.itemKey, baseHeight, heightCm);
       if (registry[itemKey] || variants[itemKey]) continue;
       const bandDelta = (heightCm - baseHeight) / WALL_PANEL_BAND_PITCH_CM;
       if (!Number.isInteger(bandDelta)) continue;
@@ -88,9 +96,8 @@ export function resolveWallItemKeyForHeight(itemKey, heightCm) {
   const baseHeight = Number(base?.sceneDimensions?.heightCm);
   if (!base || !Number.isFinite(baseHeight)) return itemKey;
   if (height === baseHeight) return baseKey;
-  const suffix = baseKey.match(/_(\d+)$/);
-  if (!suffix) return itemKey;
-  const candidate = `${baseKey.slice(0, -suffix[0].length)}_${height}`;
+  if (!wallHeightKeyPattern(baseKey, baseHeight)) return itemKey;
+  const candidate = wallKeyForHeight(baseKey, baseHeight, height);
   return getItem(candidate)?.wallHeightBaseItemKey === baseKey ? candidate : itemKey;
 }
 
@@ -465,7 +472,8 @@ export function getShowcaseItemKeyForType(type) {
 export function getShowcaseBodyDefinition(itemOrKey) {
   const item = typeof itemOrKey === 'string' ? getItem(itemOrKey) : itemOrKey;
   const expectedItemKey = getShowcaseItemKeyForType(item?.type);
-  if (!item || !expectedItemKey || item.itemKey !== expectedItemKey) return null;
+  // Türetilmiş yükseklik (wall_showcase_100_2_250) aynı gövde parçalarını kullanır.
+  if (!item || !expectedItemKey || (item.wallHeightBaseItemKey ?? item.itemKey) !== expectedItemKey) return null;
 
   const sideItem = getItem(item.bodyItems?.sideItemKey);
   const horizontalItem = getItem(item.bodyItems?.horizontalItemKey);
@@ -535,9 +543,28 @@ function readCm(value) {
 }
 
 /** Catalog drop kotu (yerden cm). Instance `placement.zCm`; tavan değil. */
+/** Açık standın duvar yüksekliği (cm); kısa duvar bu tepeye hizalanır. Stand yokken 350. */
+let activeWallLineHeightCm = CATALOG_WALL_LINE_HEIGHT_CM;
+
+export function setActiveWallLineHeightCm(heightCm) {
+  const value = Number(heightCm);
+  activeWallLineHeightCm = WALL_LINE_HEIGHTS_CM.includes(value) ? value : CATALOG_WALL_LINE_HEIGHT_CM;
+  setStandWallLineHeightCm(activeWallLineHeightCm);
+}
+
+export function getActiveWallLineHeightCm() {
+  return activeWallLineHeightCm;
+}
+
 export function resolveItemDefaultZCm(itemOrKey) {
   const item = typeof itemOrKey === 'string' ? getItem(itemOrKey) : itemOrKey;
-  return readCm(item?.defaultZCm) ?? readCm(item?.dimensions?.mountHeightCm) ?? 0;
+  const defaultZCm = readCm(item?.defaultZCm) ?? readCm(item?.dimensions?.mountHeightCm) ?? 0;
+  // Kısa duvarın DB tabanı 350 cm duvar tepesine göredir (short_2 250, short_1 300); duvar
+  // yüksekliği farklıysa aynı farkla iner/çıkar (250'de 150 / 200).
+  if (isWallShortFamilyDescriptor(item) && readCm(item?.defaultZCm) != null) {
+    return defaultZCm + (activeWallLineHeightCm - CATALOG_WALL_LINE_HEIGHT_CM);
+  }
+  return defaultZCm;
 }
 
 export const SNAP_FACES = Object.freeze(['front', 'back', 'top', 'bottom', 'left', 'right']);

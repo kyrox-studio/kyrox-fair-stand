@@ -320,7 +320,7 @@ Recipe child listesi → JSON `composition.items[]`. Parent ≠ child. `quantity
 | `parent_item_key` | — | Parent Item | Bileşik | `resolveItemBom` |
 | `child_item_key` | `items[].itemKey` | Child Item | Gerçek parça | BOM recursive |
 | `quantity` | `items[].quantity` | Adet | Üretim | BOM |
-| `per_band` | `items[].perBand` (0 ise yok) | 50 cm bant başına adet farkı | Duvar yüksekliği kuralı (`0068`): quantity üstün kendi yüksekliğindeki adettir | `items.js` türetilmiş yükseklikler |
+| `per_band` | `items[].perBand` (0 ise yok) | 50 cm bant başına adet farkı | Duvar yüksekliği kuralı (`0068` düz duvar, `0069` kapı ve vitrin, `0070` 100’lük ayırıcı, `0071` 50’lik ayırıcı + 350 reçete düzeltmesi): quantity üstün kendi yüksekliğindeki adettir | `items.js` türetilmiş yükseklikler |
 | `height_matched` | `items[].heightMatched` (false ise yok) | Parça (dikme) seçilen yükseklikteki dikmeyle değişir | Aynı | aynı |
 | — | sıra | **`sort_order` kolonu yok** (`0013`); mapper `child_item_key` ile sıralar | Deterministik bootstrap | `item_mapper.map_item` |
 

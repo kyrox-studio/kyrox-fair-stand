@@ -54,7 +54,7 @@ test('upright_346_5 uses canonical itemKey in all 9 verified parent recipes and 
       if (getRecipeItemKey(item) !== 'upright_346_5') continue;
       occurrences += 1;
       // Düz duvarda dikme seçilen yüksekliğe göre değişir (0068).
-      assert.deepEqual(item, { itemKey: 'upright_346_5', quantity: 2, ...(/^wall_(50|100|150|200)_350$/.test(recipe.recipeId) ? { heightMatched: true } : {}) });
+      assert.deepEqual(item, { itemKey: 'upright_346_5', quantity: 2, ...(/^wall_(50|100|150|200|door_100|showcase_100_[23]|separator_100|separator_50)_350(_sarmasik)?$/.test(recipe.recipeId) ? { heightMatched: true } : {}) });
     }
   }
 

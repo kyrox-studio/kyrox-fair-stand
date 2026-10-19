@@ -81,3 +81,56 @@ test('500 cm end-to-end scales the same rule: 10 doubles, upright_495', () => {
   assert.equal(qty(bom, 'connector_double'), 10);
   assert.equal(qty(bom, 'connector_single'), 18);
 });
+
+// Kapı ve vitrin (0069): B = panel sayısı (250'de kapı 1, 2 gözlü 3, 3 gözlü 2).
+test('250 cm wall + door end-to-end: wall keeps 4 singles, door 0, 1 double', () => {
+  const bom = resolveProjectBom([
+    placed('a', 'wall_100_250', { xCm: 0, widthCm: 100 }),
+    placed('d', 'wall_door_100_250', { xCm: 100, widthCm: 100 }),
+  ]);
+  assert.equal(bom.appliedJointCount, 1);
+  assert.equal(qty(bom, 'upright_247_5'), 3);
+  assert.equal(qty(bom, 'connector_double'), 1);
+  assert.equal(qty(bom, 'connector_single'), 4);
+  assert.equal(qty(bom, 'door_leaf_100'), 1);
+  assert.equal(moduleQty(bom, 'a', 'connector_single'), 4);
+  assert.equal(moduleQty(bom, 'd', 'connector_single'), 0);
+});
+
+test('250 cm wall + door inner corner: 4 corner connectors from the wall, door panel becomes a corner panel', () => {
+  const bom = resolveProjectBom([
+    placed('a', 'wall_100_250', { xCm: 0, widthCm: 100 }),
+    placed('d', 'wall_door_100_250', { xCm: 100, yCm: 0, rotationZDeg: 270, widthCm: 100 }),
+  ]);
+  assert.equal(bom.appliedCornerCount, 1);
+  assert.equal(qty(bom, 'upright_247_5'), 3);
+  assert.equal(qty(bom, 'connector_corner'), 4);
+  assert.equal(qty(bom, 'panel_corner_92'), 6);
+  assert.equal(qty(bom, 'panel_98'), 0);
+});
+
+test('250 cm showcase-2 tee into a wall: 2 corner connectors, 3 corner panels, showcase parts stay', () => {
+  const modules = [
+    placed('a', 'wall_200_250', { xCm: 0, widthCm: 200 }),
+    placed('s', 'wall_showcase_100_2_250', { xCm: 100, yCm: 0, rotationZDeg: 270, widthCm: 100 }),
+  ];
+  assert.equal(detectRelationshipJoints(modules)[0].kind, 'tee');
+  const bom = resolveProjectBom(modules);
+  assert.equal(bom.appliedTeeCount, 1);
+  assert.equal(qty(bom, 'upright_247_5'), 3);
+  assert.equal(qty(bom, 'connector_corner'), 2);
+  assert.equal(qty(bom, 'connector_single'), 9 + 3);
+  assert.equal(qty(bom, 'panel_corner_92'), 3);
+  assert.equal(qty(bom, 'glass_shelf'), 1);
+  assert.equal(qty(bom, 'showcase_side_94_6_30'), 2);
+});
+
+test('350 cm door and showcase joints keep the locked counts', () => {
+  const bom = resolveProjectBom([
+    placed('a', 'wall_100_350', { xCm: 0, widthCm: 100 }),
+    placed('d', 'wall_door_100_350', { xCm: 100, widthCm: 100 }),
+  ]);
+  assert.equal(qty(bom, 'connector_single'), 8);
+  assert.equal(qty(bom, 'connector_double'), 3);
+  assert.equal(qty(bom, 'upright_346_5'), 3);
+});

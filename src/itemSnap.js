@@ -114,7 +114,14 @@ export function resolveVirtualTopRailZCm(host, provider) {
   const hostZ = Number(host?.placement?.zCm) || 0;
   const hostTop = hostZ + hostHeightCm(host);
   if (!provider) return hostTop;
-  const railTop = resolveItemDefaultZCm(provider) + providerHeightCm(provider);
+  // Reçete parçasının (profil) DB yüksekliği 350 cm duvara göredir; türetilmiş duvar
+  // yüksekliğinde (wall_100_500 …) hat aynı farkla kayar.
+  const hostItem = host?.itemKey ? getItem(host.itemKey) : null;
+  const baseItem = hostItem?.wallHeightBaseItemKey ? getItem(hostItem.wallHeightBaseItemKey) : null;
+  const heightShiftCm = baseItem
+    ? Number(hostItem.sceneDimensions?.heightCm) - Number(baseItem.sceneDimensions?.heightCm)
+    : 0;
+  const railTop = resolveItemDefaultZCm(provider) + providerHeightCm(provider) + (Number.isFinite(heightShiftCm) ? heightShiftCm : 0);
   if (!Number.isFinite(railTop)) return hostTop;
   const hostBottom = hostZ;
   if (railTop >= hostBottom - 0.5 && railTop <= hostTop + 0.5) return railTop;

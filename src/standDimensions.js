@@ -38,9 +38,26 @@ export function resetStandDimensions() {
   standDimensions = null;
 }
 
+// Açık standın duvar yüksekliği (cm). DB tavanından yüksekse (450 / 500 cm stand) tavan odur;
+// yoksa ayırıcı, kısa duvar gibi modüller DB tavanına kırpılır.
+let wallLineHeightCm = null;
+let raisedDimensions = null;
+
+export function setStandWallLineHeightCm(heightCm) {
+  const value = Number(heightCm);
+  wallLineHeightCm = Number.isFinite(value) && value > 0 ? value : null;
+  raisedDimensions = null;
+}
+
 export function getStandDimensions() {
   if (!standDimensions) {
     throw new Error('Fair Stand dimensions are not bootstrapped.');
+  }
+  if (wallLineHeightCm && wallLineHeightCm > standDimensions.heightCm) {
+    if (raisedDimensions?.heightCm !== wallLineHeightCm) {
+      raisedDimensions = Object.freeze({ ...standDimensions, heightCm: wallLineHeightCm });
+    }
+    return raisedDimensions;
   }
   return standDimensions;
 }
