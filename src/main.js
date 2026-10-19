@@ -124,7 +124,7 @@ import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument
 import { bootstrapFairStandCatalog } from './catalogBootstrap.js';
 import { bindProjectActionSaveGuard } from './projectActionSaveGuard.js';
 import { createProductionBomPanel } from './productionBomPanel.js';
-import { waitForSceneAssets } from './sceneAssetLoading.js';
+import { waitForNextRender, waitForSceneAssets } from './sceneAssetLoading.js';
 import { beginEditorBootStep, beginProjectOpenStep, discardEditorBootTiming, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
 
 let moduleDeleteConfirmOpen = false;
@@ -3702,6 +3702,10 @@ async function waitForSceneToFill() {
   });
   if (result.timedOut) {
     projectStatus.textContent = `${projectStatus.textContent} · Bazı görsel/modeller hâlâ yükleniyor.`;
+  } else {
+    projectLoading.setDetail('Sahne çiziliyor…');
+    scene3d.requestRender?.();
+    await waitForNextRender();
   }
   return result;
 }

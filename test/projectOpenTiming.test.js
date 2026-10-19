@@ -18,7 +18,7 @@ import {
   summarizeProjectOpen,
   timeProjectOpenStep,
 } from '../src/projectOpenTiming.js';
-import { getPendingSceneAssetCount, trackSceneModel, trackSceneTextureLoader } from '../src/sceneAssetLoading.js';
+import { getPendingSceneAssetCount, noteSceneRender, trackSceneModel, trackSceneTextureLoader } from '../src/sceneAssetLoading.js';
 
 test('steps outside an open measurement run normally and record nothing', async () => {
   assert.equal(isProjectOpenTimingActive(), false);
@@ -193,6 +193,10 @@ test('scene ready waits until every tracked image and model has arrived', async 
   resolveModel('scene');
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.equal(getPendingSceneAssetCount(), 0);
+  // Sahne tamamen hazır = parçalar geldi ve sahne bir kez çizildi.
+  assert.equal(lines.length, 1, 'kare çizilmeden hazır sayılmaz');
+  noteSceneRender();
+  await new Promise((resolve) => setTimeout(resolve, 5));
   assert.match(lines[1], /^\[Fair Stand ölçüm\] sahne tamamen hazır: açılıştan \+\d+ ms · 2 görsel yüzeyi \(son \+\d+ ms, işleme \d+ ms\) · 1 model \(son \+\d+ ms, /);
   const { scene } = getLastProjectOpenTiming();
   assert.equal(scene.imageCount, 2);
@@ -205,6 +209,8 @@ test('scene ready is reported at once when nothing is pending', async () => {
   startProjectOpenTiming('p-empty');
   finishProjectOpenTiming({ log: (line) => lines.push(line) });
   await new Promise((resolve) => setTimeout(resolve, 5));
+  noteSceneRender();
+  await new Promise((resolve) => setTimeout(resolve, 5));
   assert.match(lines[1], /sahne tamamen hazır: açılıştan \+\d+ ms · 0 görsel yüzeyi · 0 model/);
 });
 
@@ -213,3 +219,4 @@ test('scene3d counts surface images and item models', () => {
   assert.match(scene, /const textureLoader = trackSceneTextureLoader\(new THREE\.TextureLoader\(\)\);/);
   assert.match(scene, /return trackSceneModel\(loadGltfScene\(/);
 });
+
