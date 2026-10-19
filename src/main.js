@@ -1,4 +1,4 @@
-import { createStandScene } from './scene3d.js';
+import { createStandScene, prefetchModuleModels } from './scene3d.js';
 import { initHelpGuide } from './helpGuide.js';
 import { planAutomaticDepot } from './autoDepot.js';
 import {
@@ -124,7 +124,7 @@ import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument
 import { bootstrapFairStandCatalog } from './catalogBootstrap.js';
 import { bindProjectActionSaveGuard } from './projectActionSaveGuard.js';
 import { createProductionBomPanel } from './productionBomPanel.js';
-import { waitForSceneAssets } from './sceneAssetLoading.js';
+import { waitForNextRender, waitForSceneAssets } from './sceneAssetLoading.js';
 import { beginEditorBootStep, beginProjectOpenStep, discardEditorBootTiming, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
 
 let moduleDeleteConfirmOpen = false;
@@ -2662,7 +2662,7 @@ async function returnToLiveProject() {
   projectLoading.show(`${label} yükleniyor…`, 'Revizyon sahnesi hazırlanıyor.');
   projectStatus.textContent = `${label} açılıyor…`;
   try {
-    const project = await loadProject(activeProjectId);
+    const project = await loadProject(activeProjectId, projectOpenLoadOptions());
     if (!project) {
       projectStatus.textContent = `${label} bulunamadı.`;
       return;
@@ -3680,6 +3680,19 @@ importProjectFileInput.addEventListener('change', async () => {
 // diye SCENE_FILL_TIMEOUT_MS sonra ekran yine kapanır.
 const SCENE_FILL_TIMEOUT_MS = 30000;
 
+// Proje açılışında aşamalar: proje verisi → görseller indiriliyor (n / N) → sahne kuruluyor →
+// görseller ve 3D modeller yükleniyor (n / N). Proje verisi gelir gelmez 3D modeller başlar.
+function projectOpenLoadOptions() {
+  return {
+    onProjectData: (project) => {
+      prefetchModuleModels(project?.modules);
+    },
+    onAssetProgress: ({ done, total }) => {
+      if (total > 0) projectLoading.setDetail(`Görseller indiriliyor… ${done} / ${total}`);
+    },
+  };
+}
+
 async function waitForSceneToFill() {
   const result = await waitForSceneAssets({
     timeoutMs: SCENE_FILL_TIMEOUT_MS,
@@ -3689,6 +3702,10 @@ async function waitForSceneToFill() {
   });
   if (result.timedOut) {
     projectStatus.textContent = `${projectStatus.textContent} · Bazı görsel/modeller hâlâ yükleniyor.`;
+  } else {
+    projectLoading.setDetail('Sahne çiziliyor…');
+    scene3d.requestRender?.();
+    await waitForNextRender();
   }
   return result;
 }
@@ -3699,17 +3716,18 @@ async function openStoredProject(projectId) {
     return false;
   }
 
-  projectLoading.show('Proje yükleniyor…', 'Görseller ve sahne hazırlanıyor.');
+  projectLoading.show('Proje yükleniyor…', 'Proje verisi alınıyor…');
   setButtonBusy(openProjectButton, true, 'Açılıyor');
   projectStatus.textContent = 'Proje yükleniyor…';
   startProjectOpenTiming(projectId);
   let timingFinished = false;
   try {
-    const project = await loadProject(projectId);
+    const project = await loadProject(projectId, projectOpenLoadOptions());
     if (!project) {
       projectStatus.textContent = 'Proje bulunamadı.';
       return false;
     }
+    projectLoading.setDetail('Sahne kuruluyor…');
     await restoreProject(project);
     // Ölçümde "proje açıldı" sahne kurulunca biter; sahnenin dolması ayrı satırda yazılır.
     timingFinished = true;

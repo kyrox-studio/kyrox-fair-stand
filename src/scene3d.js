@@ -99,7 +99,7 @@ import {
 } from './moduleGroups.js';
 import { getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, requiresShortUpJointSnap, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
-import { trackSceneModel, trackSceneTextureLoader } from './sceneAssetLoading.js';
+import { noteSceneRender, trackSceneModel, trackSceneTextureLoader } from './sceneAssetLoading.js';
 
 function frameColorForModule(moduleState) {
   const item = getItem(moduleState?.itemKey);
@@ -287,6 +287,23 @@ function loadItemModel(itemOrKey) {
     throw new TypeError(`Missing canonical model asset for ${item?.itemKey ?? 'unknown'}.`);
   }
   return trackSceneModel(loadGltfScene(import.meta.env.BASE_URL + 'models/' + item.modelFile));
+}
+
+// Proje açılışı 3D modelleri sahne kurulmadan önce, proje verisi gelir gelmez başlatır:
+// görseller inerken modeller de iner ve ayrıştırılır. Aynı adres önbelleği (gltfSceneCache)
+// sahne kurulumunda tekrar kullanılır; model iki kez inmez. Dönen değer başlatılan dosya sayısıdır.
+export function prefetchModuleModels(modules) {
+  const files = new Set();
+  for (const moduleState of modules ?? []) {
+    const modelFile = moduleState?.modelFile
+      || (moduleState?.itemKey ? getItem(moduleState.itemKey)?.modelFile : null);
+    if (modelFile) files.add(modelFile);
+  }
+  for (const modelFile of files) {
+    // Hata loadGltfScene içinde bildirilir ve önbellekten düşer; sahne kurulumu yeniden dener.
+    loadItemModel({ modelFile }).catch(() => {});
+  }
+  return files.size;
 }
 
 function createTvScreenTexture(itemOrKey) {
@@ -4809,6 +4826,33 @@ export function createStandScene(
     texture.needsUpdate = true;
   }
 
+  // Aynı görsel + oran + sığdırma için sığdırılmış tuval bir kez üretilir ve GPU'ya bir kez
+  // yüklenir. Gruplu görselde her panel grubun tamamını taşıyan aynı dokuyu kendi bölgesiyle
+  // (offset/repeat) gösterir; eskiden her panel 2048 px'lik ayrı doku yüklüyordu (60 panel =
+  // 60 yükleme, açılışta ~0,9 sn'lik kare). Kopyalar aynı Source'u paylaşır.
+  const fittedTextureCache = new Map();
+  let fittedTextureCacheTimer = null;
+  const FITTED_TEXTURE_CACHE_MS = 5000;
+
+  function sharedFittedTexture(assetId, image, targetAspect, fit, configureBase) {
+    const key = `${assetId}|${Number(targetAspect).toFixed(4)}|${fit}`;
+    let base = fittedTextureCache.get(key);
+    if (!base) {
+      base = new THREE.CanvasTexture(createFittedCanvas(image, targetAspect, fit));
+      configureBase(base);
+      fittedTextureCache.set(key, base);
+    }
+    // Önbellek yalnız açılış/yeniden kurulum dalgası için tutulur; tuvaller bellekte kalmasın.
+    clearTimeout(fittedTextureCacheTimer);
+    fittedTextureCacheTimer = setTimeout(() => fittedTextureCache.clear(), FITTED_TEXTURE_CACHE_MS);
+    // clone() kaynak sürümünü artırır (needsUpdate); artarsa aynı görsel her kopyada yeniden
+    // yüklenir. Sürüm geri alınır: kopya yalnız UV dönüşümünü (offset/repeat) kendine tutar.
+    const sourceVersion = base.source.version;
+    const texture = base.clone();
+    texture.source.version = sourceVersion;
+    return texture;
+  }
+
   function createFittedCanvas(image, targetAspect, fit = 'contain') {
     const maxSide = 2048;
     let width;
@@ -4916,10 +4960,16 @@ export function createStandScene(
         }
         if (fit === 'cover' || fit === 'contain') {
           const targetAspect = mesh.geometry.parameters.width / mesh.geometry.parameters.height;
-          const canvas = createFittedCanvas(sourceTexture.image, targetAspect, fit);
+          const fittedTexture = sharedFittedTexture(assetId, sourceTexture.image, targetAspect, fit, (base) => {
+            configureTexture(base, surfaceState);
+          });
           sourceTexture.dispose();
-          const fittedTexture = new THREE.CanvasTexture(canvas);
-          configureTexture(fittedTexture, surfaceState);
+          // Yüzeye özel UV dönüşümü (offset/repeat/rotation); yükleme gerektirmez.
+          const transform = surfaceState?.imageTransform ?? {};
+          fittedTexture.center.set(0.5, 0.5);
+          fittedTexture.offset.set(transform.offsetX ?? 0, transform.offsetY ?? 0);
+          fittedTexture.repeat.set(transform.repeatX ?? 1, transform.repeatY ?? 1);
+          fittedTexture.rotation = transform.rotation ?? 0;
           assignTexture(mesh, fittedTexture);
           return;
         }
@@ -4957,19 +5007,21 @@ export function createStandScene(
           return;
         }
 
-        const canvas = createFittedCanvas(
+        const texture = sharedFittedTexture(
+          assetId,
           sourceTexture.image,
           transform.groupAspect,
           transform.fit ?? 'contain',
+          (base) => {
+            base.colorSpace = THREE.SRGBColorSpace;
+            base.wrapS = THREE.ClampToEdgeWrapping;
+            base.wrapT = THREE.ClampToEdgeWrapping;
+            base.anisotropy = renderer.capabilities.getMaxAnisotropy();
+          },
         );
         sourceTexture.dispose();
 
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.wrapS = THREE.ClampToEdgeWrapping;
-        texture.wrapT = THREE.ClampToEdgeWrapping;
-        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
+        // Panelin grup içindeki bölgesi; aynı dokuyu paylaşan panellerden yalnız bu farklıdır.
         if (expectedMode === 'rect-group') {
           texture.offset.set(transform.regionStartX, transform.regionStartY);
           texture.repeat.set(transform.regionWidth, transform.regionHeight);
@@ -4978,7 +5030,6 @@ export function createStandScene(
           texture.repeat.set(transform.regionWidth, 1);
         }
 
-        texture.needsUpdate = true;
         assignTexture(mesh, texture);
       },
       undefined,
@@ -6314,6 +6365,8 @@ export function createStandScene(
       lastCubeQuaternion.copy(camera.quaternion);
     }
     renderer.render(scene, camera);
+    // Proje açılışı "sahne çizildi" anını bu sinyalle bekler.
+    noteSceneRender();
     if (!controlsChanged && !activelyDragging) editorRenderRequested = false;
   });
 
@@ -6418,6 +6471,7 @@ export function createStandScene(
 
   return {
     captureCurrentViewPng,
+    requestRender: requestEditorRender,
     setShelfLightingVisible,
     setCameraMode,
     getCameraMode: () => cameraMode,

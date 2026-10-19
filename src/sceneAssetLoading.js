@@ -71,6 +71,11 @@ export function trackSceneModel(promise) {
   return promise;
 }
 
+// Editör karesi çizildi. Proje açılışı "sahne çizildi" anını bu sinyalle bekler.
+export function noteSceneRender() {
+  emit({ type: 'render' });
+}
+
 export function getPendingSceneAssetCount() {
   return state.pending;
 }
@@ -82,6 +87,26 @@ export function subscribeSceneAssets(listener) {
 
 function nextTask() {
   return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+// Görseller ve modeller gelince sahnenin bir kez gerçekten çizilmesi beklenir: doku yükleme ve
+// gölgelendirici işi ilk karede olur; beklenmezse yükleme ekranı kapandıktan sonra donar.
+// timeoutMs içinde kare gelmezse (ör. sekme arka planda) beklemeden çözülür.
+export function waitForNextRender({ timeoutMs = 5000 } = {}) {
+  return new Promise((resolve) => {
+    let finished = false;
+    const finish = (rendered) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      unsubscribe();
+      resolve(rendered);
+    };
+    const unsubscribe = subscribeSceneAssets((event) => {
+      if (event.type === 'render') finish(true);
+    });
+    const timer = setTimeout(() => finish(false), timeoutMs);
+  });
 }
 
 // Bekleyen bütün görsel ve modeller gelince çözülür. Sayaç sıfıra inince bir tur beklenir:
@@ -98,7 +123,8 @@ export function waitForSceneAssets({ timeoutMs = 30000, onProgress } = {}) {
   };
   const unsubscribe = subscribeSceneAssets((event) => {
     if (event.type === 'begin') total += 1;
-    else doneCount += 1;
+    else if (event.type === 'done') doneCount += 1;
+    else return;
     report();
   });
   report();

@@ -4,7 +4,7 @@
 // geldiği için son satır ("sahne tamamen hazır") hepsi bitince yazılır. Davranış değişmez; ölçüm hatası açılışı
 // asla bozmaz.
 
-import { subscribeSceneAssets, waitForSceneAssets } from './sceneAssetLoading.js';
+import { subscribeSceneAssets, waitForNextRender, waitForSceneAssets } from './sceneAssetLoading.js';
 
 const MARK_PREFIX = 'fs:';
 const MODEL_PATH = '/models/';
@@ -145,12 +145,13 @@ export async function timeProjectOpenStep(name, run) {
   }
 }
 
-export function noteProjectOpenAssets({ count = 0, bytes = 0, missing = 0 } = {}) {
+export function noteProjectOpenAssets({ count = 0, bytes = 0, missing = 0, reused = 0 } = {}) {
   if (!current) return;
   current.assets = {
     count: Number(count) || 0,
     bytes: Number(bytes) || 0,
     missing: Number(missing) || 0,
+    reused: Number(reused) || 0,
   };
 }
 
@@ -194,7 +195,8 @@ export function summarizeProjectOpen(result) {
   const parts = [`toplam ${formatMs(result.totalMs)}`, ...formatSteps(result.steps)];
   if (result.assets) {
     const missing = result.assets.missing ? `, ${result.assets.missing} eksik` : '';
-    parts.push(`${result.assets.count} görsel (${formatMb(result.assets.bytes)}${missing})`);
+    const reused = result.assets.reused ? `, ${result.assets.reused} önbellekten` : '';
+    parts.push(`${result.assets.count} görsel (${formatMb(result.assets.bytes)} indirildi${reused}${missing})`);
   }
   if (result.moduleCount != null) parts.push(`${result.moduleCount} modül`);
   return `[Fair Stand ölçüm] proje açıldı: ${parts.join(' · ')}`;
@@ -242,6 +244,7 @@ function startSceneCounting() {
       counts[event.kind] = (counts[event.kind] ?? 0) + 1;
       return;
     }
+    if (event.type !== 'done') return;
     // Bu türün son parçası ne zaman geldi: görseller mi modeller mi bekletiyor ayrılsın.
     counts[`${event.kind}LastAt`] = nowMs();
     if (event.kind === 'image') counts.imageWorkMs += Number(event.workMs) || 0;
@@ -257,7 +260,9 @@ function endSceneCounting() {
 }
 
 function watchSceneReady(record, log) {
-  void waitForSceneAssets({ timeoutMs: SCENE_WATCH_LIMIT_MS }).then(({ timedOut }) => {
+  // "Sahne tamamen hazır" = görseller ve modeller geldi ve sahne bir kez çizildi.
+  void waitForSceneAssets({ timeoutMs: SCENE_WATCH_LIMIT_MS }).then(async ({ timedOut }) => {
+    if (!timedOut) await waitForNextRender();
     const counts = endSceneCounting();
     const readyAt = nowMs();
     const scene = {
