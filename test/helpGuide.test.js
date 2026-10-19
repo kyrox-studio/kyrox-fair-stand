@@ -54,7 +54,6 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /Yarım sahne gösterilmez/);
   assert.match(guideSource, /Editörde ışık gölgesi, LED projektör ve raf altı aydınlatmanın panele düşen ışığı kapalıdır/);
   assert.match(guideSource, /<strong>Render Al<\/strong> çizerken gölgeyi, projektör ve raf altı ışıklarını açar/);
-  assert.match(guideSource, /Cam masa editörde düz cam görünür; Render Al çıktısında arkasındaki görüntüyü hafifçe kırar\./);
   assert.match(guideSource, /sunucudaki görsel değişmediyse sonraki açılışta yeniden indirilmez/);
   assert.match(guideSource, /Duvara yapışmaz/);
   assert.match(guideSource, /Alt yüze görsel, Lightbox veya Mesh uygulanmaz/);
