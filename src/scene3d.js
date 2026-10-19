@@ -4502,6 +4502,7 @@ export function createStandScene(
   }
 
   function rebuildFabricOverlays() {
+    requestEditorRender();
     clearFabricOverlays();
     normalizeFabricOwnership();
 
@@ -5617,6 +5618,7 @@ export function createStandScene(
   }
 
   function clearImage(meshOrMeshes) {
+    requestEditorRender();
     const meshes = normalizeMeshes(meshOrMeshes);
     const fabricGroupIds = new Set(
       meshes.map((mesh) => mesh.userData.surfaceState?.fabricGroupId).filter(Boolean),
