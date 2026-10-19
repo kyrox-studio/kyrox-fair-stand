@@ -106,7 +106,7 @@ import { DEFAULT_SELECTION_HINT, describeFloorAreaSelection, describeFloorSelect
 import { createSidebarController } from './sidebarController.js';
 import { createViewportToolbarController } from './viewportToolbarController.js';
 import { formatCapacityPopup, renderStageResult as renderStageResultInto, renderWallResult } from './stageFeedback.js';
-import { getFloorItem, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey } from './items.js';
+import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getFloorItem, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
 import {
@@ -208,6 +208,7 @@ const standTypeButtons = [...document.querySelectorAll('[data-stand-type]')];
 const standSizeXInput = document.querySelector('#stand-size-x');
 const standSizeYInput = document.querySelector('#stand-size-y');
 const createStageButton = document.querySelector('#create-stage');
+const wallHeightSelect = document.querySelector('#wall-height');
 const floorTypeSelect = document.querySelector('#floor-type');
 const floorAreaControls = document.querySelector('#floor-area-controls');
 const floorAreaAddButton = document.querySelector('#floor-area-add');
@@ -778,7 +779,10 @@ function assignStandFloorItem(stand, itemKey) {
 
 function createCatalogModuleState(module, { preservePlacement = false, itemKey = null } = {}) {
   if (!module) return null;
-  const canonicalKey = itemKey || module.itemKey || resolveItemKey(module);
+  const canonicalKey = resolveWallItemKeyForHeight(
+    itemKey || module.itemKey || resolveItemKey(module),
+    activeWallHeightCm(),
+  );
   const state = createModuleStateFromCatalogKey(canonicalKey)
     ?? createModuleStateFromDescriptor(module, { itemKey: canonicalKey });
   if (!state) return null;
@@ -1804,9 +1808,30 @@ function createAutomaticDepotStates(plan) {
   }).filter(Boolean);
 }
 
+function readWallHeightCm() {
+  const value = Number(wallHeightSelect?.value);
+  return WALL_LINE_HEIGHTS_CM.includes(value) ? value : CATALOG_WALL_LINE_HEIGHT_CM;
+}
+
+/** Standın duvar yüksekliği (cm). Eski projelerde alan yoktur: 350. */
+function activeWallHeightCm() {
+  const value = Number(currentStand?.wallHeightCm);
+  return WALL_LINE_HEIGHTS_CM.includes(value) ? value : CATALOG_WALL_LINE_HEIGHT_CM;
+}
+
+/** Otomatik duvar parçası: seçilen yükseklikteki düz duvar. */
+function createAutomaticWallState(widthCm, wallHeightCm) {
+  return createModuleStateFromDescriptor({
+    type: 'flat-panel',
+    widthCm,
+    itemKey: resolveAutomaticWallFlatPanelItemKey(widthCm, wallHeightCm),
+  });
+}
+
 function readSceneSetupFromControls() {
-  const setup = readStandSetup();
-  if (!setup.ok) return { ok: false, message: setup.message };
+  const standSetup = readStandSetup();
+  if (!standSetup.ok) return { ok: false, message: standSetup.message };
+  const setup = { ...standSetup, wallHeightCm: readWallHeightCm() };
 
   const depotConfig = autoDepotEnabledInput?.checked ? {
     enabled: true,
@@ -1906,7 +1931,7 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan }) {
     }
 
     currentModules = automaticWall.widths.map((widthCm, index) => {
-      const moduleState = createModuleStateFromDescriptor({ type: 'flat-panel', widthCm });
+      const moduleState = createAutomaticWallState(widthCm, setup.wallHeightCm);
       moduleState.placement = { ...automaticWall.placements[index] };
       return moduleState;
     });
@@ -1927,10 +1952,7 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan }) {
         (moduleState) => moduleState.placement?.wallId !== 'back',
       );
       const backStates = customBack.modules.map((entry) => {
-        const moduleState = createModuleStateFromDescriptor({
-          type: 'flat-panel',
-          widthCm: entry.widthCm,
-        });
+        const moduleState = createAutomaticWallState(entry.widthCm, setup.wallHeightCm);
         moduleState.placement = { ...entry.placement };
         if (entry.depotBack) {
           moduleState.autoDepotBack = true;
@@ -1955,10 +1977,7 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan }) {
           (moduleState) => moduleState.placement?.wallId !== customSide.wallId,
         );
         const sideStates = customSide.modules.map((entry) => {
-          const moduleState = createModuleStateFromDescriptor({
-            type: 'flat-panel',
-            widthCm: entry.widthCm,
-          });
+          const moduleState = createAutomaticWallState(entry.widthCm, setup.wallHeightCm);
           moduleState.placement = { ...entry.placement };
           if (entry.depotSide) {
             moduleState.autoDepotBack = true;
@@ -2649,6 +2668,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     });
     standSizeXInput.value = String(currentStand.xCm);
     standSizeYInput.value = String(currentStand.yCm);
+    if (wallHeightSelect) wallHeightSelect.value = String(activeWallHeightCm());
     const resolvedFloor = resolveStandFloorItemKey(currentStand);
     currentStand = assignStandFloorItem(currentStand, resolvedFloor);
     syncFloorTypeSelect(resolvedFloor);

@@ -15,6 +15,22 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-19 — Duvar yüksekliği kuralı (wall ailesi)
+
+**Kural:** Düz duvar (`wall_50/100/150/200_350`) reçetesi DB'de 350 cm (7 bant) olarak kalır. Reçete satırına `per_band` (bant başına adet farkı: panel 1, tekli aparat 2) ve `height_matched` (dikme yüksekliğe göre değişir) eklendi (`0068_wall_band_recipe`). B = yükseklik / 50: panel B, tekli 2B − 1, başlangıç 2, profil 2, dikme 2.
+
+**Dikmeler:** `upright_247_5` (250), `upright_297` (300), `upright_346_5` (350, mevcut), `upright_396` (400), `upright_445_5` (450), `upright_495` (500). Gerçek boy ürün tablosundan ve kural: gerçek boy = duvar yüksekliği × 0,99 (49,5 / 99 dahil hepsi uyar); türetme dikmeyi bu kuralla seçer. upright_396 / upright_445_5 / upright_495 bazı veritabanlarında (kısa duvar dikme yığını) zaten vardı: migration onlara dokunmaz, downgrade yalnız upright_247_5 ve upright_297’yi siler. Gizli Item, fiyat atanmadı.
+
+**Türetme:** `initializeItemRegistry` kuraldan `wall_100_250` … `wall_100_500` üretir (`buildWallHeightVariants`). Türetilen Item `getItem` ile bulunur, `listRegisteredItems` / katalog / admin listesine girmez. `resolveWallItemKeyForHeight` duvarı seçilen yüksekliğe eşler.
+
+**Bağlantılar:** `relationshipBom.js` duvar/ayırıcıda sabit 7 / 13 / 6 yerine reçetenin bant sayısını kullanır: uç yüzey B, standart tekli 2B − 1, köşe aparatı B − 1; eklemde kalkan dikme katılımcının reçetesindeki dikmedir. 350'de sonuç değişmez.
+
+**Stand:** Stand kurulumunda "Duvar yüksekliği" (250–500, varsayılan 350). `currentStand.wallHeightCm` projeyle kaydedilir; eski projede alan yoksa 350. Otomatik duvar ve katalogdan eklenen düz duvar bu yüksekliği alır.
+
+**Kapsam dışı (350 kalır):** kapı, vitrin, ayırıcı, sarmaşık, kısa duvar; açılmış standın yüksekliğini sonradan değiştirmek; yeni dikmelerin fiyatı.
+
+---
+
 ## 2026-10-19 — Editör performansı: ışık/gölge Render Al'da, tek modül güncelleme
 
 **Işık ve gölge:** Editörde ışık gölgesi (`shadowMap.enabled = false`), LED projektör ve raf altı spot ışıkları kapalı. Spot ışıklar `RENDER_ONLY_LIGHT_LAYER` katmanında, editör kamerası bu katmanı görmez; lens ve LED şerit parlamaya devam eder. Render Al (`captureCurrentViewPng`) gölgeyi ve katmanı açıp çizer, sonra kapatır; bu sırada yükleme ekranı gösterilir. Projektör camında `transmission` yok; tek bir `transmission` malzemesi bile sahneyi her karede iki kez çizdirir. Cam masa (`TABLE_GLASS_APPEARANCE`) editörde kırılmasız düz camdır; Render Al çizerken `TABLE_GLASS_RENDER_TRANSMISSION` (0,32) açılır, sonra kapanır.

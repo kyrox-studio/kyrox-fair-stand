@@ -1,5 +1,5 @@
 import { getStandDimensions } from './standDimensions.js';
-import { resolveWallPanelBandPitchCm } from './wallPanelBand.js';
+import { WALL_PANEL_BAND_PITCH_CM, resolveWallPanelBandPitchCm } from './wallPanelBand.js';
 
 // catalogVisible / categoryId / catalogItemIndex her Item'ın kendi katalog görünüm verisidir.
 // previewId görünür Item'da Catalog kart silüet tanımıdır; type üzerinden seçilmez.
@@ -9,6 +9,8 @@ import { resolveWallPanelBandPitchCm } from './wallPanelBand.js';
 // Kanonik Item tablosu. Satır = Item (`itemKey`). Kova map yoktur.
 
 let itemByKey = null;
+/** Kuraldan türetilen duvar yükseklikleri: getItem bulur, Item listesine girmez. */
+let derivedItemByKey = Object.create(null);
 let catalogReady = false;
 let snapRuleById = null;
 let snapRuleByKey = null;
@@ -22,6 +24,74 @@ function freezeDeep(value) {
   }
   for (const nested of Object.values(value)) freezeDeep(nested);
   return Object.freeze(value);
+}
+
+/** Stand kurulumunda seçilebilen duvar hattı yükseklikleri (cm). */
+export const WALL_LINE_HEIGHTS_CM = Object.freeze([250, 300, 350, 400, 450, 500]);
+
+/**
+ * Duvar yüksekliği kuralı (DB 0068): reçete satırında perBand ve heightMatched varsa üst ürün,
+ * kendi yüksekliğindeki (ör. wall_100_350) reçeteden başka yüksekliklere türetilir:
+ * adet = quantity + perBand × bant farkı (50 cm), heightMatched parça (dikme) o yüksekliğin
+ * dikmesiyle değişir. Türetilen ürün katalogda görünmez; stand yüksekliği seçer.
+ */
+function buildWallHeightVariants(registry) {
+  const variants = Object.create(null);
+  // Dikmenin gerçek boyu = duvar yüksekliği × 0,99 (ürün tablosu: 247,5 / 297 / 346,5 / 396 /
+  // 445,5 / 495; kısa duvar dikmeleri 49,5 / 99 de aynı kurala uyar).
+  const uprightByLineHeight = new Map();
+  for (const item of Object.values(registry)) {
+    const realHeight = Number(item?.dimensions?.heightCm);
+    if (item?.type !== 'upright' || !Number.isFinite(realHeight)) continue;
+    const lineHeight = Math.round(realHeight / 0.99);
+    if (Math.abs(lineHeight * 0.99 - realHeight) < 0.01) uprightByLineHeight.set(lineHeight, item);
+  }
+  for (const base of Object.values(registry)) {
+    const rows = base?.composition?.mode === 'recipe' ? base.composition.items : null;
+    if (!Array.isArray(rows) || !rows.some((row) => Number(row?.perBand) || row?.heightMatched)) continue;
+    const baseHeight = Number(base.sceneDimensions?.heightCm);
+    const suffix = base.itemKey.match(/_(\d+)$/);
+    if (!Number.isFinite(baseHeight) || !suffix || Number(suffix[1]) !== baseHeight) continue;
+    for (const heightCm of WALL_LINE_HEIGHTS_CM) {
+      if (heightCm === baseHeight) continue;
+      const itemKey = `${base.itemKey.slice(0, -suffix[0].length)}_${heightCm}`;
+      if (registry[itemKey] || variants[itemKey]) continue;
+      const bandDelta = (heightCm - baseHeight) / WALL_PANEL_BAND_PITCH_CM;
+      if (!Number.isInteger(bandDelta)) continue;
+      const upright = uprightByLineHeight.get(heightCm) ?? null;
+      const items = rows.map((row) => ({
+        ...row,
+        itemKey: row.heightMatched ? upright?.itemKey : row.itemKey,
+        quantity: Number(row.quantity) + (Number(row.perBand) || 0) * bandDelta,
+      }));
+      if (items.some((row) => !row.itemKey || !(row.quantity > 0))) continue;
+      const derived = structuredClone(base);
+      derived.itemKey = itemKey;
+      derived.name = `${base.name} · ${heightCm} cm`;
+      derived.catalogVisible = false;
+      derived.wallHeightBaseItemKey = base.itemKey;
+      derived.sceneDimensions = { ...base.sceneDimensions, heightCm };
+      derived.composition = { ...base.composition, items };
+      variants[itemKey] = freezeDeep(derived);
+    }
+  }
+  return variants;
+}
+
+/** Duvar ürününün seçilen yükseklikteki karşılığı (wall_100_350 → wall_100_250); yoksa kendisi. */
+export function resolveWallItemKeyForHeight(itemKey, heightCm) {
+  const item = itemKey ? getItem(itemKey) : null;
+  const height = Number(heightCm);
+  if (!item || !Number.isFinite(height)) return itemKey;
+  const baseKey = item.wallHeightBaseItemKey ?? itemKey;
+  const base = getItem(baseKey);
+  const baseHeight = Number(base?.sceneDimensions?.heightCm);
+  if (!base || !Number.isFinite(baseHeight)) return itemKey;
+  if (height === baseHeight) return baseKey;
+  const suffix = baseKey.match(/_(\d+)$/);
+  if (!suffix) return itemKey;
+  const candidate = `${baseKey.slice(0, -suffix[0].length)}_${height}`;
+  return getItem(candidate)?.wallHeightBaseItemKey === baseKey ? candidate : itemKey;
 }
 
 export function isItemCatalogReady() {
@@ -40,6 +110,7 @@ export function initializeItemRegistry(items) {
     delete cloned.snapEdge;
     next[item.itemKey] = freezeDeep(cloned);
   }
+  derivedItemByKey = Object.freeze(buildWallHeightVariants(next));
   itemByKey = Object.freeze(next);
   catalogReady = true;
   syncProfileColorCss();
@@ -98,6 +169,7 @@ export function initializeItemTypeRegistry(itemTypes) {
 
 export function resetItemRegistry() {
   itemByKey = null;
+  derivedItemByKey = Object.create(null);
   catalogReady = false;
   snapRuleById = null;
   snapRuleByKey = null;
@@ -418,7 +490,7 @@ export function getShowcaseBodyDefinition(itemOrKey) {
 }
 
 export function getItem(itemKey) {
-  return requireRegistry()[itemKey] ?? null;
+  return requireRegistry()[itemKey] ?? derivedItemByKey[itemKey] ?? null;
 }
 
 const EMBEDDED_RENDER_PART_TYPES = new Set([

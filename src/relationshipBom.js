@@ -28,7 +28,8 @@ export const END_TO_END_JOINT_DELTAS = Object.freeze({
   connector_double: 7,
 });
 
-const FULL_HEIGHT_FLAT_WALL_RE = /^wall_(50|100|150|200)_350$/;
+// Düz duvar her yükseklikte (wall_100_250 … wall_100_500; 0068 kuralı) aynı roldedir.
+const FULL_HEIGHT_FLAT_WALL_RE = /^wall_(50|100|150|200)_\d+$/;
 const SEPARATOR_RE = /^wall_separator_(50|100)_350(_sarmasik)?$/;
 
 /** Singles a standard recipe converts on one end. Separator matches the wall face. */
@@ -250,28 +251,63 @@ function recipeSingleCount(itemKey) {
   return count;
 }
 
+/**
+ * Duvar ve ayırıcıda sayılar reçetenin bant (panel) sayısından gelir: 350 cm'de 7 bant →
+ * uç yüzey 7, standart tekli 13 (2B − 1), köşe aparatı 6 (B − 1). Kapı ve vitrin sabit kalır.
+ */
+const BAND_ROLES = new Set(['wall', 'separator']);
+const recipeBandCache = new Map();
+
+function recipeBandCount(itemKey) {
+  if (recipeBandCache.has(itemKey)) return recipeBandCache.get(itemKey);
+  const item = getItem(itemKey);
+  let bands = 0;
+  for (const row of item?.composition?.mode === 'recipe' ? item.composition.items ?? [] : []) {
+    const child = getItem(row?.itemKey);
+    if (child && (child.type === 'panel' || child.type === 'separator-panel')) bands += Number(row.quantity) || 0;
+  }
+  recipeBandCache.set(itemKey, bands);
+  return bands;
+}
+
+function faceYield(participant) {
+  if (BAND_ROLES.has(participant?.role)) {
+    const bands = recipeBandCount(participant.itemKey);
+    if (bands > 0) return bands;
+  }
+  return FACE_YIELD[participant?.role];
+}
+
+function standardEndSingles(participant) {
+  if (BAND_ROLES.has(participant?.role)) {
+    const bands = recipeBandCount(participant.itemKey);
+    if (bands > 0) return 2 * bands - 1;
+  }
+  return STANDARD_END_SINGLES[participant?.role];
+}
+
 function isLockedRelationshipPair(roleA, roleB) {
   return RELATIONSHIP_ROLES.has(roleA) && RELATIONSHIP_ROLES.has(roleB);
 }
 
-function endFaceRemoval(role, partnerRole) {
-  const own = FACE_YIELD[role];
-  const partner = FACE_YIELD[partnerRole];
-  if (own == null || partner == null) return null;
-  if (partnerRole === 'showcase-2' || partnerRole === 'showcase-3') return Math.min(own, partner);
+function endFaceRemoval(self, partner) {
+  const own = faceYield(self);
+  const other = faceYield(partner);
+  if (own == null || other == null) return null;
+  if (partner.role === 'showcase-2' || partner.role === 'showcase-3') return Math.min(own, other);
   return own;
 }
 
-function endToEndKeep(role, partnerRole) {
-  const removal = endFaceRemoval(role, partnerRole);
-  const standard = STANDARD_END_SINGLES[role];
+function endToEndKeep(self, partner) {
+  const removal = endFaceRemoval(self, partner);
+  const standard = standardEndSingles(self);
   if (removal == null || standard == null) return null;
   return standard - removal;
 }
 
-function endToEndDoubles(roleA, roleB) {
-  const left = FACE_YIELD[roleA];
-  const right = FACE_YIELD[roleB];
+function endToEndDoubles(a, b) {
+  const left = faceYield(a);
+  const right = faceYield(b);
   if (left == null || right == null) return null;
   return Math.min(left, right);
 }
@@ -296,7 +332,7 @@ function partnerOnFront(self, partner, point) {
 }
 
 function cornerCharge(participant, partners, point) {
-  const side = cornerSide(participant.role, recipeSingleCount(participant.itemKey));
+  const side = cornerSide(participant.role, recipeSingleCount(participant.itemKey), recipeBandCount(participant.itemKey));
   if (!side) return null;
   const faces = partners.some((partner) => partnerOnFront(participant, partner, point));
   return {
@@ -306,12 +342,13 @@ function cornerCharge(participant, partners, point) {
   };
 }
 
-function cornerSide(role, singles) {
+function cornerSide(role, singles, bands = 7) {
   const available = Math.max(0, Number(singles) || 0);
   if (role === 'wall' || role === 'separator') {
+    const seams = Math.max(0, (Number(bands) || 7) - 1);
     return {
-      singleRemove: Math.min(6, Math.max(0, available - 7)),
-      cornerAdd: 6,
+      singleRemove: Math.min(seams, Math.max(0, available - seams - 1)),
+      cornerAdd: seams,
       swapPanels: role === 'wall',
     };
   }
@@ -337,7 +374,22 @@ function connectorCharge(moduleId, side) {
   };
 }
 
+function jointUprightKey(joint) {
+  for (const participant of joint.participants ?? []) {
+    const item = getItem(participant.itemKey);
+    for (const row of item?.composition?.mode === 'recipe' ? item.composition.items ?? [] : []) {
+      if (getItem(row?.itemKey)?.type === 'upright') return row.itemKey;
+    }
+  }
+  return 'upright_346_5';
+}
+
 function jointAdjustment(joint) {
+  const adjustment = jointAdjustmentCounts(joint);
+  return adjustment ? { ...adjustment, uprightKey: jointUprightKey(joint) } : null;
+}
+
+function jointAdjustmentCounts(joint) {
   if (joint.kind === 'tee') {
     let single = 0;
     let corner = 0;
@@ -362,9 +414,9 @@ function jointAdjustment(joint) {
   if (!isLockedRelationshipPair(a.role, b.role)) return null;
 
   if (joint.kind === 'end-to-end') {
-    const keepA = endToEndKeep(a.role, b.role);
-    const keepB = endToEndKeep(b.role, a.role);
-    const doubles = endToEndDoubles(a.role, b.role);
+    const keepA = endToEndKeep(a, b);
+    const keepB = endToEndKeep(b, a);
+    const doubles = endToEndDoubles(a, b);
     if (keepA == null || keepB == null || doubles == null) return null;
     const removeA = Math.max(0, recipeSingleCount(a.itemKey) - keepA);
     const removeB = Math.max(0, recipeSingleCount(b.itemKey) - keepB);
@@ -593,6 +645,7 @@ function quantityOf(lines, itemKey, unit = 'adet') {
 function buildPlan(joints) {
   const plan = {
     upright: 0,
+    uprightByKey: new Map(),
     single: 0,
     double: 0,
     corner: 0,
@@ -628,6 +681,10 @@ function buildPlan(joints) {
       plan.moduleCharges.set(charge.moduleId, current);
     }
     plan.upright += adjustment.upright;
+    plan.uprightByKey.set(
+      adjustment.uprightKey,
+      (plan.uprightByKey.get(adjustment.uprightKey) ?? 0) + adjustment.upright,
+    );
     plan.single += adjustment.single;
     plan.double += adjustment.double;
     plan.corner += adjustment.corner;
@@ -682,7 +739,7 @@ function applyDeltas(lines, plan) {
     });
   }
 
-  adjust('upright_346_5', plan.upright);
+  for (const [uprightKey, delta] of plan.uprightByKey) adjust(uprightKey, delta);
   adjust('connector_single', plan.single);
   adjust('connector_double', plan.double);
   adjust('connector_corner', plan.corner);
@@ -737,10 +794,11 @@ export function applyRelationshipBomAdjustments(lines = [], joints = []) {
 
   const uprightNeed = Math.abs(plan.upright);
   const singleNeed = Math.abs(plan.single);
-  const uprightHave = quantityOf(baseLines, 'upright_346_5');
+  const uprightHave = [...plan.uprightByKey.keys()].reduce((sum, key) => sum + quantityOf(baseLines, key), 0);
   const singleHave = quantityOf(baseLines, 'connector_single');
+  const uprightShort = [...plan.uprightByKey].some(([key, delta]) => quantityOf(baseLines, key) < Math.abs(delta));
 
-  if (uprightHave < uprightNeed || singleHave < singleNeed) {
+  if (uprightShort || singleHave < singleNeed) {
     return Object.freeze({
       lines: Object.freeze(baseLines.map((line) => Object.freeze(line))),
       appliedJointCount: 0,

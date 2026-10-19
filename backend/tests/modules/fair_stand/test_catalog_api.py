@@ -20,11 +20,11 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     shelf_unit = next(item for item in body["items"] if item["itemKey"] == "shelf_100")
     assert "unitName" not in shelf_unit
     assert len(body["categories"]) == 6
-    assert len(body["items"]) == 110
+    assert len(body["items"]) == 115  # 0068: 5 yükseklik dikmesi
     visible = [item for item in body["items"] if item["catalogVisible"] is True]
     hidden = [item for item in body["items"] if item["catalogVisible"] is not True]
     assert len(visible) == 60
-    assert len(hidden) == 50
+    assert len(hidden) == 55  # 0068: 5 gizli dikme
     shelf = next(item for item in body["items"] if item["itemKey"] == "shelf_100")
     assert shelf["categoryId"] == 3
     assert "catalogCategory" not in shelf

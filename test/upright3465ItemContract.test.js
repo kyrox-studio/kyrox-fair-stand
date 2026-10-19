@@ -53,7 +53,8 @@ test('upright_346_5 uses canonical itemKey in all 9 verified parent recipes and 
     for (const item of recipe.items) {
       if (getRecipeItemKey(item) !== 'upright_346_5') continue;
       occurrences += 1;
-      assert.deepEqual(item, { itemKey: 'upright_346_5', quantity: 2 });
+      // Düz duvarda dikme seçilen yüksekliğe göre değişir (0068).
+      assert.deepEqual(item, { itemKey: 'upright_346_5', quantity: 2, ...(/^wall_(50|100|150|200)_350$/.test(recipe.recipeId) ? { heightMatched: true } : {}) });
     }
   }
 

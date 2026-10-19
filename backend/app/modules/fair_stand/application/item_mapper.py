@@ -11,6 +11,16 @@ from app.modules.fair_stand.domain.entities import (
 )
 
 
+def _composition_row(component) -> dict:
+    row = {"itemKey": component.child_item_key, "quantity": _num(component.quantity)}
+    per_band = _num(component.per_band) if component.per_band is not None else 0
+    if per_band:
+        row["perBand"] = per_band
+    if component.height_matched:
+        row["heightMatched"] = True
+    return row
+
+
 def _num(value: Decimal | None) -> float | None:
     if value is None:
         return None
@@ -154,7 +164,7 @@ def map_item(row) -> ItemAggregate:
             composition["mode"] = row.composition_mode
         if components:
             composition["items"] = [
-                {"itemKey": component.child_item_key, "quantity": _num(component.quantity)}
+                _composition_row(component)
                 for component in components
             ]
         payload["composition"] = composition
