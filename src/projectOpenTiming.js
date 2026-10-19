@@ -318,6 +318,26 @@ export function finishProjectOpenTiming({ moduleCount = null, ok = true, log = (
   return result;
 }
 
+// Sahne yenileme (modül ekle/sil, renk vb.): kurulum süresi + ardından gelen ilk karenin süresi
+// ve o karede derlenen yeni gölgelendirici sayısı. Proje açılışı sürerken yazılmaz.
+export function timeSceneRefresh(buildMs, { log = (line) => console.info(line) } = {}) {
+  if (current) return;
+  const stop = subscribeSceneAssets((event) => {
+    if (event.type !== 'render') return;
+    stop();
+    try {
+      log(summarizeSceneRefresh(buildMs, event.durationMs, event.newPrograms));
+    } catch {
+      // Konsol yoksa ölçüm atlanır.
+    }
+  });
+  setTimeout(stop, 5000);
+}
+
+export function summarizeSceneRefresh(buildMs, frameMs, newPrograms) {
+  return `[Fair Stand ölçüm] sahne yenileme: kurulum ${formatMs(buildMs)} · ilk kare ${formatMs(frameMs ?? 0)} (+${newPrograms ?? 0} program)`;
+}
+
 export function getLastProjectOpenTiming() {
   return lastResult;
 }

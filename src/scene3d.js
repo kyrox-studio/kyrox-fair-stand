@@ -354,6 +354,12 @@ function snapCollisionExemption(magneticSnap) {
   };
 }
 
+// Projektör ve raf altı spot ışıkları yalnız Render Al'da yanar. Editör kamerası bu katmanı
+// görmez (three.js ışığı kamera katmanında değilse hesaba katmaz): çok sayıda gerçek ışık her
+// pikselde hesaplanıp açılışı ve döndürmeyi ağırlaştırıyor, eklenince bütün malzemeleri yeniden
+// derletiyordu. Lens ve LED şerit gibi parlayan parçalar editörde görünür kalır.
+const RENDER_ONLY_LIGHT_LAYER = 1;
+
 export function createStandScene(
   container,
   onSurfaceSelected,
@@ -394,7 +400,10 @@ export function createStandScene(
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.08;
-  renderer.shadowMap.enabled = true;
+  // Editörde ışık gölgesi kapalı: her kare gölge haritası için ikinci kez çizilmez (döndürme
+  // takılmaz) ve gölgenin karanlıkta bıraktığı köşeler aydınlık kalır. Render Al (captureCurrentViewPng)
+  // çizerken gölgeyi açar; müşteriye giden görsel gölgeli ve derinlikli olur.
+  renderer.shadowMap.enabled = false;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   container.appendChild(renderer.domElement);
 
@@ -668,6 +677,7 @@ export function createStandScene(
   // önceki 4K tahsisinin dörtte birine iner.
   keyLight.shadow.mapSize.set(2048, 2048);
   scene.add(keyLight);
+
 
   // Fixed exhibition-hall ground: 4K CC0 Damaged Concrete Floor 02 from Poly Haven.
   // The source is seamless and repeated at a large physical scale so the hall reads as
@@ -1947,13 +1957,54 @@ export function createStandScene(
     });
   }
 
+  // Tek modül ekleme: sahnenin geri kalanı (diğer modüller, görseller, logolar, kumaşlar)
+  // olduğu gibi kalır; yalnız yeni modül yaratılıp yerleştirilir. Eskiden her bırakmada bütün
+  // sahne silinip baştan kuruluyordu (bütün görseller yeniden yüklenir, ekran kartı kilitlenir).
+  // Yeni modül zaten yerleşik (placement) olmalı; olmazsa false döner ve çağıran tam kurulum yapar.
+  function appendModule(moduleState, moduleIndex) {
+    if (!moduleState?.placement || !Number.isInteger(moduleIndex) || moduleIndex < 0) return false;
+    clearPlacementDrag();
+    let module = null;
+    try {
+      module = createRenderableModule(moduleState, moduleIndex, (surface) => applyStoredImage(surface));
+    } catch (error) {
+      console.warn('Modül eklenemedi; tam kurulum yapılacak:', moduleState?.type, moduleState?.itemKey, error);
+      return false;
+    }
+    if (!module?.group) return false;
+    const widthCm = Number(moduleState.widthCm);
+    module.group.userData.moduleState = moduleState;
+    module.group.userData.moduleIndex = moduleIndex;
+    module.group.userData.placement = { ...moduleState.placement };
+    applyPlacementToGroup(module.group, moduleState.placement, widthCm);
+    wallRoot.add(module.group);
+    surfaceMeshes.push(...module.surfaces);
+    notifySelection();
+    requestEditorRender();
+    return true;
+  }
+
+  // Eski sahne nesneleri yeni sahnenin ilk karesi çizildikten sonra dispose edilir. three.js
+  // kullanıcısı kalmayan gölgelendirici programını siler; eskiden malzemeler yeniden kurulumdan
+  // önce dispose edildiği için her modül ekle/sil/taşı işleminde bütün programlar baştan
+  // derleniyordu (ilk kare 1,3–4,9 sn, +27 program). Yeni malzemeler aynı programları devralır.
+  let deferredWallDisposal = [];
+
+  function flushDeferredWallDisposal() {
+    if (!deferredWallDisposal.length) return;
+    const pending = deferredWallDisposal;
+    deferredWallDisposal = [];
+    pending.forEach(disposeObject);
+  }
+
   function disposeWall({ notify = true, keepAnchor = false } = {}) {
     clearSelection({ notify: false, keepAnchor });
     surfaceMeshes = [];
     while (wallRoot.children.length) {
       const child = wallRoot.children.pop();
-      disposeObject(child);
+      deferredWallDisposal.push(child);
     }
+    requestEditorRender();
     if (notify) notifySelection();
   }
 
@@ -6364,9 +6415,12 @@ export function createStandScene(
       lastCubePosition.copy(camera.position);
       lastCubeQuaternion.copy(camera.quaternion);
     }
+    const renderStartedAt = performance.now();
+    const programsBefore = renderer.info.programs?.length ?? 0;
     renderer.render(scene, camera);
-    // Proje açılışı "sahne çizildi" anını bu sinyalle bekler.
-    noteSceneRender();
+    flushDeferredWallDisposal();
+    // Proje açılışı "sahne çizildi" anını bekler; sahne yenileme ölçümü kare süresini kullanır.
+    noteSceneRender(performance.now() - renderStartedAt, (renderer.info.programs?.length ?? 0) - programsBefore);
     if (!controlsChanged && !activelyDragging) editorRenderRequested = false;
   });
 
@@ -6396,6 +6450,9 @@ export function createStandScene(
       renderer.setSize(targetWidth, targetHeight, false);
       updateCameraProjection(targetWidth, targetHeight);
       controls.update();
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.needsUpdate = true;
+      camera.layers.enable(RENDER_ONLY_LIGHT_LAYER);
       renderer.render(scene, camera);
 
       const blob = await new Promise((resolve) => {
@@ -6404,6 +6461,8 @@ export function createStandScene(
       if (!blob) return { ok: false, message: 'Render görüntüsü oluşturulamadı.' };
       return { ok: true, blob, width: targetWidth, height: targetHeight };
     } finally {
+      renderer.shadowMap.enabled = false;
+      camera.layers.disable(RENDER_ONLY_LIGHT_LAYER);
       selectedFrames.forEach((frame, index) => { frame.visible = selectedVisibility[index]; });
       if (moduleSelectionFrame) moduleSelectionFrame.visible = moduleSelectionVisibility;
       activeWallGuides.forEach((guide, index) => { guide.visible = guideVisibility[index]; });
@@ -6472,6 +6531,7 @@ export function createStandScene(
   return {
     captureCurrentViewPng,
     requestRender: requestEditorRender,
+    appendModule,
     setShelfLightingVisible,
     setCameraMode,
     getCameraMode: () => cameraMode,
@@ -6529,6 +6589,7 @@ export function createStandScene(
       sceneAbort.abort();
       resizeObserver.disconnect();
       renderer.setAnimationLoop(null);
+      deferredWallDisposal.splice(0).forEach(disposeObject);
       controls.dispose?.();
       renderer.dispose();
       renderer.domElement.remove();
@@ -7602,7 +7663,9 @@ function createLedFloodlightModule(moduleState, moduleIndex) {
       emissiveIntensity: 1.65,
       roughness: 0.08,
       metalness: 0,
-      transmission: 0.08,
+      // transmission kullanılmaz: tek bir malzemede bile açık olması three.js'te sahneyi her
+      // karede ikinci kez çizdirir ve projektör eklenince bütün malzemeleri yeniden derletir
+      // (bırakınca ~1,3 sn donma, +29 program). Lens zaten kendinden parlar; fark görünmez.
       clearcoat: 0.75,
       clearcoatRoughness: 0.1,
       side: THREE.DoubleSide,
@@ -7665,6 +7728,7 @@ function createLedFloodlightModule(moduleState, moduleIndex) {
   const spot = new THREE.SpotLight(0xfffbed, 44, 5.6, 0.48, 0.62, 1.35);
   spot.position.set(0, 0.16, 0.13);
   spot.castShadow = false;
+  spot.layers.set(RENDER_ONLY_LIGHT_LAYER);
   spot.target.position.set(0, -1.5, 1.15);
   group.add(spot, spot.target);
 
@@ -9012,6 +9076,7 @@ function createShelfModule(moduleState, moduleIndex) {
     );
     spot.visible = shelfLightingOn;
     spot.castShadow = false;
+    spot.layers.set(RENDER_ONLY_LIGHT_LAYER);
     spot.userData.kind = 'decoration';
     spot.userData.role = 'shelf-under-light';
     group.add(spot, spot.target);

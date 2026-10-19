@@ -52,6 +52,8 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /title: 'Kutu Blok'/);
   assert.match(guideSource, /bütün görselleri ve 3D modelleri gelene kadar kalır/);
   assert.match(guideSource, /Yarım sahne gösterilmez/);
+  assert.match(guideSource, /Editörde ışık gölgesi, LED projektör ve raf altı aydınlatmanın panele düşen ışığı kapalıdır/);
+  assert.match(guideSource, /<strong>Render Al<\/strong> çizerken gölgeyi, projektör ve raf altı ışıklarını açar/);
   assert.match(guideSource, /sunucudaki görsel değişmediyse sonraki açılışta yeniden indirilmez/);
   assert.match(guideSource, /Duvara yapışmaz/);
   assert.match(guideSource, /Alt yüze görsel, Lightbox veya Mesh uygulanmaz/);

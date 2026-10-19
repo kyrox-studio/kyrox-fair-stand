@@ -15,6 +15,7 @@ test('main.js delegates generic project UI helpers to projectUi module', () => {
   assert.equal(mainSource.includes('function showProjectLoading('), false);
   assert.equal(mainSource.includes('function hideProjectLoading('), false);
   assert.match(mainSource, /const projectLoading = createProjectLoadingController\(\{/);
-  assert.equal((mainSource.match(/projectLoading\.show\(/g) || []).length, 4);
-  assert.equal((mainSource.match(/projectLoading\.hide\(\)/g) || []).length, 4);
+  // Proje açma, revizyon, canlıya dönüş, içe aktarma ve Render Al.
+  assert.equal((mainSource.match(/projectLoading\.show\(/g) || []).length, 5);
+  assert.equal((mainSource.match(/projectLoading\.hide\(\)/g) || []).length, 5);
 });

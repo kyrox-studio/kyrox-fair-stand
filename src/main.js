@@ -125,7 +125,7 @@ import { bootstrapFairStandCatalog } from './catalogBootstrap.js';
 import { bindProjectActionSaveGuard } from './projectActionSaveGuard.js';
 import { createProductionBomPanel } from './productionBomPanel.js';
 import { waitForNextRender, waitForSceneAssets } from './sceneAssetLoading.js';
-import { beginEditorBootStep, beginProjectOpenStep, discardEditorBootTiming, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
+import { beginEditorBootStep, beginProjectOpenStep, discardEditorBootTiming, timeSceneRefresh, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
 
 let moduleDeleteConfirmOpen = false;
 
@@ -563,8 +563,10 @@ function rebuildWall({ resetView = true } = {}) {
   }
 
   // Silme, sıfırlama veya geri yükleme sonrası tek üyesi kalan grup çözülür.
+  const buildStartedAt = performance.now();
   pruneGroups(currentModules, getGroupStand());
   scene3d.buildWall(currentModules, { resetView });
+  timeSceneRefresh(performance.now() - buildStartedAt);
   renderModuleGroupPanel();
   renderCurrentWallResult();
   if (productionBomPanel.isOpen()) productionBomPanel.refresh();
@@ -790,6 +792,21 @@ function createCatalogModuleState(module, { preservePlacement = false, itemKey =
   return state;
 }
 
+// Bırakılan tek modül sahneye tek başına eklenir; diğer modüllere dokunulmaz. Sahne bunu
+// yapamazsa (ör. renderer hatası) eskisi gibi tam kurulum yapılır.
+function appendModuleToScene(moduleState) {
+  const moduleIndex = currentModules.indexOf(moduleState);
+  const buildStartedAt = performance.now();
+  if (!currentStand || moduleIndex < 0 || !scene3d.appendModule(moduleState, moduleIndex)) {
+    rebuildWall({ resetView: false });
+    return;
+  }
+  timeSceneRefresh(performance.now() - buildStartedAt);
+  renderModuleGroupPanel();
+  renderCurrentWallResult();
+  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+}
+
 function commitDroppedCatalogModule(moduleState, dropResult, catalogKey = null) {
   if (!dropResult?.ok || !dropResult.placement) {
     return { ok: false, message: dropResult?.message ?? 'Modül bu konuma bırakılamadı.' };
@@ -822,12 +839,14 @@ function commitDroppedCatalogModule(moduleState, dropResult, catalogKey = null) 
   const previousModules = currentModules.slice();
   try {
     if (dropResult.plan?.placements instanceof Map && dropResult.plan?.orderedModuleIds?.length) {
+      // Şeride araya ekleme diğer modüllerin yerini değiştirir: tam kurulum.
       applyContinuousInsertionPlan(dropResult.plan, [canonical]);
+      rebuildWall({ resetView: false });
     } else {
       canonical.placement = { ...dropResult.placement };
       currentModules.push(canonical);
+      appendModuleToScene(canonical);
     }
-    rebuildWall({ resetView: false });
   } catch (error) {
     currentModules = previousModules;
     try {
@@ -1650,7 +1669,12 @@ renderCurrentViewButton?.addEventListener('click', async () => {
   const previousText = renderCurrentViewButton.textContent;
   renderCurrentViewButton.disabled = true;
   renderCurrentViewButton.textContent = 'Render alınıyor…';
+  // Render ışıkları ve gölgeyi açar; ilk seferde gölgelendiriciler derlenir ve ekran birkaç
+  // saniye donabilir. Yükleme ekranı önce gösterilir, iki kare beklenir ki çizim kilidinden
+  // önce gerçekten ekrana gelsin.
+  projectLoading.show('Render hazırlanıyor…', 'Işıklar ve gölgeler hesaplanıyor.');
   try {
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     const result = await scene3d.captureCurrentViewPng({ scale: 3 });
     if (!result.ok || !result.blob) {
       renderWallResult(result.message || 'Render alınamadı.', true);
@@ -1672,6 +1696,7 @@ renderCurrentViewButton?.addEventListener('click', async () => {
     console.warn('Render alınamadı:', error);
     renderWallResult('Render alınamadı.', true);
   } finally {
+    projectLoading.hide();
     renderCurrentViewButton.disabled = false;
     renderCurrentViewButton.textContent = previousText;
   }
@@ -3182,7 +3207,7 @@ async function beginIlluminatedFoamAssetDrag(assetId) {
     moduleState.placement = { ...result.placement };
     currentModules.push(moduleState);
     cleanup();
-    rebuildWall({ resetView: false });
+    appendModuleToScene(moduleState);
     assetStatus.textContent=`Işıklı Strafor sahneye eklendi · ${moduleState.widthCm} × ${moduleState.heightCm} cm · 3,5 cm kalınlık · 1,5 cm ışık boşluğu.`;
   };
   const onKeyDown = (event) => {

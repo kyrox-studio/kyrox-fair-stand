@@ -59,7 +59,10 @@ test('projector lens remains specialized and does not consume the normal glass s
   const end = scene.indexOf('function roundedRectShape', start);
   const projector = scene.slice(start, end);
   assert.match(projector, /emissive: 0xf2ffe8/);
-  assert.match(projector, /transmission: 0\.08/);
+  assert.match(projector, /emissiveIntensity: 1\.65/);
+  // transmission açık malzeme sahneyi her karede ikinci kez çizdirir ve eklenince bütün
+  // malzemeleri yeniden derletir (projektör bırakınca ~1,3 sn donma); lens yalnız parlar.
+  assert.doesNotMatch(projector, /transmission:\s*[0-9]/);
   assert.doesNotMatch(projector, /GLASS_APPEARANCE/);
 });
 
