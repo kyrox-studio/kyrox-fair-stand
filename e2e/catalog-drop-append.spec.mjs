@@ -33,7 +33,7 @@ async function dropBoxBlock(page, x, y) {
 function boxBodies(page) {
   return page.evaluate(() => window.__sceneSurfaces()
     .filter((mesh) => mesh.userData.moduleType === 'box-block' && mesh.userData.selectionMode === 'module')
-    .map((mesh) => ({ uuid: mesh.uuid, moduleId: mesh.userData.moduleId })));
+    .map((mesh) => ({ uuid: mesh.uuid, moduleId: mesh.userData.moduleId, moduleIndex: mesh.userData.moduleIndex })));
 }
 
 test('dropping a catalog module adds only that module and keeps the others untouched', async ({ page }) => {
@@ -64,4 +64,15 @@ test('dropping a catalog module adds only that module and keeps the others untou
   expect(bodies.find((body) => body.moduleId === first.moduleId)?.uuid).toBe(first.uuid);
   await expect.poll(() => refreshLines.length).toBeGreaterThanOrEqual(2);
   expect(refreshLines.at(-1)).toMatch(/sahne yenileme: kurulum \d+ ms · ilk kare \d+ ms \(\+\d+ program\)/);
+
+  // Silme: yalnız o modül kalkar; kalan modül aynı nesne olarak kalır ve sıra numarası güncellenir.
+  const second = bodies.find((body) => body.moduleId !== first.moduleId);
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.evaluate((moduleId) => {
+    window.dispatchEvent(new CustomEvent('fair-stand:delete-selected-module', { detail: { moduleId } }));
+  }, first.moduleId);
+  await expect.poll(async () => (await boxBodies(page)).length).toBe(1);
+  const [remaining] = await boxBodies(page);
+  expect(remaining.uuid).toBe(second.uuid);
+  expect(remaining.moduleIndex).toBe(0);
 });

@@ -15,6 +15,18 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-19 — Editör performansı: ışık/gölge Render Al'da, tek modül güncelleme
+
+**Işık ve gölge:** Editörde ışık gölgesi (`shadowMap.enabled = false`), LED projektör ve raf altı spot ışıkları kapalı. Spot ışıklar `RENDER_ONLY_LIGHT_LAYER` katmanında, editör kamerası bu katmanı görmez; lens ve LED şerit parlamaya devam eder. Render Al (`captureCurrentViewPng`) gölgeyi ve katmanı açıp çizer, sonra kapatır; bu sırada yükleme ekranı gösterilir. Projektör camında `transmission` yok; tek bir `transmission` malzemesi bile sahneyi her karede iki kez çizdirir.
+
+**Tek modül güncelleme:** Katalogdan bırakma, katalog düğmesiyle ekleme ve çoğaltma, mevcut modüllerin yeri değişmiyorsa yeni modülü sahneye tek başına ekler (`scene3d.appendModule`, `main.commitModuleAddition`). Silme yalnız o modülü kaldırır ve sonraki modüllerin `moduleIndex` değerini yeniler (`scene3d.removeModule`, `main.commitModuleRemoval`). Şeride araya ekleme, grup temizliğinin başka modülü değiştirdiği silme ve kumaş kaplamalı modül tam kurulumda kalır. Taşıma ve döndürme zaten sahne içinde tek modül çalışıyordu.
+
+**Program koruma:** `disposeWall` eski nesneleri yeni sahnenin ilk karesinden sonra dispose eder. three.js kullanıcısı kalmayan gölgelendirici programını siler; önceden her tam kurulumda bütün programlar baştan derleniyordu.
+
+Lokal ölçüm (kullanıcı): projektör bırakma ilk kare 1291–4893 ms (+27–29 program) → 23–36 ms (+0). Konsol: `[Fair Stand ölçüm] sahne yenileme: kurulum · ilk kare · +N program`. Hâlâ tam kurulum yapanlar: geri al/ileri al, grup işlemleri, şeride araya ekleme.
+
+---
+
 ## 2026-10-19 — Performans P0: ölçüm, yarım sahne yok, GLB ad koruması
 
 Proje açılışı "Düzenle"den sahne tamamen hazır olana kadar ölçülür ve konsola yazılır (`[Fair Stand ölçüm] …`): editör kodu, katalog, proje verisi, görsel indirme, sahne kurulumu, son görsel / son model. Kod: `src/projectOpenTiming.js` (#296), CRM işareti `fs:editor-route` (kyrox-fair-crm #357).

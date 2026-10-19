@@ -9,6 +9,7 @@ const CREATE_STAND_SCENE_PUBLIC_METHODS = Object.freeze([
   'captureCurrentViewPng',
   'requestRender',
   'appendModule',
+  'removeModule',
   'setShelfLightingVisible',
   'setCameraMode',
   'getCameraMode',

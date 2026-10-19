@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-editor-light-append-v1",
+  "id": "fair-stand-single-module-update-v1",
   "kind": "feature",
-  "summary": "Editör performansı: (1) editörde ışık gölgesi, LED projektör ve raf altı spot ışıkları kapalı; spot ışıklar RENDER_ONLY_LIGHT_LAYER katmanında, editör kamerası görmez; Render Al (captureCurrentViewPng) çizerken gölgeyi ve katmanı açar, sonra kapatır, bu sırada yükleme ekranı gösterir. (2) Katalogdan serbest bırakılan modül sahneye tek başına eklenir (scene3d appendModule); şeride araya ekleme tam kurulumda kalır. (3) disposeWall eski nesneleri ilk kareden sonra dispose eder; gölgelendirici programları korunur (bırakınca bütün malzemelerin yeniden derlenmesi kalktı). (4) Projektör camında transmission kaldırıldı. (5) Sahne yenileme ölçümü. Lokal ölçüm: projektör bırakma ilk kare 1291–4893 ms (+27–29 program) -> 23–36 ms (+0). Kayıt biçimi ve BOM değişmez.",
+  "summary": "Tek modül sahne güncellemesi (PERFORMANCE_ROADMAP P3 kısmi), editör ışık/gölge değişikliği (#302) üzerine: katalog düğmesiyle ekleme ve çoğaltma, mevcut modüllerin yeri/grubu değişmediyse yeni modülü tek başına ekler (main.commitModuleAddition + scene3d.appendModule); silme yalnız o modülü kaldırır ve sonraki modüllerin moduleIndex değerini yeniler (main.commitModuleRemoval + scene3d.removeModule). Grup temizliği başka modülü değiştirirse, kumaş kaplamalı modülde veya şeride araya eklemede tam kurulum yapılır. Kayıt biçimi ve BOM değişmez. REFACTOR.md güncellendi.",
   "owners": [
     "src/scene3d.js",
     "src/main.js"
@@ -781,7 +781,7 @@
         "e2e/project-open-wait-scene.spec.mjs",
         "e2e/smoke.spec.mjs"
       ],
-      "reason": "Gerçek Chromium ile iki modül bırakılır; birinci modülün sahne nesnesi aynı kalır (yeniden yaratılmaz) ve sahne yenileme ölçümü yazılır. Işık, modül kurulumu, yarım sahne ve smoke senaryoları regresyon için çalışır."
+      "reason": "Gerçek Chromium ile iki kutu bırakılır, birinci modülün sahne nesnesi aynı kalır; birinci silinince ikinci aynı nesne olarak kalır ve moduleIndex 0 olur. Işık, modül kurulumu, yarım sahne ve smoke regresyonları çalışır."
     }
   },
   "risk": {
@@ -792,5 +792,5 @@
     "required": false,
     "notes": "Kayıt biçimi değişmez."
   },
-  "rollback": "shadowMap.enabled true, spot layers.set kaldır, appendModuleToScene yerine rebuildWall, disposeWall anında dispose."
+  "rollback": "commitModuleAddition/commitModuleRemoval yerine eski rebuildWall çağrılarına dön."
 }

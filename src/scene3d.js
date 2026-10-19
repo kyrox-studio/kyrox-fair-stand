@@ -1984,6 +1984,36 @@ export function createStandScene(
     return true;
   }
 
+  // Tek modül silme: yalnız o modülün nesneleri kaldırılır; sonraki modüllerin sıra numarası
+  // (userData.moduleIndex) güncel diziye göre yenilenir. Kumaş kaplamalı modül (kaplama birden
+  // fazla modüle yayılabilir) veya bulunamayan modül için false döner; çağıran tam kurulum yapar.
+  function removeModule(moduleId, modules) {
+    const group = wallRoot.children.find((child) => child.userData?.moduleState?.id === moduleId);
+    if (!group || !Array.isArray(modules)) return false;
+    let hasFabric = false;
+    group.traverse((object) => {
+      if (object.userData?.surfaceState?.fabricGroupId) hasFabric = true;
+    });
+    if (hasFabric) return false;
+    clearPlacementDrag();
+    clearSelection({ notify: false });
+    wallRoot.remove(group);
+    const removedSurfaces = new Set();
+    group.traverse((object) => removedSurfaces.add(object));
+    surfaceMeshes = surfaceMeshes.filter((surface) => !removedSurfaces.has(surface));
+    deferredWallDisposal.push(group);
+    wallRoot.children.forEach((child) => {
+      const moduleIndex = modules.indexOf(child.userData?.moduleState);
+      if (moduleIndex < 0) return;
+      child.traverse((object) => {
+        if (object.userData && Object.hasOwn(object.userData, 'moduleIndex')) object.userData.moduleIndex = moduleIndex;
+      });
+    });
+    notifySelection();
+    requestEditorRender();
+    return true;
+  }
+
   // Eski sahne nesneleri yeni sahnenin ilk karesi çizildikten sonra dispose edilir. three.js
   // kullanıcısı kalmayan gölgelendirici programını siler; eskiden malzemeler yeniden kurulumdan
   // önce dispose edildiği için her modül ekle/sil/taşı işleminde bütün programlar baştan
@@ -6532,6 +6562,7 @@ export function createStandScene(
     captureCurrentViewPng,
     requestRender: requestEditorRender,
     appendModule,
+    removeModule,
     setShelfLightingVisible,
     setCameraMode,
     getCameraMode: () => cameraMode,
