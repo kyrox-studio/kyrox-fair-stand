@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import {
   getCatalogItem,
   listCatalogItems,
@@ -26,12 +27,28 @@ test('Eames set contains four chairs', () => {
 test('Eames renderer loads the original GLB once and clones four chairs', () => {
   const source = fs.readFileSync(new URL('../src/scene3d.js', import.meta.url), 'utf8');
   assert.match(source, /GLTFLoader/);
+  assert.match(source, /MeshoptDecoder/);
+  assert.match(source, /setMeshoptDecoder/);
   assert.match(source, /loadItemModel\('chair_eames'\)/);
   assert.match(source, /template\.clone\(true\)/);
   assert.match(source, /chairPlacements\.forEach/);
 });
 
-test('original Eames GLB asset is present', () => {
-  const payload = fs.statSync(new URL('../public/models/eames_chair.glb', import.meta.url));
-  assert.ok(payload.size > 400000);
+test('original Eames GLB asset is present', async () => {
+  const glbUrl = new URL('../public/models/eames_chair.glb', import.meta.url);
+  const glbPath = fileURLToPath(glbUrl);
+  const payload = fs.statSync(glbPath);
+  // Meshopt-only sonrası ~100 KB (eski sıkıştırılmamış ~479 KB).
+  assert.ok(payload.size > 50000);
+  assert.ok(payload.size < 400000);
+
+  // Malzeme adları GLB'nin JSON bölümündedir; Meshopt yalnız geometri tamponlarını sıkıştırır.
+  const buffer = fs.readFileSync(glbPath);
+  assert.equal(buffer.toString('ascii', 0, 4), 'glTF');
+  const gltf = JSON.parse(buffer.toString('utf8', 20, 20 + buffer.readUInt32LE(12)));
+  assert.ok(gltf.extensionsUsed?.includes('EXT_meshopt_compression'), 'Eames GLB Meshopt ile sıkıştırılmış olmalı');
+  const materials = new Set((gltf.materials ?? []).map((m) => m.name || ''));
+  assert.ok(materials.has('plastic_wit'), 'plastic_wit seat material must remain');
+  assert.ok(materials.has('Material1'), 'Material1 leg material must remain');
+  assert.ok(materials.has('skp_front_default'), 'skp_front_default must remain (optimize palette silmesin)');
 });

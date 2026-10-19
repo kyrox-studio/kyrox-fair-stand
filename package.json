@@ -13,7 +13,8 @@
     "e2e:install": "playwright install chromium",
     "e2e": "playwright test",
     "audit:deps": "npm audit --audit-level=high",
-    "syntax:check": "node scripts/check-src-syntax.mjs"
+    "syntax:check": "node scripts/check-src-syntax.mjs",
+    "compress:models": "node scripts/compress-models.mjs"
   },
   "dependencies": {
     "jszip": "^3.10.1",

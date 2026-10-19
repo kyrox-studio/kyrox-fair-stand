@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 import { getModuleCatalogItem, getModuleCatalogLabel } from './catalog.js';
@@ -265,14 +266,17 @@ function loadGltfScene(url) {
   const cached = gltfSceneCache.get(url);
   if (cached) return cached;
   const loader = new GLTFLoader();
-  const promise = loader.loadAsync(url).then((gltf) => {
-    requestEditorRender();
-    return gltf.scene;
-  }).catch((error) => {
-    gltfSceneCache.delete(url);
-    notifyGltfLoadFailure(url, error);
-    throw error;
-  });
+  loader.setMeshoptDecoder(MeshoptDecoder);
+  const promise = Promise.resolve(MeshoptDecoder.ready)
+    .then(() => loader.loadAsync(url))
+    .then((gltf) => {
+      requestEditorRender();
+      return gltf.scene;
+    }).catch((error) => {
+      gltfSceneCache.delete(url);
+      notifyGltfLoadFailure(url, error);
+      throw error;
+    });
   gltfSceneCache.set(url, promise);
   return promise;
 }

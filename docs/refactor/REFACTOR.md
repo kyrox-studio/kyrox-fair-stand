@@ -11,9 +11,19 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 - Ertelenmiş kararlar / backlog (tavan–şerit, Item property; tip davranışı C.3 kapandı): `docs/refactor/PENDING_ITEM_DECISIONS.md`
 - Item-first checklist: `docs/refactor/ITEM_FIRST_ROADMAP.md`
 - Belge dizini: `docs/refactor/README.md`
-- Performans backlog (proje açma 5–10 sn, orbit, ~100 eşzamanlı tasarım): `docs/refactor/PERFORMANCE_ROADMAP.md`
+- Performans yol haritası (tek kaynak platformda; burada yönlendirme): `docs/refactor/PERFORMANCE_ROADMAP.md`
 
 ---
+
+## 2026-10-19 — Performans P0: ölçüm, yarım sahne yok, GLB ad koruması
+
+Proje açılışı "Düzenle"den sahne tamamen hazır olana kadar ölçülür ve konsola yazılır (`[Fair Stand ölçüm] …`): editör kodu, katalog, proje verisi, görsel indirme, sahne kurulumu, son görsel / son model. Kod: `src/projectOpenTiming.js` (#296), CRM işareti `fs:editor-route` (kyrox-fair-crm #357).
+
+Sahnedeki görsel ve 3D model yüklemeleri sayılır (`src/sceneAssetLoading.js`: ortak `textureLoader` sarmalayıcısı + `loadItemModel`). Proje, geçmiş revizyon, canlıya dönüş ve içe aktarma yükleme ekranını hepsi gelene kadar açık tutar, ilerleme yazar; yüklenemeyen parça gelmiş sayılır, 30 sn sınırı var. Düzenle ile gelindiğinde yükleme ekranı mount anında görünür (#299).
+
+`test/glbNameContract.test.js`: `scene3d.js`'in adla aradığı GLB parçaları (Eames `plastic_wit`/`Material1`, bar taburesi `Burlington_Leather`, çöp kutusu `Sphere_1`/`Object_5`, bej koltuk `BEIGE_SOFA_MESH`, saksı, sarmaşık) ilgili GLB'de durmalı; model sıkıştırma/yeniden dışa aktarma bunu bozamaz (#297).
+
+Ölçüm sonuçları ve sıradaki işler: `kyrox-platform/projects/fair-stand/PERFORMANCE_ROADMAP.md` § 1.1 ve P0.
 
 ## 2026-10-01 — Floor Split V1
 
