@@ -30,9 +30,10 @@ const EXPECTED_RECIPE_ITEMS = Object.freeze({
   wall_150_short_1: [['profile_140_5', 2], ['upright_49_5', 2], ['panel_147_5', 1], ['connector_start', 2], ['connector_single', 3]],
   wall_100_short_1: [['profile_91', 2], ['upright_49_5', 2], ['panel_98', 1], ['connector_start', 2], ['connector_single', 3]],
   wall_50_short_1: [['profile_41_5', 2], ['upright_49_5', 2], ['panel_48_5', 1], ['connector_start', 2], ['connector_single', 3]],
-  wall_separator_50_350: [['profile_41_5', 2], ['upright_346_5', 2], ['separator_panel_48_5', 7], ['connector_start', 2], ['connector_single', 7]],
+  // 50’lik ayırıcı ürün kararı (2026-10-19, 0071): bant başına 1 panel, 2B − 1 tekli → 350’de 13.
+  wall_separator_50_350: [['profile_41_5', 2], ['upright_346_5', 2], ['separator_panel_48_5', 7], ['connector_start', 2], ['connector_single', 13]],
   wall_separator_100_350: [['profile_91', 2], ['upright_346_5', 2], ['separator_panel_98', 7], ['connector_start', 2], ['connector_single', 13]],
-  wall_separator_50_350_sarmasik: [['profile_41_5', 2], ['upright_346_5', 2], ['separator_panel_48_5', 7], ['connector_start', 2], ['connector_single', 7]],
+  wall_separator_50_350_sarmasik: [['profile_41_5', 2], ['upright_346_5', 2], ['separator_panel_48_5', 7], ['connector_start', 2], ['connector_single', 13]],
   wall_separator_100_350_sarmasik: [['profile_91', 2], ['upright_346_5', 2], ['separator_panel_98', 7], ['connector_start', 2], ['connector_single', 13]],
   wall_showcase_100_2_350: [['profile_91', 4], ['upright_346_5', 2], ['panel_98', 5], ['connector_start', 4], ['connector_single', 9], ['showcase_side_94_6_30', 2], ['showcase_horizontal_87_4_30', 2], ['glass_shelf', 1]],
   wall_showcase_100_3_350: [['profile_91', 4], ['upright_346_5', 2], ['panel_98', 4], ['connector_start', 4], ['connector_single', 7], ['showcase_side_143_5_30', 2], ['showcase_horizontal_87_4_30', 2], ['glass_shelf', 2]],

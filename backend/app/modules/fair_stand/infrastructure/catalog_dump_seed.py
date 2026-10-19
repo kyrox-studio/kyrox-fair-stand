@@ -151,6 +151,12 @@ def seed_catalog_if_empty(bind) -> None:
                     item["default_z_cm"] = 0
                 if item.get("default_opacity") is None:
                     item["default_opacity"] = 1
+        if name == "fair_stand_item_components":
+            for component in coerced:
+                if component.get("per_band") is None:
+                    component["per_band"] = 0
+                if component.get("height_matched") is None:
+                    component["height_matched"] = False
         if name == "fair_stand_item_body_parts":
             for part in coerced:
                 if part.get("id") is None:

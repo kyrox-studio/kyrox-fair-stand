@@ -52,7 +52,9 @@ test('drop commit rehydrates from catalog key and does not keep a shelf without 
   assert.match(MAIN_SOURCE, /if \(!canonical \|\| !hasCanonicalModuleItemKey\(canonical\)\)/);
   assert.match(MAIN_SOURCE, /const previousModules = currentModules\.slice\(\)/);
   assert.match(MAIN_SOURCE, /currentModules = previousModules/);
-  assert.match(SIDEBAR_SOURCE, /state\.itemKey !== moduleKey/);
+  // Kart kodu kontrolü sürüyor; duvar yüksekliğine çevrilmiş kod (wall_100_300) ana koduyla (wall_100_350) karşılaştırılır.
+  assert.match(SIDEBAR_SOURCE, /const stateCatalogKey = getItem\(state\?\.itemKey\)\?\.wallHeightBaseItemKey \?\? state\?\.itemKey;/);
+  assert.match(SIDEBAR_SOURCE, /if \(!state \|\| stateCatalogKey !== moduleKey\)/);
   assert.match(SIDEBAR_SOURCE, /catalogKey = activeCard\?\.dataset\.moduleKey \?\? state\?\.itemKey/);
   assert.match(SIDEBAR_SOURCE, /onDrop\?\.\(state, event\.clientX, event\.clientY, rotationZDeg, isRotationLocked, catalogKey\)/);
 });

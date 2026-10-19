@@ -53,7 +53,8 @@ test('separator panels use canonical itemKey in the verified recipe occurrences 
       assert.ok(recipe);
       const matches = recipe.items.filter((item) => getRecipeItemKey(item) === itemKey);
       assert.equal(matches.length, 1, `${recipe.recipeId}:${itemKey}`);
-      assert.deepEqual(matches[0], { itemKey, quantity });
+      // 100'lük ayırıcıda panel bant başına 1 artar/azalır (0070); 50'lik kural dışında.
+      assert.deepEqual(matches[0], { itemKey, quantity, ...(/^wall_separator_(50|100)_350(_sarmasik)?$/.test(recipe.recipeId) ? { perBand: 1 } : {}) });
       total += matches.length;
     }
   }

@@ -72,7 +72,8 @@ test('straight panels use canonical itemKey in exactly 21 verified recipe occurr
       assert.ok(recipe);
       const matches = recipe.items.filter((item) => getRecipeItemKey(item) === itemKey);
       assert.equal(matches.length, 1, `${recipe.recipeId}:${itemKey}`);
-      assert.deepEqual(matches[0], { itemKey, quantity });
+      // Düz duvar reçetesinde panel bant başına 1 artar/azalır (0068).
+      assert.deepEqual(matches[0], { itemKey, quantity, ...(/^wall_(50|100|150|200|door_100|showcase_100_[23])_350$/.test(recipe.recipeId) ? { perBand: 1 } : {}) });
       occurrences += matches.length;
     }
     assert.equal(occurrences, recipes.length, itemKey);

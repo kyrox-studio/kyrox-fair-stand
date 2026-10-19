@@ -15,6 +15,34 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-19 — Duvar yüksekliği kuralı (wall ailesi)
+
+**Kural:** Düz duvar (`wall_50/100/150/200_350`) reçetesi DB'de 350 cm (7 bant) olarak kalır. Reçete satırına `per_band` (bant başına adet farkı: panel 1, tekli aparat 2) ve `height_matched` (dikme yüksekliğe göre değişir) eklendi (`0068_wall_band_recipe`). B = yükseklik / 50: panel B, tekli 2B − 1, başlangıç 2, profil 2, dikme 2.
+
+**Dikmeler:** `upright_247_5` (250), `upright_297` (300), `upright_346_5` (350, mevcut), `upright_396` (400), `upright_445_5` (450), `upright_495` (500). Gerçek boy ürün tablosundan ve kural: gerçek boy = duvar yüksekliği × 0,99 (49,5 / 99 dahil hepsi uyar); türetme dikmeyi bu kuralla seçer. upright_396 / upright_445_5 / upright_495 bazı veritabanlarında (kısa duvar dikme yığını) zaten vardı: migration onlara dokunmaz, downgrade yalnız upright_247_5 ve upright_297’yi siler. Gizli Item, fiyat atanmadı.
+
+**Türetme:** `initializeItemRegistry` kuraldan `wall_100_250` … `wall_100_500` üretir (`buildWallHeightVariants`). Türetilen Item `getItem` ile bulunur, `listRegisteredItems` / katalog / admin listesine girmez. `resolveWallItemKeyForHeight` duvarı seçilen yüksekliğe eşler.
+
+**Bağlantılar:** `relationshipBom.js` duvar/ayırıcıda sabit 7 / 13 / 6 yerine reçetenin bant sayısını kullanır: uç yüzey B, standart tekli 2B − 1, köşe aparatı B − 1; eklemde kalkan dikme katılımcının reçetesindeki dikmedir. 350'de sonuç değişmez.
+
+**Stand:** Stand kurulumunda "Duvar yüksekliği" (250–500, varsayılan 350). `currentStand.wallHeightCm` projeyle kaydedilir; eski projede alan yoksa 350. Otomatik duvar ve katalogdan eklenen düz duvar bu yüksekliği alır.
+
+**Kapı ve vitrin (`0069_door_showcase_band_recipe`):** Aynı kural: panel_98 per_band 1, tekli per_band 2, dikme height_matched; kapı kanadı, profil, başlangıç ve vitrin gövde parçaları sabit. Kapı kanadı 4 bant (200 cm), 2 gözlü vitrin 2, 3 gözlü 3 bant tutar; panel = B − tutulan bant. 250 cm: kapı 1 panel / 1 tekli, 2 gözlü 3 / 5, 3 gözlü 2 / 3 (ürün tablosu); 300 kapı 2 panel / 3 tekli. Bağlantıda B panel sayısıdır; 350’de eski sabitleri (kapı 3/5/2, 2 gözlü 5/9/4, 3 gözlü 4/7/3) verir. Kapı modülü panel sayısı ve BOM bant indeksleri bant sayısından; depo kapısı ve depo duvarı stand yüksekliğini alır.
+
+**Kısa duvar:** Standın duvar tepesine hizalanır. DB tabanı 350’ye göredir (short_2 250, short_1 300); `resolveItemDefaultZCm` aynı farkla kaydırır (250’de 150 / 200). Açık standın yüksekliği `setActiveWallLineHeightCm` ile items.js’e verilir.
+
+**Dikme serbest yerleşim:** `magnetic_snap = short-up-joint` (yalnız dikme tipi) artık reddetmez: dikme birleşime yakınsa yapışır, değilse sahneye serbest bırakılır. DB değeri değişmedi; davranış koddadır.
+
+**Ayırıcı 100 (`0070_separator_band_recipe`):** Düz ve sarmaşıklı 100’lük ayırıcı aynı kuralda (separator_panel_98 per_band 1, tekli per_band 2, dikme height_matched; sarmaşık parçası sabit). Kod son ek alır (`wall_separator_100_250_sarmasik`). Çizimde lata sayısı iç yüksekliğe orantılı (350’de 36); sarmaşık GLB 350’ye göre yapıldığı için dikeyde yükseklik / 350 oranında esner.
+
+**Tavan ve projektör:** Stand tavanı (`getStandDimensions().heightCm`) en az seçilen duvar yüksekliğidir (`setStandWallLineHeightCm`); 450 / 500’de modüller DB tavanına (350) kırpılmaz. Üst profil hattı (projektör) türetilmiş duvarda yükseklik farkı kadar kayar (`resolveVirtualTopRailZCm`). Baza host listesi türetilmiş duvarı ana koduyla tanır.
+
+**Ayırıcı 50 (`0071_separator_50_band_recipe`):** Ürün kararı: 50’lik ayırıcı (düz ve sarmaşık) 2 dikme, 2 × profile_41_5, bant başına 1 × separator_panel_48_5, 2 başlangıç, 2B − 1 tekli (250: 5 panel / 9 tekli). 350 reçetesi düzeltildi: tekli 7 → 13; sarmaşıklıda 98’lik paneller silindi, 7 × 48,5. 350’lik projelerde 50’lik ayırıcının üretim listesi değişir; eklem sonuçları 100’lük ayırıcıyla aynı olur.
+
+**Kapsam dışı:** Açık standın yüksekliğini sonradan değiştirmek (backlog, `PENDING_ITEM_DECISIONS.md` B.16); yeni dikmelerin fiyatı.
+
+---
+
 ## 2026-10-19 — Editör performansı: ışık/gölge Render Al'da, tek modül güncelleme
 
 **Işık ve gölge:** Editörde ışık gölgesi (`shadowMap.enabled = false`), LED projektör ve raf altı spot ışıkları kapalı. Spot ışıklar `RENDER_ONLY_LIGHT_LAYER` katmanında, editör kamerası bu katmanı görmez; lens ve LED şerit parlamaya devam eder. Render Al (`captureCurrentViewPng`) gölgeyi ve katmanı açıp çizer, sonra kapatır; bu sırada yükleme ekranı gösterilir. Projektör camında `transmission` yok; tek bir `transmission` malzemesi bile sahneyi her karede iki kez çizdirir. Cam masa (`TABLE_GLASS_APPEARANCE`) editörde kırılmasız düz camdır; Render Al çizerken `TABLE_GLASS_RENDER_TRANSMISSION` (0,32) açılır, sonra kapanır.

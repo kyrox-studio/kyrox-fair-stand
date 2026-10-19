@@ -203,6 +203,236 @@ CATALOG_SEED = {
             "assets": [],
         },
         {
+            "item_key": "upright_247_5",
+            "name": "Dikme 247,5 cm",
+            "item_type": "upright",
+            "is_render": True,
+            "accepts_color": False,
+            "accepts_image": False,
+            "accepts_lightbox": False,
+            "accepts_glass": False,
+            "accepts_mesh": False,
+            "unit": "adet",
+            "catalog_visible": False,
+            "category_index": None,
+            "catalog_item_index": None,
+            "preview_id": None,
+            "material": "alüminyum",
+            "default_color": 13685716,
+            "preserve_model_scale": None,
+            "model_rotation_y_deg": None,
+            "visual_rotation_y_deg": None,
+            "composition_mode": None,
+            "paintable": None,
+            "shape": None,
+            "variant": None,
+            "eye_count": None,
+            
+            "dimensions": {
+                "width_cm": 8,
+                "depth_cm": 8,
+                "height_cm": 247.5,
+
+
+                "mount_height_cm": None,
+                "wall_gap_cm": None,
+            },
+            "scene_dimensions": {
+                "width_cm": 8,
+                "depth_cm": 8,
+                "height_cm": 250,
+            },
+            "strip_occupancy": None,
+            "components": [],
+            "video_wall": None,
+            "body_parts": [],
+            "assets": [],
+        },
+        {
+            "item_key": "upright_297",
+            "name": "Dikme 297 cm",
+            "item_type": "upright",
+            "is_render": True,
+            "accepts_color": False,
+            "accepts_image": False,
+            "accepts_lightbox": False,
+            "accepts_glass": False,
+            "accepts_mesh": False,
+            "unit": "adet",
+            "catalog_visible": False,
+            "category_index": None,
+            "catalog_item_index": None,
+            "preview_id": None,
+            "material": "alüminyum",
+            "default_color": 13685716,
+            "preserve_model_scale": None,
+            "model_rotation_y_deg": None,
+            "visual_rotation_y_deg": None,
+            "composition_mode": None,
+            "paintable": None,
+            "shape": None,
+            "variant": None,
+            "eye_count": None,
+            
+            "dimensions": {
+                "width_cm": 8,
+                "depth_cm": 8,
+                "height_cm": 297,
+
+
+                "mount_height_cm": None,
+                "wall_gap_cm": None,
+            },
+            "scene_dimensions": {
+                "width_cm": 8,
+                "depth_cm": 8,
+                "height_cm": 300,
+            },
+            "strip_occupancy": None,
+            "components": [],
+            "video_wall": None,
+            "body_parts": [],
+            "assets": [],
+        },
+        {
+            "item_key": "upright_396",
+            "name": "Dikme 396 cm",
+            "item_type": "upright",
+            "is_render": True,
+            "accepts_color": False,
+            "accepts_image": False,
+            "accepts_lightbox": False,
+            "accepts_glass": False,
+            "accepts_mesh": False,
+            "unit": "adet",
+            "catalog_visible": False,
+            "category_index": None,
+            "catalog_item_index": None,
+            "preview_id": None,
+            "material": "alüminyum",
+            "default_color": 13685716,
+            "preserve_model_scale": None,
+            "model_rotation_y_deg": None,
+            "visual_rotation_y_deg": None,
+            "composition_mode": None,
+            "paintable": None,
+            "shape": None,
+            "variant": None,
+            "eye_count": None,
+            
+            "dimensions": {
+                "width_cm": 8,
+                "depth_cm": 8,
+                "height_cm": 396,
+
+
+                "mount_height_cm": None,
+                "wall_gap_cm": None,
+            },
+            "scene_dimensions": {
+                "width_cm": 8,
+                "depth_cm": 8,
+                "height_cm": 400,
+            },
+            "strip_occupancy": None,
+            "components": [],
+            "video_wall": None,
+            "body_parts": [],
+            "assets": [],
+        },
+        {
+            "item_key": "upright_445_5",
+            "name": "Dikme 445,5 cm",
+            "item_type": "upright",
+            "is_render": True,
+            "accepts_color": False,
+            "accepts_image": False,
+            "accepts_lightbox": False,
+            "accepts_glass": False,
+            "accepts_mesh": False,
+            "unit": "adet",
+            "catalog_visible": False,
+            "category_index": None,
+            "catalog_item_index": None,
+            "preview_id": None,
+            "material": "alüminyum",
+            "default_color": 13685716,
+            "preserve_model_scale": None,
+            "model_rotation_y_deg": None,
+            "visual_rotation_y_deg": None,
+            "composition_mode": None,
+            "paintable": None,
+            "shape": None,
+            "variant": None,
+            "eye_count": None,
+            
+            "dimensions": {
+                "width_cm": 8,
+                "depth_cm": 8,
+                "height_cm": 445.5,
+
+
+                "mount_height_cm": None,
+                "wall_gap_cm": None,
+            },
+            "scene_dimensions": {
+                "width_cm": 8,
+                "depth_cm": 8,
+                "height_cm": 450,
+            },
+            "strip_occupancy": None,
+            "components": [],
+            "video_wall": None,
+            "body_parts": [],
+            "assets": [],
+        },
+        {
+            "item_key": "upright_495",
+            "name": "Dikme 495 cm",
+            "item_type": "upright",
+            "is_render": True,
+            "accepts_color": False,
+            "accepts_image": False,
+            "accepts_lightbox": False,
+            "accepts_glass": False,
+            "accepts_mesh": False,
+            "unit": "adet",
+            "catalog_visible": False,
+            "category_index": None,
+            "catalog_item_index": None,
+            "preview_id": None,
+            "material": "alüminyum",
+            "default_color": 13685716,
+            "preserve_model_scale": None,
+            "model_rotation_y_deg": None,
+            "visual_rotation_y_deg": None,
+            "composition_mode": None,
+            "paintable": None,
+            "shape": None,
+            "variant": None,
+            "eye_count": None,
+            
+            "dimensions": {
+                "width_cm": 8,
+                "depth_cm": 8,
+                "height_cm": 495,
+
+
+                "mount_height_cm": None,
+                "wall_gap_cm": None,
+            },
+            "scene_dimensions": {
+                "width_cm": 8,
+                "depth_cm": 8,
+                "height_cm": 500,
+            },
+            "strip_occupancy": None,
+            "components": [],
+            "video_wall": None,
+            "body_parts": [],
+            "assets": [],
+        },
+        {
             "item_key": "upright_49_5",
             "name": "Dikme 49,5 cm",
             "item_type": "upright",
@@ -3508,10 +3738,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "panel_98",
                     "quantity": 3,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -3520,6 +3752,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 5,
+                    "per_band": 2,
                 },
                 {
                     "child_item_key": "door_leaf_100",
@@ -4274,10 +4507,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "panel_48_5",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -4286,6 +4521,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -4341,10 +4577,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "panel_98",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -4353,6 +4591,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -4408,10 +4647,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "panel_147_5",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -4420,6 +4661,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -4475,10 +4717,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "panel_197",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -4487,6 +4731,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -5102,10 +5347,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "separator_panel_48_5",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5113,7 +5360,8 @@ CATALOG_SEED = {
                 },
                 {
                     "child_item_key": "connector_single",
-                    "quantity": 7,
+                    "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -5169,10 +5417,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "separator_panel_98",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5181,6 +5431,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -5236,10 +5487,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "separator_panel_48_5",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5247,7 +5500,8 @@ CATALOG_SEED = {
                 },
                 {
                     "child_item_key": "connector_single",
-                    "quantity": 7,
+                    "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -5308,10 +5562,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "separator_panel_98",
                     "quantity": 7,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5320,6 +5576,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 13,
+                    "per_band": 2,
                 },
             ],
             "video_wall": None,
@@ -5380,10 +5637,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "panel_98",
                     "quantity": 5,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5392,6 +5651,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 9,
+                    "per_band": 2,
                 },
                 {
                     "child_item_key": "showcase_side_94_6_30",
@@ -5472,10 +5732,12 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "upright_346_5",
                     "quantity": 2,
+                    "height_matched": True,
                 },
                 {
                     "child_item_key": "panel_98",
                     "quantity": 4,
+                    "per_band": 1,
                 },
                 {
                     "child_item_key": "connector_start",
@@ -5484,6 +5746,7 @@ CATALOG_SEED = {
                 {
                     "child_item_key": "connector_single",
                     "quantity": 7,
+                    "per_band": 2,
                 },
                 {
                     "child_item_key": "showcase_side_143_5_30",

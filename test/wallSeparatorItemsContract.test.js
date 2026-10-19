@@ -32,7 +32,7 @@ const EXPECTED = {
       upright_346_5: 2,
       separator_panel_48_5: 7,
       connector_start: 2,
-      connector_single: 7,
+      connector_single: 13, // 0071 ürün kararı
     },
   },
   wall_separator_100_350: {
@@ -54,7 +54,7 @@ const EXPECTED = {
       upright_346_5: 2,
       separator_panel_48_5: 7,
       connector_start: 2,
-      connector_single: 7,
+      connector_single: 13, // 0071 ürün kararı
     },
   },
   wall_separator_100_350_sarmasik: {

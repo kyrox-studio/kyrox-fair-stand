@@ -343,7 +343,8 @@ test('separator, door, and showcase pairs share one upright on end, corner, and 
 
   const sepShow2 = end('wall_separator_50_350', 50, 'wall_showcase_100_2_350', 100);
   assert.equal(qty(sepShow2, 'upright_346_5'), 3);
-  assert.equal(qty(sepShow2, 'connector_single'), 11);
+  // 0071: 50’lik ayırıcı 13 tekli; 100’lük ayırıcı + 2 gözlü vitrin ile aynı (8 + 4).
+  assert.equal(qty(sepShow2, 'connector_single'), 12);
   assert.equal(qty(sepShow2, 'connector_double'), 5);
 
   const sepShow3 = end('wall_separator_100_350', 100, 'wall_showcase_100_3_350', 100);

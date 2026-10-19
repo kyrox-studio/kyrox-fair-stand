@@ -111,6 +111,8 @@ function mapItem(row) {
       composition.items = row.components.map((component) => ({
         itemKey: component.child_item_key,
         quantity: component.quantity,
+        ...(component.per_band ? { perBand: component.per_band } : {}),
+        ...(component.height_matched ? { heightMatched: true } : {}),
       }));
     }
     item.composition = composition;

@@ -46,7 +46,7 @@ function expectedFlags(item) {
 
 test('every catalog item surface flag matches the scene audit', () => {
   const items = listRegisteredItems();
-  assert.equal(items.length, 107);
+  assert.equal(items.length, 112);
   for (const item of items) {
     const expected = expectedFlags(item);
     assert.deepEqual({

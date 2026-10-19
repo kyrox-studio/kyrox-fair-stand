@@ -40,7 +40,8 @@ test('panel_197 uses canonical itemKey in exactly four verified parent recipes w
     assert.ok(recipe);
     const matches = recipe.items.filter((item) => getRecipeItemKey(item) === 'panel_197');
     assert.equal(matches.length, 1, recipe.recipeId);
-    assert.deepEqual(matches[0], { itemKey: 'panel_197', quantity });
+    // Düz duvar reçetesinde panel bant başına 1 artar/azalır (0068).
+    assert.deepEqual(matches[0], { itemKey: 'panel_197', quantity, ...(/^wall_(50|100|150|200)_350$/.test(recipe.recipeId) ? { perBand: 1 } : {}) });
     occurrences += matches.length;
   }
 

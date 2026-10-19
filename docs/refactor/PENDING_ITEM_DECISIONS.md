@@ -192,6 +192,12 @@ Her item kendi ölçü/BOM’unu taşır; stand tavanı yalnız **max zarf** (ö
 - **Kaynak:** `src/projectBom.js`, `src/printAreaBom.js`, `src/bomLineGroups.js`, `src/productionBomPanel.js`.
 - **Yasak:** Baskı alanını ayrı “Baskı alanları” kartı yapmak; camı hem panel hem görsel saymak; short-up eklemi uydurmak
 
+### B.16. Açık standın duvar yüksekliğini sonradan değiştirmek
+
+- **Durum:** BACKLOG — 2026-10-19 (kullanıcı kararı: şimdi gerek yok, ileride olmalı; rakipler yapıyor).
+- **Bugün:** Duvar yüksekliği (250–500) yalnız “Sahneyi Oluştur”da seçilir, `stand.wallHeightCm` kaydedilir. Açık standda değiştirmek için mevcut duvar, kapı, vitrin ve kısa duvarların `resolveWallItemKeyForHeight` ile yeni yüksekliğe çevrilmesi ve sahnenin yeniden kurulması gerekir.
+- **Kaynak:** `REFACTOR.md` 2026-10-19 Duvar yüksekliği kuralı.
+
 ---
 ## C. Stand zarfı ve DB (Item tablosu değil)
 

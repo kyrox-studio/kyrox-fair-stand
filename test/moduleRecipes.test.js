@@ -57,9 +57,10 @@ test('migrated recipe identities use itemKey while legacy parts keep partId', ()
   const profile = recipe.items.find((item) => getRecipeItemKey(item) === 'profile_190');
 
   assert.deepEqual(start, { itemKey: 'connector_start', quantity: 2 });
-  assert.deepEqual(single, { itemKey: 'connector_single', quantity: 13 });
-  assert.deepEqual(upright, { itemKey: 'upright_346_5', quantity: 2 });
-  assert.deepEqual(panel, { itemKey: 'panel_197', quantity: 7 });
+  // Duvar yüksekliği kuralı (0068): bant başına tekli 2, dikme yüksekliğe göre seçilir.
+  assert.deepEqual(single, { itemKey: 'connector_single', quantity: 13, perBand: 2 });
+  assert.deepEqual(upright, { itemKey: 'upright_346_5', quantity: 2, heightMatched: true });
+  assert.deepEqual(panel, { itemKey: 'panel_197', quantity: 7, perBand: 1 });
   assert.equal(start.partId, undefined);
   assert.equal(single.partId, undefined);
   assert.equal(upright.partId, undefined);
@@ -185,10 +186,10 @@ test('50 cm straight wall recipe matches the verified production recipe', () => 
 
   assert.deepEqual(recipe.items, [
     { itemKey: 'profile_41_5', quantity: 2 },
-    { itemKey: 'upright_346_5', quantity: 2 },
-    { itemKey: 'panel_48_5', quantity: 7 },
+    { itemKey: 'upright_346_5', quantity: 2, heightMatched: true },
+    { itemKey: 'panel_48_5', quantity: 7, perBand: 1 },
     { itemKey: 'connector_start', quantity: 2 },
-    { itemKey: 'connector_single', quantity: 13 },
+    { itemKey: 'connector_single', quantity: 13, perBand: 2 },
   ]);
 });
 
@@ -215,10 +216,10 @@ test('100 cm door recipe matches verified production data', () => {
   const recipe = getModuleRecipe('door', 100);
   assert.deepEqual(recipe.items, [
     { itemKey: 'profile_91', quantity: 1 },
-    { itemKey: 'upright_346_5', quantity: 2 },
-    { itemKey: 'panel_98', quantity: 3 },
+    { itemKey: 'upright_346_5', quantity: 2, heightMatched: true },
+    { itemKey: 'panel_98', quantity: 3, perBand: 1 },
     { itemKey: 'connector_start', quantity: 2 },
-    { itemKey: 'connector_single', quantity: 5 },
+    { itemKey: 'connector_single', quantity: 5, perBand: 2 },
     { itemKey: 'door_leaf_100', quantity: 1 },
   ]);
 });

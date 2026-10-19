@@ -17,7 +17,7 @@ def test_seed_is_idempotent_and_matches_canonical_counts(db_session):
     visible = [item for item in items if item.catalog_visible]
 
     assert len(categories) == 6
-    assert len(items) == 110
+    assert len(items) == 115
     assert len(visible) == 60
     assert len(components) == 184
     assert {item.item_key for item in items} == {row["item_key"] for row in CATALOG_SEED["items"]}

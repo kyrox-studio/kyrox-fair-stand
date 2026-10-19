@@ -95,7 +95,7 @@ test('60 görünür Item catalogPreview taşır; 47 gizli Item preview taşımaz
   const visible = listRegisteredItems().filter((item) => item.catalogVisible === true);
   const hidden = listRegisteredItems().filter((item) => item.catalogVisible !== true);
   assert.equal(visible.length, 60);
-  assert.equal(hidden.length, 47);
+  assert.equal(hidden.length, 52);
 
   for (const item of visible) {
     assert.equal(typeof item.previewId, 'number', item.itemKey);

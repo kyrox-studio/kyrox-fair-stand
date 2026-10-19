@@ -273,6 +273,8 @@ def _components_payload(rows: list[FairStandItemComponentModel]) -> list[dict]:
             "childName": None,
             "childType": None,
             "quantity": _num(row.quantity),
+            "perBand": _num(row.per_band) if row.per_band is not None else 0,
+            "heightMatched": bool(row.height_matched),
         }
         for row in sorted(rows, key=lambda item: item.child_item_key)
     ]
@@ -961,6 +963,8 @@ class AdminItemsService:
                 parent_item_key=clone.item_key,
                 child_item_key=component.child_item_key,
                 quantity=component.quantity,
+                per_band=component.per_band,
+                height_matched=component.height_matched,
             )
             for component in list(source.components or [])
         ]
@@ -1159,12 +1163,17 @@ class AdminItemsService:
             quantity = _optional_decimal(component.get("quantity"))
             if quantity is None or quantity <= 0:
                 raise ItemAdminError("Alt item miktarı 0’dan büyük olmalıdır.")
+            per_band = _optional_decimal(component.get("per_band", component.get("perBand")))
             row.components.append(
                 FairStandItemComponentModel(
                     id=uuid4(),
                     parent_item_key=row.item_key,
                     child_item_key=child,
                     quantity=quantity,
+                    per_band=per_band if per_band is not None else Decimal("0"),
+                    height_matched=bool(
+                        component.get("height_matched", component.get("heightMatched"))
+                    ),
                 )
             )
 

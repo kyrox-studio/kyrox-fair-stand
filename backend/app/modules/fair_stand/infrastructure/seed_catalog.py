@@ -225,6 +225,8 @@ def seed_fair_stand_catalog(session: Session) -> None:
                     parent_item_key=item_key,
                     child_item_key=component["child_item_key"],
                     quantity=_dec(component["quantity"]),
+                    per_band=_dec(component.get("per_band") or 0),
+                    height_matched=bool(component.get("height_matched")),
                 )
             )
         video_wall = row.get("video_wall")

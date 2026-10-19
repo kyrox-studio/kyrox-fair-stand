@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
+from sqlalchemy import false as sa_false
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -566,6 +567,15 @@ class FairStandItemComponentModel(Base):
         nullable=False,
     )
     quantity: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
+    # Duvar yüksekliği kuralı: quantity üst ürünün kendi yüksekliğindeki adettir (ör. 350 cm = 7 bant).
+    # per_band, her ek/eksik 50 cm bant için adet farkıdır (panel 1, tekli aparat 2).
+    # height_matched: bu satırın parçası (dikme) seçilen duvar yüksekliğine göre değişir.
+    per_band: Mapped[Decimal] = mapped_column(
+        Numeric(12, 4), nullable=False, default=Decimal("0"), server_default="0"
+    )
+    height_matched: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=sa_false()
+    )
     parent: Mapped[FairStandItemModel] = relationship(
         back_populates="components",
         foreign_keys=[parent_item_key],
