@@ -23,7 +23,9 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 **Program koruma:** `disposeWall` eski nesneleri yeni sahnenin ilk karesinden sonra dispose eder. three.js kullanıcısı kalmayan gölgelendirici programını siler; önceden her tam kurulumda bütün programlar baştan derleniyordu.
 
-Lokal ölçüm (kullanıcı): projektör bırakma ilk kare 1291–4893 ms (+27–29 program) → 23–36 ms (+0). Konsol: `[Fair Stand ölçüm] sahne yenileme: kurulum · ilk kare · +N program`. Hâlâ tam kurulum yapanlar: geri al/ileri al, grup işlemleri, şeride araya ekleme.
+**Geri al / ileri al:** `applyDesignSnapshot` kopyadaki modül içerik olarak şimdikiyle aynıysa mevcut nesneyi kullanır (`reuseUnchangedModules`; ekrandaki yüzeyler bu nesnelere bağlıdır) ve sahneyi tam kurulum yerine eşitler (`syncSceneToModules` → `scene3d.syncModules`): aynı nesneyle kalan modüle dokunulmaz, çıkan kaldırılır, yeni/değişen yaratılır; değişen modülde kumaş varsa kaplamalar yeniden kurulur.
+
+Lokal ölçüm (kullanıcı): projektör bırakma ilk kare 1291–4893 ms (+27–29 program) → 23–36 ms (+0). Konsol: `[Fair Stand ölçüm] sahne yenileme: kurulum · ilk kare · +N program`. Hâlâ tam kurulum yapanlar: grup işlemleri, şeride araya ekleme.
 
 ---
 

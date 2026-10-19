@@ -1961,17 +1961,17 @@ export function createStandScene(
   // olduğu gibi kalır; yalnız yeni modül yaratılıp yerleştirilir. Eskiden her bırakmada bütün
   // sahne silinip baştan kuruluyordu (bütün görseller yeniden yüklenir, ekran kartı kilitlenir).
   // Yeni modül zaten yerleşik (placement) olmalı; olmazsa false döner ve çağıran tam kurulum yapar.
-  function appendModule(moduleState, moduleIndex) {
-    if (!moduleState?.placement || !Number.isInteger(moduleIndex) || moduleIndex < 0) return false;
-    clearPlacementDrag();
+  // Tek modülün sahne nesnesini yaratıp yerleştirir. Başarısızsa null (çağıran tam kurulum yapar).
+  function addModuleGroup(moduleState, moduleIndex) {
+    if (!moduleState?.placement || !Number.isInteger(moduleIndex) || moduleIndex < 0) return null;
     let module = null;
     try {
       module = createRenderableModule(moduleState, moduleIndex, (surface) => applyStoredImage(surface));
     } catch (error) {
       console.warn('Modül eklenemedi; tam kurulum yapılacak:', moduleState?.type, moduleState?.itemKey, error);
-      return false;
+      return null;
     }
-    if (!module?.group) return false;
+    if (!module?.group) return null;
     const widthCm = Number(moduleState.widthCm);
     module.group.userData.moduleState = moduleState;
     module.group.userData.moduleIndex = moduleIndex;
@@ -1979,6 +1979,68 @@ export function createStandScene(
     applyPlacementToGroup(module.group, moduleState.placement, widthCm);
     wallRoot.add(module.group);
     surfaceMeshes.push(...module.surfaces);
+    return module.group;
+  }
+
+  function groupHasFabric(group) {
+    let found = false;
+    group.traverse((object) => {
+      if (object.userData?.surfaceState?.fabricGroupId) found = true;
+    });
+    return found;
+  }
+
+  function reindexModuleGroups(modules) {
+    wallRoot.children.forEach((child) => {
+      const moduleIndex = modules.indexOf(child.userData?.moduleState);
+      if (moduleIndex < 0) return;
+      child.traverse((object) => {
+        if (object.userData && Object.hasOwn(object.userData, 'moduleIndex')) object.userData.moduleIndex = moduleIndex;
+      });
+    });
+  }
+
+  function appendModule(moduleState, moduleIndex) {
+    clearPlacementDrag();
+    if (!addModuleGroup(moduleState, moduleIndex)) return false;
+    notifySelection();
+    requestEditorRender();
+    return true;
+  }
+
+  // Sahneyi verilen modül listesine eşitler (geri al / ileri al). Listede aynı nesneyle duran
+  // modülün sahne nesnesine dokunulmaz (görsel, logo, kumaş yeniden yüklenmez); listeden çıkan
+  // kaldırılır, yeni (veya değişmiş, yani yeni nesneyle gelen) modül yaratılır. Kumaş kaplaması
+  // olan bir modül değiştiyse kaplamalar yeniden kurulur. Yerleşimi olmayan modül varsa false
+  // döner; çağıran tam kurulum yapar.
+  function syncModules(modules) {
+    if (!Array.isArray(modules) || modules.some((moduleState) => !moduleState?.placement)) return false;
+    clearPlacementDrag();
+    const wanted = new Set(modules);
+    const present = new Set();
+    let fabricTouched = false;
+    [...wallRoot.children].forEach((group) => {
+      const state = group.userData?.moduleState;
+      if (state && wanted.has(state)) {
+        present.add(state);
+        return;
+      }
+      if (groupHasFabric(group)) fabricTouched = true;
+      wallRoot.remove(group);
+      deferredWallDisposal.push(group);
+    });
+    const inScene = new Set();
+    wallRoot.children.forEach((group) => group.traverse((object) => inScene.add(object)));
+    surfaceMeshes = surfaceMeshes.filter((surface) => inScene.has(surface));
+    for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex += 1) {
+      const moduleState = modules[moduleIndex];
+      if (present.has(moduleState)) continue;
+      const group = addModuleGroup(moduleState, moduleIndex);
+      if (!group) return false;
+      if (groupHasFabric(group)) fabricTouched = true;
+    }
+    reindexModuleGroups(modules);
+    if (fabricTouched) rebuildFabricOverlays();
     notifySelection();
     requestEditorRender();
     return true;
@@ -2002,13 +2064,7 @@ export function createStandScene(
     group.traverse((object) => removedSurfaces.add(object));
     surfaceMeshes = surfaceMeshes.filter((surface) => !removedSurfaces.has(surface));
     deferredWallDisposal.push(group);
-    wallRoot.children.forEach((child) => {
-      const moduleIndex = modules.indexOf(child.userData?.moduleState);
-      if (moduleIndex < 0) return;
-      child.traverse((object) => {
-        if (object.userData && Object.hasOwn(object.userData, 'moduleIndex')) object.userData.moduleIndex = moduleIndex;
-      });
-    });
+    reindexModuleGroups(modules);
     notifySelection();
     requestEditorRender();
     return true;
@@ -6563,6 +6619,7 @@ export function createStandScene(
     requestRender: requestEditorRender,
     appendModule,
     removeModule,
+    syncModules,
     setShelfLightingVisible,
     setCameraMode,
     getCameraMode: () => cameraMode,

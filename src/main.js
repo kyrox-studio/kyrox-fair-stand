@@ -2453,9 +2453,20 @@ function floorDefaultColorHex(itemKey) {
   return typeof value === 'string' ? value : null;
 }
 
+// Geri al / ileri al: kopyadaki modül içerik olarak şimdikiyle aynıysa mevcut nesne kullanılır.
+// Ekrandaki yüzeyler bu nesnelere bağlıdır (renk/görsel buradan yazılır) ve sahne bu modüllere
+// dokunmaz; yalnız gerçekten değişen modüller yeniden kurulur.
+function reuseUnchangedModules(previousModules, nextModules) {
+  const previousById = new Map(previousModules.map((module) => [module.id, module]));
+  return nextModules.map((next) => {
+    const previous = previousById.get(next?.id);
+    return previous && JSON.stringify(previous) === JSON.stringify(next) ? previous : next;
+  });
+}
+
 function applyDesignSnapshot(snapshot) {
   const design = JSON.parse(snapshot);
-  currentModules = design.modules ?? [];
+  currentModules = reuseUnchangedModules(currentModules, design.modules ?? []);
   if (currentStand && design.stand) {
     currentStand = design.stand;
     scene3d.setFloorType(currentStand.itemKey);
@@ -2468,7 +2479,25 @@ function applyDesignSnapshot(snapshot) {
   moduleContextMenu.close();
   moduleContextMenu.closePicker();
   scene3d.clearSelection();
-  rebuildWall({ resetView: false });
+  syncSceneToModules();
+}
+
+// Sahneyi currentModules'e eşitler; grup temizliği bir modülü değiştirirse veya sahne
+// eşitleyemezse tam kurulum yapılır.
+function syncSceneToModules() {
+  const beforeSignature = moduleLayoutSignature(currentModules);
+  pruneGroups(currentModules, getGroupStand());
+  const buildStartedAt = performance.now();
+  if (moduleLayoutSignature(currentModules) !== beforeSignature
+    || !currentStand
+    || !scene3d.syncModules(currentModules)) {
+    rebuildWall({ resetView: false });
+    return;
+  }
+  timeSceneRefresh(performance.now() - buildStartedAt);
+  renderModuleGroupPanel();
+  renderCurrentWallResult();
+  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
 }
 
 function syncDesignHistoryButtons({ canUndo, canRedo }) {

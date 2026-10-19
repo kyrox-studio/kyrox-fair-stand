@@ -76,3 +76,40 @@ test('dropping a catalog module adds only that module and keeps the others untou
   expect(remaining.uuid).toBe(second.uuid);
   expect(remaining.moduleIndex).toBe(0);
 });
+
+test('undo and redo touch only the module that changed', async ({ page }) => {
+  await exposeScene(page);
+  await page.goto('/');
+  const standSetup = page.locator('details.stand-setup-card');
+  await standSetup.locator('summary').click();
+  await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
+  await page.locator('#stand-size-x').fill('600');
+  await page.locator('#stand-size-y').fill('600');
+  await page.locator('#create-stage').click();
+  await page.locator('form input[name="projectName"]').fill('E2E Geri Al');
+  await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await expect(page.locator('#viewport-toolbar')).toBeVisible();
+
+  await dropBoxBlock(page, 0.6, 0.85);
+  const [first] = await boxBodies(page);
+  await dropBoxBlock(page, 0.75, 0.9);
+  await expect.poll(async () => (await boxBodies(page)).length).toBe(2);
+  const second = (await boxBodies(page)).find((body) => body.moduleId !== first.moduleId);
+
+  // Geri al: ikinci kutu kalkar, birinci aynı nesne olarak kalır.
+  await expect(page.locator('#design-undo')).toBeEnabled();
+  await page.locator('#design-undo').click();
+  await expect.poll(async () => (await boxBodies(page)).length).toBe(1);
+  let [only] = await boxBodies(page);
+  expect(only.moduleId).toBe(first.moduleId);
+  expect(only.uuid).toBe(first.uuid);
+
+  // İleri al: ikinci kutu geri gelir; birinci yine dokunulmadan kalır.
+  await page.locator('#design-redo').click();
+  await expect.poll(async () => (await boxBodies(page)).length).toBe(2);
+  const bodies = await boxBodies(page);
+  expect(bodies.find((body) => body.moduleId === first.moduleId)?.uuid).toBe(first.uuid);
+  const restored = bodies.find((body) => body.moduleId === second.moduleId);
+  expect(restored).toBeTruthy();
+  expect(restored.moduleIndex).toBe(1);
+});
