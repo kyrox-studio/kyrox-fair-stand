@@ -1,31 +1,30 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-group-sync-v1",
-  "kind": "feature",
-  "summary": "Grup işlemleri (oluştur, gruba ekle, gruptan çıkar, çöz, çoğalt, sil, şablon yerleştir) ve şeride araya ekleme tam kurulum yerine sahneyi eşitler: işlemden önce modül içerikleri (yer ve grup hariç) kaydedilir, syncModules(modules, { rebuiltIds }) yalnız içeriği değişeni yeniden yaratır, yalnız yeri değişeni applyPlacementToGroup ile taşır. Cam masa transmission editörde kapalı, Render Al sırasında TABLE_GLASS_RENDER_TRANSMISSION ile açılır. Açılış ölçüm satırına ilk kare dökümü (kare, en ağır kare, program, doku) eklendi. Kayıt biçimi ve BOM değişmez.",
+  "id": "fair-stand-clear-image-render-v1",
+  "kind": "bugfix",
+  "summary": "Görsel Kaldır (clearImage) ve Lightbox/Mesh kaplama yenilemesi (rebuildFabricOverlays) requestEditorRender çağırır; isteğe bağlı çizimde değişiklik başka bir tıklama beklemeden ekrana gelir. Kayıt biçimi, BOM ve görsel durumu değişmez.",
   "owners": [
-    "src/scene3d.js",
-    "src/main.js"
+    "src/scene3d.js"
   ],
   "sourceOfTruth": [
     "src/scene3d.js"
   ],
   "impact": {
-    "catalog": "affected",
+    "catalog": "not-applicable",
     "behavior": "affected",
     "state": "affected",
     "placement": "affected",
     "renderer": "affected",
-    "persistence": "affected",
-    "bom": "affected",
-    "ui": "affected",
-    "composition": "affected",
-    "assets": "affected",
-    "storage": "affected",
-    "importExport": "affected",
+    "persistence": "not-applicable",
+    "bom": "not-applicable",
+    "ui": "not-applicable",
+    "composition": "not-applicable",
+    "assets": "not-applicable",
+    "storage": "not-applicable",
+    "importExport": "not-applicable",
     "performance": "affected",
-    "accessibility": "affected",
-    "architecture": "affected",
+    "accessibility": "not-applicable",
+    "architecture": "not-applicable",
     "security": "not-applicable",
     "tests": "affected"
   },
@@ -172,6 +171,7 @@
       "test/catalogPreviewConfig.test.js",
       "test/catalogSingleSource.test.js",
       "test/chairEamesContract.test.js",
+      "test/clearImageRender.test.js",
       "test/coatRackModule.test.js",
       "test/colorEditorControllerMainIntegration.test.js",
       "test/colorEditorMainIntegration.test.js",
@@ -766,37 +766,31 @@
         "F-033"
       ]
     },
-    "notes": "Keşif main.js ve markup token'ları üzerinden geniş çıkar; listedeki bağımlılar review edildi, davranışları değişmez. Katalog, BOM, yerleşim/snap/zincir hesapları, kilit kuralları, kayıt biçimi ve backend değişmez; geri yükleme mevcut rebuildWall / setFloorType / setFloorColor / setFloorArea yollarını kullanır. Yol eşlemesi main.js için ek domainleri zorunlu kılarsa bunlar yalnız eşleme gereğidir; bu değişiklikte o yüzeylerde davranış değişikliği yoktur. Bulgu adayları okundu; F-017 korunur (geri yükleme main.js'te currentModules üzerinden yapılır, renderer kalıcı state yazmaz). F-025: index.html'e yalnız Geri al / İleri al düğmeleri eklendi; rawBomDebug yüklenmez. F-029 otomatik duvar, F-010/F-013/F-014 katalog-state-BOM, F-004/F-005/F-006/F-011/F-012/F-015 belge/gate/yerleşim politikası bu değişiklikle değişmez; yeni src/designHistory.js için yol eşlemesi eklendi."
+    "notes": "Yalnız scene3d.js içindeki iki fonksiyona çizim isteği eklendi; kalıcı yüzey durumu, görsel atama, katalog, yerleşim, BOM, kayıt ve backend değişmez. Etki listesi scene3d.js yol eşlemesinden gelir; listedeki bağımlıların davranışı değişmez. Bulgu adayları okundu, bu değişiklikle etkilenmez."
   },
   "tests": {
     "targeted": [
-      "test/designHistory.test.js",
-      "test/materialAppearance.test.js",
-      "test/projectOpenTiming.test.js",
-      "test/renderOnlyLights.test.js",
-      "test/scene3dPublicContract.test.js",
-      "test/viewKeyboardShortcuts.test.js"
+      "test/clearImageRender.test.js",
+      "test/scene3dPublicContract.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/catalog-drop-append.spec.mjs",
-        "e2e/design-undo.spec.mjs",
-        "e2e/group-template.spec.mjs",
-        "e2e/module-group.spec.mjs"
+        "e2e/color-image-capability.spec.mjs",
+        "e2e/box-block-face-image-restore.spec.mjs"
       ],
-      "reason": "Gerçek Chromium: grup oluştur/çoğalt/kopya sil/çöz sonrası asıl kutuların sahne nesnesi (uuid) aynı kalır; bırakma/silme/geri al/ileri al testleri korunur. Bütün paket regresyon için çalışır."
+      "reason": "Gerçek Chromium: görsel uygulama/geri yükleme akışları korunur. Bütün paket regresyon için çalışır."
     }
   },
   "risk": {
-    "level": "medium",
-    "notes": "Grup ve araya ekleme sahne eşitlemesine geçti; eşitleme yapamazsa tam kuruluma düşer. Cam masa editörde kırılmasız görünür."
+    "level": "low",
+    "notes": "Yalnız ek çizim isteği; en kötü ihtimalle bir kare fazladan çizilir."
   },
   "migration": {
     "required": false,
     "notes": "Kayıt biçimi değişmez."
   },
-  "rollback": "syncSceneAfterModuleChange / syncSceneToModules çağrıları yerine rebuildWall; TABLE_GLASS_APPEARANCE içine transmission: 0.32 geri."
+  "rollback": "clearImage ve rebuildFabricOverlays başındaki requestEditorRender() satırları kaldırılır."
 }
