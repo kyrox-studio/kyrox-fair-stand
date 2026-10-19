@@ -603,8 +603,7 @@ function deleteContextModule(context) {
   }
   if (!confirmed) return;
 
-  currentModules.splice(index, 1);
-  rebuildWall({ resetView: false });
+  commitModuleRemoval(index);
 }
 
 function onDeleteSelectedModule(event) {
@@ -747,8 +746,7 @@ function duplicateContextModule(context, side) {
     }
 
     duplicate.placement = placement;
-    currentModules.push(duplicate);
-    rebuildWall({ resetView: false });
+    commitModuleAddition(() => currentModules.push(duplicate));
     return;
   }
 
@@ -760,8 +758,7 @@ function duplicateContextModule(context, side) {
       return;
     }
 
-    applyContinuousInsertionPlan(plan, [duplicate]);
-    rebuildWall({ resetView: false });
+    commitModuleAddition(() => applyContinuousInsertionPlan(plan, [duplicate]));
     return;
   }
 
@@ -772,8 +769,7 @@ function duplicateContextModule(context, side) {
     return;
   }
 
-  applyFreeInsertionPlan(plan, [duplicate], context, side);
-  rebuildWall({ resetView: false });
+  commitModuleAddition(() => applyFreeInsertionPlan(plan, [duplicate], context, side));
 }
 
 function assignStandFloorItem(stand, itemKey) {
@@ -790,6 +786,56 @@ function createCatalogModuleState(module, { preservePlacement = false, itemKey =
     state.placement = { ...module.placement };
   }
   return state;
+}
+
+// Mevcut modüllerin yerleşim ve grup bilgisi (ekleme/silme sonrası değişti mi karşılaştırmak için).
+function moduleLayoutSignature(modules) {
+  return JSON.stringify(modules.map((module) => [module.id, module.placement ?? null, module.groupId ?? null]));
+}
+
+// Ekleme: mutate yeni modülleri diziye koyar. Mevcut modüllerin hiçbirinin yeri/grubu değişmediyse
+// ve yeniler dizinin sonundaysa yeniler sahneye tek tek eklenir; aksi halde tam kurulum.
+function commitModuleAddition(mutate) {
+  const before = currentModules.slice();
+  const beforeSignature = moduleLayoutSignature(before);
+  mutate();
+  const unchanged = moduleLayoutSignature(currentModules.slice(0, before.length)) === beforeSignature
+    && before.every((module, index) => currentModules[index] === module);
+  if (!unchanged || !currentStand) {
+    rebuildWall({ resetView: false });
+    return;
+  }
+  const added = currentModules.slice(before.length);
+  for (const moduleState of added) {
+    const moduleIndex = currentModules.indexOf(moduleState);
+    if (!scene3d.appendModule(moduleState, moduleIndex)) {
+      rebuildWall({ resetView: false });
+      return;
+    }
+  }
+  renderModuleGroupPanel();
+  renderCurrentWallResult();
+  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+}
+
+// Silme: grup temizliği kalan modüllerden birini değiştirirse tam kurulum; değiştirmezse yalnız
+// o modül sahneden kaldırılır.
+function commitModuleRemoval(index) {
+  const removed = currentModules[index];
+  currentModules.splice(index, 1);
+  const beforeSignature = moduleLayoutSignature(currentModules);
+  pruneGroups(currentModules, getGroupStand());
+  const buildStartedAt = performance.now();
+  if (moduleLayoutSignature(currentModules) !== beforeSignature
+    || !currentStand
+    || !scene3d.removeModule(removed?.id, currentModules)) {
+    rebuildWall({ resetView: false });
+    return;
+  }
+  timeSceneRefresh(performance.now() - buildStartedAt);
+  renderModuleGroupPanel();
+  renderCurrentWallResult();
+  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
 }
 
 // Bırakılan tek modül sahneye tek başına eklenir; diğer modüllere dokunulmaz. Sahne bunu
@@ -1047,12 +1093,13 @@ function flushCatalogModuleAdds() {
       return;
     }
 
-    if (plan.appendMode === 'continuous') {
-      applyContinuousInsertionPlan(plan, moduleStates);
-    } else {
-      currentModules.push(...moduleStates);
-    }
-    rebuildWall({ resetView: false });
+    commitModuleAddition(() => {
+      if (plan.appendMode === 'continuous') {
+        applyContinuousInsertionPlan(plan, moduleStates);
+      } else {
+        currentModules.push(...moduleStates);
+      }
+    });
     return;
   }
 
@@ -1072,8 +1119,7 @@ function flushCatalogModuleAdds() {
         return;
       }
 
-      applyFreeInsertionPlan(plan, visualOrderedStates, context, placementMode);
-      rebuildWall({ resetView: false });
+      commitModuleAddition(() => applyFreeInsertionPlan(plan, visualOrderedStates, context, placementMode));
       return;
     }
 
@@ -1085,8 +1131,7 @@ function flushCatalogModuleAdds() {
       return;
     }
 
-    applyContinuousInsertionPlan(plan, moduleStates);
-    rebuildWall({ resetView: false });
+    commitModuleAddition(() => applyContinuousInsertionPlan(plan, moduleStates));
     return;
   }
 
@@ -1100,8 +1145,7 @@ function flushCatalogModuleAdds() {
     return;
   }
 
-  currentModules.push(...moduleStates);
-  rebuildWall({ resetView: false });
+  commitModuleAddition(() => currentModules.push(...moduleStates));
 }
 
 function addCatalogModule(request) {
