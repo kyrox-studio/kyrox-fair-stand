@@ -1,15 +1,14 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-p0-fast-open-v1",
+  "id": "fair-stand-editor-light-append-v1",
   "kind": "feature",
-  "summary": "PERFORMANCE_ROADMAP P0 hızlı açılış: (P0-5) proje verisi gelir gelmez projedeki 3D modeller başlar (scene3d prefetchModuleModels, aynı gltfSceneCache); (P0-2/3) tarayıcıdaki görsel kopyası sunucuyla aynıysa (kimlik + depolama anahtarı + boyut) yeniden indirilmez, inecekler en fazla 6 eşzamanlı; yerel kayıt serverStorageKey taşır; aynı görsel + oran + sığdırma için sığdırılmış tuval bir kez üretilip GPU ya bir kez yüklenir, paneller aynı Source u kendi offset/repeat iyle paylaşır (60 panel = 60 yükleme yerine görsel başına 1); (P0-4) yükleme ekranı aşamayı yazar ve görseller/modeller geldikten sonra sahnenin bir kez çizilmesini bekler (yarım sahne veya kapanıştan sonra donma yok); ölçümde sahne tamamen hazır aynı anı ölçer; (P0-6) backend core yetki sorgusunun olumlu cevabı aynı jeton özeti + organizasyon + yetki için 10 sn hatırlanır, olumsuz/hata hatırlanmaz. Kayıt biçimi ve BOM değişmez. Lokal ölçüm: Düzenle den sahne çizilene kadar 6,7–7,3 sn -> 3,9 sn.",
+  "summary": "Editör performansı: (1) editörde ışık gölgesi, LED projektör ve raf altı spot ışıkları kapalı; spot ışıklar RENDER_ONLY_LIGHT_LAYER katmanında, editör kamerası görmez; Render Al (captureCurrentViewPng) çizerken gölgeyi ve katmanı açar, sonra kapatır, bu sırada yükleme ekranı gösterir. (2) Katalogdan serbest bırakılan modül sahneye tek başına eklenir (scene3d appendModule); şeride araya ekleme tam kurulumda kalır. (3) disposeWall eski nesneleri ilk kareden sonra dispose eder; gölgelendirici programları korunur (bırakınca bütün malzemelerin yeniden derlenmesi kalktı). (4) Projektör camında transmission kaldırıldı. (5) Sahne yenileme ölçümü. Lokal ölçüm: projektör bırakma ilk kare 1291–4893 ms (+27–29 program) -> 23–36 ms (+0). Kayıt biçimi ve BOM değişmez.",
   "owners": [
-    "src/projectRemote.js",
-    "src/main.js",
-    "backend/app/integrations/kyrox_core/client.py"
+    "src/scene3d.js",
+    "src/main.js"
   ],
   "sourceOfTruth": [
-    "src/projectRemote.js"
+    "src/scene3d.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -101,7 +100,7 @@
       "e2e/box-block-corners.spec.mjs",
       "e2e/box-block-face-image-restore.spec.mjs",
       "e2e/camera-pointer-lifecycle.spec.mjs",
-      "e2e/color-image-capability.spec.mjs",
+      "e2e/catalog-drop-append.spec.mjs",
       "e2e/design-undo.spec.mjs",
       "e2e/duplicate-metal-separator.spec.mjs",
       "e2e/f010-module-construction.spec.mjs",
@@ -109,6 +108,7 @@
       "e2e/free-props-collision-none.spec.mjs",
       "e2e/group-template.spec.mjs",
       "e2e/invalid-placement-ghost.spec.mjs",
+      "e2e/lighting-items-contract.spec.mjs",
       "e2e/mini-fridge-dimensions.spec.mjs",
       "e2e/missing-project-asset-open.spec.mjs",
       "e2e/module-group.spec.mjs",
@@ -116,12 +116,11 @@
       "e2e/module-move-snap.spec.mjs",
       "e2e/plastic-trash-bin-module.spec.mjs",
       "e2e/project-import-export-roundtrip.spec.mjs",
-      "e2e/project-open-asset-cache.spec.mjs",
-      "e2e/project-open-timing.spec.mjs",
       "e2e/project-open-wait-scene.spec.mjs",
       "e2e/project-revision-session.spec.mjs",
       "e2e/rapid-actions-responsive.spec.mjs",
       "e2e/reload-restore.spec.mjs",
+      "e2e/smoke.spec.mjs",
       "e2e/stage-result-after-restore.spec.mjs",
       "e2e/visible-ui-b.spec.mjs",
       "e2e/wall-flat-panel-items-contract.spec.mjs",
@@ -294,6 +293,7 @@
       "test/relationshipBomEndToEnd.test.js",
       "test/relationshipBomJoints.test.js",
       "test/removedIndoorPlant2.test.js",
+      "test/renderOnlyLights.test.js",
       "test/rightWallOrientation.test.js",
       "test/runtimeSettings.test.js",
       "test/scene3dPublicContract.test.js",
@@ -502,13 +502,27 @@
       "docs/items/audit/properties/FINAL_PROPERTY_AUDIT.md",
       "docs/items/audit/properties/PROPERTY_INDEX.md",
       "docs/items/audit/properties/properties/behavior.allowSideInsert.md",
+      "docs/items/audit/properties/properties/behavior.boundarySnap.md",
+      "docs/items/audit/properties/properties/behavior.collision.md",
+      "docs/items/audit/properties/properties/behavior.collisionDepth.md",
+      "docs/items/audit/properties/properties/behavior.collisionHeight.md",
+      "docs/items/audit/properties/properties/behavior.collisionHeightRange.md",
+      "docs/items/audit/properties/properties/behavior.connectionEndpoint.md",
       "docs/items/audit/properties/properties/behavior.defaultRotationDeg.md",
+      "docs/items/audit/properties/properties/behavior.endpointContact.md",
+      "docs/items/audit/properties/properties/behavior.explicitTypeEntry.md",
       "docs/items/audit/properties/properties/behavior.ghost.kind.md",
+      "docs/items/audit/properties/properties/behavior.ghost.opacity.md",
+      "docs/items/audit/properties/properties/behavior.ghost.renderer.md",
       "docs/items/audit/properties/properties/behavior.magneticSnap.md",
+      "docs/items/audit/properties/properties/behavior.moveSnapCm.md",
+      "docs/items/audit/properties/properties/behavior.overlapWithTypes.md",
       "docs/items/audit/properties/properties/behavior.placement.md",
       "docs/items/audit/properties/properties/behavior.rotationStepDeg.md",
+      "docs/items/audit/properties/properties/behavior.sideInsertRotation.md",
       "docs/items/audit/properties/properties/behavior.stripOccupancyResolved.md",
       "docs/items/audit/properties/properties/behavior.supportsWallOverlayMount.md",
+      "docs/items/audit/properties/properties/behavior.wallCapacity.md",
       "docs/items/audit/properties/properties/capabilities.color.md",
       "docs/items/audit/properties/properties/capabilities.glass.md",
       "docs/items/audit/properties/properties/capabilities.image.md",
@@ -745,40 +759,38 @@
         "F-033"
       ]
     },
-    "notes": "Yetki önbelleği güvenlik ödünüdür: yetki kaldırılırsa en geç 10 sn sonra geçerli olur; olumsuz cevaplar ve hatalar her seferinde core a sorulur, anahtar jetonun SHA-256 özetidir."
+    "notes": "Görsel değişiklik: editörde gölge ve spot ışık yok (lens/LED şerit parlar); Render Al çıktısı ışıklı ve gölgeli. Kullanıcı rehberi güncellendi."
   },
   "tests": {
     "targeted": [
       "test/helpGuide.test.js",
-      "test/projectOpenFastPath.test.js",
+      "test/materialAppearance.test.js",
       "test/projectOpenTiming.test.js",
-      "test/projectRemoteSync.test.js",
-      "test/scene3dPublicContract.test.js",
-      "test/sceneAssetLoading.test.js",
-      "test/tv42Module.test.js"
+      "test/projectUiMainIntegration.test.js",
+      "test/renderOnlyLights.test.js",
+      "test/scene3dPublicContract.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/box-block-face-image-restore.spec.mjs",
-        "e2e/color-image-capability.spec.mjs",
-        "e2e/missing-project-asset-open.spec.mjs",
-        "e2e/project-open-asset-cache.spec.mjs",
-        "e2e/project-open-timing.spec.mjs",
-        "e2e/project-open-wait-scene.spec.mjs"
+        "e2e/catalog-drop-append.spec.mjs",
+        "e2e/f010-module-construction.spec.mjs",
+        "e2e/lighting-items-contract.spec.mjs",
+        "e2e/project-open-wait-scene.spec.mjs",
+        "e2e/smoke.spec.mjs"
       ],
-      "reason": "Gerçek Chromium ve taklit sunucu ile 9 görselli proje açılır: ilk açılışta hepsi en fazla 6 eşzamanlı iner ve yükleme ekranı görsel ilerlemesini yazar; ikinci açılışta görsel isteği sıfırdır; sunucuda tek görselin anahtarı değişince yalnız o iner. Eksik görsel, yarım sahne ve ölçüm senaryoları regresyon için çalışır."
+      "reason": "Gerçek Chromium ile iki modül bırakılır; birinci modülün sahne nesnesi aynı kalır (yeniden yaratılmaz) ve sahne yenileme ölçümü yazılır. Işık, modül kurulumu, yarım sahne ve smoke senaryoları regresyon için çalışır."
     }
   },
   "risk": {
     "level": "medium",
-    "notes": "Yetki cevabı 10 sn önbellek; görsel önbelleği kimlik+anahtar+boyut ile karar verir."
+    "notes": "Editör görünümü değişir (gölge/spot ışık yok); tek modül ekleme yalnız serbest bırakmada."
   },
   "migration": {
     "required": false,
     "notes": "Kayıt biçimi değişmez."
   },
-  "rollback": "cacheProjectAndAssets eski Promise.allSettled tam indirmeye, loadProject seçeneklerine ve HttpAuthorizationAdapter önbelleğine geri dön."
+  "rollback": "shadowMap.enabled true, spot layers.set kaldır, appendModuleToScene yerine rebuildWall, disposeWall anında dispose."
 }
