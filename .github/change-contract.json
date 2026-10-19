@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "fair-stand-p0-fast-open-v1",
   "kind": "feature",
-  "summary": "PERFORMANCE_ROADMAP P0 hızlı açılış: (P0-5) proje verisi gelir gelmez projedeki 3D modeller başlar (scene3d prefetchModuleModels, aynı gltfSceneCache), görsel indirmesiyle paralel; (P0-2/3) tarayıcıdaki görsel kopyası sunucuyla aynıysa (kimlik + depolama anahtarı + boyut) yeniden indirilmez, inecekler en fazla 6 eşzamanlı (settleWithConcurrency); yerel kayıt serverStorageKey taşır; (P0-4) yükleme ekranı aşamayı yazar (proje verisi, görseller n/N, sahne kuruluyor, görseller ve modeller n/N); (P0-6) backend core yetki sorgusunun olumlu cevabı aynı jeton özeti + organizasyon + yetki için 10 sn hatırlanır, olumsuz/hata hatırlanmaz. Kayıt biçimi, BOM ve sahne kurulumu değişmez.",
+  "summary": "PERFORMANCE_ROADMAP P0 hızlı açılış: (P0-5) proje verisi gelir gelmez projedeki 3D modeller başlar (scene3d prefetchModuleModels, aynı gltfSceneCache); (P0-2/3) tarayıcıdaki görsel kopyası sunucuyla aynıysa (kimlik + depolama anahtarı + boyut) yeniden indirilmez, inecekler en fazla 6 eşzamanlı; yerel kayıt serverStorageKey taşır; aynı görsel + oran + sığdırma için sığdırılmış tuval bir kez üretilip GPU ya bir kez yüklenir, paneller aynı Source u kendi offset/repeat iyle paylaşır (60 panel = 60 yükleme yerine görsel başına 1); (P0-4) yükleme ekranı aşamayı yazar ve görseller/modeller geldikten sonra sahnenin bir kez çizilmesini bekler (yarım sahne veya kapanıştan sonra donma yok); ölçümde sahne tamamen hazır aynı anı ölçer; (P0-6) backend core yetki sorgusunun olumlu cevabı aynı jeton özeti + organizasyon + yetki için 10 sn hatırlanır, olumsuz/hata hatırlanmaz. Kayıt biçimi ve BOM değişmez. Lokal ölçüm: Düzenle den sahne çizilene kadar 6,7–7,3 sn -> 3,9 sn.",
   "owners": [
     "src/projectRemote.js",
     "src/main.js",
@@ -91,6 +91,7 @@
       "src/standStandardsCopy.js",
       "src/stripOccupancy.js",
       "src/style.css",
+      "src/surfaceStateBinding.js",
       "src/systemChangeContract.js",
       "src/viewCube.js",
       "src/wallPanelBand.js",
@@ -100,6 +101,7 @@
       "e2e/box-block-corners.spec.mjs",
       "e2e/box-block-face-image-restore.spec.mjs",
       "e2e/camera-pointer-lifecycle.spec.mjs",
+      "e2e/color-image-capability.spec.mjs",
       "e2e/design-undo.spec.mjs",
       "e2e/duplicate-metal-separator.spec.mjs",
       "e2e/f010-module-construction.spec.mjs",
@@ -383,6 +385,7 @@
       "audit/remediation/A03_F011_CLOSURE.md",
       "audit/remediation/A03_F012_CLOSURE.md",
       "audit/remediation/A04_F013_CLOSURE.md",
+      "audit/remediation/A07_F017_CLOSURE.md",
       "audit/remediation/A11_F029_CLOSURE.md",
       "audit/remediation/A13_F032_CLOSURE.md",
       "docs/AUTOSAVE_INTEGRATION_NOTES.md",
@@ -749,13 +752,18 @@
       "test/helpGuide.test.js",
       "test/projectOpenFastPath.test.js",
       "test/projectOpenTiming.test.js",
-      "test/projectRemoteSync.test.js"
+      "test/projectRemoteSync.test.js",
+      "test/scene3dPublicContract.test.js",
+      "test/sceneAssetLoading.test.js",
+      "test/tv42Module.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
+        "e2e/box-block-face-image-restore.spec.mjs",
+        "e2e/color-image-capability.spec.mjs",
         "e2e/missing-project-asset-open.spec.mjs",
         "e2e/project-open-asset-cache.spec.mjs",
         "e2e/project-open-timing.spec.mjs",
