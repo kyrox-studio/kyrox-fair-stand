@@ -91,9 +91,8 @@ Context menu `type=shelf` için `Raf altı aydınlatmayı aç/kapat` aksiyonunu 
 `moduleContextMenu.js` içindeki modül menüsü şu temel aksiyonları içerir:
 
 ```text
+Döndür
 Sil
-Çoğalt Sağ Tarafa
-Çoğalt Sol Tarafa
 Ekle Sağ Tarafa…
 Ekle Sol Tarafa…
 ```

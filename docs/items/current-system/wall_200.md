@@ -525,9 +525,8 @@ Kaynak:
 `wall_200` üzerinde mevcut module context aksiyonları:
 
 ```text
+Döndür
 Sil
-Çoğalt Sağ Tarafa
-Çoğalt Sol Tarafa
 Ekle Sağ Tarafa…
 Ekle Sol Tarafa…
 ```

@@ -85,9 +85,8 @@ Context menu `Boyutlandır…` aksiyonunu gösterir; width/height state'i deği�
 `moduleContextMenu.js` içindeki modül menüsü şu temel aksiyonları içerir:
 
 ```text
+Döndür
 Sil
-Çoğalt Sağ Tarafa
-Çoğalt Sol Tarafa
 Ekle Sağ Tarafa…
 Ekle Sol Tarafa…
 ```

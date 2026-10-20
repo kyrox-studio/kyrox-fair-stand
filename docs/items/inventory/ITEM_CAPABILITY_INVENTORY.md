@@ -193,8 +193,7 @@ Görülen `overlapWithTypes`: `['kettle']`, `['mini-fridge']`, `['flat-panel','p
 | alan / aksiyon | kod adı | kanıtlı değerler (yalnız kodda görülen) | sahip dosya | sınıf | not |
 |---|---|---|---|---|---|
 | sil | `data-module-action="delete"` | her açık menü | `src/moduleContextMenu.js` | `editor-arac` | asıl sahip |
-| sağa kopyala | `data-module-action="duplicate-right"` | her açık menü | `src/moduleContextMenu.js` | `editor-arac` | asıl sahip |
-| sola kopyala | `data-module-action="duplicate-left"` | her açık menü | `src/moduleContextMenu.js` | `editor-arac` | asıl sahip |
+| kopyala (hafıza + art arda yerleştir) | seçim çubuğu `data-selection-action="duplicate"`, Ctrl/Cmd+C / V | tek modül seçili (sağ tık menüsünde yok) | `src/selectionToolbar.js`, `src/main.js`, `src/moduleDragSidebar.js` | `editor-arac` | asıl sahip |
 | strafor ölçü | `data-module-action="resize-foam"` | `moduleType === 'illuminated-foam'` | `src/moduleContextMenu.js` | `editor-arac` | asıl sahip |
 | cam aç/kapa | `data-module-action="toggle-glass"` | `supportsGlass` | `src/moduleContextMenu.js` | `editor-arac` | asıl sahip |
 | lightbox/kumaş | `data-module-action="toggle-fabric"` | `supportsFabric && fabricType !== 'mesh'` görünür | `src/moduleContextMenu.js` | `editor-arac` | asıl sahip |

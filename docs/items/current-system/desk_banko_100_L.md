@@ -86,9 +86,8 @@ Ctrl/Cmd ile counter yüzeylerinde çoklu selection toggling yolu vardır. `main
 `moduleContextMenu.js` içindeki modül menüsü şu temel aksiyonları içerir:
 
 ```text
+Döndür
 Sil
-Çoğalt Sağ Tarafa
-Çoğalt Sol Tarafa
 Ekle Sağ Tarafa…
 Ekle Sol Tarafa…
 ```
