@@ -41,6 +41,7 @@ test('dropping a catalog module adds only that module and keeps the others untou
   page.on('console', (message) => {
     if (message.text().startsWith('[Fair Stand ölçüm] sahne yenileme')) refreshLines.push(message.text());
   });
+  await page.addInitScript(() => localStorage.setItem('fairStandTiming', '1'));
   await exposeScene(page);
   await page.goto('/');
   const standSetup = page.locator('details.stand-setup-card');

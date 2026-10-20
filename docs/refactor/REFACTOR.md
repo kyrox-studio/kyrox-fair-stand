@@ -25,6 +25,18 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 **Sağ tık kalır.**
 
+### Tablette iki parmak öğeyi sürüklemez
+
+İki parmakla yakınlaştırırken ilk parmak bir öğeye denk gelince öğe sürükleniyordu; ikinci parmak öğenin üstüne gelince de öğeyi yakalıyordu. Artık ekranda ikinci parmak belirince (`scene3d`, `activeTouchPointers`) başlamış öğe sürüklemesi iptal edilir, öğe (grup sürüklemesinde bütün grup) yerine döner, uzun basma iptal olur ve iki parmak doğrudan kameraya (OrbitControls) verilir: yakınlaştırma / kaydırma çalışır. E2E `pinch-zoom-no-drag` gerçek çoklu dokunuşla (CDP) iki durumu doğrular.
+
+### Konsolda ölçüm satırı yok (varsayılan)
+
+`[Fair Stand ölçüm]` satırları (proje açılışı, sahne hazır, sahne yenileme) artık varsayılan olarak konsola yazılmaz; kullanıcının konsoluna veri gitmez. Ölçüm kaydı (`performance.mark`) aynen tutulur. Konsolda görmek için tarayıcı konsolunda `localStorage.setItem('fairStandTiming', '1')` ve sayfayı yenile; kapatmak için `removeItem`. Ölçüm satırını bekleyen E2E'ler (`project-open-timing`, `catalog-drop-append`) anahtarı açar; anahtarsız satır yazılmadığı ayrıca doğrulanır.
+
+### Üst bant, görünüm küpü ve menü düğmesi çakışmaz
+
+Üst banttaki ipucu yazıları (Modülü tut + sürükle, Ctrl/Cmd + tık, döndür / pan / zoom) kaldırıldı; aynı bilgi kılavuzun Mouse Kontrolleri tablosunda. Görünüm küpü her ekran boyutunda sahnenin sağ üst köşesinde. Bant küpün solunda biter (`--view-cube-reserve`), solda menü aç/kapa düğmesine yer bırakır (`--sidebar-toggle-reserve`), sığmazsa alt satıra kayar; hiçbir boyutta küpün veya düğmenin altına girmez. Menü altta olan dar düzende (≤760 px) aç/kapa düğmesi her durumda sahnenin sol üstündedir. E2E `viewport-chrome-layout`: 7 ekran boyutunda, menü açık ve kapalı çakışma yok.
+
 ### Çift tık modülü seçer; Ctrl+tık seçilenin çoğulu; Shift+tık kaldırıldı
 
 **Çift tık / çift dokunuş** (`scene3d`, ~0,35 sn ve 10 px içinde aynı modüle iki basış) modülün tamamını seçer (`selectModuleOnly`, turuncu); tek tık bugünkü gibi paneli seçer. İkinci basış sürükleme başlatmaz; hemen ardından gelen basış da modül seçimini korur. Kopyala / katalog yerleştirme ve Çoklu panel modunda devreye girmez.

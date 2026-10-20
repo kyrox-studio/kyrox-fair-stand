@@ -228,3 +228,16 @@ test('scene3d counts surface images and item models', () => {
   assert.match(scene, /return trackSceneModel\(loadGltfScene\(/);
 });
 
+
+// Ölçüm satırları varsayılan olarak konsola yazılmaz; yalnız localStorage 'fairStandTiming' = '1' iken.
+test('timing lines are off by default and on only with the fairStandTiming switch', async () => {
+  const { isTimingLogEnabled, TIMING_LOG_STORAGE_KEY } = await import('../src/projectOpenTiming.js');
+  assert.equal(TIMING_LOG_STORAGE_KEY, 'fairStandTiming');
+  assert.equal(isTimingLogEnabled(null), false);
+  assert.equal(isTimingLogEnabled({ getItem: () => null }), false);
+  assert.equal(isTimingLogEnabled({ getItem: () => '0' }), false);
+  assert.equal(isTimingLogEnabled({ getItem: () => '1' }), true);
+  assert.equal(isTimingLogEnabled({ getItem: () => { throw new Error('blocked'); } }), false);
+  const source = await import('node:fs').then((m) => m.readFileSync(new URL('../src/projectOpenTiming.js', import.meta.url), 'utf8'));
+  assert.doesNotMatch(source, /log = \(line\) => console\.info\(line\)/);
+});

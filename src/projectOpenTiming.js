@@ -1,12 +1,27 @@
 // Proje açma ölçümü (PERFORMANCE_ROADMAP P0 adım 1). Her adımın süresi performance.mark /
 // measure ile kaydedilir ("fs:" önekiyle DevTools Performance panelinde de görünür) ve açılış
-// bitince konsola tek satır yazılır. Görseller ve 3D modeller sahne kurulduktan sonra tek tek
+// bitince konsola tek satır yazılır — yalnız ölçüm açıksa (varsayılan kapalı; kullanıcının
+// konsoluna veri yazılmaz). Açmak için tarayıcı konsolunda:
+// localStorage.setItem('fairStandTiming', '1') ve sayfayı yenile; kapatmak için removeItem. Görseller ve 3D modeller sahne kurulduktan sonra tek tek
 // geldiği için son satır ("sahne tamamen hazır") hepsi bitince yazılır. Davranış değişmez; ölçüm hatası açılışı
 // asla bozmaz.
 
 import { subscribeSceneAssets, waitForNextRender, waitForSceneAssets } from './sceneAssetLoading.js';
 
 const MARK_PREFIX = 'fs:';
+export const TIMING_LOG_STORAGE_KEY = 'fairStandTiming';
+
+export function isTimingLogEnabled(storage = globalThis.localStorage) {
+  try {
+    return storage?.getItem?.(TIMING_LOG_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function defaultTimingLog(line) {
+  if (isTimingLogEnabled()) console.info(line);
+}
 const MODEL_PATH = '/models/';
 // Hiç bitmeyen bir yükleme ölçümü sonsuza kadar açık tutmasın.
 const SCENE_WATCH_LIMIT_MS = 60000;
@@ -307,7 +322,7 @@ function watchSceneReady(record, log) {
   });
 }
 
-export function finishProjectOpenTiming({ moduleCount = null, ok = true, log = (line) => console.info(line) } = {}) {
+export function finishProjectOpenTiming({ moduleCount = null, ok = true, log = defaultTimingLog } = {}) {
   const record = current;
   current = null;
   if (!record) return null;
@@ -341,7 +356,7 @@ export function finishProjectOpenTiming({ moduleCount = null, ok = true, log = (
 
 // Sahne yenileme (modül ekle/sil, renk vb.): kurulum süresi + ardından gelen ilk karenin süresi
 // ve o karede derlenen yeni gölgelendirici sayısı. Proje açılışı sürerken yazılmaz.
-export function timeSceneRefresh(buildMs, { log = (line) => console.info(line) } = {}) {
+export function timeSceneRefresh(buildMs, { log = defaultTimingLog } = {}) {
   if (current) return;
   const stop = subscribeSceneAssets((event) => {
     if (event.type !== 'render') return;
