@@ -10,7 +10,6 @@ async function createIslandStand(page, projectName, { depotContents = false } = 
   await page.locator('#stand-size-y').fill('500');
 
   if (depotContents) {
-    await page.locator('#auto-depot-enabled').check();
     await page.locator('#auto-depot-size').selectOption('100x100');
     await page.locator('#auto-depot-contents').check();
   }

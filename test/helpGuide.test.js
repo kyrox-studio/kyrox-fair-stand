@@ -95,6 +95,8 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /Sağ tık menüsünde Kopyala yoktur\./);
   assert.match(guideSource, /<th>İki parmak \(tablet\)<\/th><td>Parmakları açıp kapatmak yakınlaştırır/);
   assert.match(guideSource, /<strong>Yeni proje sihirbazı:<\/strong> Yeni projede boş sahnenin ortasında 3 adım açılır/);
+  assert.match(guideSource, /<strong>Depo<\/strong> listesinde <strong>Depo yok<\/strong> yerine 1×1, 1,5×1, 2×1 veya 2×2 m depo ölçüsünü seç\./);
+  assert.doesNotMatch(guideSource, /Depo eklensin/);
   assert.match(guideSource, /Mevcut proje açılınca sihirbaz çıkmaz\./);
   assert.match(guideSource, /<strong>İlk ipuçları:<\/strong> İlk sahne kurulunca altta 3 kısa ipucu çıkar/);
   assert.match(guideSource, /İkinci parmak ekrana değince ilk parmağın başlattığı öğe sürüklemesi iptal olur ve öğe yerinde kalır/);

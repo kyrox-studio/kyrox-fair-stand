@@ -112,3 +112,68 @@ test.describe('tablet', () => {
     await expect(page.locator('#stage-result')).toContainText('Sırt Duvar · 400 × 300 cm');
   });
 });
+
+async function savedStandDepot(page) {
+  return page.evaluate(async () => {
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('fair-stand-configurator', 2);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const projects = await new Promise((resolve) => {
+      const request = db.transaction('projects', 'readonly').objectStore('projects').getAll();
+      request.onsuccess = () => resolve(request.result ?? []);
+    });
+    db.close();
+    return projects.sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0))[0]?.stand?.depot ?? null;
+  });
+}
+
+test('sidebar depot: "Depo yok" by default; picking a size enables contents and shows its note', async ({ page }) => {
+  await page.goto('/');
+  await wizard(page).getByRole('button', { name: 'Sihirbazı kapat' }).click();
+  const standSetup = page.locator('details.stand-setup-card');
+  if (!(await standSetup.evaluate((el) => el.open))) await standSetup.locator('summary').click();
+  const size = page.locator('#auto-depot-size');
+  const contents = page.locator('#auto-depot-contents');
+  const hint = page.locator('#auto-depot-contents-hint');
+  await expect(page.locator('#auto-depot-enabled')).toHaveCount(0);
+  await expect(size).toHaveValue('');
+  await expect(size.locator('option').first()).toHaveText('Depo yok');
+  await expect(contents).toBeDisabled();
+  await expect(hint).toBeHidden();
+
+  await size.selectOption('200x200');
+  await expect(contents).toBeEnabled();
+  await expect(hint).toBeVisible();
+  await contents.check();
+
+  await size.selectOption('');
+  await expect(contents).toBeDisabled();
+  await expect(contents).not.toBeChecked();
+  await expect(hint).toBeHidden();
+});
+
+test('wizard depot: the same list and contents box, mirrored to the sidebar and saved', async ({ page }) => {
+  await page.goto('/');
+  const dialog = wizard(page);
+  await dialog.getByRole('button', { name: 'Ada Stand' }).click();
+  await dialog.getByRole('button', { name: 'İleri →' }).click();
+  await dialog.locator('#wizard-size-x').fill('600');
+  await dialog.locator('#wizard-size-y').fill('600');
+  const contents = dialog.locator('#wizard-depot-contents');
+  await expect(dialog.locator('#wizard-depot-size')).toHaveValue('');
+  await expect(contents).toBeDisabled();
+  await dialog.locator('#wizard-depot-size').selectOption('150x100');
+  await expect(contents).toBeEnabled();
+  await expect(dialog).toContainText('Mini Buzdolabı + Kettle + Askılık + Çöp Kutusu');
+  await contents.check();
+  await expect(page.locator('#auto-depot-size')).toHaveValue('150x100');
+  await expect(page.locator('#auto-depot-contents')).toBeChecked();
+
+  await dialog.getByRole('button', { name: 'İleri →' }).click();
+  await expect(dialog).toContainText('Depo: 1,5 × 1 m · içerikli');
+  await dialog.getByRole('button', { name: 'Oluştur' }).click();
+  await finishNameDialog(page, 'E2E Sihirbaz Depo');
+  expect(await savedStandDepot(page)).toEqual(expect.objectContaining({ enabled: true, sizeKey: '150x100', includeContents: true }));
+});

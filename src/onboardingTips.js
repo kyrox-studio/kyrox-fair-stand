@@ -1,5 +1,6 @@
 import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument.js';
 
+// Renkler Kyrox marka standardından (kyrox-brand/tokens/colors.css): koyu zemin, bakır vurgu.
 // İlk kullanım ipuçları: sahne ilk kez kurulduğunda 3 kısa ipucu sırayla gösterilir; "Tamam"
 // ile ilerler, "Atla" ile kapanır. Bir kez görüldüğü bu tarayıcıda hatırlanır ve bir daha çıkmaz.
 
@@ -18,14 +19,16 @@ function ensureStyles(document) {
   style.id = STYLE_ID;
   style.textContent = `
     .onboarding-tip { position: absolute; z-index: 6; left: 50%; bottom: 16px; display: flex; width: min(380px, calc(100% - 32px));
-      flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(17, 24, 39, 0.92);
+      flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 14px; background: #1A1816; /* kyrox-night */
       color: #fff; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28); transform: translateX(-50%); font: 14px/1.45 system-ui, sans-serif; }
     .onboarding-tip[hidden] { display: none; }
-    .onboarding-tip .tip-count { color: #fdba74; font-size: 12px; font-weight: 700; }
+    .onboarding-tip .tip-count { color: #CD8D56; /* kyrox-copper-on-dark */ font-size: 12px; font-weight: 700; }
     .onboarding-tip .tip-actions { display: flex; justify-content: flex-end; gap: 8px; }
     .onboarding-tip button { min-height: 36px; padding: 0 14px; border-radius: 9px; font-weight: 700; cursor: pointer; }
     .onboarding-tip .tip-skip { border: 1px solid rgba(255, 255, 255, 0.4); background: transparent; color: #fff; }
-    .onboarding-tip .tip-next { border: 0; background: #f97316; color: #fff; }
+    .onboarding-tip .tip-next { border: 0; background: #99602D; color: #fff; } /* kyrox-copper-text */
+    .onboarding-tip .tip-next:hover:not(:disabled) { background: #7f4f25; color: #fff; }
+    .onboarding-tip .tip-skip:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); color: #fff; }
   `;
   document.head.appendChild(style);
 }

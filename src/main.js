@@ -243,9 +243,10 @@ function syncFloorTypeSelect(selectedKey = floorTypeSelect.value) {
 }
 
 syncFloorTypeSelect();
-const autoDepotEnabledInput = document.querySelector('#auto-depot-enabled');
+// Depo: tek açılır liste ("Depo yok" + ölçüler); depo seçiliyken içerik kutusu ve açıklaması açılır.
 const autoDepotSizeSelect = document.querySelector('#auto-depot-size');
 const autoDepotContentsInput = document.querySelector('#auto-depot-contents');
+const autoDepotContentsHint = document.querySelector('#auto-depot-contents-hint');
 const stageResult = document.querySelector('#stage-result');
 const openModuleCatalogButton = document.querySelector('#open-module-catalog');
 const clearWallButton = document.querySelector('#clear-wall');
@@ -1832,16 +1833,16 @@ standTypeButtons.forEach((button) => {
     if (event.key === 'Enter' && !createStageButton.disabled) createStageButton.click();
   });
 });
-autoDepotEnabledInput?.addEventListener('change', syncAutoDepotControls);
+autoDepotSizeSelect?.addEventListener('change', syncAutoDepotControls);
 syncAutoDepotControls();
 
 function syncAutoDepotControls() {
-  const enabled = Boolean(autoDepotEnabledInput?.checked);
-  if (autoDepotSizeSelect) autoDepotSizeSelect.disabled = !enabled;
+  const enabled = Boolean(autoDepotSizeSelect?.value);
   if (autoDepotContentsInput) {
     autoDepotContentsInput.disabled = !enabled;
     if (!enabled) autoDepotContentsInput.checked = false;
   }
+  if (autoDepotContentsHint) autoDepotContentsHint.hidden = !enabled;
 }
 
 function createAutomaticDepotStates(plan) {
@@ -1897,9 +1898,9 @@ function readSceneSetupFromControls() {
   if (!standSetup.ok) return { ok: false, message: standSetup.message };
   const setup = { ...standSetup, wallHeightCm: readWallHeightCm() };
 
-  const depotConfig = autoDepotEnabledInput?.checked ? {
+  const depotConfig = autoDepotSizeSelect?.value ? {
     enabled: true,
-    sizeKey: autoDepotSizeSelect?.value || '100x100',
+    sizeKey: autoDepotSizeSelect.value,
     includeContents: Boolean(autoDepotContentsInput?.checked),
   } : { enabled: false, sizeKey: null, includeContents: false };
 
@@ -2741,8 +2742,10 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     const resolvedFloor = resolveStandFloorItemKey(currentStand);
     currentStand = assignStandFloorItem(currentStand, resolvedFloor);
     syncFloorTypeSelect(resolvedFloor);
-    if (autoDepotEnabledInput) autoDepotEnabledInput.checked = Boolean(currentStand.depot?.enabled);
-    if (autoDepotSizeSelect && currentStand.depot?.sizeKey) autoDepotSizeSelect.value = currentStand.depot.sizeKey;
+    if (autoDepotSizeSelect) {
+      autoDepotSizeSelect.value = currentStand.depot?.enabled ? (currentStand.depot.sizeKey || '100x100') : '';
+    }
+    syncAutoDepotControls();
     if (autoDepotContentsInput) autoDepotContentsInput.checked = Boolean(currentStand.depot?.includeContents);
     syncAutoDepotControls();
     const endSceneBuild = beginProjectOpenStep('scene-build');
@@ -2910,7 +2913,7 @@ function resetToFirstOpenState() {
   standTypeButtons.forEach((button) => button.setAttribute('aria-pressed', 'false'));
   standSizeXInput.value = '';
   standSizeYInput.value = '';
-  if (autoDepotEnabledInput) autoDepotEnabledInput.checked = false;
+  if (autoDepotSizeSelect) autoDepotSizeSelect.value = '';
   syncAutoDepotControls();
   syncFloorTypeSelect();
   if (foamLightControls) foamLightControls.hidden = true;

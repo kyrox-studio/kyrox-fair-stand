@@ -40,7 +40,6 @@ test('Sahneyi Sıfırla rebuilds from the visible setup controls without creatin
   await page.locator('#stand-size-x').fill('900');
   await page.locator('#stand-size-y').fill('300');
   await page.locator('#floor-type').selectOption('hali');
-  await page.locator('#auto-depot-enabled').check();
   await page.locator('#auto-depot-size').selectOption('200x200');
   await page.locator('#auto-depot-contents').check();
 

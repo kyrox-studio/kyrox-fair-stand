@@ -124,11 +124,10 @@
             </div>
             <p id="floor-area-status" class="status">Baz zemin tüm standı kaplar. İstersen içine bir dikdörtgen alan ekle.</p>
           </div>
-          <div style="display:grid;gap:8px;padding:10px 0 4px">
-            <label style="display:flex;align-items:center;gap:8px;font-weight:700"><input id="auto-depot-enabled" type="checkbox" /> Depo eklensin</label>
-            <label class="stand-size-field" for="auto-depot-size"><span>Depo ölçüsü</span><select id="auto-depot-size" disabled><option value="100x100">1 × 1 m</option><option value="150x100">1,5 × 1 m</option><option value="200x100">2 × 1 m</option><option value="200x200">2 × 2 m</option></select></label>
-            <label style="display:flex;align-items:center;gap:8px;font-weight:700"><input id="auto-depot-contents" type="checkbox" disabled /> Depo içeriği eklensin</label>
-            <span class="muted">Seçilirse Mini Buzdolabı + Kettle + Askılık + Çöp Kutusu otomatik eklenir.</span>
+          <div class="auto-depot-row" style="display:grid;gap:8px;padding:10px 0 4px">
+            <label class="stand-size-field" for="auto-depot-size"><span>Depo</span><select id="auto-depot-size"><option value="" selected>Depo yok</option><option value="100x100">1 × 1 m</option><option value="150x100">1,5 × 1 m</option><option value="200x100">2 × 1 m</option><option value="200x200">2 × 2 m</option></select></label>
+            <label style="display:flex;align-items:center;gap:8px;min-height:38px;font-weight:700"><input id="auto-depot-contents" type="checkbox" disabled /> Depo içeriği eklensin</label>
+            <span id="auto-depot-contents-hint" class="muted" style="grid-column:1/-1" hidden>Seçilirse Mini Buzdolabı + Kettle + Askılık + Çöp Kutusu otomatik eklenir.</span>
           </div>
           <button id="create-stage" type="button" class="primary" disabled>Sahneyi Oluştur</button>
           <p id="stage-result" class="status">Stand tipi ile X ve Y ölçülerinin üçü de tamamlanmadan sahne oluşmaz.</p>

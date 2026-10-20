@@ -25,6 +25,10 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 **Sağ tık kalır.**
 
+### Depo seçimi tek liste
+
+"Depo eklensin" onay kutusu (`#auto-depot-enabled`) kaldırıldı. `#auto-depot-size` listesinin ilk seçeneği **Depo yok** (`value=""`), ardından 1×1, 1,5×1, 2×1, 2×2 m. Depo seçiliyken altındaki **Depo içeriği eklensin** açılır ve açıklaması (`#auto-depot-contents-hint`) görünür; Depo yok'a dönünce kapanır ve işareti kalkar. Sol menüde alt alta; sihirbazda aynı liste ve kutu. Kayıt biçimi aynı (`stand.depot { enabled, sizeKey, includeContents }`); proje açılınca liste kayda göre dolar. Kutuyu işaretleyen 3 E2E'den yalnız o satır çıktı.
+
 ### Yeni proje sihirbazı ve ilk ipuçları
 
 **Sihirbaz** (`src/newProjectWizard.js`): yeni projede (`initialProjectId` yok veya sahne sıfırlanınca) boş sahnenin (`#viewport-empty`) ortasında 3 adım: stand tipi, ölçü (X, Y, duvar yüksekliği, depo), özet + Oluştur. Yeni kurulum yolu yok: seçimleri sol menüdeki alanlara yazar (`input`/`change` olaylarıyla), ölçüyü `readSceneSetupFromControls` ile doğrular, Oluştur mevcut `#create-stage`'e basar (proje adı penceresi, kayıt, revizyon aynı). ✕ ile kapanır, bugünkü boş sahne kartı görünür. Mevcut proje açılınca çıkmaz.

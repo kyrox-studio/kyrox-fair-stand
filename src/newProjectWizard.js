@@ -33,6 +33,7 @@ function ensureStyles(document) {
     .new-project-wizard .wizard-check { flex-direction: row !important; align-items: center; }
     .new-project-wizard .wizard-check input { min-height: 0; width: 20px; height: 20px; }
     .new-project-wizard .wizard-hint { margin: 0; color: #667085; font-size: 12px; }
+    .new-project-wizard .wizard-hint[hidden] { display: none; }
     .new-project-wizard .wizard-error { margin: 0; color: #b42318; font-size: 13px; font-weight: 600; }
     .new-project-wizard .wizard-summary { margin: 0; padding: 12px 14px; border-radius: 12px; background: #f8fafc; font-size: 14px; line-height: 1.6; }
     .new-project-wizard .wizard-actions { display: flex; justify-content: space-between; gap: 10px; }
@@ -68,8 +69,8 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     sizeX: document.querySelector('#stand-size-x'),
     sizeY: document.querySelector('#stand-size-y'),
     wallHeight: document.querySelector('#wall-height'),
-    depotEnabled: document.querySelector('#auto-depot-enabled'),
     depotSize: document.querySelector('#auto-depot-size'),
+    depotContents: document.querySelector('#auto-depot-contents'),
   };
   const emptyCard = container.querySelector('.viewport-empty-card');
 
@@ -166,30 +167,43 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     y.value = sidebar.sizeY?.value ?? '';
     y.placeholder = 'ör. 400';
     const height = cloneSelect(sidebar.wallHeight, 'wizard-wall-height');
-    const depot = document.createElement('input');
-    depot.type = 'checkbox';
-    depot.id = 'wizard-depot-enabled';
-    depot.checked = Boolean(sidebar.depotEnabled?.checked);
+    // Depo: sol menüdeki gibi tek liste ("Depo yok" + ölçüler); depo seçiliyken içerik kutusu açılır.
     const depotSize = cloneSelect(sidebar.depotSize, 'wizard-depot-size');
-    depotSize.disabled = !depot.checked;
+    const contents = document.createElement('input');
+    contents.type = 'checkbox';
+    contents.id = 'wizard-depot-contents';
+    contents.checked = Boolean(sidebar.depotContents?.checked);
+    const contentsHint = document.createElement('p');
+    contentsHint.className = 'wizard-hint';
+    contentsHint.textContent = 'Seçilirse Mini Buzdolabı + Kettle + Askılık + Çöp Kutusu otomatik eklenir.';
+    const syncDepot = () => {
+      const enabled = Boolean(depotSize.value);
+      contents.disabled = !enabled;
+      if (!enabled) contents.checked = false;
+      contentsHint.hidden = !enabled;
+    };
+    syncDepot();
 
     x.addEventListener('input', () => setControlValue(sidebar.sizeX, x.value));
     y.addEventListener('input', () => setControlValue(sidebar.sizeY, y.value));
     height.addEventListener('change', () => setControlValue(sidebar.wallHeight, height.value));
-    depot.addEventListener('change', () => {
-      setControlValue(sidebar.depotEnabled, depot.checked);
-      depotSize.disabled = !depot.checked;
+    depotSize.addEventListener('change', () => {
+      setControlValue(sidebar.depotSize, depotSize.value);
+      syncDepot();
+      setControlValue(sidebar.depotContents, contents.checked);
     });
-    depotSize.addEventListener('change', () => setControlValue(sidebar.depotSize, depotSize.value));
+    contents.addEventListener('change', () => setControlValue(sidebar.depotContents, contents.checked));
 
-    const depotLabel = field('Depo eklensin', depot);
-    depotLabel.classList.add('wizard-check');
+    const contentsLabel = field('Depo içeriği eklensin', contents);
+    contentsLabel.classList.add('wizard-check');
+    contentsHint.style.gridColumn = '1 / -1';
     fields.append(
       field('Genişlik X (cm)', x),
       field('Derinlik Y (cm)', y),
       field('Duvar yüksekliği', height),
-      field('Depo ölçüsü', depotSize),
-      depotLabel,
+      field('Depo', depotSize),
+      contentsLabel,
+      contentsHint,
     );
     const hint = document.createElement('p');
     hint.className = 'wizard-hint';
@@ -201,8 +215,8 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
   function renderSummary() {
     title.textContent = 'Özet';
     const type = selectedTypeButton()?.textContent.trim() ?? '—';
-    const depot = sidebar.depotEnabled?.checked
-      ? `Var (${sidebar.depotSize?.selectedOptions?.[0]?.textContent ?? ''})`
+    const depot = sidebar.depotSize?.value
+      ? `${sidebar.depotSize.selectedOptions?.[0]?.textContent ?? ''}${sidebar.depotContents?.checked ? ' · içerikli' : ''}`
       : 'Yok';
     const summary = document.createElement('p');
     summary.className = 'wizard-summary';
