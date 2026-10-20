@@ -9,6 +9,8 @@ function listGuideSections() {
     open: true,
     html: `
       <p>Stand tipini seç, X ve Y ölçülerini gir, <strong>Duvar yüksekliği</strong>ni seç (250–500 cm, varsayılan 350; duvar, kapı, vitrin, ayırıcı ve kısa duvar bu yüksekliğe göre kurulur, üretim listesi panel ve aparat sayısını buna göre verir); istersen <strong>Depo eklensin</strong> seçeneğini açıp 1×1, 1,5×1, 2×1 veya 2×2 m depo ölçüsünü belirle. <strong>Depo içeriği eklensin</strong> seçilirse Mini Buzdolabı, Kettle, Askılık ve Çöp Kutusu da otomatik yerleşir. Sonra <strong>Sahneyi Oluştur</strong> butonuna bas ve yalnızca proje/stand adını gir. Sistem stand tipi ve ölçülerini ada otomatik ekler, projeyi oluşturur ve ilk kaydı otomatik yapar.</p>
+      <p><strong>Yeni proje sihirbazı:</strong> Yeni projede boş sahnenin ortasında 3 adım açılır: stand tipi, ölçü (genişlik, derinlik, duvar yüksekliği, istersen depo) ve özet. <strong>Oluştur</strong> proje adını sorar ve sahneyi kurar. Sihirbaz sol menüdeki aynı alanları doldurur; ✕ ile kapatıp sol menüden de devam edebilirsin. Mevcut proje açılınca sihirbaz çıkmaz.</p>
+      <p><strong>İlk ipuçları:</strong> İlk sahne kurulunca altta 3 kısa ipucu çıkar (katalogdan ekleme, çift tıkla seçim, Kaydet). <strong>Tamam</strong> ile ilerler, <strong>Atla</strong> ile kapanır; bir kez görülünce bu tarayıcıda bir daha çıkmaz.</p>
       <div class="help-guide-callout"><strong>Temel akış:</strong> Sahne oluştur + proje/stand adını gir → Otomatik proje adı oluşur → Proje otomatik kaydedilir → Modül ekle → Yerleştir → Panel seç → Renk / görsel / cam / Lightbox / Mesh uygula → Render Al.</div>
     `,
   },

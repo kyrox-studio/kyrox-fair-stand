@@ -34,6 +34,8 @@ import {
 import { describeRectSelection } from './rectSelection.js';
 import { createModuleContextMenu, allowsModuleSideInsert } from './moduleContextMenu.js';
 import { createSelectionToolbar } from './selectionToolbar.js';
+import { createNewProjectWizard } from './newProjectWizard.js';
+import { createOnboardingTips } from './onboardingTips.js';
 import { createModuleDragSidebar } from './moduleDragSidebar.js';
 import { createColorEditorController } from './colorEditorController.js';
 import { STAND_TYPE_LABELS, validateStandSetup } from './standSetup.js';
@@ -199,6 +201,13 @@ const appElement = document.querySelector('#app');
 const sidebarToggleButton = document.querySelector('#sidebar-toggle');
 const viewport = document.querySelector('#viewport');
 const viewportEmpty = document.querySelector('#viewport-empty');
+// Yeni proje sihirbazı boş sahnede açılır, mevcut kurulum alanlarını ve Sahneyi Oluştur'u kullanır.
+const newProjectWizard = createNewProjectWizard({
+  container: viewportEmpty,
+  validateSetup: () => readSceneSetupFromControls(),
+  onCreate: () => createStageButton.click(),
+});
+const onboardingTips = createOnboardingTips({ container: viewportEmpty?.closest('.viewport-wrap') });
 const viewportToolbar = document.querySelector('#viewport-toolbar');
 const viewportToolbarToggle = document.querySelector('#viewport-toolbar-toggle');
 const toggleProductionBomButton = document.querySelector('#toggle-production-bom');
@@ -2104,6 +2113,7 @@ createStageButton.addEventListener('click', async () => {
     await persistActiveProject({ quiet: true, reason: 'init' });
     autosaveController.enableFromCurrentState();
     projectStatus.textContent = 'Oluşturuldu ve kaydedildi: ' + projectName;
+    onboardingTips.maybeShow();
   } catch (error) {
     console.warn('Yeni proje ilk kayıt sırasında kaydedilemedi:', error);
     autosaveController.disable();
@@ -2911,6 +2921,7 @@ function resetToFirstOpenState() {
   clearRegisteredAssets();
 
   viewportEmpty.hidden = false;
+  newProjectWizard.show();
   viewportToolbar.hidden = true;
   setStandEditingEnabled(false);
   productionBomPanel.close();
@@ -4074,6 +4085,9 @@ void refreshProjectList().catch((error) => console.warn('Proje listesi açılama
 void refreshGroupTemplates();
 if (initialProjectId) {
   void openStoredProject(initialProjectId);
+} else {
+  // Yeni proje: boş sahnede kurulum sihirbazı.
+  newProjectWizard.show();
 }
 
 // Otomatik kayıt kapalıyken "← Standlar" (sayfa içi geçiş; tarayıcı uyarısı çıkmaz) kaydedilmemiş

@@ -12,7 +12,7 @@ test('help guide explains metal separator splitting, duplicate groups and placem
   await page.goto('/');
 
   await page.locator('#help-guide-button').click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'Kullanım Kılavuzu' });
   await expect(dialog).toBeVisible();
 
   const metal = guideSection(page, 'Metal Separatör');

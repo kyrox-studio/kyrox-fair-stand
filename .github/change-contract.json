@@ -1,14 +1,14 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-tablet-chrome-pinch-timing-v1",
+  "id": "fair-stand-new-project-wizard-v1",
   "kind": "feature",
-  "summary": "(1) Üst banttaki ipucu yazıları kaldırıldı; görünüm küpü sağ üst köşede; bant küpün ve menü aç/kapa düğmesinin altına hiçbir boyutta girmez. (2) Tablette ikinci parmak belirince başlamış öğe sürüklemesi iptal edilir, öğe/grup yerine döner ve iki parmak kameraya verilir. (3) [Fair Stand ölçüm] konsol satırları varsayılan kapalı; localStorage fairStandTiming = 1 ile açılır. BOM ve kayıt biçimi değişmez.",
+  "summary": "Yeni proje sihirbazı: yeni projede boş sahnede 3 adım (stand tipi, ölçü + duvar yüksekliği + depo, özet + Oluştur); mevcut kurulum alanlarını, readSceneSetupFromControls doğrulamasını ve Sahneyi Oluştur akışını kullanır, mevcut proje açılınca çıkmaz. İlk sahneden sonra 3 ipucu bir kez (localStorage fairStandTipsSeen). Playwright storageState ipuçlarını görülmüş sayar. BOM, kayıt biçimi ve veritabanı değişmez.",
   "owners": [
-    "src/style.css",
-    "index.html",
-    "src/configuratorMarkup.js",
-    "src/scene3d.js",
-    "src/projectOpenTiming.js"
+    "src/newProjectWizard.js",
+    "src/onboardingTips.js",
+    "src/main.js",
+    "src/helpGuide.js",
+    "playwright.config.mjs"
   ],
   "sourceOfTruth": [
     "src/scene3d.js"
@@ -96,6 +96,7 @@
       "docs/items/audit/report/MEKANIZMA_PARAMETRE.html",
       "index.html",
       "package.json",
+      "pw-4193.config.mjs",
       "scripts/archive/add-tv-sizes.py",
       "scripts/archive/add-video-wall-2x2.py",
       "scripts/archive/fix-tv-screen-face.py",
@@ -212,6 +213,7 @@
       "e2e/module-group.spec.mjs",
       "e2e/module-lock.spec.mjs",
       "e2e/module-move-snap.spec.mjs",
+      "e2e/new-project-wizard.spec.mjs",
       "e2e/panel-sweep.spec.mjs",
       "e2e/pinch-zoom-no-drag.spec.mjs",
       "e2e/plastic-trash-bin-module.spec.mjs",
@@ -1051,6 +1053,7 @@
         "e2e/metal-separator-bom-gap.spec.mjs",
         "e2e/module-group.spec.mjs",
         "e2e/module-lock.spec.mjs",
+        "e2e/new-project-wizard.spec.mjs",
         "e2e/panel-sweep.spec.mjs",
         "e2e/pinch-zoom-no-drag.spec.mjs",
         "e2e/project-open-timing.spec.mjs",
@@ -1058,7 +1061,7 @@
         "e2e/smoke.spec.mjs",
         "e2e/viewport-chrome-layout.spec.mjs"
       ],
-      "reason": "Gerçek Chromium: 7 ekran boyutunda çakışma yok; CDP çoklu dokunuşla öğe yerinde kalır, kamera yakınlaşır; ölçüm satırları anahtarsız yazılmaz. Bütün paket regresyon için çalışır."
+      "reason": "Gerçek Chromium: sihirbazla L stand kurulur ve kaydedilir; ölçü hatası adımda; ✕ ile kart; ipuçları bir kez; tablette dokunuşla aynı akış. Bütün paket regresyon için çalışır."
     }
   },
   "risk": {
