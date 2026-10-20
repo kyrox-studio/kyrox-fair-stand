@@ -34,6 +34,8 @@ import {
 import { describeRectSelection } from './rectSelection.js';
 import { createModuleContextMenu, allowsModuleSideInsert } from './moduleContextMenu.js';
 import { createSelectionToolbar } from './selectionToolbar.js';
+import { createNewProjectWizard } from './newProjectWizard.js';
+import { createOnboardingTips } from './onboardingTips.js';
 import { createModuleDragSidebar } from './moduleDragSidebar.js';
 import { createColorEditorController } from './colorEditorController.js';
 import { STAND_TYPE_LABELS, validateStandSetup } from './standSetup.js';
@@ -199,6 +201,13 @@ const appElement = document.querySelector('#app');
 const sidebarToggleButton = document.querySelector('#sidebar-toggle');
 const viewport = document.querySelector('#viewport');
 const viewportEmpty = document.querySelector('#viewport-empty');
+// Yeni proje sihirbazı boş sahnede açılır, mevcut kurulum alanlarını ve Sahneyi Oluştur'u kullanır.
+const newProjectWizard = createNewProjectWizard({
+  container: viewportEmpty,
+  validateSetup: () => readSceneSetupFromControls(),
+  onCreate: () => createStageButton.click(),
+});
+const onboardingTips = createOnboardingTips({ container: viewportEmpty?.closest('.viewport-wrap') });
 const viewportToolbar = document.querySelector('#viewport-toolbar');
 const viewportToolbarToggle = document.querySelector('#viewport-toolbar-toggle');
 const toggleProductionBomButton = document.querySelector('#toggle-production-bom');
@@ -234,9 +243,10 @@ function syncFloorTypeSelect(selectedKey = floorTypeSelect.value) {
 }
 
 syncFloorTypeSelect();
-const autoDepotEnabledInput = document.querySelector('#auto-depot-enabled');
+// Depo: tek açılır liste ("Depo yok" + ölçüler); depo seçiliyken içerik kutusu ve açıklaması açılır.
 const autoDepotSizeSelect = document.querySelector('#auto-depot-size');
 const autoDepotContentsInput = document.querySelector('#auto-depot-contents');
+const autoDepotContentsHint = document.querySelector('#auto-depot-contents-hint');
 const stageResult = document.querySelector('#stage-result');
 const openModuleCatalogButton = document.querySelector('#open-module-catalog');
 const clearWallButton = document.querySelector('#clear-wall');
@@ -1823,16 +1833,16 @@ standTypeButtons.forEach((button) => {
     if (event.key === 'Enter' && !createStageButton.disabled) createStageButton.click();
   });
 });
-autoDepotEnabledInput?.addEventListener('change', syncAutoDepotControls);
+autoDepotSizeSelect?.addEventListener('change', syncAutoDepotControls);
 syncAutoDepotControls();
 
 function syncAutoDepotControls() {
-  const enabled = Boolean(autoDepotEnabledInput?.checked);
-  if (autoDepotSizeSelect) autoDepotSizeSelect.disabled = !enabled;
+  const enabled = Boolean(autoDepotSizeSelect?.value);
   if (autoDepotContentsInput) {
     autoDepotContentsInput.disabled = !enabled;
     if (!enabled) autoDepotContentsInput.checked = false;
   }
+  if (autoDepotContentsHint) autoDepotContentsHint.hidden = !enabled;
 }
 
 function createAutomaticDepotStates(plan) {
@@ -1888,9 +1898,9 @@ function readSceneSetupFromControls() {
   if (!standSetup.ok) return { ok: false, message: standSetup.message };
   const setup = { ...standSetup, wallHeightCm: readWallHeightCm() };
 
-  const depotConfig = autoDepotEnabledInput?.checked ? {
+  const depotConfig = autoDepotSizeSelect?.value ? {
     enabled: true,
-    sizeKey: autoDepotSizeSelect?.value || '100x100',
+    sizeKey: autoDepotSizeSelect.value,
     includeContents: Boolean(autoDepotContentsInput?.checked),
   } : { enabled: false, sizeKey: null, includeContents: false };
 
@@ -2104,6 +2114,7 @@ createStageButton.addEventListener('click', async () => {
     await persistActiveProject({ quiet: true, reason: 'init' });
     autosaveController.enableFromCurrentState();
     projectStatus.textContent = 'Oluşturuldu ve kaydedildi: ' + projectName;
+    onboardingTips.maybeShow();
   } catch (error) {
     console.warn('Yeni proje ilk kayıt sırasında kaydedilemedi:', error);
     autosaveController.disable();
@@ -2731,8 +2742,10 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     const resolvedFloor = resolveStandFloorItemKey(currentStand);
     currentStand = assignStandFloorItem(currentStand, resolvedFloor);
     syncFloorTypeSelect(resolvedFloor);
-    if (autoDepotEnabledInput) autoDepotEnabledInput.checked = Boolean(currentStand.depot?.enabled);
-    if (autoDepotSizeSelect && currentStand.depot?.sizeKey) autoDepotSizeSelect.value = currentStand.depot.sizeKey;
+    if (autoDepotSizeSelect) {
+      autoDepotSizeSelect.value = currentStand.depot?.enabled ? (currentStand.depot.sizeKey || '100x100') : '';
+    }
+    syncAutoDepotControls();
     if (autoDepotContentsInput) autoDepotContentsInput.checked = Boolean(currentStand.depot?.includeContents);
     syncAutoDepotControls();
     const endSceneBuild = beginProjectOpenStep('scene-build');
@@ -2900,7 +2913,7 @@ function resetToFirstOpenState() {
   standTypeButtons.forEach((button) => button.setAttribute('aria-pressed', 'false'));
   standSizeXInput.value = '';
   standSizeYInput.value = '';
-  if (autoDepotEnabledInput) autoDepotEnabledInput.checked = false;
+  if (autoDepotSizeSelect) autoDepotSizeSelect.value = '';
   syncAutoDepotControls();
   syncFloorTypeSelect();
   if (foamLightControls) foamLightControls.hidden = true;
@@ -2911,6 +2924,7 @@ function resetToFirstOpenState() {
   clearRegisteredAssets();
 
   viewportEmpty.hidden = false;
+  newProjectWizard.show();
   viewportToolbar.hidden = true;
   setStandEditingEnabled(false);
   productionBomPanel.close();
@@ -4074,6 +4088,9 @@ void refreshProjectList().catch((error) => console.warn('Proje listesi açılama
 void refreshGroupTemplates();
 if (initialProjectId) {
   void openStoredProject(initialProjectId);
+} else {
+  // Yeni proje: boş sahnede kurulum sihirbazı.
+  newProjectWizard.show();
 }
 
 // Otomatik kayıt kapalıyken "← Standlar" (sayfa içi geçiş; tarayıcı uyarısı çıkmaz) kaydedilmemiş
