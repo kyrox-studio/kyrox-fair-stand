@@ -18,7 +18,7 @@ function listGuideSections() {
       <table><tbody>
         <tr><th>Sol tık</th><td>Panel, modül veya zemini seçer.</td></tr>
         <tr><th>Modülü tut + sürükle</th><td>Modülü geçerli yerleşim kurallarına göre taşır.</td></tr>
-        <tr><th>Ctrl/Cmd + tık</th><td>İlk panel ile tıklanan panel arasında çoklu panel seçimi yapar. Tablette panel seçiliyken seçim çubuğunda <strong>Çoklu panel</strong>’e basıp parmağı bir panelden diğerine kaydırmak aynı dikdörtgeni seçer (komşu modüller ve köşe dahil); parmak kalkınca mod kapanır.</td></tr>
+        <tr><th>Ctrl/Cmd + tık</th><td>İlk panel ile tıklanan panel arasında çoklu panel seçimi yapar. Tablette panel seçiliyken seçim çubuğunda <strong>Çoklu panel</strong>’e basıp parmağı bir panelden diğerine kaydırmak aynı dikdörtgeni seçer (komşu modüller ve köşe dahil); kaydırmadan başka bir panele dokunmak da ilk seçili panelden oraya kadar seçer. Parmak kalkınca mod kapanır.</td></tr>
         <tr><th>Shift + tık (öğe üstünde)</th><td>Öğeyi toplu seçime ekler veya çıkarır. Sağ tıkla seçilenlerin hepsi birden kilitlenir veya kilidi açılır. Boş alanda Shift kamerayı etkilemeye devam eder. Tablette seçim çubuğunda <strong>Çoklu modül</strong> açıkken modüle dokunmak aynı işi yapar; boş alana dokununca kapanır.</td></tr>
         <tr><th>Boş alanda sol sürükle</th><td>Kamerayı stand etrafında döndürür.</td></tr>
         <tr><th>Orta tuş / tekerleğe basılı sürükle</th><td>Kamerayı yatay-dikey kaydırır (pan).</td></tr>
@@ -81,7 +81,7 @@ function listGuideSections() {
     html: `
       <p>Grup, istediğin öğeleri tek bir isimli küme yapar: duvar paneli, profil, lamba, logo, TV, kutu blok, masa, sandalye; türü fark etmez. Grup BOM'a ve maliyete girmez; parçalar bugünkü gibi girer.</p>
       <ul>
-        <li><strong>Grup oluştur:</strong> Shift+tık ile en az 2 öğe seç, birinin üstünde sağ tık → <strong>Grup oluştur…</strong> → isim ver. Stand kenarına bağlı duvar parçaları gruplanınca kenardan ayrılır; yerleri değişmez ve grup her yöne taşınabilir.</li>
+        <li><strong>Grup oluştur:</strong> Shift+tık ile (tablette seçim çubuğundaki <strong>Çoklu modül</strong> ile) en az 2 öğe seç, birinin üstünde sağ tık → <strong>Grup oluştur…</strong> → isim ver. Stand kenarına bağlı duvar parçaları gruplanınca kenardan ayrılır; yerleri değişmez ve grup her yöne taşınabilir.</li>
         <li><strong>Gruba ekle:</strong> Bir grubun parçasıyla birlikte grupsuz öğeleri Shift+tık ile seç, sağ tık → <strong>Gruba ekle: &lt;grup&gt;</strong>.</li>
         <li><strong>Bir öğe tek grupta olur:</strong> Başka gruptaki bir öğeyi eklemek istersen önce sorulur: “Bu gruptan çıkarılıp … grubuna eklensin mi?” Hayır dersen hiçbir şey değişmez.</li>
         <li><strong>Taşıma:</strong> Gruptaki herhangi bir öğeyi sürükle ya da ok tuşuna bas: bütün grup aynı mesafe kayar. Tek kısıt: hiçbir parça stand alanının dışına çıkamaz; grup kenarda durur. Başka öğelerle üst üste gelme engellenmez.</li>
@@ -102,7 +102,7 @@ function listGuideSections() {
   {
     title: 'Panel Seçimi ve Çoklu Seçim',
     html: `
-      <p>Tek panel için normal sol tık kullanılır. Çoklu seçimde önce başlangıç panelini seç, ardından <strong>Ctrl/Cmd + tık</strong> ile diğer sınır paneline tıkla.</p>
+      <p>Tek panel için normal sol tık kullanılır. Çoklu seçimde önce başlangıç panelini seç, ardından <strong>Ctrl/Cmd + tık</strong> ile diğer sınır paneline tıkla. Tablette: panele dokun, seçim çubuğunda <strong>Çoklu panel</strong>’e bas, sonra diğer sınır paneline dokun ya da parmağı oraya kaydır.</p>
       <ul>
         <li>Panel seçimi fiziksel panel yüzeylerini esas alır.</li>
         <li>Bağlı duvar/köşe düzenlerinde seçim duvar zinciri boyunca devam edebilir.</li>
@@ -282,8 +282,8 @@ function listGuideSections() {
         <li><strong>Proje adını değiştir:</strong> <strong>Değiştir</strong> butonu yalnızca tireden önceki proje/stand adı bölümünü düzenler. Otomatik <strong>StandTipi_X_Y</strong> bölümü korunur; örneğin <strong>Ferromet-L_Sol_800_600</strong> adı <strong>Umaay-L_Sol_800_600</strong> olarak değiştirilebilir.</li>
         <li><strong>Farklı Kaydet:</strong> sahne varken aktiftir. Mevcut sahneyi yeni proje UUID’si ve yeni görsel klasörüyle kopyalar; müşteri aynı kalır. Ad diyaloğu <strong>Yeni Proje</strong> ile aynı kuralı kullanır: stand adı + otomatik <strong>StandTipi_X_Y</strong>. Önerilen ön ek <strong>(1)</strong> ile biter. Eski proje olduğu gibi kalır. Sahne yokken kapalıdır.</li>
         <li><strong>Kaydet:</strong> sahne varken stand, modüller, yerleşimler ve proje durumunu kaydeder. Sahne yokken kapalıdır.</li>
-        <li><strong>Otomatik kayıt:</strong> Kayıtlı/açılmış projede değişiklik, Kaydet düğmelerinin altındaki <strong>Otomatik kayıt</strong> listesinde seçilen süre içinde kaydedilir: <strong>3, 5, 7 veya 10 dk</strong> (varsayılan 3 dk). Sürekli düzenlemede de en geç bu süre dolunca kaydedilir. <strong>Kapalı (Otomatik Kayıt Kapalı)</strong> seçilirse süreli kayıt yapılmaz; durum satırında “Kaydedilmemiş değişiklik var” yazar ve <strong>Kaydet</strong> ile elle kaydedilir. Seçim bu tarayıcıda hatırlanır, projeye yazılmaz.</li>
-        <li><strong>Kaydedilmemiş değişiklik koruması:</strong> Kayıtlı projede kaydedilmemiş değişiklik varken sekme gizlenir veya editörden çıkılırsa değişiklik hemen kaydedilir; otomatik kayıt kapalı olsa da bu koruma çalışır. Sayfa kapatılmak veya yenilenmek istenirse tarayıcı uyarı gösterir.</li>
+        <li><strong>Otomatik kayıt:</strong> Kayıtlı/açılmış projede değişiklik, Kaydet düğmelerinin altındaki <strong>Otomatik kayıt</strong> listesinde seçilen süre içinde kaydedilir: <strong>3, 5, 7 veya 10 dk</strong> (varsayılan 3 dk). Sürekli düzenlemede de en geç bu süre dolunca kaydedilir. <strong>Kapalı (Otomatik Kayıt Kapalı)</strong> seçilirse proje yalnız <strong>Kaydet</strong> ile kaydedilir: görsel ekleme, kaldırma veya silme, sekmeyi değiştirme ve proje işlemleri kayıt yapmaz, revizyon da ilerlemez; durum satırında “Kaydedilmemiş değişiklik var” yazar. Seçim bu tarayıcıda hatırlanır, projeye yazılmaz.</li>
+        <li><strong>Kaydedilmemiş değişiklik koruması:</strong> Otomatik kayıt açıkken kaydedilmemiş değişiklik varsa sekme gizlenince veya editörden çıkılınca değişiklik hemen kaydedilir. Otomatik kayıt kapalıyken kaydedilmez: editörden çıkarken “Kaydedilmemiş değişiklikler var” uyarısı çıkar; Aç, Sahneyi Oluştur, İçe Aktar veya başka proje seçmek kaydedilmemiş değişikliğin kaybolacağını sorar; Dışarı Aktar projenin son kaydını aktarır. Sayfa kapatılmak veya yenilenmek istenirse tarayıcı uyarı gösterir.</li>
         <li><strong>Müşteri adı:</strong> Açık projenin bağlı olduğu müşterinin adı, proje adının üstünde görünür. Başka projeler bu ekranda listelenmez; yalnız açık proje üzerinde çalışılır.</li>
         <li><strong>Aç:</strong> Açık projeyi görselleriyle birlikte yeniden yükler. Bir görselin dosyası bulunamazsa proje yine açılır; o yüzey kendi rengiyle gösterilir ve durum satırında kaç görselin bulunamadığı yazar. Görsel bağlantısı projede kalır, dosya geri gelirse görsel yeniden görünür.</li>
         <li><strong>Yükleme ekranı:</strong> Proje, revizyon veya içe aktarılan dosya açılırken yükleme ekranı sahnenin bütün görselleri ve 3D modelleri gelene kadar kalır; alt satırda kaçının geldiği yazar (ör. 45 / 73). Yarım sahne gösterilmez. Yüklenemeyen parça yerine kendi rengiyle çizilir; 30 saniyede bitmeyen yükleme olursa ekran yine kapanır ve durum satırında yazar.</li>

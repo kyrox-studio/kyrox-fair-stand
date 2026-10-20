@@ -189,9 +189,9 @@ export function createAutosaveController({
   }
 
   // Sekme gizlenirken veya editör kapanırken: yalnız kaydedilmemiş değişiklik varsa kaydeder.
-  // Otomatik kayıt kapalı olsa da çalışır; denetleyiciyi yeniden açmaz.
+  // Otomatik kayıt kapalıyken çalışmaz (yalnız Kaydet kaydeder); denetleyiciyi yeniden açmaz.
   async function saveNowIfDirty() {
-    if (!hasUnsavedChanges()) return false;
+    if (isAutoSaveOff() || !hasUnsavedChanges()) return false;
     if (flushPromise) {
       await flushPromise;
       return true;
@@ -211,6 +211,7 @@ export function createAutosaveController({
   }
 
   const controller = Object.freeze({
+    isAutoSaveOff,
     checkForChanges,
     clearPending,
     disable,

@@ -37,9 +37,21 @@ export function bindProjectActionSaveGuard({
     return controller.isEnabled() || Boolean(viewportEmpty?.hidden);
   }
 
-  async function saveBeforeAction(failureMessage) {
+  // Otomatik kayıt kapalıyken kaydedilmez (yalnız Kaydet); kaydedilmemiş değişiklik varsa sorulur.
+  function confirmWithoutSave(actionId) {
+    const message = actionId === 'export-project'
+      ? 'Kaydedilmemiş değişiklikler dışa aktarılmaz; projenin son kaydı aktarılır.\n\nDevam edilsin mi?'
+      : 'Kaydedilmemiş değişiklikler kaybolacak.\n\nDevam edilsin mi?';
+    const confirmFn = documentRef.defaultView?.confirm ?? globalThis.confirm;
+    return typeof confirmFn === 'function' ? Boolean(confirmFn(message)) : true;
+  }
+
+  async function saveBeforeAction(failureMessage, actionId = null) {
     const controller = getController();
     if (!hasActiveProjectWork(controller)) return true;
+    if (controller.isAutoSaveOff?.()) {
+      return controller.hasUnsavedChanges?.() ? confirmWithoutSave(actionId) : true;
+    }
 
     const status = getProjectStatus();
     if (status) status.textContent = 'Mevcut proje kaydediliyor…';
@@ -74,7 +86,7 @@ export function bindProjectActionSaveGuard({
     if (!button || bypassTargets.has(button)) return;
 
     if (button.id === 'import-project') {
-      importPreflightSave = saveBeforeAction(ACTION_FAILURE_MESSAGES['import-project']);
+      importPreflightSave = saveBeforeAction(ACTION_FAILURE_MESSAGES['import-project'], 'import-project');
       return;
     }
 
@@ -86,7 +98,7 @@ export function bindProjectActionSaveGuard({
     const selectedProjectId = button.id === 'open-project' || button.id === 'export-project'
       ? getProjectSelect()?.value ?? null
       : null;
-    const saved = await saveBeforeAction(ACTION_FAILURE_MESSAGES[button.id]);
+    const saved = await saveBeforeAction(ACTION_FAILURE_MESSAGES[button.id], button.id);
     if (!saved) return;
 
     resumeButtonClick(button, selectedProjectId);
@@ -101,7 +113,7 @@ export function bindProjectActionSaveGuard({
       event.preventDefault();
       event.stopImmediatePropagation();
 
-      const saved = await saveBeforeAction(ACTION_FAILURE_MESSAGES['project-select']);
+      const saved = await saveBeforeAction(ACTION_FAILURE_MESSAGES['project-select'], 'project-select');
       if (!saved) return;
 
       restoreSelectedProject(selectedProjectId);
@@ -121,7 +133,7 @@ export function bindProjectActionSaveGuard({
     event.stopImmediatePropagation();
 
     const saved = await (importPreflightSave
-      ?? saveBeforeAction(ACTION_FAILURE_MESSAGES['import-project']));
+      ?? saveBeforeAction(ACTION_FAILURE_MESSAGES['import-project'], 'import-project'));
     importPreflightSave = null;
     if (!saved) {
       target.value = '';

@@ -1,14 +1,13 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-selection-toolbar-v1",
+  "id": "fair-stand-autosave-off-manual-save-v1",
   "kind": "feature",
-  "summary": "Tablet kullanımı: seçili öğenin üstünde seçim çubuğu (Döndür / Kopyala / Sil / Çoklu seç / ⋯), dokunmatikte uzun basma ile sağ tık menüsü, menüye Döndür; sağ tık menüsü sade + Gelişmiş (Cam, Metal Separatör, Lightbox, Mesh) olarak ayrıldı; çubukta seçime göre Çoklu panel (mavi, tek seferlik parmak taraması = Ctrl + tık dikdörtgeni, komşu modül ve köşe dahil) veya Çoklu modül (turuncu, dokunuş = Shift + tık) (setMultiSelectMode); modüller arası panel seçiminde çubuk ve ⋯ korunur; katalog kartına dokunup sahnede yere dokunmak modülü sürükle-bırakla aynı yoldan ekler. Sağ tık ve sürükle-bırak korunur; BOM ve kayıt değişmez.",
+  "summary": "Otomatik kayıt kapalıyken proje yalnız Kaydet ile kaydedilir: görsel ekleme/kaldırma/silme, sekme gizleme, editörden çıkış ve proje işlemleri (Aç, Dışarı Aktar, Sahneyi Oluştur, İçe Aktar, proje seçimi) kayıt yapmaz, revizyon ilerlemez; proje işlemleri kaydedilmemiş değişiklik için onay sorar, \"← Standlar\" ile çıkış kaydedilmemiş değişiklik için onay sorar (CRM değişmez). Açıkken davranış aynı. Ayrıca tablette Çoklu panel modunda ikinci panele dokunmak Ctrl + tık gibi dikdörtgen seçer.",
   "owners": [
-    "src/selectionToolbar.js",
-    "src/scene3d.js",
+    "src/autosaveController.js",
+    "src/projectActionSaveGuard.js",
     "src/main.js",
-    "src/moduleContextMenu.js",
-    "src/moduleDragSidebar.js"
+    "src/scene3d.js"
   ],
   "sourceOfTruth": [
     "src/scene3d.js"
@@ -165,6 +164,7 @@
       "src/stripOccupancy.js",
       "src/style.css",
       "src/surfaceStateBinding.js",
+      "src/systemChangeContract.js",
       "src/viewCube.js",
       "src/viewKeyboardShortcuts.js",
       "src/wall.js",
@@ -173,6 +173,7 @@
       "vite.config.js"
     ],
     "affectedTests": [
+      "e2e/autosave-interval.spec.mjs",
       "e2e/base-items-contract.spec.mjs",
       "e2e/box-block-corners.spec.mjs",
       "e2e/box-block-face-image-restore.spec.mjs",
@@ -185,6 +186,7 @@
       "e2e/duplicate-metal-separator.spec.mjs",
       "e2e/f010-module-construction.spec.mjs",
       "e2e/f011-module-behavior.spec.mjs",
+      "e2e/f020-save-before-project-actions.spec.mjs",
       "e2e/f023-atomic-project-delete.spec.mjs",
       "e2e/f027-scene-reset.spec.mjs",
       "e2e/f028-reset-features.spec.mjs",
@@ -996,6 +998,7 @@
         "F-015",
         "F-017",
         "F-018",
+        "F-020",
         "F-027",
         "F-028",
         "F-029",
@@ -1007,10 +1010,13 @@
   },
   "tests": {
     "targeted": [
+      "test/autosaveController.test.js",
+      "test/autosaveMainIntegration.test.js",
       "test/catalogDragItemKeyInvariant.test.js",
       "test/helpGuide.test.js",
       "test/lightboxFabric.test.js",
       "test/metalSeparator.test.js",
+      "test/projectActionSaveGuard.test.js",
       "test/scene3dPublicContract.test.js",
       "test/systemChangeGate.test.js"
     ],
@@ -1019,14 +1025,16 @@
     "e2e": {
       "required": true,
       "targeted": [
+        "e2e/autosave-interval.spec.mjs",
         "e2e/box-block-corners.spec.mjs",
         "e2e/duplicate-metal-separator.spec.mjs",
+        "e2e/f020-save-before-project-actions.spec.mjs",
         "e2e/metal-separator-bom-gap.spec.mjs",
         "e2e/panel-sweep.spec.mjs",
         "e2e/selection-toolbar.spec.mjs",
         "e2e/smoke.spec.mjs"
       ],
-      "reason": "Gerçek Chromium, tablet boyutu + dokunmatik: seçim çubuğu döndürür, kopyalar, siler, ⋯ menüyü açar; uzun basma menüyü açar, kısa dokunuş açmaz; karta dokunup sahneye dokunmak ekler, Esc/aynı kart iptal eder; Çoklu modül dokunuşla toplu seçer; Çoklu panel taraması 3 modülde orta 2 sırayı seçip Lightbox yapar ve L köşeyi döner; panel dönüşümleri Gelişmiş altında. Bütün paket regresyon için çalışır."
+      "reason": "Gerçek Chromium: kapalıyken görsel yükleme, sekme gizleme ve Aç kayıt yapmaz, Aç onay sorar, yalnız Kaydet kaydeder; Çoklu panelde dokun-dokun ve parmak taraması (CDP dokunuş) 3 modülde 2 sıra seçer. Bütün paket regresyon için çalışır."
     }
   },
   "risk": {

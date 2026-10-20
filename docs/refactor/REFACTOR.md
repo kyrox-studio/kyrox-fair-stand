@@ -25,11 +25,19 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 **Sağ tık kalır.**
 
+### Otomatik kayıt kapalıyken yalnız Kaydet
+
+Otomatik kayıt **Kapalı** iken proje yalnız **Kaydet** ile kaydedilir; revizyon da yalnız o zaman ilerler. Önceden kapalıyken de kaydeden yollar: görsel ekleme/kaldırma/kullanılan görseli silme (`persistActiveProject`), sekme gizlenince ve editörden çıkınca (`saveNowIfDirty`), Aç / Dışarı Aktar / Sahneyi Oluştur / İçe Aktar / proje seçimi öncesi (`projectActionSaveGuard`). Artık:
+- görsel işlemleri kaydetmez (`autosaveController.isAutoSaveOff()`), `saveNowIfDirty` kapalıyken hiçbir şey yapmaz;
+- proje işlemleri kaydetmez; kaydedilmemiş değişiklik varsa onay sorar (Dışarı Aktar: son kayıt aktarılır);
+- "← Standlar" (sayfa içi geçiş; tarayıcının "Siteden çıkılsın mı?" uyarısı çıkmaz) kaydedilmemiş değişiklik varsa "Kaydetmeden çıkılsın mı?" diye sorar; fair-stand kendi tıklamayı yakalar, CRM'e dokunulmaz. Sekme kapatma / yenileme uyarısı aynen kalır. Tarayıcının geri tuşu bu onaydan geçmez.
+Otomatik kayıt açıkken davranış aynıdır. Not: kapalıyken kullanılan görsel silinirse kayıtlı sürüm, Kaydet'e kadar o yüzeyleri görselsiz açar (eksik görsel davranışı).
+
 ### 2. aşama: sade menü, dokunmatik çoklu seçim, dokunarak ekleme
 
 **Sade / Gelişmiş menü:** Cam, Metal Separatör, Lightbox, Mesh dönüşümleri ve Lightbox aydınlatması `.module-context-advanced` altına alındı; `Gelişmiş ▸` düğmesi yalnız bu öğede en az biri uygunsa çıkar, açık/kapalı tercihi oturum boyunca hatırlanır. Görünür kalanlar: grup komutları, Kilitle, Döndür, Sil, Çoğalt, Boyutlandır, Görseli ölçülendir, Raf altı ışık, Ekle. Bu butonlara basan 3 E2E (`box-block-corners`, `duplicate-metal-separator`, `metal-separator-bom-gap`) önce Gelişmiş'i açar; doğrulamaları aynı.
 
-**Çoklu panel / Çoklu modül (tablet):** Seçim çubuğundaki düğme seçili olana göre değişir (anchor `kind`). Panel seçiliyse **Çoklu panel** (mavi): tek seferlik parmak taraması; parmağın konduğu panel çapa, kaydırdıkça Ctrl + tık ile aynı `selectRectangleTo` dikdörtgeni (komşu modüller ve köşe dahil); parmak kalkınca mod kapanır, sonraki sürükleme yine taşır. Modül seçiliyse **Çoklu modül** (turuncu): dokunuş Shift + tık ile aynı `toggleMultiModuleSelection`; seçim boşalınca kapanır. `scene3d.setMultiSelectMode(false | 'panel' | 'module', { onEnd })`; sahnenin kenarı modda mavi/turuncu. Renk kuralı: mavi = panel/alan, turuncu = modülün tamamı. Bu modlarda uzun basma menüsü başlamaz.
+**Çoklu panel / Çoklu modül (tablet):** Seçim çubuğundaki düğme seçili olana göre değişir (anchor `kind`). Panel seçiliyse **Çoklu panel** (mavi), tek seferlik, Ctrl + tık ile aynı `selectRectangleTo` dikdörtgeni (komşu modüller ve köşe dahil): kaydırmadan dokunuş önceden seçili panelden (çapa) dokunulan panele kadar seçer; kaydırmada parmağın konduğu panel çapa olur. Parmak kalkınca mod kapanır, sonraki sürükleme yine taşır. Modül seçiliyse **Çoklu modül** (turuncu): dokunuş Shift + tık ile aynı `toggleMultiModuleSelection`; seçim boşalınca kapanır. `scene3d.setMultiSelectMode(false | 'panel' | 'module', { onEnd })`; sahnenin kenarı modda mavi/turuncu. Renk kuralı: mavi = panel/alan, turuncu = modülün tamamı. Bu modlarda uzun basma menüsü başlamaz.
 
 **Modüller arası panel seçiminde çubuk ve ⋯:** Seçili paneller birden fazla modüle yayılınca çubuk o modüllerin üstünde kalır (önceden kayboluyordu) ve ⋯ menüsü çapa panelinin bağlamıyla açılır (sağ tıkla aynı panel işlemleri). Modülün tepesi ekranın üstünde kalırsa (yakınlaşınca) çubuk üst kenara yapışır.
 

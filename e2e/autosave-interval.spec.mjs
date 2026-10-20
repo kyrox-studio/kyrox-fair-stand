@@ -100,3 +100,68 @@ test('switching from Kapalı to 5 minutes schedules the pending change', async (
   await page.locator('#autosave-interval').selectOption('5');
   await expect(page.locator('#project-status')).toContainText('5 dk içinde otomatik kaydedilecek');
 });
+
+// Otomatik kayıt kapalıyken proje yalnız Kaydet ile kaydedilir: görsel yükleme, sekme gizleme ve
+// proje işlemleri kayıt yapmaz; Aç kaydedilmemiş değişikliğin kaybolacağını sorar.
+test('Kapalı: image upload, hidden tab, Aç and ← Standlar never save; only Kaydet saves', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await page.goto('/');
+  await page.locator('#autosave-interval').selectOption('0');
+  const projectName = await createIslandProject(page, 'Autosave Yalniz Kaydet');
+  const initialFloor = await readStoredFloorType(page, projectName);
+  expect(initialFloor).not.toBe('hali');
+
+  await page.locator('#floor-type').selectOption('hali');
+  await page.locator('#surface-image').setInputFiles({
+    name: 'e2e-yalniz-kaydet.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  });
+  await expect(page.locator('#asset-status')).toContainText('e2e-yalniz-kaydet.png');
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    delete document.visibilityState;
+  });
+  await page.waitForTimeout(800);
+  expect(await readStoredFloorType(page, projectName)).toBe(initialFloor);
+
+  const dialogs = [];
+  let acceptDialog = false;
+  page.on('dialog', (dialog) => {
+    dialogs.push(dialog.message());
+    void (acceptDialog ? dialog.accept() : dialog.dismiss());
+  });
+  await page.locator('#open-project').click();
+  await expect.poll(() => dialogs.length).toBe(1);
+  expect(dialogs[0]).toContain('Kaydedilmemiş değişiklikler kaybolacak');
+  expect(await readStoredFloorType(page, projectName)).toBe(initialFloor);
+
+  // "← Standlar" (CRM'in kenar çubuğuna eklediği sayfa içi geçiş): önce onay sorar.
+  await page.evaluate(() => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'sidebar-back';
+    button.textContent = '← Standlar';
+    button.addEventListener('click', () => { window.__leftEditor = (window.__leftEditor ?? 0) + 1; });
+    document.querySelector('#sidebar').prepend(button);
+  });
+  await page.locator('.sidebar-back').click();
+  await expect.poll(() => dialogs.length).toBe(2);
+  expect(dialogs[1]).toContain('Kaydetmeden çıkılsın mı?');
+  expect(await page.evaluate(() => window.__leftEditor ?? 0)).toBe(0);
+  acceptDialog = true;
+  await page.locator('.sidebar-back').click();
+  await expect.poll(() => page.evaluate(() => window.__leftEditor ?? 0)).toBe(1);
+  expect(await readStoredFloorType(page, projectName)).toBe(initialFloor);
+  acceptDialog = false;
+
+  await page.locator('#save-project').click();
+  await expect.poll(() => readStoredFloorType(page, projectName)).toBe('hali');
+  expect(pageErrors).toEqual([]);
+});

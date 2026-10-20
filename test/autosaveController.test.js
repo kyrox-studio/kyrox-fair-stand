@@ -414,7 +414,9 @@ test('hasUnsavedChanges is false before first save and after scheduled autosave'
   assert.equal(controller.hasUnsavedChanges(), false);
 });
 
-test('saveNowIfDirty persists unsaved changes even when autosave is off', async () => {
+// Otomatik kayıt kapalıyken yalnız Kaydet kaydeder: sekme gizlenince / editörden çıkınca kayıt yok,
+// değişiklik kaydedilmemiş kalır (çıkışta barındıran uyarı gösterir). Açılınca aynı çağrı kaydeder.
+test('saveNowIfDirty does not save while autosave is off and saves once it is on', async () => {
   const clock = createFakeClock();
   const persistCalls = [];
   let signature = 'saved';
@@ -431,8 +433,14 @@ test('saveNowIfDirty persists unsaved changes even when autosave is off', async 
 
   signature = 'dirty';
   controller.checkForChanges();
-  assert.equal(await controller.saveNowIfDirty(), true);
+  assert.equal(controller.isAutoSaveOff(), true);
+  assert.equal(await controller.saveNowIfDirty(), false);
+  assert.deepEqual(persistCalls, []);
+  assert.equal(controller.hasUnsavedChanges(), true);
 
+  controller.setDelayMinutes(3);
+  controller.clearPending();
+  assert.equal(await controller.saveNowIfDirty(), true);
   assert.deepEqual(persistCalls, [{ quiet: true }]);
   assert.equal(controller.hasUnsavedChanges(), false);
   assert.equal(controller.isEnabled(), true);

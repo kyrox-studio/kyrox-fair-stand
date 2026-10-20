@@ -2979,7 +2979,9 @@ async function requestDeleteImageAsset(assetId) {
   try {
     // Kayıtlı projede önce referansları kalıcılaştır; ardından blob'u sil.
     // Böylece proje hiçbir zaman silinmiş bir asset'e bilinçli olarak bağlı bırakılmaz.
-    if (usageCount > 0 && (autosaveController.isEnabled() || revisionSession.mode === 'historical')) {
+    // Otomatik kayıt kapalıyken kaydedilmez (yalnız Kaydet); kayıtlı sürüm o yüzeyleri görselsiz açar.
+    if (usageCount > 0 && !autosaveController.isAutoSaveOff()
+      && (autosaveController.isEnabled() || revisionSession.mode === 'historical')) {
       autosaveController.clearPending();
       const cleared = await persistActiveProject({ quiet: true });
       if (cleared?.enableAutosave !== false) autosaveController.markSavedState();
@@ -3003,7 +3005,9 @@ async function requestDeleteImageAsset(assetId) {
     }
     renderAssetLibrary();
 
-    if (currentStand || autosaveController.isEnabled() || revisionSession.mode === 'historical') {
+    // Otomatik kayıt kapalıyken kaydedilmez; değişiklik Kaydet'i bekler.
+    if (!autosaveController.isAutoSaveOff()
+      && (currentStand || autosaveController.isEnabled() || revisionSession.mode === 'historical')) {
       try {
         autosaveController.clearPending();
         const removed = await persistActiveProject({ quiet: true });
@@ -3561,7 +3565,9 @@ imageInput.addEventListener('change', async () => {
     const selected = scene3d.getSelectedSurfaces();
     if (selected.length) applyActiveImageToSelection('cover');
 
-    if (currentStand || autosaveController.isEnabled() || revisionSession.mode === 'historical') {
+    // Otomatik kayıt kapalıyken kaydedilmez; değişiklik Kaydet'i bekler.
+    if (!autosaveController.isAutoSaveOff()
+      && (currentStand || autosaveController.isEnabled() || revisionSession.mode === 'historical')) {
       try {
         autosaveController.clearPending();
         const added = await persistActiveProject({ quiet: true });
@@ -4058,6 +4064,17 @@ if (initialProjectId) {
   void openStoredProject(initialProjectId);
 }
 
+// Otomatik kayıt kapalıyken "← Standlar" (sayfa içi geçiş; tarayıcı uyarısı çıkmaz) kaydedilmemiş
+// değişiklik varsa onay sorar. Açıkken çıkış arka planda kaydeder.
+function onLeaveEditorClick(event) {
+  if (!event.target?.closest?.('.sidebar-back')) return;
+  if (!autosaveController.isAutoSaveOff() || !autosaveController.hasUnsavedChanges()) return;
+  if (window.confirm('Kaydedilmemiş değişiklikler var.\n\nKaydetmeden çıkılsın mı?')) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+}
+document.addEventListener('click', onLeaveEditorClick, true);
+
 const historicalEditWatch = setInterval(() => {
   if (revisionSession.mode !== 'historical' || revisionSession.hasCreatedRevision || revisionSession.historicalEditArmed) return;
   if (designSignature() === revisionSession.baselineDesign) return;
@@ -4067,6 +4084,7 @@ const historicalEditWatch = setInterval(() => {
 }, 1000);
 
   return function stopFairStandConfigurator() {
+    document.removeEventListener('click', onLeaveEditorClick, true);
     clearInterval(historicalEditWatch);
     clearInterval(designHistoryWatch);
     window.removeEventListener('keydown', onDesignHistoryKeyDown);
@@ -4076,7 +4094,8 @@ const historicalEditWatch = setInterval(() => {
     window.removeEventListener('beforeunload', onBeforeUnloadWarnUnsaved);
     window.removeEventListener('pagehide', onPageHide);
     document.removeEventListener('visibilitychange', onVisibilityChangeSave);
-    // CRM içinde başka sayfaya geçilirken bekleyen değişiklik arka planda kaydedilir.
+    // CRM içinde başka sayfaya geçilirken bekleyen değişiklik arka planda kaydedilir
+    // (otomatik kayıt kapalıyken kaydedilmez; "← Standlar" önce onay sorar).
     void autosaveController?.saveNowIfDirty?.().catch(() => {});
     autosaveController?.disable?.();
     productionBomPanel?.destroy?.();

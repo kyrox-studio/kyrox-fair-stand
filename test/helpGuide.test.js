@@ -27,6 +27,9 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /<strong>3, 5, 7 veya 10 dk<\/strong> \(varsayılan 3 dk\)/);
   assert.match(guideSource, /Kapalı \(Otomatik Kayıt Kapalı\)/);
   assert.match(guideSource, /Kaydedilmemiş değişiklik koruması/);
+  assert.match(guideSource, /seçilirse proje yalnız <strong>Kaydet<\/strong> ile kaydedilir/);
+  assert.match(guideSource, /editörden çıkarken “Kaydedilmemiş değişiklikler var” uyarısı çıkar/);
+  assert.match(guideSource, /Dışarı Aktar projenin son kaydını aktarır/);
   assert.match(guideSource, /Bir görselin dosyası bulunamazsa proje yine açılır/);
   assert.match(guideSource, /Her proje bir müşteriye bağlıdır/);
   assert.match(guideSource, /title: 'Gruplar'/);
@@ -57,6 +60,9 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /<strong>Çoklu modül<\/strong> açıkken modüle dokunmak aynı işi yapar/);
   assert.match(guideSource, /<strong>Çoklu panel<\/strong>’e basıp parmağı bir panelden diğerine kaydırmak aynı dikdörtgeni seçer/);
   assert.match(guideSource, /panel seçimi mavi, modül seçimi turuncudur/);
+  assert.match(guideSource, /kaydırmadan başka bir panele dokunmak da ilk seçili panelden oraya kadar seçer/);
+  assert.match(guideSource, /Tablette: panele dokun, seçim çubuğunda <strong>Çoklu panel<\/strong>’e bas/);
+  assert.match(guideSource, /tablette seçim çubuğundaki <strong>Çoklu modül<\/strong> ile\) en az 2 öğe seç/);
   assert.match(guideSource, /menüde <strong>Gelişmiş ▸<\/strong> altındadır/);
   assert.match(guideSource, /Tablette karta dokunup sahnede yere dokunmak da modülü oraya ekler/);
   assert.match(guideSource, /<strong>Duvar yüksekliği<\/strong>ni seç \(250–500 cm, varsayılan 350;/);

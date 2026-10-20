@@ -3,7 +3,14 @@ import assert from 'node:assert/strict';
 
 import { bindProjectActionSaveGuard } from '../src/projectActionSaveGuard.js';
 
-function createHarness({ flush = async () => true, enabled = true, stageVisible = true } = {}) {
+function createHarness({
+  flush = async () => true,
+  enabled = true,
+  stageVisible = true,
+  autoSaveOff = false,
+  unsaved = false,
+  confirm = () => true,
+} = {}) {
   const listeners = new Map();
   const status = { textContent: '' };
   const projectSelect = {
@@ -18,6 +25,7 @@ function createHarness({ flush = async () => true, enabled = true, stageVisible 
   };
   const viewportEmpty = { hidden: stageVisible };
   const documentRef = {
+    defaultView: { confirm },
     addEventListener(type, handler) { listeners.set(type, handler); },
     removeEventListener(type) { listeners.delete(type); },
     querySelector(selector) {
@@ -29,6 +37,8 @@ function createHarness({ flush = async () => true, enabled = true, stageVisible 
   };
   const controller = {
     isEnabled: () => enabled,
+    isAutoSaveOff: () => autoSaveOff,
+    hasUnsavedChanges: () => unsaved,
     flush,
   };
   const cleanup = bindProjectActionSaveGuard({
@@ -152,5 +162,43 @@ test('import keeps the native picker click synchronous but blocks archive proces
 
   assert.deepEqual(order, ['save-start', 'save-done', 'import']);
   assert.equal(fileInput.dispatchedChanges, 1);
+  harness.cleanup();
+});
+
+// Otomatik kayıt kapalıyken yalnız Kaydet kaydeder: proje işlemi kaydetmez, kaydedilmemiş değişiklik varsa sorar.
+test('with autosave off, guarded actions never save and ask before dropping unsaved changes', async () => {
+  for (const buttonId of ['open-project', 'export-project', 'create-stage']) {
+    const order = [];
+    const messages = [];
+    let answer = false;
+    const harness = createHarness({
+      autoSaveOff: true,
+      unsaved: true,
+      flush: async () => { order.push('save'); },
+      confirm: (message) => { messages.push(message); return answer; },
+    });
+    const button = createButton(buttonId, () => order.push('action'));
+    await harness.listeners.get('click')(createGuardEvent(button));
+    assert.deepEqual(order, [], buttonId);
+    answer = true;
+    await harness.listeners.get('click')(createGuardEvent(button));
+    assert.deepEqual(order, ['action'], buttonId);
+    assert.equal(messages.length, 2, buttonId);
+    const expected = buttonId === 'export-project' ? /son kaydı aktarılır/ : /Kaydedilmemiş değişiklikler kaybolacak/;
+    assert.match(messages[0], expected, buttonId);
+    harness.cleanup();
+  }
+});
+
+test('with autosave off and nothing unsaved, guarded actions run without asking or saving', async () => {
+  const order = [];
+  const harness = createHarness({
+    autoSaveOff: true,
+    unsaved: false,
+    flush: async () => { order.push('save'); },
+    confirm: () => { order.push('confirm'); return false; },
+  });
+  await harness.listeners.get('click')(createGuardEvent(createButton('open-project', () => order.push('action'))));
+  assert.deepEqual(order, ['action']);
   harness.cleanup();
 });

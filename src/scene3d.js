@@ -5836,8 +5836,9 @@ export function createStandScene(
     toggleMultiModuleSelection(moduleId);
   }, { capture: true });
 
-  // Çoklu panel taraması: parmağın konduğu panel çapa olur, kaydırdıkça çapadan parmağın
-  // altındaki panele Ctrl + tık ile aynı dikdörtgen (komşu modüller ve köşe dahil) seçilir.
+  // Çoklu panel (tek seferlik), Ctrl + tık ile aynı dikdörtgen (komşu modüller ve köşe dahil):
+  // - dokunuş: önceden seçili panel (çapa) ile dokunulan panel arası seçilir;
+  // - kaydırma: parmağın konduğu panel çapa olur, parmağın altındaki panele kadar seçilir.
   // Parmak kalkınca seçim kalır ve mod kapanır; sonraki sürükleme yine taşır / kamerayı çevirir.
   function pickPanelAt(clientX, clientY) {
     setPointerFromClient(clientX, clientY);
@@ -5860,8 +5861,7 @@ export function createStandScene(
     event.stopImmediatePropagation();
     const panel = pickPanelAt(event.clientX, event.clientY);
     if (!panel) return;
-    selectOnly(panel);
-    panelSweep = { pointerId: event.pointerId, surfaceId: panel.userData.surfaceId };
+    panelSweep = { pointerId: event.pointerId, downPanel: panel, surfaceId: panel.userData.surfaceId, swept: false };
   }, { capture: true, signal });
 
   // Ctrl/Cmd + sol tık çoklu panel seçimini OrbitControls'tan önce yakala.
@@ -5974,11 +5974,20 @@ export function createStandScene(
     if (!panelSweep || event.pointerId !== panelSweep.pointerId) return;
     const panel = pickPanelAt(event.clientX, event.clientY);
     if (!panel || panel.userData.surfaceId === panelSweep.surfaceId) return;
+    if (!panelSweep.swept) {
+      panelSweep.swept = true;
+      selectOnly(panelSweep.downPanel);
+    }
     panelSweep.surfaceId = panel.userData.surfaceId;
     selectRectangleTo(panel);
   }, { signal });
   const finishPanelSweep = (event) => {
     if (!panelSweep || event.pointerId !== panelSweep.pointerId) return;
+    if (event.type === 'pointerup' && !panelSweep.swept) {
+      const hasPanelAnchor = [...selectedSurfaces].some((mesh) => mesh.userData?.selectionMode === 'panel');
+      if (hasPanelAnchor) selectRectangleTo(panelSweep.downPanel);
+      else selectOnly(panelSweep.downPanel);
+    }
     endMultiSelectMode();
   };
   hostWindow.addEventListener('pointerup', finishPanelSweep, { signal });
