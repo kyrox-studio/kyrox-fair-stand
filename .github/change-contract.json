@@ -1,10 +1,13 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-copy-place-v1",
+  "id": "fair-stand-manual-save-copy-dblclick-v1",
   "kind": "feature",
-  "summary": "Sağ tık menüsündeki Çoğalt Sağ / Sol kaldırıldı; kopyalama yalnız seçim çubuğundaki Kopyala ve Ctrl/Cmd + C ile (sağ tık menüsünde Kopyala yok): modül hafızaya alınır ve katalogdan dokunarak eklemenin yerleştirme yolu açılır; her tıklama/dokunuş duplicateModuleState ile yeni bir kopyayı dropCatalogModuleDrag ile katalogla aynı kuralla bırakır (görsel, renk, cam/Lightbox/metal dahil; kilitsiz, grupsuz, metal kendi grubunu alır). Art arda sürer; Esc veya seçim çubuğundaki Kopyalamayı bitir çıkar; Ctrl/Cmd + V son kopyayla yeniden başlar. Grubu çoğalt aynı. BOM ve kayıt biçimi değişmez.",
+  "summary": "(1) Otomatik kayıt kapalıyken proje yalnız Kaydet ile kaydedilir: görsel işlemleri, sekme gizleme, editörden çıkış ve proje işlemleri kaydetmez, revizyon ilerlemez; proje işlemleri ve ← Standlar kaydedilmemiş değişiklik için onay sorar (CRM değişmez). (2) Tablette Çoklu panelde ikinci panele dokunmak Ctrl + tık gibi seçer. (3) Çoğalt Sağ / Sol kaldırıldı; seçim çubuğundaki Kopyala ve Ctrl/Cmd + C modülü hafızaya alır, her tıklama/dokunuşta katalogla aynı kuralla bir kopya bırakır (Esc / Kopyalamayı bitir; Ctrl/Cmd + V yeniden başlar). (4) Çift tık / çift dokunuş modülün tamamını seçer; Ctrl/Cmd + tık seçilenin çoğulu (modül seçiliyse modül ekle/çıkar, yüzey seçiliyse panel dikdörtgeni / banko yüzü); Shift + tık ile modül seçimi kaldırıldı. BOM ve kayıt biçimi değişmez.",
   "owners": [
+    "src/scene3d.js",
     "src/main.js",
+    "src/autosaveController.js",
+    "src/projectActionSaveGuard.js",
     "src/moduleDragSidebar.js",
     "src/moduleContextMenu.js",
     "src/selectionToolbar.js",
@@ -184,6 +187,7 @@
       "e2e/commercial-items-contract.spec.mjs",
       "e2e/design-undo.spec.mjs",
       "e2e/desk-banko-items-contract.spec.mjs",
+      "e2e/double-click-select.spec.mjs",
       "e2e/duplicate-metal-separator.spec.mjs",
       "e2e/f010-module-construction.spec.mjs",
       "e2e/f011-module-behavior.spec.mjs",
@@ -1014,6 +1018,7 @@
       "test/autosaveController.test.js",
       "test/autosaveMainIntegration.test.js",
       "test/catalogDragItemKeyInvariant.test.js",
+      "test/ctrlMultiSelect.test.js",
       "test/helpGuide.test.js",
       "test/lightboxFabric.test.js",
       "test/metalSeparator.test.js",
@@ -1029,15 +1034,19 @@
       "targeted": [
         "e2e/autosave-interval.spec.mjs",
         "e2e/box-block-corners.spec.mjs",
+        "e2e/double-click-select.spec.mjs",
         "e2e/duplicate-metal-separator.spec.mjs",
         "e2e/f020-save-before-project-actions.spec.mjs",
+        "e2e/group-template.spec.mjs",
         "e2e/help-guide-recent-rules.spec.mjs",
         "e2e/metal-separator-bom-gap.spec.mjs",
+        "e2e/module-group.spec.mjs",
+        "e2e/module-lock.spec.mjs",
         "e2e/panel-sweep.spec.mjs",
         "e2e/selection-toolbar.spec.mjs",
         "e2e/smoke.spec.mjs"
       ],
-      "reason": "Gerçek Chromium: sağ tık menüsünde Çoğalt ve Kopyala yok; çubukla art arda iki kopya, Kopyalamayı bitir; Ctrl+C / Ctrl+V / Esc; tablette dokunarak kopya ve bitirme; metal separatörlü kopya kendi grubunu alır. Bütün paket regresyon için çalışır."
+      "reason": "Gerçek Chromium: kapalıyken kayıt yok ve onaylar; Çoklu panel dokunma/kaydırma; Kopyala art arda, Ctrl+C/V, tablette bitirme; çift tık modül seçimi, Ctrl ile modül ekle/çıkar, grup/kilit menüsü, panel dikdörtgeni ve banko yüzleri korunur, Shift+tık modül eklemez, tablette çift dokunuş. Bütün paket regresyon için çalışır."
     }
   },
   "risk": {

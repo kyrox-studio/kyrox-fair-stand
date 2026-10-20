@@ -93,6 +93,11 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /<th>Ctrl\/Cmd \+ C \/ V<\/th>/);
   assert.doesNotMatch(guideSource, /Çoğalt Sağ \/ Sol/);
   assert.match(guideSource, /Sağ tık menüsünde Kopyala yoktur\./);
+  assert.match(guideSource, /<th>Çift tık \(öğe üstünde\)<\/th><td>Modülün herhangi bir yerine \(panel dahil\) çift tıklamak modülün tamamını seçer/);
+  assert.match(guideSource, /Modülün tamamı seçiliyken \(çift tık\) tıklanan modülü toplu seçime ekler veya çıkarır/);
+  assert.match(guideSource, /Shift \+ tık ile seçim yoktur; boş alanda Shift kamerayı kaydırır\./);
+  assert.doesNotMatch(guideSource, /Shift\+tık ile/);
+  assert.doesNotMatch(guideSource, /<th>Shift \+ tık/);
   assert.match(guideSource, /uyarı modülün adını ve sebebini yazar/);
   assert.match(guideSource, /<strong>Metin indir<\/strong>/);
   assert.match(guideSource, /görselin dosya adı, cm ölçüsü ve m²/);

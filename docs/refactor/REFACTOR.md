@@ -25,6 +25,14 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 **Sağ tık kalır.**
 
+### Çift tık modülü seçer; Ctrl+tık seçilenin çoğulu; Shift+tık kaldırıldı
+
+**Çift tık / çift dokunuş** (`scene3d`, ~0,35 sn ve 10 px içinde aynı modüle iki basış) modülün tamamını seçer (`selectModuleOnly`, turuncu); tek tık bugünkü gibi paneli seçer. İkinci basış sürükleme başlatmaz; hemen ardından gelen basış da modül seçimini korur. Kopyala / katalog yerleştirme ve Çoklu panel modunda devreye girmez.
+
+**Ctrl/Cmd + tık** seçilenin çoğulu: modülün tamamı seçiliyse (yüzey seçimi yok) tıklanan modülü toplu seçime ekler/çıkarır (`toggleMultiModuleSelection`); yüzey (panel, banko yüzü) seçiliyse veya seçim yoksa bugünkü çoklu panel dikdörtgeni / banko yüzü (`handleSurfaceSelectionAt(..., true)`). Grup ve kilit menüsü (Grup oluştur, Gruba ekle, Seçilenleri kilitle) aynıdır.
+
+**Shift + tık ile modül seçimi kaldırıldı.** Boş alanda Shift kamera kaydırma ve Shift+R aynı. Tablette toplu modül seçimi yine **Çoklu modül** ile. `module-group`, `module-lock`, `group-template` E2E'leri çift tık + Ctrl+tık'a çevrildi (doğrulamalar aynı); `double-click-select` yeni.
+
 ### Kopyala: hafıza + art arda yerleştirme (Çoğalt Sağ/Sol kaldırıldı)
 
 Sağ tık menüsündeki **Çoğalt Sağ / Sol** kaldırıldı. Kopyalama yalnız seçim çubuğundaki **Kopyala** ve Ctrl/Cmd + C ile yapılır; sağ tık menüsünde Kopyala yoktur. Kopyala modülü hafızaya alır (`copiedModule`) ve katalogdan dokunarak eklemenin yerleştirme yolunu açar (`moduleDragSidebar.armPlacement`): her tıklama/dokunuş `duplicateModuleState` ile yeni bir kopya üretir ve `scene3d.dropCatalogModuleDrag` ile katalogla aynı kuralla yerleştirir (duvar şeridine araya ekleme dahil). Görseller, renk, cam/Lightbox/metal taşınır; kopya kilitsiz ve grupsuzdur, metal separatör kendi grubunu alır. Art arda sürer; Esc, seçim çubuğundaki **Kopyalamayı bitir** veya katalog kartı bitirir. Ctrl/Cmd + V son kopyayla yeniden başlar. **Grubu çoğalt** aynen kalır. `duplicateContextModule` (yana ekleme) kaldırıldı.

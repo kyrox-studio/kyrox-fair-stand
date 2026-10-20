@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 // Faz 1 — Kilit (kyrox-platform projects/fair-stand/GROUP_LOCK_ROADMAP.md): kilitli öğe sürüklenmez,
 // ok tuşu ve Delete ile oynamaz, kilit projeyle kaydedilir; kilit açılınca taşınır.
-// Shift+tık toplu seçimi sağ tık menüsünden hepsini birden kilitler.
+// Çift tık + Ctrl+tık toplu seçimi sağ tık menüsünden hepsini birden kilitler.
 
 const FRIDGE = { key: 'mini_fridge_avanti', at: { x: 0.52, y: 0.82 } };
 const BIN = { key: 'plastic_trash_bin', at: { x: 0.36, y: 0.82 } };
@@ -144,7 +144,7 @@ test('kilitli öğe sürükleme, ok tuşu ve Delete ile oynamaz; kilit kaydedili
   expect(pageErrors).toEqual([]);
 });
 
-test('Shift+tık toplu seçim sağ tık menüsünden hepsini kilitler ve kilidini açar', async ({ page }) => {
+test('çift tık + Ctrl+tık toplu seçim sağ tık menüsünden hepsini kilitler ve kilidini açar', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await createIslandStand(page, 'E2E Module Lock Multi');
@@ -158,10 +158,17 @@ test('Shift+tık toplu seçim sağ tık menüsünden hepsini kilitler ve kilidin
 
   const fridgePoint = await viewportPoint(page, FRIDGE.at);
   const binPoint = await viewportPoint(page, BIN.at);
-  await page.mouse.click(fridgePoint.x, fridgePoint.y);
+  // Shift+tık artık modül eklemez.
+  await page.mouse.dblclick(fridgePoint.x, fridgePoint.y);
   await page.keyboard.down('Shift');
   await page.mouse.click(binPoint.x, binPoint.y);
   await page.keyboard.up('Shift');
+  await expect(page.locator('#selection-info')).not.toContainText('2 öğe seçili');
+
+  await page.mouse.dblclick(fridgePoint.x, fridgePoint.y);
+  await page.keyboard.down('Control');
+  await page.mouse.click(binPoint.x, binPoint.y);
+  await page.keyboard.up('Control');
   await expect(page.locator('#selection-info')).toContainText('2 öğe seçili');
 
   await contextAction(page, BIN.at, 'lock-selection');
@@ -169,10 +176,10 @@ test('Shift+tık toplu seçim sağ tık menüsünden hepsini kilitler ve kilidin
   expect(findModule(lockedBoth, fridge.id).locked).toBe(true);
   expect(findModule(lockedBoth, bin.id).locked).toBe(true);
 
-  await page.mouse.click(fridgePoint.x, fridgePoint.y);
-  await page.keyboard.down('Shift');
+  await page.mouse.dblclick(fridgePoint.x, fridgePoint.y);
+  await page.keyboard.down('Control');
   await page.mouse.click(binPoint.x, binPoint.y);
-  await page.keyboard.up('Shift');
+  await page.keyboard.up('Control');
   await contextAction(page, FRIDGE.at, 'unlock-selection');
   const unlockedBoth = await saveAndReadProject(page);
   expect(findModule(unlockedBoth, fridge.id).locked).toBeUndefined();

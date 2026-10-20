@@ -5821,10 +5821,44 @@ export function createStandScene(
     }
   }
 
-  // Shift + sol tık (veya çoklu seçim modunda dokunuş) bir modülün üstündeyse toplu seçime
-  // ekler/çıkarır ve kameraya gitmez. Boş alanda dokunulmaz: OrbitControls'un Shift davranışı (pan) korunur.
+  function moduleIdAt(clientX, clientY) {
+    const picked = pickModuleAt(clientX, clientY);
+    return picked?.moduleGroup?.userData?.moduleState?.id
+      ?? picked?.moduleGroup?.userData?.moduleId
+      ?? null;
+  }
+
+  // Çift tık / çift dokunuş: modülün herhangi bir yerine (panel dahil) kısa arayla aynı yere iki
+  // kez basmak modülün tamamını seçer (turuncu). Tek tık bugünkü gibi paneli seçer; ikinci basış
+  // sürükleme başlatmaz. Kopyala / katalog yerleştirme (viewport'ta yakalanır) ve Çoklu panel
+  // modunda devreye girmez.
+  const DOUBLE_PRESS_MS = 350;
+  const DOUBLE_PRESS_PX = 10;
+  let lastModulePress = null;
   renderer.domElement.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0 || !(event.shiftKey || multiSelectMode === 'module') || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey
+      || !stageLayout || floorAreaDrawArmed || multiSelectMode) {
+      lastModulePress = null;
+      return;
+    }
+    const moduleId = moduleIdAt(event.clientX, event.clientY);
+    const now = performance.now();
+    const previous = lastModulePress;
+    lastModulePress = moduleId ? { moduleId, at: now, clientX: event.clientX, clientY: event.clientY } : null;
+    if (!moduleId || previous?.moduleId !== moduleId || now - previous.at > DOUBLE_PRESS_MS
+      || Math.hypot(event.clientX - previous.clientX, event.clientY - previous.clientY) > DOUBLE_PRESS_PX) {
+      return;
+    }
+    // Kayıt kalır: hemen ardından gelen basış (üçlü tık) da modül seçimini korur, panele dönmez.
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    selectModuleOnly(moduleId);
+  }, { capture: true });
+
+  // Tablet Çoklu modül modunda dokunuş bir modülün üstündeyse toplu seçime ekler/çıkarır ve
+  // kameraya gitmez. (Shift + tık ile modül seçimi yoktur; boş alanda Shift kamerayı kaydırır.)
+  renderer.domElement.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || multiSelectMode !== 'module' || event.ctrlKey || event.metaKey || event.altKey) return;
     if (!stageLayout || floorAreaDrawArmed) return;
     const picked = pickModuleAt(event.clientX, event.clientY);
     const moduleId = picked?.moduleGroup?.userData?.moduleState?.id
@@ -5864,12 +5898,20 @@ export function createStandScene(
     panelSweep = { pointerId: event.pointerId, downPanel: panel, surfaceId: panel.userData.surfaceId, swept: false };
   }, { capture: true, signal });
 
-  // Ctrl/Cmd + sol tık çoklu panel seçimini OrbitControls'tan önce yakala.
-  // Capture fazı kamera döndürme listener'ının seçimi bozmasını engeller.
+  // Ctrl/Cmd + sol tık, seçili olana göre ("seçilenin çoğulu"); OrbitControls'tan önce yakalanır.
+  // - modülün tamamı seçiliyse (çift tık, turuncu): tıklanan modülü toplu seçime ekler/çıkarır;
+  // - yüzey seçiliyse veya seçim yoksa: çoklu panel dikdörtgeni / banko yüzü (bugünkü davranış).
   renderer.domElement.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || !(event.ctrlKey || event.metaKey)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
+    const moduleLevelSelection = selectedSurfaces.size === 0
+      && (Boolean(selectedModuleId) || multiSelectedModuleIds.size > 0);
+    if (moduleLevelSelection) {
+      const moduleId = moduleIdAt(event.clientX, event.clientY);
+      if (moduleId) toggleMultiModuleSelection(moduleId);
+      return;
+    }
     handleSurfaceSelectionAt(event.clientX, event.clientY, true);
   }, { capture: true });
 

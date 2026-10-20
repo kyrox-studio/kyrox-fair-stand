@@ -18,8 +18,8 @@ function listGuideSections() {
       <table><tbody>
         <tr><th>Sol tık</th><td>Panel, modül veya zemini seçer.</td></tr>
         <tr><th>Modülü tut + sürükle</th><td>Modülü geçerli yerleşim kurallarına göre taşır.</td></tr>
-        <tr><th>Ctrl/Cmd + tık</th><td>İlk panel ile tıklanan panel arasında çoklu panel seçimi yapar. Tablette panel seçiliyken seçim çubuğunda <strong>Çoklu panel</strong>’e basıp parmağı bir panelden diğerine kaydırmak aynı dikdörtgeni seçer (komşu modüller ve köşe dahil); kaydırmadan başka bir panele dokunmak da ilk seçili panelden oraya kadar seçer. Parmak kalkınca mod kapanır.</td></tr>
-        <tr><th>Shift + tık (öğe üstünde)</th><td>Öğeyi toplu seçime ekler veya çıkarır. Sağ tıkla seçilenlerin hepsi birden kilitlenir veya kilidi açılır. Boş alanda Shift kamerayı etkilemeye devam eder. Tablette seçim çubuğunda <strong>Çoklu modül</strong> açıkken modüle dokunmak aynı işi yapar; boş alana dokununca kapanır.</td></tr>
+        <tr><th>Ctrl/Cmd + tık</th><td>Seçilenin çoğulunu yapar. Panel (veya banko yüzü) seçiliyken ilk panel ile tıklanan panel arasında çoklu panel seçimi yapar; banko yüzlerini tek tek ekler. Modülün tamamı seçiliyken (çift tık) tıklanan modülü toplu seçime ekler veya çıkarır; sağ tıkla seçilenlerin hepsi birden gruplanır, kilitlenir veya kilidi açılır. Tablette panel seçiliyken seçim çubuğunda <strong>Çoklu panel</strong>’e basıp parmağı bir panelden diğerine kaydırmak aynı dikdörtgeni seçer (komşu modüller ve köşe dahil); kaydırmadan başka bir panele dokunmak da ilk seçili panelden oraya kadar seçer. Parmak kalkınca mod kapanır.</td></tr>
+        <tr><th>Çift tık (öğe üstünde)</th><td>Modülün herhangi bir yerine (panel dahil) çift tıklamak modülün tamamını seçer (turuncu); tek tık paneli seçer (mavi). Tablette çift dokunuş aynı işi yapar. Sonra <strong>Ctrl/Cmd + tık</strong> ile başka modüller eklenir; tablette seçim çubuğunda <strong>Çoklu modül</strong> açıkken modüle dokunmak aynı işi yapar, boş alana dokununca kapanır. Shift + tık ile seçim yoktur; boş alanda Shift kamerayı kaydırır.</td></tr>
         <tr><th>Boş alanda sol sürükle</th><td>Kamerayı stand etrafında döndürür.</td></tr>
         <tr><th>Orta tuş / tekerleğe basılı sürükle</th><td>Kamerayı yatay-dikey kaydırır (pan).</td></tr>
         <tr><th>Mouse tekerleği</th><td>Yakınlaştırır / uzaklaştırır.</td></tr>
@@ -58,7 +58,7 @@ function listGuideSections() {
     html: `
       <p>Menü içeriği seçilen modül veya panelin desteklediği özelliklere göre değişir.</p>
       <ul>
-        <li><strong>Kilitle / Kilidi aç:</strong> Öğeyi bulunduğu yere sabitler. Kilitli öğe sürüklenemez, ok tuşlarıyla taşınamaz, döndürülemez, boyutlandırılamaz ve silinemez. Yanına ekleme veya başka bir öğenin taşınması onu kaydıracaksa işlem yapılmaz. Renk, görsel, cam, separatör ve kumaş kilitliyken de değiştirilebilir. Kilit projeyle kaydedilir. Shift ile toplu seçimde menü <strong>Seçilenleri kilitle / Seçilenlerin kilidini aç</strong> olur.</li>
+        <li><strong>Kilitle / Kilidi aç:</strong> Öğeyi bulunduğu yere sabitler. Kilitli öğe sürüklenemez, ok tuşlarıyla taşınamaz, döndürülemez, boyutlandırılamaz ve silinemez. Yanına ekleme veya başka bir öğenin taşınması onu kaydıracaksa işlem yapılmaz. Renk, görsel, cam, separatör ve kumaş kilitliyken de değiştirilebilir. Kilit projeyle kaydedilir. Çift tık + Ctrl/Cmd + tık ile toplu seçimde menü <strong>Seçilenleri kilitle / Seçilenlerin kilidini aç</strong> olur.</li>
         <li><strong>Sil:</strong> Modülü sahneden kaldırır. Kilitli öğede pasiftir.</li>
         <li><strong>Boyutlandır…:</strong> Işıklı Strafor seçiliyken mevcut X/Y ölçülerini açar; yeni ölçüler girildiğinde aynı modül konumu ve ışık rengi korunarak yeniden boyutlandırılır.</li>
         <li><strong>Ölçü / opacity…:</strong> Kutu blok seçiliyken genişlik, derinlik, yükseklik ve 0–1 opacity açılır. Yüzler, renk ve taşıma <strong>Kutu Blok</strong> bölümündedir.</li>
@@ -81,8 +81,8 @@ function listGuideSections() {
     html: `
       <p>Grup, istediğin öğeleri tek bir isimli küme yapar: duvar paneli, profil, lamba, logo, TV, kutu blok, masa, sandalye; türü fark etmez. Grup BOM'a ve maliyete girmez; parçalar bugünkü gibi girer.</p>
       <ul>
-        <li><strong>Grup oluştur:</strong> Shift+tık ile (tablette seçim çubuğundaki <strong>Çoklu modül</strong> ile) en az 2 öğe seç, birinin üstünde sağ tık → <strong>Grup oluştur…</strong> → isim ver. Stand kenarına bağlı duvar parçaları gruplanınca kenardan ayrılır; yerleri değişmez ve grup her yöne taşınabilir.</li>
-        <li><strong>Gruba ekle:</strong> Bir grubun parçasıyla birlikte grupsuz öğeleri Shift+tık ile seç, sağ tık → <strong>Gruba ekle: &lt;grup&gt;</strong>.</li>
+        <li><strong>Grup oluştur:</strong> Bir öğeye çift tıkla, sonra Ctrl/Cmd + tık ile (tablette seçim çubuğundaki <strong>Çoklu modül</strong> ile) en az 2 öğe seç, birinin üstünde sağ tık → <strong>Grup oluştur…</strong> → isim ver. Stand kenarına bağlı duvar parçaları gruplanınca kenardan ayrılır; yerleri değişmez ve grup her yöne taşınabilir.</li>
+        <li><strong>Gruba ekle:</strong> Bir grubun parçasıyla birlikte grupsuz öğeleri çift tık + Ctrl/Cmd + tık ile seç, sağ tık → <strong>Gruba ekle: &lt;grup&gt;</strong>.</li>
         <li><strong>Bir öğe tek grupta olur:</strong> Başka gruptaki bir öğeyi eklemek istersen önce sorulur: “Bu gruptan çıkarılıp … grubuna eklensin mi?” Hayır dersen hiçbir şey değişmez.</li>
         <li><strong>Taşıma:</strong> Gruptaki herhangi bir öğeyi sürükle ya da ok tuşuna bas: bütün grup aynı mesafe kayar. Tek kısıt: hiçbir parça stand alanının dışına çıkamaz; grup kenarda durur. Başka öğelerle üst üste gelme engellenmez.</li>
         <li><strong>Döndürme (Shift+R):</strong> Gruptaki bir öğe seçiliyken Shift+R bütün grubu grubun ortası etrafında 45° döndürür; parçalar birbirine göre yerini korur. Gruptaki duvar, kapı ve paneller de 45° açıya geçebilir. Döndürülmüş grup standa sığmazsa işlem yapılmaz. Kilitli grup döndürülmez. Gruptaki öğe tek başına döndürülemez; tek öğeyi döndürmek için önce gruptan çıkar.</li>
