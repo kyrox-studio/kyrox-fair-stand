@@ -89,6 +89,10 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /3,47 × Metal Separatör · metre_kare · metal_separator/);
   assert.match(guideSource, /Aynı grup her zaman tek levha değildir/);
   assert.match(guideSource, /Kopyadaki metal separatör kendi grubunu alır/);
+  assert.match(guideSource, /<strong>Kopyala:<\/strong> Modülü hafızaya alır; sahnede tıkladığın veya dokunduğun her yere/);
+  assert.match(guideSource, /<th>Ctrl\/Cmd \+ C \/ V<\/th>/);
+  assert.doesNotMatch(guideSource, /Çoğalt Sağ \/ Sol/);
+  assert.match(guideSource, /Sağ tık menüsünde Kopyala yoktur\./);
   assert.match(guideSource, /uyarı modülün adını ve sebebini yazar/);
   assert.match(guideSource, /<strong>Metin indir<\/strong>/);
   assert.match(guideSource, /görselin dosya adı, cm ölçüsü ve m²/);

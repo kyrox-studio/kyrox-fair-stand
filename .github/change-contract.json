@@ -1,13 +1,14 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-autosave-off-manual-save-v1",
+  "id": "fair-stand-copy-place-v1",
   "kind": "feature",
-  "summary": "Otomatik kayıt kapalıyken proje yalnız Kaydet ile kaydedilir: görsel ekleme/kaldırma/silme, sekme gizleme, editörden çıkış ve proje işlemleri (Aç, Dışarı Aktar, Sahneyi Oluştur, İçe Aktar, proje seçimi) kayıt yapmaz, revizyon ilerlemez; proje işlemleri kaydedilmemiş değişiklik için onay sorar, \"← Standlar\" ile çıkış kaydedilmemiş değişiklik için onay sorar (CRM değişmez). Açıkken davranış aynı. Ayrıca tablette Çoklu panel modunda ikinci panele dokunmak Ctrl + tık gibi dikdörtgen seçer.",
+  "summary": "Sağ tık menüsündeki Çoğalt Sağ / Sol kaldırıldı; kopyalama yalnız seçim çubuğundaki Kopyala ve Ctrl/Cmd + C ile (sağ tık menüsünde Kopyala yok): modül hafızaya alınır ve katalogdan dokunarak eklemenin yerleştirme yolu açılır; her tıklama/dokunuş duplicateModuleState ile yeni bir kopyayı dropCatalogModuleDrag ile katalogla aynı kuralla bırakır (görsel, renk, cam/Lightbox/metal dahil; kilitsiz, grupsuz, metal kendi grubunu alır). Art arda sürer; Esc veya seçim çubuğundaki Kopyalamayı bitir çıkar; Ctrl/Cmd + V son kopyayla yeniden başlar. Grubu çoğalt aynı. BOM ve kayıt biçimi değişmez.",
   "owners": [
-    "src/autosaveController.js",
-    "src/projectActionSaveGuard.js",
     "src/main.js",
-    "src/scene3d.js"
+    "src/moduleDragSidebar.js",
+    "src/moduleContextMenu.js",
+    "src/selectionToolbar.js",
+    "src/helpGuide.js"
   ],
   "sourceOfTruth": [
     "src/scene3d.js"
@@ -1016,6 +1017,7 @@
       "test/helpGuide.test.js",
       "test/lightboxFabric.test.js",
       "test/metalSeparator.test.js",
+      "test/moduleBehaviorPolicy.test.js",
       "test/projectActionSaveGuard.test.js",
       "test/scene3dPublicContract.test.js",
       "test/systemChangeGate.test.js"
@@ -1029,12 +1031,13 @@
         "e2e/box-block-corners.spec.mjs",
         "e2e/duplicate-metal-separator.spec.mjs",
         "e2e/f020-save-before-project-actions.spec.mjs",
+        "e2e/help-guide-recent-rules.spec.mjs",
         "e2e/metal-separator-bom-gap.spec.mjs",
         "e2e/panel-sweep.spec.mjs",
         "e2e/selection-toolbar.spec.mjs",
         "e2e/smoke.spec.mjs"
       ],
-      "reason": "Gerçek Chromium: kapalıyken görsel yükleme, sekme gizleme ve Aç kayıt yapmaz, Aç onay sorar, yalnız Kaydet kaydeder; Çoklu panelde dokun-dokun ve parmak taraması (CDP dokunuş) 3 modülde 2 sıra seçer. Bütün paket regresyon için çalışır."
+      "reason": "Gerçek Chromium: sağ tık menüsünde Çoğalt ve Kopyala yok; çubukla art arda iki kopya, Kopyalamayı bitir; Ctrl+C / Ctrl+V / Esc; tablette dokunarak kopya ve bitirme; metal separatörlü kopya kendi grubunu alır. Bütün paket regresyon için çalışır."
     }
   },
   "risk": {

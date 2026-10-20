@@ -100,8 +100,13 @@ export function createModuleDragSidebar({
   let armed = false;
   let placePointerId = null;
   let suppressNextClick = false;
+  // Dışarıdan verilen yerleştirme kaynağı (Kopyala): aynı dokun/tıkla yerleştirme yolu, her
+  // bırakışta kaynaktan yeni durum alınır ve Esc / cancelPlacement'a kadar art arda sürer.
+  let placementSource = null;
 
   function resetDragState() {
+    const endedSource = placementSource;
+    placementSource = null;
     activeCard?.classList.remove('is-dragging', 'is-armed');
     viewport.closest('.viewport-wrap')?.classList.remove('catalog-drag-active', 'catalog-place-armed');
     hint.classList.remove('is-armed');
@@ -114,6 +119,7 @@ export function createModuleDragSidebar({
     rotationLocked = false;
     lastClientX = null;
     lastClientY = null;
+    endedSource?.onEnd?.();
   }
 
   const cards = groupDefinitions
@@ -227,6 +233,21 @@ export function createModuleDragSidebar({
     if (!armed || placePointerId === null || event.pointerId !== placePointerId) return;
     event.preventDefault();
     event.stopImmediatePropagation();
+    if (placementSource) {
+      const source = placementSource;
+      placePointerId = null;
+      suppressNextClick = true;
+      source.onPlace?.(activeModuleState, event.clientX, event.clientY, activeRotationZDeg, rotationLocked);
+      onCancel?.();
+      if (placementSource !== source) return;
+      const next = source.createState?.();
+      if (next) {
+        activeModuleState = next;
+      } else {
+        resetDragState();
+      }
+      return;
+    }
     const state = activeModuleState;
     const rotationZDeg = activeRotationZDeg;
     const isRotationLocked = rotationLocked;
@@ -304,6 +325,34 @@ export function createModuleDragSidebar({
     }
   });
 
+  function armPlacement(source) {
+    if (!enabled || !canDrag() || !source) return false;
+    if (armed || activeModuleState) {
+      resetDragState();
+      onCancel?.();
+    }
+    const state = source.createState?.();
+    if (!state) return false;
+    const preferredRotation = Number(source.rotationZDeg);
+    placementSource = source;
+    activeModuleState = state;
+    activeRotationZDeg = Number.isFinite(preferredRotation)
+      ? preferredRotation
+      : getModuleDefaultRotationDeg(state);
+    rotationLocked = false;
+    armed = true;
+    viewport.closest('.viewport-wrap')?.classList.add('catalog-place-armed');
+    hint.classList.add('is-armed');
+    hint.textContent = source.hint ?? ARMED_HINT;
+    return true;
+  }
+
+  function cancelPlacement() {
+    if (!placementSource) return;
+    resetDragState();
+    onCancel?.();
+  }
+
   function setEnabled(nextEnabled) {
     enabled = Boolean(nextEnabled);
     if (!enabled && armed) {
@@ -317,5 +366,10 @@ export function createModuleDragSidebar({
     });
   }
 
-  return { setEnabled };
+  return {
+    setEnabled,
+    armPlacement,
+    cancelPlacement,
+    isPlacementArmed: () => Boolean(placementSource),
+  };
 }

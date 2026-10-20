@@ -1,6 +1,39 @@
 import { test, expect } from '@playwright/test';
 
+// Kopyanın panelinin ekran noktası için sahne yüzeyleri ve kamera testte açılır.
+async function exposeScene(page) {
+  await page.route('**/src/scene3d.js*', async (route) => {
+    const response = await route.fetch();
+    const body = (await response.text())
+      .replace(
+        'const controls = new OrbitControls(camera, renderer.domElement);',
+        'const controls = new OrbitControls(camera, renderer.domElement); window.__sceneCamera = camera;',
+      )
+      .replace(
+        '  let surfaceMeshes = [];',
+        '  let surfaceMeshes = []; window.__sceneSurfaces = () => surfaceMeshes;',
+      );
+    await route.fulfill({ response, body });
+  });
+}
+
+async function stripScreenPoint(page, moduleId, stripIndex) {
+  return page.evaluate(({ id, index }) => {
+    const mesh = window.__sceneSurfaces().find((surface) => (
+      surface.userData.moduleId === id && Number(surface.userData.stripIndex) === index
+    ));
+    const canvas = document.querySelector('#viewport > canvas').getBoundingClientRect();
+    mesh.updateMatrixWorld(true);
+    const screen = mesh.getWorldPosition(mesh.position.clone()).project(window.__sceneCamera);
+    return {
+      x: canvas.left + ((screen.x + 1) / 2) * canvas.width,
+      y: canvas.top + ((1 - screen.y) / 2) * canvas.height,
+    };
+  }, { id: moduleId, index: stripIndex });
+}
+
 async function createBackWallStand(page, projectName) {
+  await exposeScene(page);
   await page.goto('/');
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
@@ -35,6 +68,9 @@ async function saveAndReadProject(page) {
     return projects.sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0))[0] ?? null;
   });
 }
+
+// Sabit ilk kamera açısında sırt duvarın sağ yarısının önü: kopya oraya oturur.
+const COPY_DROP_POINT = { x: 830, y: 530 };
 
 function topStrip(module) {
   return module.strips.find((strip) => strip.stripIndex === module.strips.length - 1);
@@ -71,8 +107,13 @@ test('duplicating a panel with a metal separator gives the copy its own metal gr
   await expect(metalToggle).toHaveText('Metal Separatöre Çevir');
   await metalToggle.click();
 
-  await page.mouse.click(650, 145, { button: 'right' });
-  await menu.locator('[data-module-action="duplicate-right"]').click();
+  // Seçim çubuğundaki Kopyala: hafızaya alır; orijinalin sağındaki boş duvar önüne tıklamak kopyayı oraya bırakır.
+  await page.mouse.click(650, 145);
+  await page.getByRole('toolbar', { name: 'Seçim işlemleri' }).getByRole('button', { name: /Kopyala/ }).click();
+  await expect(page.locator('.viewport-wrap')).toHaveClass(/catalog-place-armed/);
+  await page.mouse.click(COPY_DROP_POINT.x, COPY_DROP_POINT.y);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.viewport-wrap')).not.toHaveClass(/catalog-place-armed/);
 
   const duplicated = await saveAndReadProject(page);
   expect(duplicated.modules).toHaveLength(2);
@@ -84,7 +125,9 @@ test('duplicating a panel with a metal separator gives the copy its own metal gr
   expect(copy.metalSeparatorGroupId).not.toBe(original.metalSeparatorGroupId);
 
   // Kopyada separatörü kapatmak orijinali etkilememeli.
-  await page.mouse.click(785, 190, { button: 'right' });
+  const copyModule = duplicated.modules.find((module) => module.id !== initialProject.modules[0].id);
+  const copyTop = await stripScreenPoint(page, copyModule.id, copyModule.strips.length - 1);
+  await page.mouse.click(copyTop.x, copyTop.y, { button: 'right' });
   await expect(menu).toBeVisible();
   // "Gelişmiş" açık kaldı (oturum boyunca hatırlanır).
   await expect(menu.locator('.module-context-advanced-toggle')).toHaveAttribute('aria-expanded', 'true');

@@ -70,9 +70,21 @@ test('selection toolbar rotates, duplicates, deletes and opens the menu', async 
   const [rotated] = await fridges(page);
   expect(rotated.placement.rotationZDeg).not.toBe(before.placement.rotationZDeg);
 
-  // Kopyala: ikinci kutu.
+  // Kopyala: hafızaya alır; sahnede tıklanan her yere bir kopya bırakır, "Kopyalamayı bitir" ile çıkar.
+  const viewportBox = await page.locator('#viewport').boundingBox();
+  const at = (fx, fy) => ({ x: viewportBox.x + Math.round(viewportBox.width * fx), y: viewportBox.y + Math.round(viewportBox.height * fy) });
   await toolbar.getByRole('button', { name: /Kopyala/ }).click();
+  await expect(page.locator('.viewport-wrap')).toHaveClass(/catalog-place-armed/);
+  const finish = toolbar.getByRole('button', { name: 'Kopyalamayı bitir', exact: false });
+  await expect(finish).toHaveAttribute('aria-pressed', 'true');
+  const firstCopy = at(0.35, 0.8);
+  await page.mouse.click(firstCopy.x, firstCopy.y);
   await expect.poll(async () => (await fridges(page)).length).toBe(2);
+  const secondCopy = at(0.5, 0.92);
+  await page.mouse.click(secondCopy.x, secondCopy.y);
+  await expect.poll(async () => (await fridges(page)).length).toBe(3);
+  await finish.click();
+  await expect(page.locator('.viewport-wrap')).not.toHaveClass(/catalog-place-armed/);
 
   // ⋯: sağ tık menüsü, Döndür dahil.
   await page.mouse.click(point.x, point.y);
@@ -80,6 +92,9 @@ test('selection toolbar rotates, duplicates, deletes and opens the menu', async 
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Döndür' })).toBeVisible();
+  // Çoğalt Sağ/Sol kaldırıldı; Kopyala yalnız seçim çubuğunda (sağ tık menüsünde yok).
+  await expect(menu.getByRole('menuitem', { name: 'Kopyala' })).toHaveCount(0);
+  await expect(menu.locator('[data-module-action^="duplicate-"]')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await page.mouse.click(5, 5);
 
@@ -88,7 +103,7 @@ test('selection toolbar rotates, duplicates, deletes and opens the menu', async 
   await expect(toolbar).toBeVisible();
   page.once('dialog', (dialog) => dialog.accept());
   await toolbar.getByRole('button', { name: 'Sil' }).click();
-  await expect.poll(async () => (await fridges(page)).length).toBe(1);
+  await expect.poll(async () => (await fridges(page)).length).toBe(2);
   expect(errors).toEqual([]);
 });
 
@@ -204,4 +219,58 @@ test('module menu keeps advanced panel actions under Gelişmiş', async ({ page 
   // Buzdolabında panel dönüşümü yok: Gelişmiş başlığı da çıkmaz.
   await expect(menu.locator('.module-context-advanced-toggle')).toBeHidden();
   await expect(menu.getByRole('menuitem', { name: 'Döndür' })).toBeVisible();
+});
+
+test('Ctrl+C copies the selected module and Ctrl+V starts placing it again; Esc ends', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await createIslandStand(page);
+  const point = await dropFridge(page, 0.6, 0.8);
+  const box = await page.locator('#viewport').boundingBox();
+  const at = (fx, fy) => ({ x: box.x + Math.round(box.width * fx), y: box.y + Math.round(box.height * fy) });
+  const wrap = page.locator('.viewport-wrap');
+
+  await page.mouse.click(point.x, point.y);
+  await page.keyboard.press('Control+c');
+  await expect(wrap).toHaveClass(/catalog-place-armed/);
+  const first = at(0.35, 0.8);
+  await page.mouse.click(first.x, first.y);
+  await expect.poll(async () => (await fridges(page)).length).toBe(2);
+  await page.keyboard.press('Escape');
+  await expect(wrap).not.toHaveClass(/catalog-place-armed/);
+
+  // Esc sonrası tıklamak kopya bırakmaz.
+  const idle = at(0.5, 0.92);
+  await page.mouse.click(idle.x, idle.y);
+  expect((await fridges(page)).length).toBe(2);
+
+  await page.keyboard.press('Control+v');
+  await expect(wrap).toHaveClass(/catalog-place-armed/);
+  await page.mouse.click(idle.x, idle.y);
+  await expect.poll(async () => (await fridges(page)).length).toBe(3);
+  await page.keyboard.press('Escape');
+  await expect(wrap).not.toHaveClass(/catalog-place-armed/);
+  expect(errors).toEqual([]);
+});
+
+test('tablet: Kopyala then taps place copies; the toolbar button ends copying', async ({ page }) => {
+  await createIslandStand(page);
+  const point = await dropFridge(page, 0.6, 0.8);
+  const box = await page.locator('#viewport').boundingBox();
+  const at = (fx, fy) => ({ x: box.x + Math.round(box.width * fx), y: box.y + Math.round(box.height * fy) });
+  const toolbar = page.getByRole('toolbar', { name: 'Seçim işlemleri' });
+
+  await page.touchscreen.tap(point.x, point.y);
+  await toolbar.getByRole('button', { name: /Kopyala/ }).tap();
+  const tapAt = at(0.35, 0.8);
+  await page.touchscreen.tap(tapAt.x, tapAt.y);
+  await expect.poll(async () => (await fridges(page)).length).toBe(2);
+  // Seçim kalksa da "Kopyalamayı bitir" görünür kalır (tablette Esc yok).
+  const finish = toolbar.getByRole('button', { name: /Kopyalamayı bitir/ });
+  await expect(finish).toBeVisible();
+  await finish.tap();
+  await expect(page.locator('.viewport-wrap')).not.toHaveClass(/catalog-place-armed/);
+  const after = at(0.5, 0.92);
+  await page.touchscreen.tap(after.x, after.y);
+  expect((await fridges(page)).length).toBe(2);
 });

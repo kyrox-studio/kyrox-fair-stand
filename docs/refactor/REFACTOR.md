@@ -25,6 +25,10 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 **Sağ tık kalır.**
 
+### Kopyala: hafıza + art arda yerleştirme (Çoğalt Sağ/Sol kaldırıldı)
+
+Sağ tık menüsündeki **Çoğalt Sağ / Sol** kaldırıldı. Kopyalama yalnız seçim çubuğundaki **Kopyala** ve Ctrl/Cmd + C ile yapılır; sağ tık menüsünde Kopyala yoktur. Kopyala modülü hafızaya alır (`copiedModule`) ve katalogdan dokunarak eklemenin yerleştirme yolunu açar (`moduleDragSidebar.armPlacement`): her tıklama/dokunuş `duplicateModuleState` ile yeni bir kopya üretir ve `scene3d.dropCatalogModuleDrag` ile katalogla aynı kuralla yerleştirir (duvar şeridine araya ekleme dahil). Görseller, renk, cam/Lightbox/metal taşınır; kopya kilitsiz ve grupsuzdur, metal separatör kendi grubunu alır. Art arda sürer; Esc, seçim çubuğundaki **Kopyalamayı bitir** veya katalog kartı bitirir. Ctrl/Cmd + V son kopyayla yeniden başlar. **Grubu çoğalt** aynen kalır. `duplicateContextModule` (yana ekleme) kaldırıldı.
+
 ### Otomatik kayıt kapalıyken yalnız Kaydet
 
 Otomatik kayıt **Kapalı** iken proje yalnız **Kaydet** ile kaydedilir; revizyon da yalnız o zaman ilerler. Önceden kapalıyken de kaydeden yollar: görsel ekleme/kaldırma/kullanılan görseli silme (`persistActiveProject`), sekme gizlenince ve editörden çıkınca (`saveNowIfDirty`), Aç / Dışarı Aktar / Sahneyi Oluştur / İçe Aktar / proje seçimi öncesi (`projectActionSaveGuard`). Artık:

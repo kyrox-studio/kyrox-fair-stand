@@ -32,7 +32,7 @@ import {
   resolveRevisionWrite,
 } from './projectRevisionSession.js';
 import { describeRectSelection } from './rectSelection.js';
-import { createModuleContextMenu, allowsModuleSideInsert, resolveModuleSidePlacement } from './moduleContextMenu.js';
+import { createModuleContextMenu, allowsModuleSideInsert } from './moduleContextMenu.js';
 import { createSelectionToolbar } from './selectionToolbar.js';
 import { createModuleDragSidebar } from './moduleDragSidebar.js';
 import { createColorEditorController } from './colorEditorController.js';
@@ -49,7 +49,7 @@ import {
   withStandEdgeWallIds,
 } from './modulePlacement.js';
 import { getContinuousWallSegments, planContinuousWallInsertion } from './wallReflow.js';
-import { getModuleDefaultRotationDeg, isTopPlacementModule } from './moduleBehavior.js';
+import { getModuleDefaultRotationDeg } from './moduleBehavior.js';
 import {
   buildAutomaticProjectNameSuffix,
   createProjectNamingController,
@@ -419,9 +419,14 @@ const selectionToolbar = createSelectionToolbar({
     const context = scene3d.getSelectionContext();
     if (context) scene3d.rotateModuleById(context.moduleId);
   },
+  // Kopyala açıkken aynı düğme kopyalamayı bitirir.
   onDuplicate: (point) => {
+    if (moduleDragSidebar?.isPlacementArmed()) {
+      moduleDragSidebar.cancelPlacement();
+      return;
+    }
     const context = scene3d.getSelectionContext(point);
-    if (context) duplicateContextModule(context, resolveModuleSidePlacement(context, 'right'));
+    if (context) copyContextModule(context);
   },
   onDelete: (point) => {
     const context = scene3d.getSelectionContext(point);
@@ -752,62 +757,69 @@ function applyContinuousInsertionPlan(plan, insertedModules) {
     .filter(Boolean);
 }
 
-function duplicateContextModule(context, side) {
+// Kopyala: modül hafızaya alınır; sahnede tıklanan/dokunulan her yere, katalogdan bırakmayla aynı
+// yerleşim kuralıyla bir kopya bırakılır (görseller, renk, cam/Lightbox/metal dahil; kilitsiz,
+// grupsuz). Esc veya Kopyala'ya tekrar basmak bitirir. Ctrl+C kopyalar, Ctrl+V son kopyayla yeniden başlar.
+let copiedModule = null;
+
+function placeCopiedModule(state, clientX, clientY, rotationZDeg, rotationLocked) {
+  if (!state) return;
+  const result = scene3d.dropCatalogModuleDrag(state, clientX, clientY, rotationZDeg, rotationLocked);
+  if (!result?.ok || !result.placement) {
+    renderWallResult(result?.message ?? 'Kopya bu konuma bırakılamadı.', true);
+    return;
+  }
+  if (result.plan?.placements instanceof Map && result.plan?.orderedModuleIds?.length) {
+    // Şeride araya ekleme: diğer modüller kayar, kopya araya girer.
+    commitModuleAddition(() => applyContinuousInsertionPlan(result.plan, [state]));
+    return;
+  }
+  state.placement = { ...result.placement };
+  commitModuleAddition(() => currentModules.push(state));
+}
+
+function startCopyPlacement() {
+  if (!copiedModule) return false;
+  const label = getItem(copiedModule.itemKey)?.label ?? copiedModule.label ?? copiedModule.itemKey ?? 'Modül';
+  const armed = moduleDragSidebar?.armPlacement({
+    createState: () => duplicateModuleState(copiedModule),
+    rotationZDeg: copiedModule.placement?.rotationZDeg,
+    hint: 'Kopyayı bırakmak için sahnede yere dokun · Esc veya Kopyalamayı bitir: çık',
+    onPlace: placeCopiedModule,
+    onEnd: () => selectionToolbar?.setCopyActive(false),
+  });
+  if (!armed) return false;
+  selectionToolbar?.setCopyActive(true);
+  selectionInfo.textContent = `Kopyalandı: ${label} · bırakmak için sahnede bir yere dokun · Esc: bitir`;
+  return true;
+}
+
+function copyContextModule(context) {
   const index = findContextModuleIndex(context);
   if (index < 0 || index >= currentModules.length) return;
+  copiedModule = JSON.parse(JSON.stringify(currentModules[index]));
+  startCopyPlacement();
+}
 
-  const sourceModule = currentModules[index];
-  const duplicate = duplicateModuleState(sourceModule);
-  if (!duplicate) return;
-
-  if (isTopPlacementModule(sourceModule) && sourceModule.placement) {
-    const sourcePlacement = sourceModule.placement;
-    const placement = { ...sourcePlacement };
-    if (!Number.isFinite(Number(placement.zCm))) {
-      placement.zCm = resolveItemDefaultZCm(sourceModule);
-    }
-    const deltaCm = side === 'left' ? -20 : 20;
-    const widthCm = Number(duplicate.widthCm) || 50;
-
-    if (sourcePlacement.wallId === 'back') {
-      placement.xCm = Math.min(
-        Math.max(0, Number(currentStand?.xCm) - widthCm),
-        Math.max(0, Number(sourcePlacement.xCm) + deltaCm),
-      );
-      placement.yCm = 0;
-    } else if (sourcePlacement.wallId === 'left' || sourcePlacement.wallId === 'right') {
-      placement.yCm = Math.min(
-        Math.max(0, Number(currentStand?.yCm) - widthCm),
-        Math.max(0, Number(sourcePlacement.yCm) + deltaCm),
-      );
-      placement.xCm = sourcePlacement.wallId === 'right' ? Number(currentStand?.xCm) : 0;
-    }
-
-    duplicate.placement = placement;
-    commitModuleAddition(() => currentModules.push(duplicate));
+function onCopyPasteKeyDown(event) {
+  if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+  const key = String(event.key).toLowerCase();
+  if (key !== 'c' && key !== 'v') return;
+  const tagName = String(event.target?.tagName ?? '').toLowerCase();
+  if (tagName === 'input' || tagName === 'textarea' || tagName === 'select' || event.target?.isContentEditable) return;
+  if (key === 'c') {
+    // Metin seçiliyse tarayıcının kendi kopyalaması çalışır; toplu seçimde kopya yok.
+    if (window.getSelection?.()?.toString()) return;
+    if ((scene3d.getSelectedModuleIds?.() ?? []).length > 1) return;
+    const context = scene3d.getSelectionContext();
+    if (!context) return;
+    event.preventDefault();
+    copyContextModule(context);
     return;
   }
-
-  if (resolveContextEdgeWallId(sourceModule) !== 'free') {
-    const plan = planContextContinuousInsertion([duplicate], context, side);
-    if (!plan.ok) {
-      renderWallResult(plan.message, true);
-      window.alert(`Modül çoğaltılamadı\n\n${plan.message}`);
-      return;
-    }
-
-    commitModuleAddition(() => applyContinuousInsertionPlan(plan, [duplicate]));
-    return;
-  }
-
-  const plan = planContextFreeInsertion([duplicate], context, side);
-  if (!plan.ok) {
-    renderWallResult(plan.message, true);
-    window.alert(`Modül çoğaltılamadı\n\n${plan.message}`);
-    return;
-  }
-
-  commitModuleAddition(() => applyFreeInsertionPlan(plan, [duplicate], context, side));
+  if (!copiedModule) return;
+  event.preventDefault();
+  startCopyPlacement();
 }
 
 function assignStandFloorItem(stand, itemKey) {
@@ -1353,7 +1365,6 @@ async function resizeContextIlluminatedFoam(context) {
 }
 const moduleContextMenu = createModuleContextMenu({
   onDelete: deleteContextModule,
-  onDuplicate: duplicateContextModule,
   onResize: resizeContextIlluminatedFoam,
   onImageResize: resizeContextImage,
   onAdd: addCatalogModule,
@@ -3459,6 +3470,7 @@ function onDesignHistoryKeyDown(event) {
   runDesignHistory(shortcut.type);
 }
 window.addEventListener('keydown', onDesignHistoryKeyDown);
+window.addEventListener('keydown', onCopyPasteKeyDown);
 
 designUndoButton?.addEventListener('click', () => runDesignHistory('undo'));
 designRedoButton?.addEventListener('click', () => runDesignHistory('redo'));
@@ -4088,6 +4100,7 @@ const historicalEditWatch = setInterval(() => {
     clearInterval(historicalEditWatch);
     clearInterval(designHistoryWatch);
     window.removeEventListener('keydown', onDesignHistoryKeyDown);
+    window.removeEventListener('keydown', onCopyPasteKeyDown);
     window.removeEventListener('pointerup', scheduleDesignHistoryCapture);
     window.removeEventListener('keyup', scheduleDesignHistoryCapture);
     document.removeEventListener('change', scheduleDesignHistoryCapture);

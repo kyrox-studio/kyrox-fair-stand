@@ -24,7 +24,7 @@ function listGuideSections() {
         <tr><th>Orta tuş / tekerleğe basılı sürükle</th><td>Kamerayı yatay-dikey kaydırır (pan).</td></tr>
         <tr><th>Mouse tekerleği</th><td>Yakınlaştırır / uzaklaştırır.</td></tr>
         <tr><th>Sağ tık</th><td>Modül veya panel için bağlama göre işlem menüsünü açar. Tablette parmakla basılı tutmak (uzun basma) aynı menüyü açar.</td></tr>
-        <tr><th>Seçim çubuğu</th><td>Seçili öğenin üstünde <strong>Döndür</strong>, <strong>Kopyala</strong>, <strong>Sil</strong>, <strong>Çoklu panel</strong> veya <strong>Çoklu modül</strong> ve <strong>⋯</strong> (sağ tık menüsü) çıkar; panel seçimi mavi, modül seçimi turuncudur; fare ve tablette aynı çalışır.</td></tr>
+        <tr><th>Seçim çubuğu</th><td>Seçili öğenin üstünde <strong>Döndür</strong>, <strong>Kopyala</strong>, <strong>Sil</strong>, <strong>Çoklu panel</strong> veya <strong>Çoklu modül</strong> ve <strong>⋯</strong> (sağ tık menüsü) çıkar; Kopyala açıkken yalnız <strong>Kopyalamayı bitir</strong> görünür; panel seçimi mavi, modül seçimi turuncudur; fare ve tablette aynı çalışır. <strong>Kopyala:</strong> Modülü hafızaya alır; sahnede tıkladığın veya dokunduğun her yere, katalogdan bırakmayla aynı kuralla bir kopya bırakır (görsel, renk, cam, Lightbox ve metal dahil); Esc veya <strong>Kopyalamayı bitir</strong> ile çıkılır. Kilitli öğenin kopyası kilitsiz gelir. Kopyadaki metal separatör kendi grubunu alır; kopyada kapatmak orijinali etkilemez. Sağ tık menüsünde Kopyala yoktur.</td></tr>
       </tbody></table>
     `,
   },
@@ -42,6 +42,7 @@ function listGuideSections() {
         <tr><th>Shift + R</th><td>Seçili modülü saat yönünde döndürür. Sürükleme sırasında da kullanılabilir.</td></tr>
         <tr><th>↑ ↓ ← →</th><td>Seçili modülü kendi snap adımına göre ekranda görülen yöne taşır.</td></tr>
         <tr><th>Delete</th><td>Sahnede tek modül seçiliyse modülü siler (kilitli değilse). Görsel kütüphanesinde bir görsel seçili/odaktaysa görsel silme uyarısını açar.</td></tr>
+        <tr><th>Ctrl/Cmd + C / V</th><td>Ctrl/Cmd + C seçili modülü kopyalar ve yerleştirmeye başlar; Ctrl/Cmd + V son kopyayla yeniden başlar. Her tıklama bir kopya bırakır, Esc bitirir.</td></tr>
         <tr><th>Ctrl/Cmd + Z</th><td>Tasarımdaki son değişikliği geri alır: taşıma, döndürme, ekleme, silme, çoğaltma, renk, görsel, cam, separatör, kumaş, kilit ve zemin. Üst banttaki <strong>Geri al</strong> düğmesi de aynı işi yapar.</td></tr>
         <tr><th>Ctrl/Cmd + Y veya Ctrl/Cmd + Shift + Z</th><td>Geri alınanı ileri alır. Üst banttaki <strong>İleri al</strong> düğmesi de aynı işi yapar.</td></tr>
         <tr><th>Esc</th><td>Açık sağ tık menüsü, katalog veya yardım penceresini kapatır.</td></tr>
@@ -59,7 +60,6 @@ function listGuideSections() {
       <ul>
         <li><strong>Kilitle / Kilidi aç:</strong> Öğeyi bulunduğu yere sabitler. Kilitli öğe sürüklenemez, ok tuşlarıyla taşınamaz, döndürülemez, boyutlandırılamaz ve silinemez. Yanına ekleme veya başka bir öğenin taşınması onu kaydıracaksa işlem yapılmaz. Renk, görsel, cam, separatör ve kumaş kilitliyken de değiştirilebilir. Kilit projeyle kaydedilir. Shift ile toplu seçimde menü <strong>Seçilenleri kilitle / Seçilenlerin kilidini aç</strong> olur.</li>
         <li><strong>Sil:</strong> Modülü sahneden kaldırır. Kilitli öğede pasiftir.</li>
-        <li><strong>Çoğalt Sağ / Sol:</strong> Aynı modülün kopyasını belirtilen tarafa ekler. Kilitli öğenin kopyası kilitsiz gelir. Kopyadaki metal separatör kendi grubunu alır; kopyada kapatmak orijinali etkilemez.</li>
         <li><strong>Boyutlandır…:</strong> Işıklı Strafor seçiliyken mevcut X/Y ölçülerini açar; yeni ölçüler girildiğinde aynı modül konumu ve ışık rengi korunarak yeniden boyutlandırılır.</li>
         <li><strong>Ölçü / opacity…:</strong> Kutu blok seçiliyken genişlik, derinlik, yükseklik ve 0–1 opacity açılır. Yüzler, renk ve taşıma <strong>Kutu Blok</strong> bölümündedir.</li>
         <li><strong>Kutu yürütme:</strong> Ok tuşları kutuyu sağa, sola, ileri, geri ve yukarı, aşağı yürütür. Taban zeminin altına inmez. Kutunun tepesi stand tavanını geçmez.</li>

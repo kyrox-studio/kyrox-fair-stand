@@ -108,8 +108,12 @@ test('placement core selects F-011 policies through moduleBehavior instead of pr
   }
 });
 
-test('controller routes top-fixture duplication through moduleBehavior instead of a LED type check', () => {
+// Kopyala (Çoğalt Sağ/Sol yerine): kopya katalogdan bırakmayla aynı, davranışa dayalı yerleşim
+// yolundan geçer; tavan armatürü için türe özel kontrol yoktur.
+test('controller places copies through the shared behavior-driven drop path instead of a LED type check', () => {
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /sourceModule\.type === 'led-floodlight'/);
-  assert.match(source, /isTopPlacementModule\(sourceModule\)/);
+  assert.doesNotMatch(source, /type === 'led-floodlight'/);
+  assert.match(source, /const result = scene3d\.dropCatalogModuleDrag\(state, clientX, clientY, rotationZDeg, rotationLocked\);/);
+  assert.match(source, /createState: \(\) => duplicateModuleState\(copiedModule\),/);
 });
