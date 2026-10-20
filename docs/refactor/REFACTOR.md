@@ -15,6 +15,28 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-20 — Tablet kullanımı 1. aşama: seçim çubuğu, uzun basma, Döndür
+
+**Seçim çubuğu (`selectionToolbar.js`):** Tek öğe seçiliyken üstünde Döndür / Kopyala (sağa) / Sil / ⋯; toplu seçimde yalnız ⋯ (toplu menü). Konumu sahne bildirir: `createStandScene` 6. geri çağrısı `onSelectionAnchor`, her karede seçili modülün tepe ortasının ekran noktası (değişince); sürüklerken gizlenir. Stili modül kendisi ekler (CRM gömülü stil dosyasına girmez).
+
+**Uzun basma:** Dokunmatikte ~0,55 sn basılı tutmak sağ tık menüsünü açar (`openModuleContextMenuAt`); parmak 10 px oynarsa veya kalkarsa iptal, açılırsa başlamış modül sürüklemesi bırakılır; tarayıcının kendi contextmenu olayı ikinci kez açmaz.
+
+**Döndür:** Sağ tık menüsüne eklendi; `scene3d.rotateModuleById` modülü seçip Shift+R ile aynı döndürmeyi yapar. Seçimden menü bağlamı: `scene3d.getSelectionContext`.
+
+**Sağ tık kalır.**
+
+### 2. aşama: sade menü, dokunmatik çoklu seçim, dokunarak ekleme
+
+**Sade / Gelişmiş menü:** Cam, Metal Separatör, Lightbox, Mesh dönüşümleri ve Lightbox aydınlatması `.module-context-advanced` altına alındı; `Gelişmiş ▸` düğmesi yalnız bu öğede en az biri uygunsa çıkar, açık/kapalı tercihi oturum boyunca hatırlanır. Görünür kalanlar: grup komutları, Kilitle, Döndür, Sil, Çoğalt, Boyutlandır, Görseli ölçülendir, Raf altı ışık, Ekle. Bu butonlara basan 3 E2E (`box-block-corners`, `duplicate-metal-separator`, `metal-separator-bom-gap`) önce Gelişmiş'i açar; doğrulamaları aynı.
+
+**Çoklu panel / Çoklu modül (tablet):** Seçim çubuğundaki düğme seçili olana göre değişir (anchor `kind`). Panel seçiliyse **Çoklu panel** (mavi): tek seferlik parmak taraması; parmağın konduğu panel çapa, kaydırdıkça Ctrl + tık ile aynı `selectRectangleTo` dikdörtgeni (komşu modüller ve köşe dahil); parmak kalkınca mod kapanır, sonraki sürükleme yine taşır. Modül seçiliyse **Çoklu modül** (turuncu): dokunuş Shift + tık ile aynı `toggleMultiModuleSelection`; seçim boşalınca kapanır. `scene3d.setMultiSelectMode(false | 'panel' | 'module', { onEnd })`; sahnenin kenarı modda mavi/turuncu. Renk kuralı: mavi = panel/alan, turuncu = modülün tamamı. Bu modlarda uzun basma menüsü başlamaz.
+
+**Modüller arası panel seçiminde çubuk ve ⋯:** Seçili paneller birden fazla modüle yayılınca çubuk o modüllerin üstünde kalır (önceden kayboluyordu) ve ⋯ menüsü çapa panelinin bağlamıyla açılır (sağ tıkla aynı panel işlemleri). Modülün tepesi ekranın üstünde kalırsa (yakınlaşınca) çubuk üst kenara yapışır.
+
+**Dokunarak ekleme:** Katalog kartına tıklamak/dokunmak kartı "yerleştirmeye hazır" yapar (turuncu çerçeve, ipucu metni); sahnede dokunulan nokta sürükle-bırakla aynı `onPreview` / `onDrop` yolundan geçer (capture fazında yakalanır, sahne seçimi ve kameraya gitmez). Tek seferliktir; aynı kart veya Esc iptal eder. Farede imleç gezerken önizleme gösterilir. Sürükle-bırak aynen kalır.
+
+---
+
 ## 2026-10-19 — Duvar yüksekliği kuralı (wall ailesi)
 
 **Kural:** Düz duvar (`wall_50/100/150/200_350`) reçetesi DB'de 350 cm (7 bant) olarak kalır. Reçete satırına `per_band` (bant başına adet farkı: panel 1, tekli aparat 2) ve `height_matched` (dikme yüksekliğe göre değişir) eklendi (`0068_wall_band_recipe`). B = yükseklik / 50: panel B, tekli 2B − 1, başlangıç 2, profil 2, dikme 2.

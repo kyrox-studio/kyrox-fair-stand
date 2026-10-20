@@ -372,6 +372,7 @@ export function createStandScene(
   getAssetUrl = () => null,
   onModuleContextMenu = () => {},
   onFloorSelected = () => {},
+  onSelectionAnchor = () => {},
 ) {
   const document = getFairStandHostDocument();
   const window = getFairStandHostWindow();
@@ -826,6 +827,11 @@ export function createStandScene(
   let floorSelected = false;
   let floorAreaSelected = false;
   let floorAreaDrawArmed = false;
+  // Tablet çoklu seçim modu: 'module' açıkken modüle dokunmak Shift + tık gibi toplu seçime
+  // ekler/çıkarır; 'panel' tek seferlik parmak taramasıdır (Ctrl + tık dikdörtgeni gibi).
+  let multiSelectMode = false;
+  let onMultiSelectModeEnd = null;
+  let panelSweep = null;
   let floorDrawSession = null;
   let floorAreaMesh = null;
   let floorAreaPattern = null;
@@ -2560,6 +2566,27 @@ export function createStandScene(
 
     const { moduleGroup, hit } = picked;
     const surface = hit.object.userData?.kind === 'surface' ? hit.object : null;
+    return buildModuleContext(moduleGroup, surface, event.clientX, event.clientY);
+  }
+
+  // Seçili modülün menü bağlamı (araç çubuğu ⋯, dokunmatik): seçili yüzey o modüldeyse onu kullanır.
+  function getSelectionContext({ clientX = 0, clientY = 0 } = {}) {
+    let moduleGroup = getSingleSelectedModuleGroup()
+      ?? (multiSelectedModuleIds.size ? findModuleGroupById([...multiSelectedModuleIds][0]) : null);
+    // Modüller arası panel seçimi: bağlam çapa panelinin modülüdür (sağ tıkla aynı panel işlemleri).
+    let anchorSurface = null;
+    if (!moduleGroup && selectedSurfaces.size) {
+      anchorSurface = [...selectedSurfaces].find((mesh) => mesh.userData?.surfaceId === selectionAnchorSurfaceId)
+        ?? [...selectedSurfaces][0];
+      moduleGroup = findModuleGroupById(anchorSurface.userData?.moduleId);
+    }
+    if (!moduleGroup) return null;
+    const moduleId = moduleGroup.userData?.moduleState?.id ?? moduleGroup.userData?.moduleId;
+    const surface = anchorSurface ?? [...selectedSurfaces].find((mesh) => mesh.userData?.moduleId === moduleId) ?? null;
+    return buildModuleContext(moduleGroup, surface, clientX, clientY);
+  }
+
+  function buildModuleContext(moduleGroup, surface, clientX, clientY) {
     const supportsGlass = surface?.userData.acceptsGlass === true;
     const supportsLightbox = surface?.userData.acceptsLightbox === true;
     const supportsMesh = surface?.userData.acceptsMesh === true;
@@ -2614,8 +2641,8 @@ export function createStandScene(
           )
         ),
       ),
-      clientX: event.clientX,
-      clientY: event.clientY,
+      clientX,
+      clientY,
     };
   }
 
@@ -5656,14 +5683,23 @@ export function createStandScene(
   }
 
   renderer.domElement.addEventListener('contextmenu', (event) => {
+    // Dokunmatik uzun basma menüyü zaten açtıysa tarayıcının kendi contextmenu olayı ikinci kez açmaz.
+    if (performance.now() - lastLongPressAt < 800) {
+      event.preventDefault();
+      return;
+    }
+    if (openModuleContextMenuAt(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  });
+
+  function openModuleContextMenuAt(event) {
     const context = pickModuleContext(event);
     if (!context) {
       onModuleContextMenu?.(null);
-      return;
+      return false;
     }
-
-    event.preventDefault();
-    event.stopPropagation();
 
     // Toplu seçim (≥2) varken sağ tık seçimi asla bozmaz: komşu panele kaymış
     // tıklama 6–7 öğelik seçimi tek öğeye düşürüp "Grup oluştur"u kaçırıyordu.
@@ -5680,7 +5716,46 @@ export function createStandScene(
     }
 
     onModuleContextMenu?.(context);
-  });
+    return true;
+  }
+
+  // Tablet: parmakla ~0,55 sn basılı tutmak sağ tıkla aynı menüyü açar. Parmak oynarsa
+  // (sürükleme / kamera) iptal olur; açılınca başlamış modül sürüklemesi bırakılır.
+  const LONG_PRESS_MS = 550;
+  const LONG_PRESS_MOVE_PX = 10;
+  let longPress = null;
+  let lastLongPressAt = -Infinity;
+
+  function cancelLongPress() {
+    if (!longPress) return;
+    clearTimeout(longPress.timer);
+    longPress = null;
+  }
+
+  renderer.domElement.addEventListener('pointerdown', (event) => {
+    cancelLongPress();
+    if (event.pointerType !== 'touch' || !stageLayout || multiSelectMode) return;
+    const { pointerId, clientX, clientY } = event;
+    longPress = {
+      pointerId,
+      clientX,
+      clientY,
+      timer: setTimeout(() => {
+        longPress = null;
+        if (dragSession && dragSession.pointerId === pointerId && !dragSession.dragging) {
+          try {
+            renderer.domElement.releasePointerCapture?.(pointerId);
+          } catch {
+            // İşaretçi zaten bırakılmış olabilir.
+          }
+          dragSession = null;
+          controls.enabled = true;
+        }
+        lastLongPressAt = performance.now();
+        openModuleContextMenuAt({ clientX, clientY });
+      }, LONG_PRESS_MS),
+    };
+  }, { capture: true, signal });
 
   function handleSurfaceSelectionAt(clientX, clientY, rectangleSelect, fallbackModuleId = null) {
     setPointerFromClient(clientX, clientY);
@@ -5746,10 +5821,10 @@ export function createStandScene(
     }
   }
 
-  // Shift + sol tık bir modülün üstündeyse toplu seçime ekler/çıkarır ve kameraya
-  // gitmez. Boş alanda dokunulmaz: OrbitControls'un Shift davranışı (pan) korunur.
+  // Shift + sol tık (veya çoklu seçim modunda dokunuş) bir modülün üstündeyse toplu seçime
+  // ekler/çıkarır ve kameraya gitmez. Boş alanda dokunulmaz: OrbitControls'un Shift davranışı (pan) korunur.
   renderer.domElement.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0 || !event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.button !== 0 || !(event.shiftKey || multiSelectMode === 'module') || event.ctrlKey || event.metaKey || event.altKey) return;
     if (!stageLayout || floorAreaDrawArmed) return;
     const picked = pickModuleAt(event.clientX, event.clientY);
     const moduleId = picked?.moduleGroup?.userData?.moduleState?.id
@@ -5760,6 +5835,34 @@ export function createStandScene(
     event.stopImmediatePropagation();
     toggleMultiModuleSelection(moduleId);
   }, { capture: true });
+
+  // Çoklu panel taraması: parmağın konduğu panel çapa olur, kaydırdıkça çapadan parmağın
+  // altındaki panele Ctrl + tık ile aynı dikdörtgen (komşu modüller ve köşe dahil) seçilir.
+  // Parmak kalkınca seçim kalır ve mod kapanır; sonraki sürükleme yine taşır / kamerayı çevirir.
+  function pickPanelAt(clientX, clientY) {
+    setPointerFromClient(clientX, clientY);
+    raycaster.setFromCamera(pointer, camera);
+    return raycaster.intersectObjects(surfaceMeshes, false)
+      .find((entry) => entry.object?.userData?.selectionMode === 'panel')?.object ?? null;
+  }
+
+  function endMultiSelectMode() {
+    panelSweep = null;
+    multiSelectMode = false;
+    const done = onMultiSelectModeEnd;
+    onMultiSelectModeEnd = null;
+    done?.();
+  }
+
+  renderer.domElement.addEventListener('pointerdown', (event) => {
+    if (multiSelectMode !== 'panel' || event.button !== 0 || !stageLayout) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const panel = pickPanelAt(event.clientX, event.clientY);
+    if (!panel) return;
+    selectOnly(panel);
+    panelSweep = { pointerId: event.pointerId, surfaceId: panel.userData.surfaceId };
+  }, { capture: true, signal });
 
   // Ctrl/Cmd + sol tık çoklu panel seçimini OrbitControls'tan önce yakala.
   // Capture fazı kamera döndürme listener'ının seçimi bozmasını engeller.
@@ -5857,6 +5960,29 @@ export function createStandScene(
   });
 
   const hostWindow = getFairStandHostWindow();
+  hostWindow.addEventListener('pointermove', (event) => {
+    if (longPress && event.pointerId === longPress.pointerId
+      && Math.hypot(event.clientX - longPress.clientX, event.clientY - longPress.clientY) > LONG_PRESS_MOVE_PX) {
+      cancelLongPress();
+    }
+  }, { signal });
+  hostWindow.addEventListener('pointerup', (event) => {
+    if (longPress && event.pointerId === longPress.pointerId) cancelLongPress();
+  }, { signal });
+  hostWindow.addEventListener('pointercancel', cancelLongPress, { signal });
+  hostWindow.addEventListener('pointermove', (event) => {
+    if (!panelSweep || event.pointerId !== panelSweep.pointerId) return;
+    const panel = pickPanelAt(event.clientX, event.clientY);
+    if (!panel || panel.userData.surfaceId === panelSweep.surfaceId) return;
+    panelSweep.surfaceId = panel.userData.surfaceId;
+    selectRectangleTo(panel);
+  }, { signal });
+  const finishPanelSweep = (event) => {
+    if (!panelSweep || event.pointerId !== panelSweep.pointerId) return;
+    endMultiSelectMode();
+  };
+  hostWindow.addEventListener('pointerup', finishPanelSweep, { signal });
+  hostWindow.addEventListener('pointercancel', finishPanelSweep, { signal });
   hostWindow.addEventListener('pointermove', (event) => {
     if (floorDrawSession && event.pointerId === floorDrawSession.pointerId) {
       const ground = getGroundPoint(event.clientX, event.clientY);
@@ -6505,7 +6631,70 @@ export function createStandScene(
       (renderer.info.memory?.textures ?? 0) - texturesBefore,
     );
     if (!controlsChanged && !activelyDragging) editorRenderRequested = false;
+    emitSelectionAnchor(activelyDragging);
   });
+
+  let lastSelectionAnchorKey = '';
+  const selectionAnchorBox = new THREE.Box3();
+  const selectionAnchorPoint = new THREE.Vector3();
+
+  function selectedModuleGroupsForAnchor() {
+    if (multiSelectedModuleIds.size > 1) {
+      return [...multiSelectedModuleIds].map((id) => findModuleGroupById(id)).filter(Boolean);
+    }
+    const single = getSingleSelectedModuleGroup();
+    if (single) return [single];
+    // Komşu modüllere yayılan panel seçimi (Ctrl + tık / parmak taraması): panellerin modülleri.
+    const moduleIds = new Set([...selectedSurfaces].map((surface) => surface.userData?.moduleId).filter(Boolean));
+    return [...moduleIds].map((moduleId) => findModuleGroupById(moduleId)).filter(Boolean);
+  }
+
+  function emitSelectionAnchor(dragging) {
+    let anchor = null;
+    const groups = dragging ? [] : selectedModuleGroupsForAnchor();
+    if (groups.length) {
+      selectionAnchorBox.makeEmpty();
+      groups.forEach((group) => selectionAnchorBox.expandByObject(group));
+      selectionAnchorBox.getCenter(selectionAnchorPoint);
+      selectionAnchorPoint.y = selectionAnchorBox.max.y;
+      selectionAnchorPoint.project(camera);
+      const rect = renderer.domElement.getBoundingClientRect();
+      // Yakınlaşınca modülün tepesi ekranın üstünde kalabilir: çubuk o zaman üst kenara yapışır
+      // (konumu çubuk sınırlar); yalnız tepe ekranın altında veya yanlarda kalırsa gizlenir.
+      const visible = selectionAnchorPoint.z < 1
+        && Math.abs(selectionAnchorPoint.x) <= 1.05 && selectionAnchorPoint.y >= -1.05;
+      if (visible) {
+        anchor = {
+          clientX: Math.round(rect.left + ((selectionAnchorPoint.x + 1) / 2) * rect.width),
+          clientY: Math.round(rect.top + ((1 - selectionAnchorPoint.y) / 2) * rect.height),
+          count: groups.length,
+          kind: multiSelectedModuleIds.size <= 1
+            && [...selectedSurfaces].some((mesh) => mesh.userData?.selectionMode === 'panel')
+            ? 'panel'
+            : 'module',
+        };
+      }
+    }
+    const key = anchor ? `${anchor.clientX},${anchor.clientY},${anchor.count},${anchor.kind}` : '';
+    if (key === lastSelectionAnchorKey) return;
+    lastSelectionAnchorKey = key;
+    onSelectionAnchor?.(anchor);
+  }
+
+  // mode: false | 'module' | 'panel'. onEnd: tek seferlik panel taraması bitince çağrılır.
+  function setMultiSelectMode(mode, { onEnd = null } = {}) {
+    multiSelectMode = mode === 'panel' || mode === 'module' ? mode : false;
+    onMultiSelectModeEnd = multiSelectMode ? onEnd : null;
+    panelSweep = null;
+  }
+
+  // Menü ve araç çubuğu Döndür: modülü seçip klavyedeki Shift+R ile aynı döndürmeyi yapar.
+  function rotateModuleById(moduleId) {
+    if (moduleId && getSingleSelectedModuleGroup()?.userData?.moduleState?.id !== moduleId) {
+      selectModulesById([moduleId]);
+    }
+    return rotateSelectedModule(-90);
+  }
 
   async function captureCurrentViewPng({ scale = 3 } = {}) {
     if (!stageLayout) return { ok: false, message: 'Önce stand sahnesini oluştur.' };
@@ -6637,6 +6826,9 @@ export function createStandScene(
     isFloorAreaSelected: () => floorAreaSelected,
     getSelectedModuleIds,
     selectModulesById,
+    getSelectionContext,
+    rotateModuleById,
+    setMultiSelectMode,
     showPlacementFeedback,
     buildWall,
     clearWall,

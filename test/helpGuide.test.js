@@ -52,6 +52,13 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /title: 'Kutu Blok'/);
   assert.match(guideSource, /bütün görselleri ve 3D modelleri gelene kadar kalır/);
   assert.match(guideSource, /Yarım sahne gösterilmez/);
+  assert.match(guideSource, /Tablette parmakla basılı tutmak \(uzun basma\) aynı menüyü açar\./);
+  assert.match(guideSource, /<th>Seçim çubuğu<\/th>/);
+  assert.match(guideSource, /<strong>Çoklu modül<\/strong> açıkken modüle dokunmak aynı işi yapar/);
+  assert.match(guideSource, /<strong>Çoklu panel<\/strong>’e basıp parmağı bir panelden diğerine kaydırmak aynı dikdörtgeni seçer/);
+  assert.match(guideSource, /panel seçimi mavi, modül seçimi turuncudur/);
+  assert.match(guideSource, /menüde <strong>Gelişmiş ▸<\/strong> altındadır/);
+  assert.match(guideSource, /Tablette karta dokunup sahnede yere dokunmak da modülü oraya ekler/);
   assert.match(guideSource, /<strong>Duvar yüksekliği<\/strong>ni seç \(250–500 cm, varsayılan 350;/);
   assert.match(guideSource, /Editörde ışık gölgesi, LED projektör ve raf altı aydınlatmanın panele düşen ışığı kapalıdır/);
   assert.match(guideSource, /<strong>Render Al<\/strong> çizerken gölgeyi, projektör ve raf altı ışıklarını açar/);
