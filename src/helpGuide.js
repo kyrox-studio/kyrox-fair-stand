@@ -18,12 +18,13 @@ function listGuideSections() {
       <table><tbody>
         <tr><th>Sol tık</th><td>Panel, modül veya zemini seçer.</td></tr>
         <tr><th>Modülü tut + sürükle</th><td>Modülü geçerli yerleşim kurallarına göre taşır.</td></tr>
-        <tr><th>Ctrl/Cmd + tık</th><td>İlk panel ile tıklanan panel arasında çoklu panel seçimi yapar.</td></tr>
-        <tr><th>Shift + tık (öğe üstünde)</th><td>Öğeyi toplu seçime ekler veya çıkarır. Sağ tıkla seçilenlerin hepsi birden kilitlenir veya kilidi açılır. Boş alanda Shift kamerayı etkilemeye devam eder.</td></tr>
+        <tr><th>Ctrl/Cmd + tık</th><td>İlk panel ile tıklanan panel arasında çoklu panel seçimi yapar. Tablette panel seçiliyken seçim çubuğunda <strong>Çoklu panel</strong>’e basıp parmağı bir panelden diğerine kaydırmak aynı dikdörtgeni seçer (komşu modüller ve köşe dahil); parmak kalkınca mod kapanır.</td></tr>
+        <tr><th>Shift + tık (öğe üstünde)</th><td>Öğeyi toplu seçime ekler veya çıkarır. Sağ tıkla seçilenlerin hepsi birden kilitlenir veya kilidi açılır. Boş alanda Shift kamerayı etkilemeye devam eder. Tablette seçim çubuğunda <strong>Çoklu modül</strong> açıkken modüle dokunmak aynı işi yapar; boş alana dokununca kapanır.</td></tr>
         <tr><th>Boş alanda sol sürükle</th><td>Kamerayı stand etrafında döndürür.</td></tr>
         <tr><th>Orta tuş / tekerleğe basılı sürükle</th><td>Kamerayı yatay-dikey kaydırır (pan).</td></tr>
         <tr><th>Mouse tekerleği</th><td>Yakınlaştırır / uzaklaştırır.</td></tr>
-        <tr><th>Sağ tık</th><td>Modül veya panel için bağlama göre işlem menüsünü açar.</td></tr>
+        <tr><th>Sağ tık</th><td>Modül veya panel için bağlama göre işlem menüsünü açar. Tablette parmakla basılı tutmak (uzun basma) aynı menüyü açar.</td></tr>
+        <tr><th>Seçim çubuğu</th><td>Seçili öğenin üstünde <strong>Döndür</strong>, <strong>Kopyala</strong>, <strong>Sil</strong>, <strong>Çoklu panel</strong> veya <strong>Çoklu modül</strong> ve <strong>⋯</strong> (sağ tık menüsü) çıkar; panel seçimi mavi, modül seçimi turuncudur; fare ve tablette aynı çalışır.</td></tr>
       </tbody></table>
     `,
   },
@@ -64,6 +65,7 @@ function listGuideSections() {
         <li><strong>Kutu yürütme:</strong> Ok tuşları kutuyu sağa, sola, ileri, geri ve yukarı, aşağı yürütür. Taban zeminin altına inmez. Kutunun tepesi stand tavanını geçmez.</li>
         <li><strong>Tül Z:</strong> Ok yukarı/aşağı tülü yükseltir veya alçaltır. Taban zeminin altına inmez; levhanın tepesi stand tavanını geçmez.</li>
         <li><strong>Görseli ölçülendir…:</strong> Görsel, Lightbox veya Mesh görseli atanmış yüzeyde açılır. Başlangıç ölçüsü seçili alanın kendi ölçüsüdür. Küçültünce boşluklar tekrarlanır, büyütünce görsel alanın dışına taşar. Aynı ölçü penceresi panel, Lightbox ve Mesh için geçerlidir.</li>
+        <li><strong>Gelişmiş:</strong> Cam, Metal Separatör, Lightbox ve Mesh dönüşümleri menüde <strong>Gelişmiş ▸</strong> altındadır; açık/kapalı tercihi oturum boyunca hatırlanır.</li>
         <li><strong>Cam Panele Çevir / Normal Panele Çevir:</strong> Uygun panelin cam durumunu değiştirir.</li>
         <li><strong>Metal Separatöre Çevir / Normal Panele Çevir:</strong> Uygun paneli tel ızgaraya çevirir. Deliklerden arkası görünür. Ctrl ile seçilen tam dikdörtgen tek ölçüdür.</li>
         <li><strong>Lightbox Kumaşa Çevir / Lightbox Kumaştan Çıkar:</strong> Uygun panel bloğunu tek parça opak Lightbox Kumaşa dönüştürür veya geri alır.</li>
@@ -200,14 +202,14 @@ function listGuideSections() {
   {
     title: 'Cam Panel',
     html: `
-      <p>Cam özelliğini destekleyen paneli seçip sağ tık menüsünden <strong>Cam Panele Çevir</strong> seçeneğini kullanabilirsin. Aynı menüden tekrar normal panele döndürülebilir.</p>
+      <p>Cam özelliğini destekleyen paneli seçip sağ tık menüsünde <strong>Gelişmiş</strong> altından <strong>Cam Panele Çevir</strong> seçeneğini kullanabilirsin. Aynı menüden tekrar normal panele döndürülebilir.</p>
       <p class="help-guide-note">Cam görsel/şeffaf baskı davranışları geliştikçe bu bölüm güncellenecektir.</p>
     `,
   },
   {
     title: 'Metal Separatör',
     html: `
-      <p>Cam kabul eden paneli seçip sağ tık menüsünden <strong>Metal Separatöre Çevir</strong> seçeneğini kullanabilirsin. Aynı menüden normal panele döner.</p>
+      <p>Cam kabul eden paneli seçip sağ tık menüsünde <strong>Gelişmiş</strong> altından <strong>Metal Separatöre Çevir</strong> seçeneğini kullanabilirsin. Aynı menüden normal panele döner.</p>
       <ul>
         <li>Tek panel kendi ölçüsüdür. <strong>Ctrl</strong> ile seçilen eksiksiz dikdörtgen tek ölçüdür: yan yana enler, üst üste boylar toplanır.</li>
         <li>Aynı grup her zaman tek levha değildir. Modül silinir ya da taşınırsa veya satırlar arasında boşluk kalırsa liste her bitişik bloğu ayrı levha yazar. Örnek: 197 + 98 cm arada boşlukla → <strong>1 x 197 × 47</strong> + <strong>1 x 98 × 47</strong>. Toplam m² değişmez.</li>
@@ -243,7 +245,7 @@ function listGuideSections() {
     html: `
       <ul>
         <li>Sahne oluşturulduktan sonra Modül Ekle aktif olur.</li>
-        <li>Modül Ekle’nin üstündeki katalog kartı sahneye sürüklenebilir. Sürüklerken <strong>Shift+R</strong> saat yönünde döndürür ve açıyı kilitler.</li>
+        <li>Modül Ekle’nin üstündeki katalog kartı sahneye sürüklenebilir. Sürüklerken <strong>Shift+R</strong> saat yönünde döndürür ve açıyı kilitler. Tablette karta dokunup sahnede yere dokunmak da modülü oraya ekler; aynı karta tekrar dokunmak veya Esc iptal eder.</li>
         <li><strong>Sahneyi Sıfırla:</strong> stand tipi, ölçü ve Zemin Kaplaması seçimi kalır; sahnedeki modüller ve zemin alanı silinir.</li>
         <li>Katalogdan bir veya birden fazla modül seçilebilir.</li>
         <li>Aynı modül birden fazla kez seçim sırasına eklenebilir.</li>

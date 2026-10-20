@@ -29,6 +29,10 @@ function ensureStyles() {
     .module-drag-card strong { overflow:hidden; font-size:10px; line-height:1.25; text-overflow:ellipsis; white-space:nowrap; }
     .module-drag-preview { display:flex; height:78px; align-items:center; justify-content:center; overflow:hidden; border-radius:7px; background:#fff; }
     .viewport-wrap.catalog-drag-active { outline:2px solid rgba(249,115,22,.2); outline-offset:-2px; }
+    .module-drag-card.is-armed { border-color:#f97316; background:#fff3e8; box-shadow:0 0 0 3px rgba(249,115,22,.45); }
+    .module-drag-hint.is-armed { color:#c2410c; font-weight:700; }
+    .viewport-wrap.catalog-place-armed { outline:3px solid rgba(249,115,22,.55); outline-offset:-3px; }
+    .viewport-wrap.catalog-place-armed canvas { cursor:crosshair; }
   `;
   document.head.appendChild(style);
 }
@@ -57,7 +61,9 @@ export function createModuleDragSidebar({
 
   const hint = document.createElement('p');
   hint.className = 'module-drag-hint';
-  hint.textContent = 'Kartı sahneye sürükle · Shift+R: saat yönünde döndür · grid modüle göre';
+  const DEFAULT_HINT = 'Kartı sahneye sürükle ya da karta dokunup sahnede yere dokun · Shift+R: saat yönünde döndür · grid modüle göre';
+  const ARMED_HINT = 'Yerleştirmek için sahnede yere dokun · aynı kart veya Esc: iptal';
+  hint.textContent = DEFAULT_HINT;
 
   const groupsRoot = document.createElement('div');
   groupsRoot.className = 'module-drag-groups';
@@ -89,10 +95,19 @@ export function createModuleDragSidebar({
   let rotationLocked = false;
   let lastClientX = null;
   let lastClientY = null;
+  // Dokunarak ekleme (tablet): karta dokununca kart "yerleştirmeye hazır" olur, sahnede
+  // dokunulan nokta sürükleyip bırakmayla aynı önizleme/bırakma yolundan geçer.
+  let armed = false;
+  let placePointerId = null;
+  let suppressNextClick = false;
 
   function resetDragState() {
-    activeCard?.classList.remove('is-dragging');
-    viewport.closest('.viewport-wrap')?.classList.remove('catalog-drag-active');
+    activeCard?.classList.remove('is-dragging', 'is-armed');
+    viewport.closest('.viewport-wrap')?.classList.remove('catalog-drag-active', 'catalog-place-armed');
+    hint.classList.remove('is-armed');
+    hint.textContent = DEFAULT_HINT;
+    armed = false;
+    placePointerId = null;
     activeCard = null;
     activeModuleState = null;
     activeRotationZDeg = 0;
@@ -112,7 +127,7 @@ export function createModuleDragSidebar({
       card.draggable = false;
       card.setAttribute('role', 'button');
       card.setAttribute('aria-disabled', 'true');
-      card.title = `${module.label} · sahneye sürükle`;
+      card.title = `${module.label} · sahneye sürükle veya dokunup sahnede yerini seç`;
 
       const label = document.createElement('strong');
       label.textContent = module.label;
@@ -124,14 +139,16 @@ export function createModuleDragSidebar({
           return;
         }
 
-        const state = createModuleState?.(module, moduleKey);
-        // Duvar standın yüksekliğine çevrilir (wall_100_350 kartı → wall_100_300); ana kod kartla aynı olmalı.
-        const stateCatalogKey = getItem(state?.itemKey)?.wallHeightBaseItemKey ?? state?.itemKey;
-        if (!state || stateCatalogKey !== moduleKey) {
+        const state = createCardState(module, moduleKey);
+        if (!state) {
           event.preventDefault();
           return;
         }
 
+        if (armed) {
+          resetDragState();
+          onCancel?.();
+        }
         activeCard = card;
         activeModuleState = state;
         activeRotationZDeg = getModuleDefaultRotationDeg(state);
@@ -143,8 +160,30 @@ export function createModuleDragSidebar({
       });
 
       card.addEventListener('dragend', () => {
+        if (armed) return;
         resetDragState();
         onCancel?.();
+      });
+
+      card.addEventListener('click', () => {
+        if (!enabled || !canDrag()) return;
+        const wasArmedCard = armed && activeCard === card;
+        if (armed || activeModuleState) {
+          resetDragState();
+          onCancel?.();
+        }
+        if (wasArmedCard) return;
+        const state = createCardState(module, moduleKey);
+        if (!state) return;
+        activeCard = card;
+        activeModuleState = state;
+        activeRotationZDeg = getModuleDefaultRotationDeg(state);
+        rotationLocked = false;
+        armed = true;
+        card.classList.add('is-armed');
+        viewport.closest('.viewport-wrap')?.classList.add('catalog-place-armed');
+        hint.classList.add('is-armed');
+        hint.textContent = ARMED_HINT;
       });
 
       const targetGrid = groupGridByKey.get(moduleKey);
@@ -154,6 +193,54 @@ export function createModuleDragSidebar({
       targetGrid.appendChild(card);
       return card;
     });
+
+  function createCardState(module, moduleKey) {
+    const state = createModuleState?.(module, moduleKey);
+    // Duvar standın yüksekliğine çevrilir (wall_100_350 kartı → wall_100_300); ana kod kartla aynı olmalı.
+    const stateCatalogKey = getItem(state?.itemKey)?.wallHeightBaseItemKey ?? state?.itemKey;
+    if (!state || stateCatalogKey !== moduleKey) return null;
+    return state;
+  }
+
+  // Yerleştirme dokunuşu sahneye (seçim, kamera) gitmez: capture fazında yakalanır.
+  viewport.addEventListener('pointerdown', (event) => {
+    if (!armed || event.button !== 0) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    placePointerId = event.pointerId;
+    lastClientX = event.clientX;
+    lastClientY = event.clientY;
+    onPreview?.(activeModuleState, event.clientX, event.clientY, activeRotationZDeg, rotationLocked);
+  }, { capture: true });
+
+  // Farede imleç gezerken önizleme gösterilir (dokunmatikte hover yok).
+  viewport.addEventListener('pointermove', (event) => {
+    if (!armed || (placePointerId === null && event.pointerType !== 'mouse')) return;
+    if (placePointerId !== null && event.pointerId !== placePointerId) return;
+    event.stopImmediatePropagation();
+    lastClientX = event.clientX;
+    lastClientY = event.clientY;
+    onPreview?.(activeModuleState, event.clientX, event.clientY, activeRotationZDeg, rotationLocked);
+  }, { capture: true });
+
+  viewport.addEventListener('pointerup', (event) => {
+    if (!armed || placePointerId === null || event.pointerId !== placePointerId) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const state = activeModuleState;
+    const rotationZDeg = activeRotationZDeg;
+    const isRotationLocked = rotationLocked;
+    const catalogKey = activeCard?.dataset.moduleKey ?? state?.itemKey ?? null;
+    resetDragState();
+    suppressNextClick = true;
+    onDrop?.(state, event.clientX, event.clientY, rotationZDeg, isRotationLocked, catalogKey);
+  }, { capture: true });
+
+  viewport.addEventListener('click', (event) => {
+    if (!suppressNextClick) return;
+    suppressNextClick = false;
+    event.stopImmediatePropagation();
+  }, { capture: true });
 
   viewport.addEventListener('dragover', (event) => {
     if (!activeModuleState) return;
@@ -188,6 +275,11 @@ export function createModuleDragSidebar({
   });
 
   window.addEventListener('keydown', (event) => {
+    if (armed && event.key === 'Escape') {
+      resetDragState();
+      onCancel?.();
+      return;
+    }
     const isShiftR = activeModuleState
       && String(event.key).toLowerCase() === 'r'
       && event.shiftKey
@@ -214,6 +306,10 @@ export function createModuleDragSidebar({
 
   function setEnabled(nextEnabled) {
     enabled = Boolean(nextEnabled);
+    if (!enabled && armed) {
+      resetDragState();
+      onCancel?.();
+    }
     cards.forEach((card) => {
       card.draggable = enabled;
       card.classList.toggle('is-disabled', !enabled);

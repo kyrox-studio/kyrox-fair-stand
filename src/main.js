@@ -32,7 +32,8 @@ import {
   resolveRevisionWrite,
 } from './projectRevisionSession.js';
 import { describeRectSelection } from './rectSelection.js';
-import { createModuleContextMenu, allowsModuleSideInsert } from './moduleContextMenu.js';
+import { createModuleContextMenu, allowsModuleSideInsert, resolveModuleSidePlacement } from './moduleContextMenu.js';
+import { createSelectionToolbar } from './selectionToolbar.js';
 import { createModuleDragSidebar } from './moduleDragSidebar.js';
 import { createColorEditorController } from './colorEditorController.js';
 import { STAND_TYPE_LABELS, validateStandSetup } from './standSetup.js';
@@ -409,7 +410,43 @@ const scene3d = createStandScene(
       : describeFloorSelection(floorSelection);
     if (message) selectionInfo.textContent = message;
   },
+  (anchor) => selectionToolbar?.update(anchor),
 );
+
+// Seçili modülün üstündeki işlem çubuğu (tablette sağ tık yerine geçer).
+const selectionToolbar = createSelectionToolbar({
+  onRotate: () => {
+    const context = scene3d.getSelectionContext();
+    if (context) scene3d.rotateModuleById(context.moduleId);
+  },
+  onDuplicate: (point) => {
+    const context = scene3d.getSelectionContext(point);
+    if (context) duplicateContextModule(context, resolveModuleSidePlacement(context, 'right'));
+  },
+  onDelete: (point) => {
+    const context = scene3d.getSelectionContext(point);
+    if (context) deleteContextModule(context);
+  },
+  onMore: (point) => {
+    const context = scene3d.getSelectionContext(point);
+    if (context) openModuleContextMenu(context);
+  },
+  // Panel taraması mavi, modül toplu seçimi turuncu çerçeve; tarama bitince mod kendiliğinden kapanır.
+  onMultiSelectChange: (mode, resetButton) => {
+    const viewportWrap = viewport.closest('.viewport-wrap');
+    const setFrame = (next) => {
+      viewportWrap?.classList.toggle('multi-select-panel', next === 'panel');
+      viewportWrap?.classList.toggle('multi-select-module', next === 'module');
+    };
+    setFrame(mode);
+    scene3d.setMultiSelectMode(mode, {
+      onEnd: () => {
+        setFrame(false);
+        resetButton();
+      },
+    });
+  },
+});
 
 function renderStageResult(message, isError = false) {
   renderStageResultInto(stageResult, message, isError);
@@ -1329,6 +1366,7 @@ const moduleContextMenu = createModuleContextMenu({
   getShelfLightingState: getContextShelfLightingState,
   onShelfLightingChange: changeContextShelfLighting,
   onLockChange: changeModuleLock,
+  onRotate: (context) => scene3d.rotateModuleById(context.moduleId),
   onGroupAction: (action, context) => handleGroupAction(action, {
     groupId: context?.group?.id ?? null,
     moduleId: context?.moduleId ?? null,

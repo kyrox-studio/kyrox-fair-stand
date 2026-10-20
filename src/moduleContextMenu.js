@@ -34,6 +34,7 @@ export function createModuleContextMenu({
   onShelfLightingChange,
   onLockChange,
   onGroupAction,
+  onRotate,
 }) {
   const document = getFairStandHostDocument();
   const window = getFairStandHostWindow();
@@ -62,20 +63,24 @@ export function createModuleContextMenu({
     <button type="button" role="menuitem" data-module-action="toggle-lock">Kilitle</button>
     <button type="button" role="menuitem" data-module-action="lock-selection" hidden>Seçilenleri kilitle</button>
     <button type="button" role="menuitem" data-module-action="unlock-selection" hidden>Seçilenlerin kilidini aç</button>
+    <button type="button" role="menuitem" data-module-action="rotate">Döndür</button>
     <button type="button" role="menuitem" data-module-action="delete" class="danger">Sil</button>
     <button type="button" role="menuitem" data-module-action="duplicate-right">Çoğalt Sağ Tarafa</button>
     <button type="button" role="menuitem" data-module-action="duplicate-left">Çoğalt Sol Tarafa</button>
     <button type="button" role="menuitem" data-module-action="resize-foam" hidden>Boyutlandır…</button>
     <button type="button" role="menuitem" data-module-action="resize-image" hidden>Görseli ölçülendir…</button>
     <div class="module-context-separator"></div>
-    <button type="button" role="menuitem" data-module-action="toggle-glass" hidden>Cam Panele Çevir</button>
-    <button type="button" role="menuitem" data-module-action="toggle-metal-separator" hidden>Metal Separatöre Çevir</button>
-    <button type="button" role="menuitem" data-module-action="toggle-fabric" hidden>Lightbox Kumaşa Çevir</button>
-    <button type="button" role="menuitem" data-module-action="toggle-mesh" hidden>Mesh (Delikli) Brandaya Çevir</button>
-    <button type="button" role="menuitem" data-module-action="toggle-fabric-light" hidden>Lightbox aydınlatmayı aç</button>
     <button type="button" role="menuitem" data-module-action="toggle-shelf-light" hidden>Raf altı aydınlatmayı aç</button>
     <button type="button" role="menuitem" data-module-action="add-right">Ekle Sağ Tarafa…</button>
     <button type="button" role="menuitem" data-module-action="add-left">Ekle Sol Tarafa…</button>
+    <button type="button" role="menuitem" class="module-context-advanced-toggle" aria-expanded="false" hidden>Gelişmiş ▸</button>
+    <div class="module-context-advanced" hidden>
+      <button type="button" role="menuitem" data-module-action="toggle-glass" hidden>Cam Panele Çevir</button>
+      <button type="button" role="menuitem" data-module-action="toggle-metal-separator" hidden>Metal Separatöre Çevir</button>
+      <button type="button" role="menuitem" data-module-action="toggle-fabric" hidden>Lightbox Kumaşa Çevir</button>
+      <button type="button" role="menuitem" data-module-action="toggle-mesh" hidden>Mesh (Delikli) Brandaya Çevir</button>
+      <button type="button" role="menuitem" data-module-action="toggle-fabric-light" hidden>Lightbox aydınlatmayı aç</button>
+    </div>
   `;
   document.body.appendChild(menu);
 
@@ -124,9 +129,24 @@ export function createModuleContextMenu({
   const lockSelectionButton = menu.querySelector('[data-module-action="lock-selection"]');
   const unlockSelectionButton = menu.querySelector('[data-module-action="unlock-selection"]');
   const deleteButton = menu.querySelector('[data-module-action="delete"]');
+  const rotateButton = menu.querySelector('[data-module-action="rotate"]');
   const duplicateButtons = [...menu.querySelectorAll('[data-module-action^="duplicate-"]')];
   const separator = menu.querySelector('.module-context-separator:not(.module-context-group-separator)');
   const groupSeparator = menu.querySelector('.module-context-group-separator');
+  // Sade menü: sık kullanılanlar görünür; panel dönüşümleri (Cam, Metal Separatör, Lightbox, Mesh)
+  // "Gelişmiş" altında. Açık/kapalı tercihi oturum boyunca hatırlanır.
+  const advancedToggle = menu.querySelector('.module-context-advanced-toggle');
+  const advancedSection = menu.querySelector('.module-context-advanced');
+  const advancedButtons = [...advancedSection.querySelectorAll('[data-module-action]')];
+  let advancedExpanded = false;
+
+  function syncAdvancedSection() {
+    const hasAdvanced = advancedButtons.some((button) => !button.hidden);
+    advancedToggle.hidden = !hasAdvanced;
+    advancedToggle.setAttribute('aria-expanded', String(advancedExpanded));
+    advancedToggle.textContent = advancedExpanded ? 'Gelişmiş ▾' : 'Gelişmiş ▸';
+    advancedSection.hidden = !hasAdvanced || !advancedExpanded;
+  }
   const groupButtons = Object.fromEntries(
     [...menu.querySelectorAll('[data-module-action^="group-"]')].map((button) => [button.dataset.moduleAction, button]),
   );
@@ -184,6 +204,7 @@ export function createModuleContextMenu({
       button.hidden = true;
     });
     separator.hidden = true;
+    syncAdvancedSection();
     lockSelectionButton.hidden = lockedCount >= ids.length;
     unlockSelectionButton.hidden = lockedCount === 0;
     showMultiGroupSection(context.groupOptions);
@@ -493,6 +514,8 @@ export function createModuleContextMenu({
     unlockSelectionButton.hidden = true;
     deleteButton.hidden = false;
     setDisabled(deleteButton, locked);
+    rotateButton.hidden = false;
+    setDisabled(rotateButton, locked);
     duplicateButtons.forEach((button) => { button.hidden = false; });
     separator.hidden = false;
     const panelSuffix = context.supportsGlass && Number.isInteger(context.stripNumber)
@@ -544,6 +567,7 @@ export function createModuleContextMenu({
     const showSideInsert = allowsModuleSideInsert(context);
     addRightButton.hidden = !showSideInsert;
     addLeftButton.hidden = !showSideInsert;
+    syncAdvancedSection();
     positionMenu(context);
   }
 
@@ -560,6 +584,12 @@ export function createModuleContextMenu({
   }
 
   menu.addEventListener('click', (event) => {
+    if (event.target.closest('.module-context-advanced-toggle') && activeContext) {
+      advancedExpanded = !advancedExpanded;
+      syncAdvancedSection();
+      positionMenu(activeContext);
+      return;
+    }
     const button = event.target.closest('[data-module-action]');
     if (!button || !activeContext) return;
 
@@ -588,6 +618,12 @@ export function createModuleContextMenu({
     if (action === 'delete') {
       close();
       onDelete?.(context);
+      return;
+    }
+
+    if (action === 'rotate') {
+      close();
+      onRotate?.(context);
       return;
     }
 

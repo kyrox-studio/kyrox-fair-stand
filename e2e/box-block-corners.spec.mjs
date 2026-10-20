@@ -43,6 +43,9 @@ async function applyLightboxToFace(page, slot, viewKey) {
   await expect.poll(() => page.evaluate((faceSlot) => window.__sceneSurfaces()
     .find((mesh) => mesh.userData.faceSlot === faceSlot)?.userData.selectionFrame?.visible === true, slot)).toBe(true);
   await page.mouse.click(point.x, point.y, { button: 'right' });
+  // Panel dönüşümleri sade menüde "Gelişmiş" altında; kapalıysa aç.
+  const advancedToggle = page.getByRole('menu', { name: 'Modül işlemleri' }).locator('.module-context-advanced-toggle');
+  if ((await advancedToggle.getAttribute('aria-expanded')) !== 'true') await advancedToggle.click();
   await page.locator('[data-module-action="toggle-fabric"]').click();
   await expect.poll(() => page.evaluate((faceSlot) => Boolean(window.__sceneSurfaces()
     .find((mesh) => mesh.userData.faceSlot === faceSlot)?.userData.surfaceState?.fabricGroupId), slot)).toBe(true);
