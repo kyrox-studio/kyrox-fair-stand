@@ -1,17 +1,14 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-manual-save-copy-dblclick-v1",
+  "id": "fair-stand-tablet-chrome-pinch-timing-v1",
   "kind": "feature",
-  "summary": "(1) Otomatik kayıt kapalıyken proje yalnız Kaydet ile kaydedilir: görsel işlemleri, sekme gizleme, editörden çıkış ve proje işlemleri kaydetmez, revizyon ilerlemez; proje işlemleri ve ← Standlar kaydedilmemiş değişiklik için onay sorar (CRM değişmez). (2) Tablette Çoklu panelde ikinci panele dokunmak Ctrl + tık gibi seçer. (3) Çoğalt Sağ / Sol kaldırıldı; seçim çubuğundaki Kopyala ve Ctrl/Cmd + C modülü hafızaya alır, her tıklama/dokunuşta katalogla aynı kuralla bir kopya bırakır (Esc / Kopyalamayı bitir; Ctrl/Cmd + V yeniden başlar). (4) Çift tık / çift dokunuş modülün tamamını seçer; Ctrl/Cmd + tık seçilenin çoğulu (modül seçiliyse modül ekle/çıkar, yüzey seçiliyse panel dikdörtgeni / banko yüzü); Shift + tık ile modül seçimi kaldırıldı. BOM ve kayıt biçimi değişmez.",
+  "summary": "(1) Üst banttaki ipucu yazıları kaldırıldı; görünüm küpü sağ üst köşede; bant küpün ve menü aç/kapa düğmesinin altına hiçbir boyutta girmez. (2) Tablette ikinci parmak belirince başlamış öğe sürüklemesi iptal edilir, öğe/grup yerine döner ve iki parmak kameraya verilir. (3) [Fair Stand ölçüm] konsol satırları varsayılan kapalı; localStorage fairStandTiming = 1 ile açılır. BOM ve kayıt biçimi değişmez.",
   "owners": [
+    "src/style.css",
+    "index.html",
+    "src/configuratorMarkup.js",
     "src/scene3d.js",
-    "src/main.js",
-    "src/autosaveController.js",
-    "src/projectActionSaveGuard.js",
-    "src/moduleDragSidebar.js",
-    "src/moduleContextMenu.js",
-    "src/selectionToolbar.js",
-    "src/helpGuide.js"
+    "src/projectOpenTiming.js"
   ],
   "sourceOfTruth": [
     "src/scene3d.js"
@@ -60,6 +57,7 @@
       "backend/app/modules/fair_stand/api/cost_item_routes.py",
       "backend/app/modules/fair_stand/api/dependencies.py",
       "backend/app/modules/fair_stand/api/group_template_routes.py",
+      "backend/app/modules/fair_stand/api/live_share_routes.py",
       "backend/app/modules/fair_stand/api/project_routes.py",
       "backend/app/modules/fair_stand/application/admin_items.py",
       "backend/app/modules/fair_stand/application/cost_items.py",
@@ -90,6 +88,7 @@
       "backend/tests/modules/fair_stand/test_item_surface_flags.py",
       "backend/tests/modules/fair_stand/test_item_type_behavior.py",
       "backend/tests/modules/fair_stand/test_item_type_scene_behavior_migration.py",
+      "backend/tests/modules/fair_stand/test_live_share.py",
       "backend/tests/modules/fair_stand/test_project_revisions.py",
       "backend/tests/modules/fair_stand/test_projects_api.py",
       "docs/items/audit/_meta.json",
@@ -102,6 +101,7 @@
       "scripts/archive/fix-tv-screen-face.py",
       "scripts/change-impact-analysis.mjs",
       "scripts/export-catalog-seed.mjs",
+      "scripts/install-server.sh",
       "scripts/screenshot-glb-compare.mjs",
       "scripts/strip-legacy-dimension-columns.mjs",
       "scripts/verify-change-contract.mjs",
@@ -205,6 +205,7 @@
       "e2e/indoor-plant-items-contract.spec.mjs",
       "e2e/invalid-placement-ghost.spec.mjs",
       "e2e/lighting-items-contract.spec.mjs",
+      "e2e/live-tab-share.spec.mjs",
       "e2e/metal-separator-bom-gap.spec.mjs",
       "e2e/mini-fridge-dimensions.spec.mjs",
       "e2e/missing-project-asset-open.spec.mjs",
@@ -212,17 +213,21 @@
       "e2e/module-lock.spec.mjs",
       "e2e/module-move-snap.spec.mjs",
       "e2e/panel-sweep.spec.mjs",
+      "e2e/pinch-zoom-no-drag.spec.mjs",
       "e2e/plastic-trash-bin-module.spec.mjs",
       "e2e/project-import-export-roundtrip.spec.mjs",
       "e2e/project-import-validation.spec.mjs",
+      "e2e/project-open-asset-cache.spec.mjs",
       "e2e/project-open-timing.spec.mjs",
       "e2e/project-open-wait-scene.spec.mjs",
+      "e2e/project-revision-session.spec.mjs",
       "e2e/rapid-actions-responsive.spec.mjs",
       "e2e/reload-restore.spec.mjs",
       "e2e/selection-toolbar.spec.mjs",
       "e2e/shelf-items-contract.spec.mjs",
       "e2e/smoke.spec.mjs",
       "e2e/stage-result-after-restore.spec.mjs",
+      "e2e/viewport-chrome-layout.spec.mjs",
       "e2e/visible-ui-b.spec.mjs",
       "e2e/wall-flat-panel-items-contract.spec.mjs",
       "e2e/wall-height-matrix.spec.mjs",
@@ -653,6 +658,7 @@
       "docs/items/audit/properties/DEFAULT_OVERRIDE_CHAINS.md",
       "docs/items/audit/properties/FINAL_PROPERTY_AUDIT.md",
       "docs/items/audit/properties/PROPERTY_INDEX.md",
+      "docs/items/audit/properties/README.md",
       "docs/items/audit/properties/VALIDATION_GAPS.md",
       "docs/items/audit/properties/properties/behavior.allowSideInsert.md",
       "docs/items/audit/properties/properties/behavior.boundarySnap.md",
@@ -1004,6 +1010,7 @@
         "F-017",
         "F-018",
         "F-020",
+        "F-025",
         "F-027",
         "F-028",
         "F-029",
@@ -1024,6 +1031,7 @@
       "test/metalSeparator.test.js",
       "test/moduleBehaviorPolicy.test.js",
       "test/projectActionSaveGuard.test.js",
+      "test/projectOpenTiming.test.js",
       "test/scene3dPublicContract.test.js",
       "test/systemChangeGate.test.js"
     ],
@@ -1034,6 +1042,7 @@
       "targeted": [
         "e2e/autosave-interval.spec.mjs",
         "e2e/box-block-corners.spec.mjs",
+        "e2e/catalog-drop-append.spec.mjs",
         "e2e/double-click-select.spec.mjs",
         "e2e/duplicate-metal-separator.spec.mjs",
         "e2e/f020-save-before-project-actions.spec.mjs",
@@ -1043,10 +1052,13 @@
         "e2e/module-group.spec.mjs",
         "e2e/module-lock.spec.mjs",
         "e2e/panel-sweep.spec.mjs",
+        "e2e/pinch-zoom-no-drag.spec.mjs",
+        "e2e/project-open-timing.spec.mjs",
         "e2e/selection-toolbar.spec.mjs",
-        "e2e/smoke.spec.mjs"
+        "e2e/smoke.spec.mjs",
+        "e2e/viewport-chrome-layout.spec.mjs"
       ],
-      "reason": "Gerçek Chromium: kapalıyken kayıt yok ve onaylar; Çoklu panel dokunma/kaydırma; Kopyala art arda, Ctrl+C/V, tablette bitirme; çift tık modül seçimi, Ctrl ile modül ekle/çıkar, grup/kilit menüsü, panel dikdörtgeni ve banko yüzleri korunur, Shift+tık modül eklemez, tablette çift dokunuş. Bütün paket regresyon için çalışır."
+      "reason": "Gerçek Chromium: 7 ekran boyutunda çakışma yok; CDP çoklu dokunuşla öğe yerinde kalır, kamera yakınlaşır; ölçüm satırları anahtarsız yazılmaz. Bütün paket regresyon için çalışır."
     }
   },
   "risk": {

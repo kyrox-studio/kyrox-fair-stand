@@ -536,16 +536,21 @@ button.asset-tile > span {
 }
 
 .viewport-toolbar {
+  --view-cube-reserve: 136px;
+  --sidebar-toggle-reserve: 50px;
   position: absolute;
   z-index: 1;
-  top: 16px;
-  right: 16px;
+  top: 12px;
+  right: var(--view-cube-reserve);
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: 12px;
+  max-width: calc(100% - var(--view-cube-reserve) - var(--sidebar-toggle-reserve));
   padding: 9px 12px;
   border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 999px;
+  border-radius: 18px;
   background: rgba(17, 24, 39, 0.78);
   color: #ffffff;
   font-size: 11px;
@@ -586,8 +591,8 @@ button.asset-tile > span {
 .view-cube {
   position: absolute;
   z-index: 4;
-  top: 58px;
-  right: 18px;
+  top: 12px;
+  right: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -890,14 +895,21 @@ button.asset-tile > span {
   }
 
   .viewport-toolbar {
+    --view-cube-reserve: 112px;
     top: 10px;
-    right: 10px;
     gap: 8px;
     font-size: 10px;
   }
 
+  /* Menü altta; aç/kapa düğmesi her durumda sahnenin sol üstünde. */
+  .sidebar-toggle,
+  #app.sidebar-collapsed > .sidebar-toggle {
+    top: 10px;
+    left: 10px;
+  }
+
   .view-cube {
-    top: 54px;
+    top: 10px;
     right: 10px;
     width: 92px;
     padding: 4px;
@@ -1302,10 +1314,6 @@ button[aria-busy="true"]::after {
     padding: 11px;
   }
 
-  .viewport-toolbar span {
-    display: none;
-  }
-
   .viewport-toolbar {
     gap: 6px;
     padding: 7px;
@@ -1331,6 +1339,10 @@ button[aria-busy="true"]::after {
 
   .stand-type-thumb {
     height: 46px;
+  }
+
+  .viewport-toolbar {
+    --view-cube-reserve: 114px;
   }
 
   .view-cube {
@@ -1417,9 +1429,8 @@ button[aria-busy="true"]::after {
   }
 
   .viewport-toolbar {
+    --view-cube-reserve: 104px;
     top: 8px;
-    left: 8px;
-    right: auto;
     padding: 6px;
     border-radius: 10px;
     background: rgba(17, 24, 39, 0.72);
@@ -1537,6 +1548,10 @@ button[aria-busy="true"]::after {
 @media (max-width: 420px) {
   #app {
     grid-template-rows: minmax(340px, 60dvh) minmax(0, 40dvh);
+  }
+
+  .viewport-toolbar {
+    --view-cube-reserve: 98px;
   }
 
   .view-cube {

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// Proje açma ölçümü: kayıtlı proje yeniden açılınca konsola adım süreleri yazılır,
+// Proje açma ölçümü (ölçüm anahtarı açıkken): kayıtlı proje yeniden açılınca konsola adım süreleri yazılır,
 // görseller ve modeller gelince "sahne tamamen hazır" satırı gelir. Açılış eskisi gibi tamamlanır.
 test('opening a saved project logs step timings and model loads', async ({ page }) => {
   const measurements = [];
@@ -9,6 +9,7 @@ test('opening a saved project logs step timings and model loads', async ({ page 
     if (message.text().startsWith('[Fair Stand ölçüm]')) measurements.push(message.text());
   });
   page.on('pageerror', (error) => pageErrors.push(error.message));
+  await page.addInitScript(() => localStorage.setItem('fairStandTiming', '1'));
 
   await page.goto('/');
   const standSetup = page.locator('details.stand-setup-card');
@@ -59,4 +60,26 @@ test('opening a saved project logs step timings and model loads', async ({ page 
   expect(opened).toMatch(/· 1 modül$/);
   expect(models).toMatch(/^\[Fair Stand ölçüm\] sahne tamamen hazır: açılıştan \+\d+ ms · \d+ görsel yüzeyi · \d+ model/);
   expect(pageErrors).toEqual([]);
+});
+
+// Varsayılan: kullanıcının konsoluna ölçüm satırı yazılmaz.
+test('without the timing switch no measurement lines reach the console', async ({ page }) => {
+  const measurements = [];
+  page.on('console', (message) => {
+    if (message.text().startsWith('[Fair Stand ölçüm]')) measurements.push(message.text());
+  });
+  await page.goto('/');
+  const standSetup = page.locator('details.stand-setup-card');
+  await standSetup.locator('summary').click();
+  await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
+  await page.locator('#stand-size-x').fill('500');
+  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#create-stage').click();
+  await page.locator('form input[name="projectName"]').fill('E2E Olcum Kapali');
+  await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await expect(page.locator('#viewport-toolbar')).toBeVisible();
+  await page.locator('#save-project').click();
+  await page.locator('#open-project').click();
+  await page.waitForTimeout(2500);
+  expect(measurements).toEqual([]);
 });

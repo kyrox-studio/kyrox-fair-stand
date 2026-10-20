@@ -5719,6 +5719,64 @@ export function createStandScene(
     return true;
   }
 
+  // Tablet iki parmak: ekranda ikinci parmak belirince (yakınlaştırma / kaydırma) ilk parmağın
+  // başlattığı öğe sürüklemesi iptal edilir ve öğe yerine döner; iki parmak doğrudan kameraya
+  // verilir. İkinci parmak bir öğenin üstüne gelse de öğeyi yakalamaz.
+  const activeTouchPointers = new Map();
+  function cancelDragForMultiTouch() {
+    const session = dragSession;
+    if (!session) return null;
+    try {
+      renderer.domElement.releasePointerCapture?.(session.pointerId);
+    } catch {
+      // İşaretçi zaten bırakılmış olabilir.
+    }
+    if (session.groupId && session.dragging) {
+      restoreGroupPlacements(session.groupId);
+      dragSession = null;
+      controls.enabled = true;
+      disposeDragBadge();
+      clearPlacementFeedback();
+    } else {
+      clearPlacementDrag();
+    }
+    requestEditorRender();
+    return session;
+  }
+  renderer.domElement.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch') return;
+    const firstTouch = [...activeTouchPointers.entries()][0] ?? null;
+    activeTouchPointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+    if (!firstTouch || !stageLayout) return;
+    cancelLongPress();
+    const cancelled = cancelDragForMultiTouch();
+    controls.enabled = true;
+    // Kamera ilk parmağı tanımıyorsa (öğe yakaladığı için) son konumuyla ona tanıtılır.
+    if (cancelled && cancelled.pointerId === firstTouch[0]) {
+      const last = activeTouchPointers.get(firstTouch[0]);
+      controls._onPointerDown?.(new orbitWindow.PointerEvent('pointerdown', {
+        pointerId: firstTouch[0],
+        pointerType: 'touch',
+        isPrimary: true,
+        clientX: Number(last?.clientX ?? cancelled.lastClientX),
+        clientY: Number(last?.clientY ?? cancelled.lastClientY),
+        button: 0,
+        buttons: 1,
+      }));
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    controls._onPointerDown?.(event);
+  }, { capture: true, signal });
+  orbitWindow.addEventListener('pointermove', (event) => {
+    if (activeTouchPointers.has(event.pointerId)) {
+      activeTouchPointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+    }
+  }, { signal });
+  const releaseTouchPointer = (event) => activeTouchPointers.delete(event.pointerId);
+  orbitWindow.addEventListener('pointerup', releaseTouchPointer, { signal });
+  orbitWindow.addEventListener('pointercancel', releaseTouchPointer, { signal });
+
   // Tablet: parmakla ~0,55 sn basılı tutmak sağ tıkla aynı menüyü açar. Parmak oynarsa
   // (sürükleme / kamera) iptal olur; açılınca başlamış modül sürüklemesi bırakılır.
   const LONG_PRESS_MS = 550;
