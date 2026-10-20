@@ -64,3 +64,17 @@ test('autosave interval select exists with the same options in both markups', as
     assert.match(select[1], /<option value="3" selected>3 dk<\/option>/);
   }
 });
+
+// Otomatik kayıt kapalıyken yalnız Kaydet kaydeder: görsel ekleme/kaldırma/silme kaydetmez,
+// "← Standlar" ile çıkışta kaydedilmemiş değişiklik onay sorar.
+test('main.js never saves image changes while autosave is off and confirms leaving with unsaved changes', () => {
+  // Görsel ekleme, kaldırma ve kullanılan görseli silme: kayıt yalnız otomatik kayıt açıkken.
+  const guarded = mainSource.match(/!autosaveController\.isAutoSaveOff\(\)\s*&& \(/g) ?? [];
+  assert.equal(guarded.length, 3);
+  assert.match(mainSource, /if \(!event\.target\?\.closest\?\.\('\.sidebar-back'\)\) return;/);
+  assert.match(mainSource, /if \(!autosaveController\.isAutoSaveOff\(\) \|\| !autosaveController\.hasUnsavedChanges\(\)\) return;/);
+  assert.match(mainSource, /Kaydedilmemiş değişiklikler var\.\\n\\nKaydetmeden çıkılsın mı\?/);
+  assert.match(mainSource, /document\.addEventListener\('click', onLeaveEditorClick, true\);/);
+  const stop = mainSource.slice(mainSource.indexOf('return function stopFairStandConfigurator'));
+  assert.match(stop, /document\.removeEventListener\('click', onLeaveEditorClick, true\);/);
+});

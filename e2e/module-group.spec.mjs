@@ -121,14 +121,14 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   expect(initial).toHaveLength(2);
   const [first, second] = initial;
 
-  // Shift+tık ile iki kutuyu seç, sağ tık > Grup oluştur.
+  // Çift tık + Ctrl+tık ile iki kutuyu seç, sağ tık > Grup oluştur.
   const bodiesBeforeGroup = await bodyUuids(page);
   expect(Object.keys(bodiesBeforeGroup)).toHaveLength(2);
   const points = await boxScreenPoints(page);
-  await page.keyboard.down('Shift');
-  await page.mouse.click(points[first.id].x, points[first.id].y);
+  await page.mouse.dblclick(points[first.id].x, points[first.id].y);
+  await page.keyboard.down('Control');
   await page.mouse.click(points[second.id].x, points[second.id].y);
-  await page.keyboard.up('Shift');
+  await page.keyboard.up('Control');
   page.once('dialog', (dialog) => dialog.accept('Sağ duvar'));
   await page.mouse.click(points[second.id].x, points[second.id].y, { button: 'right' });
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });

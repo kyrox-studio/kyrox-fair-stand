@@ -166,10 +166,11 @@ test('grup şablon olarak kaydedilir, yerleştirilir ve silinir', async ({ page 
   const initial = await savedBoxes(page, store);
   expect(initial).toHaveLength(2);
   const points = await boxScreenPoints(page);
-  await page.keyboard.down('Shift');
-  await page.mouse.click(points[initial[0].id].x, points[initial[0].id].y);
+  // Çift tık modülün tamamını seçer, Ctrl+tık modül ekler.
+  await page.mouse.dblclick(points[initial[0].id].x, points[initial[0].id].y);
+  await page.keyboard.down('Control');
   await page.mouse.click(points[initial[1].id].x, points[initial[1].id].y);
-  await page.keyboard.up('Shift');
+  await page.keyboard.up('Control');
   page.once('dialog', (dialog) => dialog.accept('Tezgah'));
   await page.mouse.click(points[initial[1].id].x, points[initial[1].id].y, { button: 'right' });
   await page.getByRole('menu', { name: 'Modül işlemleri' }).getByRole('menuitem', { name: 'Grup oluştur…' }).click();

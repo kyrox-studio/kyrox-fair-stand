@@ -21,9 +21,10 @@ test('help guide explains metal separator splitting, duplicate groups and placem
   await expect(metal).toContainText('1 x 197 × 47 + 1 x 98 × 47');
   await expect(metal).toContainText('Toplam m² değişmez.');
 
-  const menu = guideSection(page, 'Sağ Tık Menüsü');
-  await menu.locator('summary').click();
-  await expect(menu).toContainText('Kopyadaki metal separatör kendi grubunu alır');
+  // Kopyala sağ tık menüsünde değil, seçim çubuğundadır (Mouse Kontrolleri).
+  const mouse = guideSection(page, 'Mouse Kontrolleri');
+  await mouse.locator('summary').click();
+  await expect(mouse).toContainText('Kopyadaki metal separatör kendi grubunu alır');
 
   const foam = guideSection(page, 'Işıklı Strafor');
   await foam.locator('summary').click();

@@ -5,7 +5,12 @@ import { readFileSync } from 'node:fs';
 test('Ctrl/Cmd left click is captured before OrbitControls and selects a rectangle', () => {
   const scene = readFileSync(new URL('../src/scene3d.js', import.meta.url), 'utf8');
   assert.match(scene, /if \(event\.button !== 0 \|\| !\(event\.ctrlKey \|\| event\.metaKey\)\) return/);
-  assert.match(scene, /event\.preventDefault\(\);\s*event\.stopImmediatePropagation\(\);\s*handleSurfaceSelectionAt\(event\.clientX, event\.clientY, true\)/s);
+  // Ctrl/Cmd + tık seçilenin çoğulu: modülün tamamı seçiliyse (çift tık) modül ekler/çıkarır,
+  // yüzey seçiliyse veya seçim yoksa aynı çoklu panel dikdörtgeni.
+  assert.match(scene, /event\.preventDefault\(\);\s*event\.stopImmediatePropagation\(\);\s*const moduleLevelSelection = selectedSurfaces\.size === 0\s*&& \(Boolean\(selectedModuleId\) \|\| multiSelectedModuleIds\.size > 0\);\s*if \(moduleLevelSelection\) \{\s*const moduleId = moduleIdAt\(event\.clientX, event\.clientY\);\s*if \(moduleId\) toggleMultiModuleSelection\(moduleId\);\s*return;\s*\}\s*handleSurfaceSelectionAt\(event\.clientX, event\.clientY, true\)/s);
+  // Shift + tık ile modül seçimi yoktur; toplu modül seçimi yalnız tablet Çoklu modül modunda dokunuşla.
+  assert.doesNotMatch(scene, /event\.shiftKey \|\| multiSelectMode === 'module'/);
+  assert.match(scene, /if \(event\.button !== 0 \|\| multiSelectMode !== 'module' \|\| event\.ctrlKey/);
   assert.match(scene, /\}, \{ capture: true \}\);/);
   assert.doesNotMatch(scene, /function toggleSurfaceSelection\(mesh\)/);
   assert.match(scene, /const canRectangleSelect = rectangleSelect[\s\S]*selectionMode === 'panel'[\s\S]*selectRectangleTo\(hit\.object\)/);

@@ -1,14 +1,17 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-selection-toolbar-v1",
+  "id": "fair-stand-manual-save-copy-dblclick-v1",
   "kind": "feature",
-  "summary": "Tablet kullanımı: seçili öğenin üstünde seçim çubuğu (Döndür / Kopyala / Sil / Çoklu seç / ⋯), dokunmatikte uzun basma ile sağ tık menüsü, menüye Döndür; sağ tık menüsü sade + Gelişmiş (Cam, Metal Separatör, Lightbox, Mesh) olarak ayrıldı; çubukta seçime göre Çoklu panel (mavi, tek seferlik parmak taraması = Ctrl + tık dikdörtgeni, komşu modül ve köşe dahil) veya Çoklu modül (turuncu, dokunuş = Shift + tık) (setMultiSelectMode); modüller arası panel seçiminde çubuk ve ⋯ korunur; katalog kartına dokunup sahnede yere dokunmak modülü sürükle-bırakla aynı yoldan ekler. Sağ tık ve sürükle-bırak korunur; BOM ve kayıt değişmez.",
+  "summary": "(1) Otomatik kayıt kapalıyken proje yalnız Kaydet ile kaydedilir: görsel işlemleri, sekme gizleme, editörden çıkış ve proje işlemleri kaydetmez, revizyon ilerlemez; proje işlemleri ve ← Standlar kaydedilmemiş değişiklik için onay sorar (CRM değişmez). (2) Tablette Çoklu panelde ikinci panele dokunmak Ctrl + tık gibi seçer. (3) Çoğalt Sağ / Sol kaldırıldı; seçim çubuğundaki Kopyala ve Ctrl/Cmd + C modülü hafızaya alır, her tıklama/dokunuşta katalogla aynı kuralla bir kopya bırakır (Esc / Kopyalamayı bitir; Ctrl/Cmd + V yeniden başlar). (4) Çift tık / çift dokunuş modülün tamamını seçer; Ctrl/Cmd + tık seçilenin çoğulu (modül seçiliyse modül ekle/çıkar, yüzey seçiliyse panel dikdörtgeni / banko yüzü); Shift + tık ile modül seçimi kaldırıldı. BOM ve kayıt biçimi değişmez.",
   "owners": [
-    "src/selectionToolbar.js",
     "src/scene3d.js",
     "src/main.js",
+    "src/autosaveController.js",
+    "src/projectActionSaveGuard.js",
+    "src/moduleDragSidebar.js",
     "src/moduleContextMenu.js",
-    "src/moduleDragSidebar.js"
+    "src/selectionToolbar.js",
+    "src/helpGuide.js"
   ],
   "sourceOfTruth": [
     "src/scene3d.js"
@@ -165,6 +168,7 @@
       "src/stripOccupancy.js",
       "src/style.css",
       "src/surfaceStateBinding.js",
+      "src/systemChangeContract.js",
       "src/viewCube.js",
       "src/viewKeyboardShortcuts.js",
       "src/wall.js",
@@ -173,6 +177,7 @@
       "vite.config.js"
     ],
     "affectedTests": [
+      "e2e/autosave-interval.spec.mjs",
       "e2e/base-items-contract.spec.mjs",
       "e2e/box-block-corners.spec.mjs",
       "e2e/box-block-face-image-restore.spec.mjs",
@@ -182,9 +187,11 @@
       "e2e/commercial-items-contract.spec.mjs",
       "e2e/design-undo.spec.mjs",
       "e2e/desk-banko-items-contract.spec.mjs",
+      "e2e/double-click-select.spec.mjs",
       "e2e/duplicate-metal-separator.spec.mjs",
       "e2e/f010-module-construction.spec.mjs",
       "e2e/f011-module-behavior.spec.mjs",
+      "e2e/f020-save-before-project-actions.spec.mjs",
       "e2e/f023-atomic-project-delete.spec.mjs",
       "e2e/f027-scene-reset.spec.mjs",
       "e2e/f028-reset-features.spec.mjs",
@@ -996,6 +1003,7 @@
         "F-015",
         "F-017",
         "F-018",
+        "F-020",
         "F-027",
         "F-028",
         "F-029",
@@ -1007,10 +1015,15 @@
   },
   "tests": {
     "targeted": [
+      "test/autosaveController.test.js",
+      "test/autosaveMainIntegration.test.js",
       "test/catalogDragItemKeyInvariant.test.js",
+      "test/ctrlMultiSelect.test.js",
       "test/helpGuide.test.js",
       "test/lightboxFabric.test.js",
       "test/metalSeparator.test.js",
+      "test/moduleBehaviorPolicy.test.js",
+      "test/projectActionSaveGuard.test.js",
       "test/scene3dPublicContract.test.js",
       "test/systemChangeGate.test.js"
     ],
@@ -1019,14 +1032,21 @@
     "e2e": {
       "required": true,
       "targeted": [
+        "e2e/autosave-interval.spec.mjs",
         "e2e/box-block-corners.spec.mjs",
+        "e2e/double-click-select.spec.mjs",
         "e2e/duplicate-metal-separator.spec.mjs",
+        "e2e/f020-save-before-project-actions.spec.mjs",
+        "e2e/group-template.spec.mjs",
+        "e2e/help-guide-recent-rules.spec.mjs",
         "e2e/metal-separator-bom-gap.spec.mjs",
+        "e2e/module-group.spec.mjs",
+        "e2e/module-lock.spec.mjs",
         "e2e/panel-sweep.spec.mjs",
         "e2e/selection-toolbar.spec.mjs",
         "e2e/smoke.spec.mjs"
       ],
-      "reason": "Gerçek Chromium, tablet boyutu + dokunmatik: seçim çubuğu döndürür, kopyalar, siler, ⋯ menüyü açar; uzun basma menüyü açar, kısa dokunuş açmaz; karta dokunup sahneye dokunmak ekler, Esc/aynı kart iptal eder; Çoklu modül dokunuşla toplu seçer; Çoklu panel taraması 3 modülde orta 2 sırayı seçip Lightbox yapar ve L köşeyi döner; panel dönüşümleri Gelişmiş altında. Bütün paket regresyon için çalışır."
+      "reason": "Gerçek Chromium: kapalıyken kayıt yok ve onaylar; Çoklu panel dokunma/kaydırma; Kopyala art arda, Ctrl+C/V, tablette bitirme; çift tık modül seçimi, Ctrl ile modül ekle/çıkar, grup/kilit menüsü, panel dikdörtgeni ve banko yüzleri korunur, Shift+tık modül eklemez, tablette çift dokunuş. Bütün paket regresyon için çalışır."
     }
   },
   "risk": {

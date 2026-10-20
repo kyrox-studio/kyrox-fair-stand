@@ -25,6 +25,7 @@ function ensureStyles(document) {
     .selection-toolbar button[data-selection-action="multi"][data-kind="module"] { color: #c2410c; }
     .selection-toolbar button[aria-pressed="true"][data-kind="panel"] { background: #2563eb; color: #fff; }
     .selection-toolbar button[aria-pressed="true"][data-kind="module"] { background: #f97316; color: #fff; }
+    .selection-toolbar button[data-selection-action="duplicate"][aria-pressed="true"] { background: #f97316; color: #fff; }
     .viewport-wrap.multi-select-panel { outline: 3px solid rgba(37, 99, 235, 0.65); outline-offset: -3px; }
     .viewport-wrap.multi-select-module { outline: 3px solid rgba(249, 115, 22, 0.65); outline-offset: -3px; }
   `;
@@ -44,7 +45,7 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
   bar.setAttribute('aria-label', 'Seçim işlemleri');
   bar.innerHTML = `
     <button type="button" data-selection-action="rotate" title="Döndür (Shift+R)">⟳ Döndür</button>
-    <button type="button" data-selection-action="duplicate" title="Sağ tarafa kopyala">⧉ Kopyala</button>
+    <button type="button" data-selection-action="duplicate" aria-pressed="false" title="Hafızaya al; sahnede dokunduğun her yere bir kopya bırakır (Ctrl+C)">⧉ Kopyala</button>
     <button type="button" data-selection-action="delete" title="Sil">Sil</button>
     <button type="button" data-selection-action="multi" data-kind="module" aria-pressed="false">Çoklu modül</button>
     <button type="button" data-selection-action="more" title="Diğer işlemler" aria-label="Diğer işlemler">⋯</button>
@@ -52,6 +53,8 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
   document.body.appendChild(bar);
 
   const multiButton = bar.querySelector('[data-selection-action="multi"]');
+  const duplicateButton = bar.querySelector('[data-selection-action="duplicate"]');
+  const allButtons = [...bar.querySelectorAll('[data-selection-action]')];
   const handlers = {
     rotate: onRotate,
     duplicate: onDuplicate,
@@ -64,6 +67,9 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
   let anchor = null;
   // false | 'panel' (tek seferlik parmak taraması) | 'module' (dokunduğun modülü ekle/çıkar).
   let multiSelect = false;
+  // Kopya yerleştirilirken çubuk yalnız "Kopyalamayı bitir" gösterir ve seçim kalkınca da kalır
+  // (tablette Esc yok).
+  let copyActive = false;
 
   function syncMultiButton() {
     const kind = multiSelect || (anchor?.kind === 'panel' ? 'panel' : 'module');
@@ -94,18 +100,32 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
     });
   });
 
+  function setCopyActive(active) {
+    copyActive = Boolean(active);
+    duplicateButton.setAttribute('aria-pressed', String(copyActive));
+    duplicateButton.textContent = copyActive ? '✕ Kopyalamayı bitir' : '⧉ Kopyala';
+    update(anchor);
+  }
+
   function update(next) {
     anchor = next ?? null;
-    if (!anchor) {
+    if (!anchor && !copyActive) {
       bar.hidden = true;
       // Seçim boşalınca (boş alana dokunma, Esc) çoklu seçim modu da kapanır.
       if (multiSelect) setMultiSelect(false);
       return;
     }
-    // Toplu seçimde yalnız ⋯ (toplu menü: grup, kilit) ve çoklu modül.
-    singleOnly.forEach((button) => { button.hidden = anchor.count > 1; });
-    syncMultiButton();
-    bar.hidden = false;
+    if (copyActive) {
+      allButtons.forEach((button) => { button.hidden = button !== duplicateButton; });
+      bar.hidden = false;
+      if (!anchor) return;
+    } else {
+      allButtons.forEach((button) => { button.hidden = false; });
+      // Toplu seçimde yalnız ⋯ (toplu menü: grup, kilit) ve çoklu modül.
+      singleOnly.forEach((button) => { button.hidden = anchor.count > 1; });
+      syncMultiButton();
+      bar.hidden = false;
+    }
     const margin = 8;
     const width = bar.offsetWidth || 260;
     const height = bar.offsetHeight || 48;
@@ -115,5 +135,5 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
     bar.style.top = `${Math.round(top)}px`;
   }
 
-  return { update, element: bar };
+  return { update, setCopyActive, element: bar };
 }

@@ -20,7 +20,6 @@ export function resolveModuleSidePlacement(context, visualSide) {
 
 export function createModuleContextMenu({
   onDelete,
-  onDuplicate,
   onResize,
   onImageResize,
   onAdd,
@@ -65,8 +64,6 @@ export function createModuleContextMenu({
     <button type="button" role="menuitem" data-module-action="unlock-selection" hidden>Seçilenlerin kilidini aç</button>
     <button type="button" role="menuitem" data-module-action="rotate">Döndür</button>
     <button type="button" role="menuitem" data-module-action="delete" class="danger">Sil</button>
-    <button type="button" role="menuitem" data-module-action="duplicate-right">Çoğalt Sağ Tarafa</button>
-    <button type="button" role="menuitem" data-module-action="duplicate-left">Çoğalt Sol Tarafa</button>
     <button type="button" role="menuitem" data-module-action="resize-foam" hidden>Boyutlandır…</button>
     <button type="button" role="menuitem" data-module-action="resize-image" hidden>Görseli ölçülendir…</button>
     <div class="module-context-separator"></div>
@@ -130,7 +127,6 @@ export function createModuleContextMenu({
   const unlockSelectionButton = menu.querySelector('[data-module-action="unlock-selection"]');
   const deleteButton = menu.querySelector('[data-module-action="delete"]');
   const rotateButton = menu.querySelector('[data-module-action="rotate"]');
-  const duplicateButtons = [...menu.querySelectorAll('[data-module-action^="duplicate-"]')];
   const separator = menu.querySelector('.module-context-separator:not(.module-context-group-separator)');
   const groupSeparator = menu.querySelector('.module-context-group-separator');
   // Sade menü: sık kullanılanlar görünür; panel dönüşümleri (Cam, Metal Separatör, Lightbox, Mesh)
@@ -516,7 +512,6 @@ export function createModuleContextMenu({
     setDisabled(deleteButton, locked);
     rotateButton.hidden = false;
     setDisabled(rotateButton, locked);
-    duplicateButtons.forEach((button) => { button.hidden = false; });
     separator.hidden = false;
     const panelSuffix = context.supportsGlass && Number.isInteger(context.stripNumber)
       ? ` · Panel ${context.stripNumber}`
@@ -639,14 +634,6 @@ export function createModuleContextMenu({
     if (action === 'resize-image' && context.hasImage) {
       close();
       onImageResize?.(context);
-      return;
-    }
-
-    if (action === 'duplicate-right' || action === 'duplicate-left') {
-      const visualSide = action === 'duplicate-left' ? 'left' : 'right';
-      const placementSide = resolveModuleSidePlacement(context, visualSide);
-      close();
-      onDuplicate?.(context, placementSide);
       return;
     }
 

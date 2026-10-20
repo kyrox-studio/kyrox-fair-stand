@@ -71,9 +71,8 @@ Context menu'de LED'e özel light on/off butonu yoktur; spotlight renderer taraf
 `moduleContextMenu.js` içindeki modül menüsü şu temel aksiyonları içerir:
 
 ```text
+Döndür
 Sil
-Çoğalt Sağ Tarafa
-Çoğalt Sol Tarafa
 Ekle Sağ Tarafa…
 Ekle Sol Tarafa…
 ```

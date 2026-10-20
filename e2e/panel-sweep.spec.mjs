@@ -77,32 +77,28 @@ async function panels(page) {
   });
 }
 
-// Parmak: kanvasa bas, pencerede adım adım kaydır, kaldır.
+// Gerçek dokunuş (Chromium dokunmatik girişi): bas, adım adım kaydır, kaldır.
 async function sweep(page, from, to) {
-  await page.evaluate(async ({ from: start, to: end }) => {
-    const canvas = document.querySelector('#viewport > canvas');
-    const base = { pointerId: 31, pointerType: 'touch', isPrimary: true, button: 0, bubbles: true, cancelable: true };
-    canvas.dispatchEvent(new PointerEvent('pointerdown', { ...base, buttons: 1, clientX: start.x, clientY: start.y }));
-    for (let step = 1; step <= 12; step += 1) {
-      const t = step / 12;
-      window.dispatchEvent(new PointerEvent('pointermove', {
-        ...base,
-        buttons: 1,
-        clientX: start.x + (end.x - start.x) * t,
-        clientY: start.y + (end.y - start.y) * t,
-      }));
-      await new Promise((resolve) => setTimeout(resolve, 16));
-    }
-    window.dispatchEvent(new PointerEvent('pointerup', { ...base, buttons: 0, clientX: end.x, clientY: end.y }));
-  }, { from, to });
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: from.x, y: from.y, id: 1 }] });
+  for (let step = 1; step <= 12; step += 1) {
+    const t = step / 12;
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t, id: 1 }],
+    });
+    await page.waitForTimeout(16);
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await cdp.detach();
 }
 
 async function startPanelSweep(page, panel) {
   const toolbar = page.getByRole('toolbar', { name: 'Seçim işlemleri' });
-  await page.mouse.click(panel.x, panel.y);
+  await page.touchscreen.tap(panel.x, panel.y);
   await expect(toolbar).toBeVisible();
   const multi = toolbar.getByRole('button', { name: 'Çoklu panel' });
-  await multi.click();
+  await multi.tap();
   await expect(multi).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.viewport-wrap')).toHaveClass(/multi-select-panel/);
   return { toolbar, multi };
@@ -181,6 +177,27 @@ test('finger sweep turns the corner of an L stand', async ({ page }) => {
     };
   }).toEqual({ rows: [2, 3, 4], walls: ['back', 'left'], anchor: true, end: true });
   expect(errors).toEqual([]);
+});
+
+test('tapping a second panel in panel mode selects the rectangle like Ctrl + click', async ({ page }) => {
+  await createStand(page, 'Sırt Duvar', 600, 300);
+  const all = await panels(page);
+  const modules = [...new Set(all.map((panel) => panel.moduleId))]
+    .map((moduleId) => ({ moduleId, x: all.find((panel) => panel.moduleId === moduleId).x }))
+    .sort((a, b) => a.x - b.x)
+    .slice(0, 3)
+    .map((entry) => entry.moduleId);
+  const at = (moduleId, stripIndex) => all.find((panel) => panel.moduleId === moduleId && panel.stripIndex === stripIndex);
+
+  // Panele dokun → Çoklu panel → diğer panele dokun (kaydırmadan).
+  const { multi } = await startPanelSweep(page, at(modules[0], 2));
+  const target = at(modules[2], 3);
+  await page.touchscreen.tap(target.x, target.y);
+
+  const expected = modules.flatMap((moduleId) => [2, 3].map((stripIndex) => at(moduleId, stripIndex).surfaceId)).sort();
+  await expect.poll(async () => (await panels(page)).filter((panel) => panel.selected).map((panel) => panel.surfaceId).sort())
+    .toEqual(expected);
+  await expect(multi).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('without the panel mode a finger drag does not select panels', async ({ page }) => {

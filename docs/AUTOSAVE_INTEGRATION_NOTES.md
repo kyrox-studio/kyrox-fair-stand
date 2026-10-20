@@ -13,7 +13,8 @@ Bu dosya canlı autosave akışını controller'a bağlarken korunması gereken 
 - Persist hatasında autosave enabled kalır ve kullanıcıya `Otomatik kayıt başarısız.` gösterilir.
 - Yeni proje oluşturma / proje restore / pagehide sırasında autosave disable edilir.
 - `beforeunload` yalnız `hasUnsavedChanges()` true ise tarayıcı uyarısı ister; disable etmez.
-- Sekme gizlenince (`visibilitychange` → hidden) ve editör kapatılırken (`stopFairStandConfigurator`) `saveNowIfDirty()` çalışır: kayıtlı projede kaydedilmemiş değişiklik varsa otomatik kayıt kapalı olsa da kaydeder, denetleyiciyi yeniden açmaz.
+- Sekme gizlenince (`visibilitychange` → hidden) ve editör kapatılırken (`stopFairStandConfigurator`) `saveNowIfDirty()` çalışır: otomatik kayıt **açıkken** kaydedilmemiş değişiklik varsa kaydeder, denetleyiciyi yeniden açmaz. Otomatik kayıt **kapalıyken** hiçbir şey kaydetmez (yalnız Kaydet).
+- Otomatik kayıt kapalıyken görsel ekleme/kaldırma/silme kaydetmez (`autosaveController.isAutoSaveOff()`); Aç / Sahneyi Oluştur / İçe Aktar / proje seçimi kaydetmez, kaydedilmemiş değişiklik için onay sorar, Dışarı Aktar son kaydı aktarır (`projectActionSaveGuard`); "← Standlar" (`.sidebar-back`) "Kaydetmeden çıkılsın mı?" diye sorar. Revizyon yalnız Kaydet ile ilerler.
 - İlk başarılı proje kaydı ve proje restore sonrası autosave güncel state'ten enable edilir.
 - Manuel save ve rename öncesi pending autosave iptal edilir; başarılı kayıt sonrası güncel state baseline yapılır.
 - Asset silme sırasında referans temizliği kalıcılaştırılıyorsa pending autosave iptal edilir; persist sonrası güncel state baseline yapılır.
