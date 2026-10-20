@@ -24,6 +24,7 @@ function listGuideSections() {
         <tr><th>Orta tuş / tekerleğe basılı sürükle</th><td>Kamerayı yatay-dikey kaydırır (pan).</td></tr>
         <tr><th>Mouse tekerleği</th><td>Yakınlaştırır / uzaklaştırır.</td></tr>
         <tr><th>Sağ tık</th><td>Modül veya panel için bağlama göre işlem menüsünü açar. Tablette parmakla basılı tutmak (uzun basma) aynı menüyü açar.</td></tr>
+        <tr><th>İki parmak (tablet)</th><td>Parmakları açıp kapatmak yakınlaştırır, birlikte kaydırmak sahneyi kaydırır. İkinci parmak ekrana değince ilk parmağın başlattığı öğe sürüklemesi iptal olur ve öğe yerinde kalır; ikinci parmak bir öğeyi yakalamaz. Görünüm küpü sahnenin sağ üst köşesindedir.</td></tr>
         <tr><th>Seçim çubuğu</th><td>Seçili öğenin üstünde <strong>Döndür</strong>, <strong>Kopyala</strong>, <strong>Sil</strong>, <strong>Çoklu panel</strong> veya <strong>Çoklu modül</strong> ve <strong>⋯</strong> (sağ tık menüsü) çıkar; Kopyala açıkken yalnız <strong>Kopyalamayı bitir</strong> görünür; panel seçimi mavi, modül seçimi turuncudur; fare ve tablette aynı çalışır. <strong>Kopyala:</strong> Modülü hafızaya alır; sahnede tıkladığın veya dokunduğun her yere, katalogdan bırakmayla aynı kuralla bir kopya bırakır (görsel, renk, cam, Lightbox ve metal dahil); Esc veya <strong>Kopyalamayı bitir</strong> ile çıkılır. Kilitli öğenin kopyası kilitsiz gelir. Kopyadaki metal separatör kendi grubunu alır; kopyada kapatmak orijinali etkilemez. Sağ tık menüsünde Kopyala yoktur.</td></tr>
       </tbody></table>
     `,
