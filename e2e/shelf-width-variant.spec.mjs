@@ -1,5 +1,47 @@
 import { test, expect } from '@playwright/test';
 
+test('kapı üstü raf birleşimleri tüm stand yüksekliklerinde gerçek panellerden gelir', async ({ page }) => {
+  await page.goto('/');
+  const results = await page.evaluate(async () => {
+    const { mapCatalogSeedToBootstrap } = await import('/test/mapCatalogSeed.mjs');
+    const items = await import('/src/items.js');
+    const { initializeStandDimensions } = await import('/src/standDimensions.js');
+    const { createModuleStateFromDescriptor: create } = await import('/src/designState.js');
+    const { snapPanelSeamOverlayPlacement: snap } = await import('/src/modulePlacement.js');
+    const { listFlatPanelModuleSeamHeightsCm: seams } = await import('/src/wallPanelBand.js');
+    const snapshot = mapCatalogSeedToBootstrap(await (await fetch('/test/fixtures/itemCatalogSeed.json')).json());
+    items.initializeItemRegistry(snapshot.items);
+    items.initializeItemTypeRegistry(snapshot.itemTypes);
+    const results = [];
+    for (const height of [250, 300, 350, 400, 450, 500]) {
+      initializeStandDimensions({ ...snapshot.standDimensions, heightCm: height });
+      const host = create({ itemKey: items.resolveWallItemKeyForHeight('wall_door_100_350', height) });
+      host.placement = { wallId: 'back', xCm: 0, yCm: 0, zCm: 0, rotationZDeg: 0 };
+      for (const card of ['shelf_row_1', 'shelf_row_2']) {
+        const shelf = create({ itemKey: card });
+        const at = (z) => snap({ moduleState: shelf, modules: [host],
+          wallPoint: { wallId: 'back', pointerXCm: 50, pointerYCm: 0, absoluteHeightCm: z } });
+        const first = seams(host).map(at).find((result) => result.ok);
+        const placed = first ? { ...first.resolvedModuleState, placement: first.placement } : null;
+        const duplicate = first ? snap({ moduleState: create({ itemKey: card }), modules: [host, placed],
+          wallPoint: { wallId: 'back', pointerXCm: 50, pointerYCm: 0, absoluteHeightCm: first.seamHeightCm } }) : null;
+        results.push({ height, card, seams: seams(host), bottom: at(200).ok, top: at(height).ok,
+          duplicateRejected: !duplicate || !duplicate.ok,
+          accepted: seams(host).filter((z) => at(z).ok) });
+      }
+    }
+    return results;
+  });
+  for (const result of results) {
+    const seams = Array.from({ length: result.height / 50 - 5 }, (_, i) => 250 + i * 50);
+    expect(result.seams).toEqual(seams);
+    expect(result.bottom).toBe(false);
+    expect(result.top).toBe(false);
+    expect(result.duplicateRejected).toBe(true);
+    expect(result.accepted).toEqual(seams.filter((z) => z + (result.card === 'shelf_row_1' ? 1.8 : 51.8) <= result.height));
+  }
+});
+
 test('tarayıcıda raf yerleştirmesi duvarın genişliğine çözülür', async ({ page }) => {
   await page.goto('/');
   const results = await page.evaluate(async () => {

@@ -9,7 +9,10 @@ export function resolveModuleBandPitchCm(moduleState) {
   const stripCount = Array.isArray(moduleState?.strips) ? moduleState.strips.length : 0;
   const heightCm = Number(moduleState?.heightCm);
   if (stripCount > 0 && Number.isFinite(heightCm) && heightCm > 0) {
-    return heightCm / stripCount;
+    const indexes = moduleState.strips.map((strip) => Number(strip.stripIndex));
+    const bandCount = indexes.every((index) => Number.isInteger(index) && index >= 0)
+      ? Math.max(...indexes) + 1 : stripCount;
+    return heightCm / bandCount;
   }
   return WALL_PANEL_BAND_PITCH_CM;
 }
@@ -48,10 +51,12 @@ export function listFlatPanelModuleSeamHeightsCm(moduleState, occupancyRange = n
   const pitchCm = resolveModuleBandPitchCm(moduleState);
   const minCm = Number(occupancyRange?.minCm);
   const maxCm = Number(occupancyRange?.maxCm);
-  return listInternalSeamHeightsCm({
-    stripCount,
-    pitchCm,
-    minCm: Number.isFinite(minCm) ? minCm : 0,
-    maxCm: Number.isFinite(maxCm) ? maxCm : Number.POSITIVE_INFINITY,
-  });
+  const indexes = moduleState.strips.map((strip, index) => Number.isInteger(strip.stripIndex) ? strip.stripIndex : index);
+  const occupied = new Set(indexes);
+  // Yalnız iki mevcut panelin ortak sınırı; kapı kanadı üstteki panellerden biri değildir.
+  return Object.freeze(indexes.filter((index) => occupied.has(index - 1))
+    .map((index) => index * pitchCm)
+    .filter((seam) => seam > (Number.isFinite(minCm) ? minCm : 0)
+      && seam < (Number.isFinite(maxCm) ? maxCm : Number.POSITIVE_INFINITY))
+    .sort((a, b) => a - b));
 }

@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "fair-stand-shelf-width-variant-placement",
   "kind": "feature",
-  "summary": "Raf genişlik ailesi hedef duvarın genişliğinden çözülür; önizleme kaynak state değiştirmez, geçerli bırakmada ürün kimliği ve ölçüler birlikte işlenir. 50 cm duvar reddedilir. Sıralı raf renderer reçetedeki adet kadar ayrı tahta ve her tahtanın altında aydınlatma üretir; tahta kalınlığı alt Item ölçüsünden, aralık toplam Item yüksekliğinden gelir. Kullanım kılavuzu, DB envanteri ve raf Item tanımları güncellendi; 0072 upgrade/idempotency/downgrade ve kullanıcı ölçüsü koruma testi eklendi. Çok sıralı rafın üst tahtası duvarın içinde kalır (seamsFittingOverlayHeight). Gerçek kullanıcı akışı E2E: üretim listesi, eski proje, 50 cm ve duvar dışı ret, taşımada genişlik, bütün sıralarda ışık, tablet (shelf-rows-flow).",
+  "summary": "Raf genişlik ailesi hedef duvarın genişliğinden çözülür; önizleme kaynak state değiştirmez, geçerli bırakmada ürün kimliği ve ölçüler birlikte işlenir. 50 cm duvar reddedilir. Sıralı raf renderer reçetedeki adet kadar ayrı tahta ve her tahtanın altında aydınlatma üretir; tahta kalınlığı alt Item ölçüsünden, aralık toplam Item yüksekliğinden gelir. Kullanım kılavuzu, DB envanteri ve raf Item tanımları güncellendi; 0072 upgrade/idempotency/downgrade ve kullanıcı ölçüsü koruma testi eklendi. Çok sıralı rafın üst tahtası duvarın içinde kalır (seamsFittingOverlayHeight). Gerçek kullanıcı akışı E2E: üretim listesi, eski proje, 50 cm ve duvar dışı ret, taşımada genişlik, bütün sıralarda ışık, tablet (shelf-rows-flow). Kapı üstü panellerde birleşimler gerçek stripIndex üzerinden çözülür; 250–500 cm standlarda panel bölgesinin dış alt/üst sınırı reddedilir. Aynı panel birleşimindeki raf tahtası çakışması yeni bırakma ve klavye taşımasında engellenir; çok sıralı her tahta ayrı kontrol edilir.",
   "owners": [
     "src/scene3d.js",
     "src/items.js",
@@ -504,7 +504,8 @@
       "test/wallShortProfileSnapCollision.test.js",
       "test/wallShortRelationshipBom.test.js",
       "test/wallShortVerticalMove.test.js",
-      "test/wallShowcaseItemContract.test.js"
+      "test/wallShowcaseItemContract.test.js",
+      "test/doorShelfPanelSeams.test.js"
     ],
     "affectedDocs": [
       "AGENTS.md",
@@ -1080,7 +1081,7 @@
         "F-019"
       ]
     },
-    "notes": "Raf genişliği items.js DB aile eşlemesinden gelir; modulePlacement hedef duvarı seçer, scene3d önizleme ve geçerli bırakmayı işler. F-019 için ikinci ölçü kaynağı eklenmez. Önceden var olan Claude katalog/seed değişiklikleri korunur. Son doğrulama: 1320 frontend, 174 backend testi geçti. Temiz sunucuda tam E2E: 187 başarılı/1 hazır olma yarışı; kart etkinlik kontrolleri eklenen ilgili dosyanın 15 testi tekrar geçti. Beklentiler gevşetilmedi. Nihai kapsam: 1321 frontend ve 174 backend başarılı; 188 testlik temiz E2E turunda 187 başarılı, kart hazır olma yarışı sonrası ilgili dosyanın 15 testi ve yeni raf akışının 4 testi başarılı. Test atlama/eşik gevşetme yok."
+    "notes": "Raf genişliği items.js DB aile eşlemesinden gelir; modulePlacement hedef duvarı seçer, scene3d önizleme ve geçerli bırakmayı işler. F-019 için ikinci ölçü kaynağı eklenmez. Önceden var olan Claude katalog/seed değişiklikleri korunur. Son doğrulama: 1320 frontend, 174 backend testi geçti. Temiz sunucuda tam E2E: 187 başarılı/1 hazır olma yarışı; kart etkinlik kontrolleri eklenen ilgili dosyanın 15 testi tekrar geçti. Beklentiler gevşetilmedi. Nihai kapsam: 1321 frontend ve 174 backend başarılı; 188 testlik temiz E2E turunda 187 başarılı, kart hazır olma yarışı sonrası ilgili dosyanın 15 testi ve yeni raf akışının 4 testi başarılı. Test atlama/eşik gevşetme yok. Kapı üstü snap ve dolu raf yeri engeli son doğrulama: 1323 frontend testi ve 28 hedefli Chromium testi başarılı; stand 250–500 cm, gerçek panel indeksleri, dış alt/üst sınır retleri ve tekrar raf çakışması korunur."
   },
   "tests": {
     "targeted": [
@@ -1096,7 +1097,8 @@
       "test/uprightFieldPlacement.test.js",
       "test/shelfWidthVariantPlacement.test.js",
       "test/shelfRowsRender.test.js",
-      "test/helpGuide.test.js"
+      "test/helpGuide.test.js",
+      "test/doorShelfPanelSeams.test.js"
     ],
     "fullSuite": true,
     "build": true,
