@@ -45,7 +45,7 @@ def test_bootstrap_includes_preview_kind_definitions(client, db_session, auth_he
     response = client.get("/api/v1/fair-stand/catalog/bootstrap", headers=auth_headers)
     assert response.status_code == 200
     kinds = response.json()["previewKinds"]
-    assert len(kinds) == 28
+    assert len(kinds) == 30  # 0074: ayaklı vitrin + broşürlük önizlemesi
     shelf = next(kind for kind in kinds if kind["id"] == 20)
     assert isinstance(shelf["id"], int)
     assert "previewKey" not in shelf

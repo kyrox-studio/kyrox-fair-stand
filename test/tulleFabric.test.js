@@ -50,7 +50,7 @@ test('bootstrap item tulle_fabric is the visible square-metre plate', () => {
   assert.equal(item.dimensions.depthCm, 0.4);
   assert.equal(item.categoryId, 5);
   assert.equal(item.previewId, 9);
-  assert.equal(getModuleMoveSnapCm('tulle-fabric'), 50);
+  assert.equal(getModuleMoveSnapCm('tulle-fabric'), 10);
 });
 
 test('drop dialog asks width and depth only', () => {
@@ -98,11 +98,11 @@ test('arrow Z steps come from moveSnapCm and leave the plan size alone', () => {
 
   let zCm = 200;
   zCm = stepTulleFabricZCm(zCm, 'up', stepCm, thicknessCm);
-  assert.equal(zCm, 250);
+  assert.equal(zCm, 210);
   zCm = stepTulleFabricZCm(zCm, 'up', stepCm, thicknessCm);
-  assert.equal(zCm, 300);
+  assert.equal(zCm, 220);
   zCm = stepTulleFabricZCm(zCm, 'down', stepCm, thicknessCm);
-  assert.equal(zCm, 250);
+  assert.equal(zCm, 210);
   assert.equal(stepTulleFabricZCm(200, 'up', 25, thicknessCm), 225);
 });
 

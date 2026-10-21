@@ -13,7 +13,7 @@
 | 3 | Default state | VAR | Parent state kanonik `itemKey/type/width` ile oluşur; child leaf kendi beyaz default'unu taşır. |
 | 4 | Oluşturma | VAR | `createDoorModuleState` → `getItem('door_100')`; catalog girişi aynı kanonik Item'dan türetilir. |
 | 5 | Placement | VAR | `type=door` → `WALL_BEHAVIOR.placement=wall`. |
-| 6 | Move | VAR | Ortak module move motoru; `moveSnapCm=50`. |
+| 6 | Move | VAR | Ortak module move motoru; `moveSnapCm=10` (0073). |
 | 7 | Rotation | VAR | Ortak behavior; `rotationStepDeg=90`, default 0°. |
 | 8 | Snap | VAR | Standard magnetic snap + stand-edge boundary. |
 | 9 | Collision / connection | VAR | Segment collision, physical depth, segment endpoint; mevcut parity korunur. |

@@ -104,6 +104,8 @@ Aşağıdaki mevcut liste korunur. Bu Item'ların Tekil/Bileşik ve parametrik d
 | 46 | `MINI_FRIDGE_AVANTI` | Mini Buzdolabı | **`mini-fridge` · Tekil Item · Tamam · self BOM `1 adet`** |
 | 47 | `KETTLE` | Kettle | **`kettle` · Tekil Item · Tamam · self BOM `1 adet`** |
 | 48 | `COAT_RACK` | Askılık | **`coat-rack` · Tekil Item · Tamam · self BOM `1 adet`** |
+| 48a | `floor_showcase_100` | Ayaklı Vitrin 100 | **`floor-showcase` · Tekil Item · Tamam · self BOM `1 adet`** (0074) |
+| 48b | `brochure_stand` | Broşürlük | **`brochure-stand` · Tekil Item · Tamam · self BOM `1 adet`** (0074) |
 | 49 | `PLASTIC_TRASH_BIN` | Çöp Kutusu | **`plastic-trash-bin` · Tekil Item · Tamam · self BOM `1 adet`** |
 | 50 | `EXTRA_INDOOR_PLANT_1` | Yapay Çiçek 1 | `indoor-plant-1` |
 | 51 | `EXTRA_LONG_PLANTER_100` | Uzun Saksı 100 | `indoor-plant-1` |

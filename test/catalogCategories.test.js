@@ -13,9 +13,9 @@ import { getItem, listRegisteredItems } from '../src/items.js';
 const EXPECTED_CATEGORIES = Object.freeze([
   Object.freeze({ id: 1, catalogName: 'Panel & Duvar', catalogIndex: 1, itemCount: 9 }),
   Object.freeze({ id: 2, catalogName: 'Panel Ek Modül', catalogIndex: 2, itemCount: 14 }),
-  Object.freeze({ id: 3, catalogName: 'Raf & Vitrin', catalogIndex: 3, itemCount: 5 }),
+  Object.freeze({ id: 3, catalogName: 'Raf & Vitrin', catalogIndex: 3, itemCount: 6 }),
   Object.freeze({ id: 4, catalogName: 'Banko & Baza', catalogIndex: 4, itemCount: 9 }),
-  Object.freeze({ id: 5, catalogName: 'Extra', catalogIndex: 5, itemCount: 17 }),
+  Object.freeze({ id: 5, catalogName: 'Extra', catalogIndex: 5, itemCount: 18 }),
   Object.freeze({ id: 6, catalogName: 'Elektronik & Aydınlatma', catalogIndex: 6, itemCount: 6 }),
 ]);
 
@@ -33,7 +33,7 @@ const EXPECTED_GROUP_KEYS = Object.freeze({
   ]),
   3: Object.freeze([
     'wall_showcase_100_3_350', 'wall_showcase_100_2_350',
-    'shelf_row_1', 'shelf_row_2', 'shelf_row_3',
+    'shelf_row_1', 'shelf_row_2', 'shelf_row_3', 'floor_showcase_100',
   ]),
   4: Object.freeze([
     'desk_banko_200', 'desk_banko_150', 'desk_banko_100',
@@ -45,7 +45,7 @@ const EXPECTED_GROUP_KEYS = Object.freeze({
     'furniture_coffee_table_classic', 'furniture_table_chair_set_eames', 'chair_eames',
     'glass_table', 'furniture_bar_stool_classic', 'mini_fridge_avanti', 'kettle',
     'coat_rack', 'plastic_trash_bin', 'extra_indoor_plant_1',
-    'extra_long_planter_100', 'extra_long_planter_150', 'extra_long_planter_200', 'tulle_fabric',
+    'extra_long_planter_100', 'extra_long_planter_150', 'extra_long_planter_200', 'tulle_fabric', 'brochure_stand',
   ]),
   6: Object.freeze([
     'tv_42', 'tv_55', 'video_wall_2x2', 'video_wall_3x3', 'tv_65', 'led_floodlight',
@@ -135,7 +135,7 @@ test('listCatalogGroups kategori sırası, adı ve Item sırasını korur', () =
     });
   });
 
-  assert.equal(visibleTotal, 60);
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 60);
+  assert.equal(visibleTotal, 62);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 62);
   assert.deepEqual([...listCatalogItems().map((item) => item.itemKey)], groups.flatMap((group) => group.keys));
 });

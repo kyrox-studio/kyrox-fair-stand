@@ -111,6 +111,8 @@ PREVIEW_KIND_DEFINITIONS: tuple[dict[str, object], ...] = (
         "sort_index": 28,
         "markup": '<div class="module-drag-tv is-video-wall" data-video-wall></div>',
     },
+    {"preview_key": "floor-showcase", "display_name": "Ayaklı vitrin", "sort_index": 29, "markup": _simple("module-drag-floor-showcase")},
+    {"preview_key": "brochure-stand", "display_name": "Broşürlük", "sort_index": 30, "markup": _simple("module-drag-brochure-stand")},
 )
 
 

@@ -27,7 +27,7 @@ function listGuideSections() {
         <tr><th>Mouse tekerleği</th><td>Yakınlaştırır / uzaklaştırır.</td></tr>
         <tr><th>Sağ tık</th><td>Modül veya panel için bağlama göre işlem menüsünü açar. Tablette parmakla basılı tutmak (uzun basma) aynı menüyü açar.</td></tr>
         <tr><th>İki parmak (tablet)</th><td>Parmakları açıp kapatmak yakınlaştırır, birlikte kaydırmak sahneyi kaydırır. İkinci parmak ekrana değince ilk parmağın başlattığı öğe sürüklemesi iptal olur ve öğe yerinde kalır; ikinci parmak bir öğeyi yakalamaz. Görünüm küpü sahnenin sağ üst köşesindedir.</td></tr>
-        <tr><th>Seçim çubuğu</th><td>Seçili öğenin üstünde <strong>Döndür</strong>, <strong>Kopyala</strong>, <strong>Sil</strong>, <strong>Çoklu panel</strong> veya <strong>Çoklu modül</strong> ve <strong>⋯</strong> (sağ tık menüsü) çıkar; Kopyala açıkken yalnız <strong>Kopyalamayı bitir</strong> görünür; panel seçimi mavi, modül seçimi turuncudur; fare ve tablette aynı çalışır. <strong>Kopyala:</strong> Modülü hafızaya alır; sahnede tıkladığın veya dokunduğun her yere, katalogdan bırakmayla aynı kuralla bir kopya bırakır (görsel, renk, cam, Lightbox ve metal dahil); Esc veya <strong>Kopyalamayı bitir</strong> ile çıkılır. Kilitli öğenin kopyası kilitsiz gelir. Kopyadaki metal separatör kendi grubunu alır; kopyada kapatmak orijinali etkilemez. Sağ tık menüsünde Kopyala yoktur.</td></tr>
+        <tr><th>Seçim çubuğu</th><td>Seçili öğenin üstünde <strong>Döndür</strong>, <strong>Kopyala</strong>, <strong>Sil</strong>, <strong>Çoklu panel</strong> veya <strong>Çoklu modül</strong> ve <strong>⋯</strong> (sağ tık menüsü) çıkar; Kopyala açıkken yalnız <strong>Kopyalamayı bitir</strong> görünür; panel seçimi mavi, modül seçimi turuncudur; fare ve tablette aynı çalışır. <strong>Kopyala:</strong> Modülü hafızaya alır; sahnede tıkladığın veya dokunduğun her yere, katalogdan bırakmayla aynı kuralla bir kopya bırakır (görsel, renk, cam, Lightbox ve metal dahil); Esc veya <strong>Kopyalamayı bitir</strong> ile çıkılır. Kilitli öğenin kopyası kilitsiz gelir. Kopyadaki metal separatör kendi grubunu alır; kopyada kapatmak orijinali etkilemez. Kopyayı bırakmadan önce <strong>Shift+R</strong> yalnız kopyayı döndürür; seçili kalan asıl öğe dönmez. Sağ tık menüsünde Kopyala yoktur.</td></tr>
       </tbody></table>
     `,
   },
@@ -119,9 +119,10 @@ function listGuideSections() {
     html: `
       <p>Modüller serbestçe görünse de bırakıldıkları konum sistem kurallarıyla doğrulanır. Stand sınırı, çarpışma ve modülün kendi snap adımı kontrol edilir.</p>
       <ul>
-        <li>Duvar modülleri çoğunlukla 50 cm adımla hareket eder.</li>
-        <li>Mobilya ve bazı serbest objeler genellikle 10 cm adım kullanır.</li>
-        <li>LED projektör gibi üst elemanlarda farklı snap adımı uygulanabilir.</li>
+        <li>Bütün modüller 10 cm adımla hareket eder (duvar, banko, mobilya, projektör dahil).</li>
+        <li>Serbest öğe stand kenarına 10 cm'den yakın bırakılırsa kenara yaslanır; daha uzaktaysa bıraktığın yerde kalır, köşeye çekilmez.</li>
+        <li><strong>Izgara:</strong> Taşırken, kopyalarken veya katalogdan yerleştirirken stand zemininde 1 m kalın, 50 cm ince çizgiler çıkar; bırakınca kaybolur. Izgara yalnız göz içindir, öğe 10 cm adımla oturur.</li>
+        <li><strong>Ölçüler:</strong> Tek öğe seçiliyken zeminde kapladığı alan kesikli çizilir; genişlik, derinlik ve yükseklik cm olarak yazar. Taşırken öğeden standın dört kenarına uzaklık metre olarak gösterilir; kenara yaslı taraf çizilmez. Ölçüler Render Al görseline girmez.</li>
         <li>Geçersiz yerleşim kabul edilmez; modül eski/geçerli konumunda kalır.</li>
         <li>Birden fazla modülü kaplayan tek parça Lightbox/Mesh kaplamasına bağlı modül tek başına taşınamaz veya döndürülemez; önce kaplama kaldırılmalıdır.</li>
       </ul>
@@ -177,6 +178,16 @@ function listGuideSections() {
       <h4>Işık rengini değiştirme</h4>
       <p>Işıklı Straforu seçtiğinde sol taraftaki <strong>Seçili yüzey</strong> bölümünde <strong>Işıklı Strafor · Işık rengi</strong> kontrolü görünür. Renk seçici yalnızca arkadaki halo ışığını değiştirir; SVG'nin ön yüz renklerini değiştirmez.</p>
       <p class="help-guide-note">Yerleştirme sırasında Esc tuşu ile işlem iptal edilebilir. Strafor, duvar üstü modül gibi taşınır ve kendi hareket snap adımını kullanır. Yerleştirilemezse uyarı modülün adıyla ve gerçek sebeple çıkar (ör. Başka modülle çakışıyor.).</p>
+    `,
+  },
+  {
+    title: 'Ayaklı Vitrin ve Broşürlük',
+    html: `
+      <ul>
+        <li><strong>Ayaklı Vitrin 100</strong> (Raf & Vitrin): 100 × 40 cm, toplam 100 cm; 70 cm gövde, üstte 30 cm cam fanus. Gövdenin ön, sol ve sağ yüzüne sağ tıkla renk, görsel ve Lightbox uygulanır; arka yüz ve cam düzenlenmez.</li>
+        <li><strong>Broşürlük</strong> (Extra): 30 × 30 cm taban, 150 cm yükseklik, 5 cep, beyaz delikli metal.</li>
+        <li>İkisi de standda serbest durur, duvarın veya başka öğenin içine girmez, 10 cm adımla taşınır. Üretim listesine tek kalem, 1 adet yazılır.</li>
+      </ul>
     `,
   },
   {

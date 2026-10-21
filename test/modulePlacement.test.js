@@ -99,7 +99,7 @@ test('rejects overlapping modules on the same wall but allows a corner connectio
   assert.equal(corner.ok, true);
 });
 
-test('snaps a module inside every stand to the 50 cm free grid', () => {
+test('snaps a module inside every stand to the 10 cm free grid', () => {
   const result = snapPlacementToStand({
     standType: 'back-wall',
     widthCm: 100,
@@ -112,8 +112,8 @@ test('snaps a module inside every stand to the 50 cm free grid', () => {
   assert.equal(result.ok, true);
   assert.equal(result.mode, 'free');
   assert.deepEqual(result.placement, {
-    xCm: 350,
-    yCm: 300,
+    xCm: 330,
+    yCm: 280,
     zCm: 0,
     rotationZDeg: 0,
     wallId: 'free',
@@ -470,7 +470,7 @@ test('counter face snap ignores longitudinal grid offset when measuring wall pro
   });
 
   assert.equal(snapped?.snapKind, 'face');
-  assert.equal(snapped?.placement.xCm, 100);
+  assert.equal(snapped?.placement.xCm, 80);
   assert.equal(snapped?.placement.yCm, 30);
 
   const validation = validatePlacementAgainstModules({
@@ -960,12 +960,12 @@ test('50 cm panel snaps centered to the short side of Banko 150', () => {
 });
 
 
-test('furniture modules use a 10 cm free-placement grid while other modules keep 50 cm', () => {
+test('every module type uses the 10 cm free-placement grid', () => {
   assert.equal(getModulePlacementSnapCm('sofa-set-classic'), 10);
   assert.equal(getModulePlacementSnapCm('table-chair-set-eames'), 10);
   assert.equal(getModulePlacementSnapCm('chair'), 10);
   assert.equal(getModulePlacementSnapCm('table-glass'), 10);
-  assert.equal(getModulePlacementSnapCm('counter'), 50);
+  assert.equal(getModulePlacementSnapCm('counter'), 10);
 
   for (const moduleType of ['sofa-set-classic', 'table-chair-set-eames']) {
     const result = snapPlacementToStand({
@@ -996,7 +996,8 @@ test('furniture modules use a 10 cm free-placement grid while other modules keep
     standXCm: 800,
     standYCm: 600,
   });
+  // Banko da mobilyayla aynı 10 cm ızgaraya oturur.
   assert.equal(regular.ok, true);
-  assert.equal(regular.placement.xCm, 250);
-  assert.equal(regular.placement.yCm, 325);
+  assert.equal(regular.placement.xCm, 270);
+  assert.equal(regular.placement.yCm, 345);
 });

@@ -239,6 +239,20 @@ const MESH_FABRIC_OPACITY = 0.48;
 const FLOOR_COLOR = 0xe9edf1;
 const OUTER_FLOOR_COLOR = 0xd2d8df;
 const GRID_COLOR = 0x7f8994;
+// Ana ışığın stand merkezine göre konumu: tepeden, hafif öne (+Z) ve sağa eğik.
+const KEY_LIGHT_OFFSET = Object.freeze({ x: 1.2, y: 12, z: 3 });
+// Gölge kamerasının stand kenarından taşma payı (çevre şeridi + uzun gölgeler).
+const KEY_LIGHT_SHADOW_MARGIN_M = 2;
+// Ölçü katmanı renkleri: taban alanı turuncu kesikli, kenar uzaklığı mavi.
+const MEASURE_FOOTPRINT_COLOR = 0xf97316;
+const MEASURE_DISTANCE_COLOR = 0x2563eb;
+// Bu mesafenin altındaki (kenara yaslanmış) uzaklık çizilmez.
+const MEASURE_MIN_DISTANCE_M = 0.005;
+// Stand zemini ızgarası (1 m kalın / 50 cm ince); yalnız taşırken görünür, boşta hiç yok.
+const STAND_GRID_COLOR = 0xb4bcc6;
+const STAND_GRID_FINE_STEP_M = 0.5;
+const STAND_GRID_FINE_PER_BOLD = 2;
+const STAND_GRID_OPACITY = Object.freeze({ bold: 0.8, fine: 0.45 });
 const STAND_BORDER_COLOR = 0x6f7a87;
 const ACTIVE_WALL_GUIDE_COLOR = 0xf97316;
 const ACTIVE_WALL_GUIDE_THICKNESS_M = 0.045;
@@ -682,13 +696,33 @@ export function createStandScene(
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x7f8790, 2.1));
 
+  // Ana ışık fuar holündeki gibi tepeden gelir (bkz. aimKeyLightAtStand); hafif öne eğik
+  // olduğu için panel yüzleri de aydınlanır, gölge öğenin altına kısa düşer.
   const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
-  keyLight.position.set(5, 8, 6);
+  keyLight.position.set(KEY_LIGHT_OFFSET.x, KEY_LIGHT_OFFSET.y, KEY_LIGHT_OFFSET.z);
   keyLight.castShadow = true;
   // 2K editör için yeterli; yönsel gölge haritası bellek/dolgu maliyeti
   // önceki 4K tahsisinin dörtte birine iner.
   keyLight.shadow.mapSize.set(2048, 2048);
-  scene.add(keyLight);
+  scene.add(keyLight, keyLight.target);
+
+  function aimKeyLightAtStand(widthM, depthM) {
+    const centerX = widthM / 2;
+    const centerZ = depthM / 2;
+    keyLight.position.set(centerX + KEY_LIGHT_OFFSET.x, KEY_LIGHT_OFFSET.y, centerZ + KEY_LIGHT_OFFSET.z);
+    keyLight.target.position.set(centerX, 0, centerZ);
+    keyLight.target.updateMatrixWorld();
+    // Gölge kamerası bütün standı ve çevresini kapsar.
+    const halfSpanM = Math.max(widthM, depthM) / 2 + KEY_LIGHT_SHADOW_MARGIN_M;
+    const shadowCamera = keyLight.shadow.camera;
+    shadowCamera.left = -halfSpanM;
+    shadowCamera.right = halfSpanM;
+    shadowCamera.top = halfSpanM;
+    shadowCamera.bottom = -halfSpanM;
+    shadowCamera.near = 0.5;
+    shadowCamera.far = KEY_LIGHT_OFFSET.y * 2;
+    shadowCamera.updateProjectionMatrix();
+  }
 
 
   // Fixed exhibition-hall ground: 4K CC0 Damaged Concrete Floor 02 from Poly Haven.
@@ -819,6 +853,7 @@ export function createStandScene(
   const carpetTextures = createCarpetTexturePair();
 
   let grid = null;
+  let standFloorGrid = null;
   let standOutline = null;
   let activeWallGuides = [];
   let floorPattern = null;
@@ -855,6 +890,7 @@ export function createStandScene(
 
   function disposeGroundGuides() {
     disposeGroundObject(grid);
+    disposeStandFloorGrid();
     disposeGroundObject(standOutline);
     disposeGroundObject(floorPattern);
     activeWallGuides.forEach(disposeGroundObject);
@@ -1183,6 +1219,201 @@ export function createStandScene(
     );
   }
 
+  // Stand zemini ızgarası: 1 m'de kalın, 50 cm'de ince çizgi, yalnız stand alanında. Yalnız
+  // görüntüdür; öğe kendi taşıma adımıyla (10 cm) oturur. Yalnız yerleştirme önizlemesi
+  // (katalog, kopya, taşıma) görünürken çizilir; bırakınca kaybolur.
+  function createStandFloorGrid(widthM, depthM) {
+    const y = ACTIVE_PLATFORM_HEIGHT_M + 0.014;
+    const boldOffsetM = 0.006;
+    const bold = [];
+    const fine = [];
+    const collect = (lengthM, push) => {
+      const steps = Math.ceil(lengthM / STAND_GRID_FINE_STEP_M - 1e-6);
+      for (let index = 1; index < steps; index += 1) {
+        push(index * STAND_GRID_FINE_STEP_M, index % STAND_GRID_FINE_PER_BOLD === 0);
+      }
+    };
+    collect(widthM, (x, isBold) => {
+      if (!isBold) fine.push(x, y, 0, x, y, depthM);
+      else [-boldOffsetM, 0, boldOffsetM].forEach((offset) => bold.push(x + offset, y, 0, x + offset, y, depthM));
+    });
+    collect(depthM, (z, isBold) => {
+      if (!isBold) fine.push(0, y, z, widthM, y, z);
+      else [-boldOffsetM, 0, boldOffsetM].forEach((offset) => bold.push(0, y, z + offset, widthM, y, z + offset));
+    });
+    const group = new THREE.Group();
+    group.name = 'stand-floor-grid';
+    [['bold', bold], ['fine', fine]].forEach(([weight, positions]) => {
+      if (!positions.length) return;
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      const lines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({
+        color: STAND_GRID_COLOR,
+        transparent: true,
+        opacity: STAND_GRID_OPACITY[weight],
+        depthWrite: false,
+        toneMapped: false,
+      }));
+      lines.userData.gridWeight = weight;
+      lines.renderOrder = 8;
+      // Seçim/yerleştirme ışını ızgaraya takılmaz.
+      lines.raycast = () => {};
+      group.add(lines);
+    });
+    group.visible = false;
+    return group;
+  }
+
+  function setStandFloorGridActive(active) {
+    if (!standFloorGrid || standFloorGrid.visible === active) return;
+    standFloorGrid.visible = active;
+    requestEditorRender();
+  }
+
+  function disposeStandFloorGrid() {
+    if (!standFloorGrid) return;
+    scene.remove(standFloorGrid);
+    standFloorGrid.children.forEach((lines) => {
+      lines.geometry?.dispose?.();
+      lines.material?.dispose?.();
+    });
+    standFloorGrid = null;
+  }
+
+  // Ölçü katmanı (yalnız görüntü, Render Al'a girmez):
+  // - tek öğe seçiliyken taban alanı kesikli dikdörtgen + genişlik/derinlik/yükseklik etiketi;
+  // - yerleştirme önizlemesi görünürken öğeden stand kenarlarına uzaklık çizgisi + metre etiketi.
+  const measureGroup = new THREE.Group();
+  measureGroup.name = 'measure-overlay';
+  scene.add(measureGroup);
+  let measureLabels = [];
+  let measureSignature = '';
+
+  function clearMeasureOverlay() {
+    measureGroup.children.slice().forEach((child) => {
+      measureGroup.remove(child);
+      child.geometry?.dispose?.();
+      child.material?.dispose?.();
+    });
+    measureLabels.forEach(({ element }) => element.remove());
+    measureLabels = [];
+  }
+
+  function addMeasureLine(points, color, dashed = false) {
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = dashed
+      ? new THREE.LineDashedMaterial({ color, dashSize: 0.06, gapSize: 0.04, depthTest: false, transparent: true })
+      : new THREE.LineBasicMaterial({ color, depthTest: false, transparent: true });
+    const line = new THREE.Line(geometry, material);
+    if (dashed) line.computeLineDistances();
+    line.renderOrder = 30;
+    line.raycast = () => {};
+    measureGroup.add(line);
+  }
+
+  function addMeasureLabel(text, worldPoint, kind) {
+    const element = document.createElement('div');
+    element.className = `scene-measure-label is-${kind}`;
+    element.dataset.measureKind = kind;
+    element.textContent = text;
+    element.style.cssText = [
+      'position:fixed', 'z-index:30', 'pointer-events:none', 'transform:translate(-50%,-50%)',
+      'padding:2px 6px', 'border-radius:4px', 'font:600 11px/1.3 system-ui,sans-serif', 'color:#fff',
+      'white-space:nowrap', 'box-shadow:0 1px 3px rgba(15,23,42,.25)',
+      `background:${kind === 'distance' ? 'rgba(37,99,235,.92)' : 'rgba(30,41,59,.88)'}`,
+    ].join(';');
+    document.body.appendChild(element);
+    measureLabels.push({ element, world: worldPoint.clone() });
+  }
+
+  function positionMeasureLabels() {
+    if (!measureLabels.length) return;
+    const rect = renderer.domElement.getBoundingClientRect();
+    const projected = new THREE.Vector3();
+    measureLabels.forEach(({ element, world }) => {
+      projected.copy(world).project(camera);
+      const visible = projected.z > -1 && projected.z < 1 && rect.width > 0;
+      element.style.display = visible ? '' : 'none';
+      if (!visible) return;
+      element.style.left = `${rect.left + ((projected.x + 1) / 2) * rect.width}px`;
+      element.style.top = `${rect.top + ((1 - projected.y) / 2) * rect.height}px`;
+    });
+  }
+
+  function formatMeasureCm(meters) {
+    return `${Math.round(meters * 100)} cm`;
+  }
+
+  function formatMeasureM(meters) {
+    return `${meters.toFixed(2)} m`;
+  }
+
+  function measureFootprint(box) {
+    const y = ACTIVE_PLATFORM_HEIGHT_M + 0.02;
+    const { min, max } = box;
+    const corners = [
+      new THREE.Vector3(min.x, y, min.z), new THREE.Vector3(max.x, y, min.z),
+      new THREE.Vector3(max.x, y, max.z), new THREE.Vector3(min.x, y, max.z),
+    ];
+    addMeasureLine([...corners, corners[0]], MEASURE_FOOTPRINT_COLOR, true);
+    addMeasureLabel(formatMeasureCm(max.x - min.x), new THREE.Vector3((min.x + max.x) / 2, y, max.z + 0.12), 'size');
+    addMeasureLabel(formatMeasureCm(max.z - min.z), new THREE.Vector3(max.x + 0.16, y, (min.z + max.z) / 2), 'size');
+    addMeasureLabel(formatMeasureCm(max.y - min.y), new THREE.Vector3((min.x + max.x) / 2, max.y + 0.08, (min.z + max.z) / 2), 'size');
+  }
+
+  function measureStandDistances(box) {
+    if (!stageLayout) return;
+    const y = ACTIVE_PLATFORM_HEIGHT_M + 0.02;
+    const centerX = (box.min.x + box.max.x) / 2;
+    const centerZ = (box.min.z + box.max.z) / 2;
+    const spans = [
+      [new THREE.Vector3(box.min.x, y, centerZ), new THREE.Vector3(0, y, centerZ)],
+      [new THREE.Vector3(box.max.x, y, centerZ), new THREE.Vector3(stageLayout.widthM, y, centerZ)],
+      [new THREE.Vector3(centerX, y, box.min.z), new THREE.Vector3(centerX, y, 0)],
+      [new THREE.Vector3(centerX, y, box.max.z), new THREE.Vector3(centerX, y, stageLayout.depthM)],
+    ];
+    spans.forEach(([from, to]) => {
+      const distanceM = from.distanceTo(to);
+      if (distanceM < MEASURE_MIN_DISTANCE_M) return;
+      addMeasureLine([from, to], MEASURE_DISTANCE_COLOR);
+      addMeasureLabel(formatMeasureM(distanceM), from.clone().lerp(to, 0.5), 'distance');
+    });
+  }
+
+  // Öğenin kayıtlı ölçü kutusu (seçim çerçevesinden, payı düşülmüş). Çizimin dış kutusu
+  // kullanılmaz: panel yüzü gövdenin 1,5 cm önünde durur ve ölçüyü büyütür.
+  function measureModuleBox(moduleGroup) {
+    const frame = moduleGroup ? ensureModuleSelectionFrame(moduleGroup) : null;
+    if (!frame) return null;
+    frame.updateMatrixWorld(true);
+    return new THREE.Box3().setFromObject(frame).expandByScalar(-(frame.userData.paddingM ?? 0) / 2);
+  }
+
+  function syncMeasureOverlay() {
+    const ghostVisible = Boolean(placementGhost?.root?.visible);
+    let box = null;
+    let mode = '';
+    if (ghostVisible && stageLayout) {
+      placementGhost.root.updateMatrixWorld(true);
+      box = measureModuleBox(placementGhost.root) ?? new THREE.Box3().setFromObject(placementGhost.root);
+      mode = 'distance';
+    } else if (!multiSelectedModuleIds.size && selectedModuleId) {
+      const moduleGroup = findModuleGroupById(selectedModuleId);
+      box = moduleGroup?.visible ? measureModuleBox(moduleGroup) : null;
+      if (box) mode = 'footprint';
+    }
+    const signature = box && !box.isEmpty()
+      ? `${mode}|${[box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z].map((value) => value.toFixed(3)).join(',')}`
+      : '';
+    if (signature !== measureSignature) {
+      measureSignature = signature;
+      clearMeasureOverlay();
+      if (signature && mode === 'footprint') measureFootprint(box);
+      if (signature && mode === 'distance') measureStandDistances(box);
+    }
+    positionMeasureLabels();
+  }
+
   function createActiveWallGuides(standType, widthM, depthM) {
     const wallIds = getAllowedWallIds(standType).filter(
       (wallId) => wallId === 'back' || wallId === 'left' || wallId === 'right',
@@ -1226,6 +1457,7 @@ export function createStandScene(
     }
 
     updateStageFog(widthM, depthM);
+    aimKeyLightAtStand(widthM, depthM);
 
     disposeWall();
     disposeGroundGuides();
@@ -1253,9 +1485,10 @@ export function createStandScene(
     activeFloor.visible = true;
 
     grid = createRectangularGrid(widthM, depthM);
+    standFloorGrid = createStandFloorGrid(widthM, depthM);
     standOutline = createStandOutline(widthM, depthM);
     activeWallGuides = createActiveWallGuides(standType, widthM, depthM);
-    scene.add(grid, standOutline, ...activeWallGuides);
+    scene.add(grid, standFloorGrid, standOutline, ...activeWallGuides);
 
     stageLayout = {
       standType,
@@ -1490,6 +1723,7 @@ export function createStandScene(
     );
     frame.renderOrder = 1000;
     frame.visible = false;
+    frame.userData.paddingM = paddingM;
     // Seçim görselleri yalnızca göstergedir; asla tıklama hedefi olmamalı.
     frame.raycast = () => {};
     frame.userData.isModuleSelectionVisual = true;
@@ -2240,6 +2474,12 @@ export function createStandScene(
     if (moduleState.type === 'coat-rack') {
       return createCoatRackModule(moduleState, moduleIndex);
     }
+    if (moduleState.type === 'floor-showcase') {
+      return createFloorShowcaseModule(moduleState, moduleIndex, onSurfaceReady);
+    }
+    if (moduleState.type === 'brochure-stand') {
+      return createBrochureStandModule(moduleState, moduleIndex);
+    }
     if (moduleState.type === 'upright') {
       return createUprightModule(moduleState, moduleIndex);
     }
@@ -2656,6 +2896,7 @@ export function createStandScene(
   }
 
   function syncPlacementGhostDom() {
+    setStandFloorGridActive(Boolean(placementGhost?.root?.visible));
     const canvas = renderer.domElement;
     if (!canvas?.dataset) return;
     if (!placementGhost?.root?.visible) {
@@ -6751,6 +6992,7 @@ export function createStandScene(
       lastCubePosition.copy(camera.position);
       lastCubeQuaternion.copy(camera.quaternion);
     }
+    syncMeasureOverlay();
     const renderStartedAt = performance.now();
     const programsBefore = renderer.info.programs?.length ?? 0;
     const texturesBefore = renderer.info.memory?.textures ?? 0;
@@ -6851,10 +7093,14 @@ export function createStandScene(
       });
     });
 
+    const editorAidVisibility = [measureGroup.visible, standFloorGrid?.visible ?? false];
     try {
       selectedFrames.forEach((frame) => { frame.visible = false; });
       if (moduleSelectionFrame) moduleSelectionFrame.visible = false;
       activeWallGuides.forEach((guide) => { guide.visible = false; });
+      // Müşteriye giden görselde ölçü katmanı ve zemin ızgarası yok.
+      measureGroup.visible = false;
+      if (standFloorGrid) standFloorGrid.visible = false;
 
       renderer.setPixelRatio(1);
       renderer.setSize(targetWidth, targetHeight, false);
@@ -6878,6 +7124,8 @@ export function createStandScene(
       selectedFrames.forEach((frame, index) => { frame.visible = selectedVisibility[index]; });
       if (moduleSelectionFrame) moduleSelectionFrame.visible = moduleSelectionVisibility;
       activeWallGuides.forEach((guide, index) => { guide.visible = guideVisibility[index]; });
+      [measureGroup.visible] = editorAidVisibility;
+      if (standFloorGrid) standFloorGrid.visible = editorAidVisibility[1];
       renderer.setPixelRatio(previousPixelRatio);
       renderer.setSize(cssWidth, cssHeight, false);
       updateCameraProjection(cssWidth, cssHeight);
@@ -7012,6 +7260,7 @@ export function createStandScene(
       renderer.domElement.remove();
       placementFeedback?.remove?.();
       dragBadge?.remove?.();
+      measureLabels.forEach(({ element }) => element.remove());
     },
   };
 }
@@ -7805,6 +8054,214 @@ function createCoatRackModule(moduleState, moduleIndex) {
   });
 
   return { group, surfaces: [proxy] };
+}
+
+// Tekil ticari öğelerin ortak iskeleti: ölçü kutusu kadar görünmez seçim yüzeyi.
+function createFreeItemShell(moduleState, moduleIndex, type) {
+  const { widthCm, depthCm, heightCm } = getItem(moduleState.itemKey).dimensions;
+  const group = new THREE.Group();
+  group.userData = {
+    kind: 'module',
+    moduleIndex,
+    moduleId: moduleState.id,
+    moduleType: type,
+    type,
+    widthCm,
+    depthCm,
+    heightCm,
+  };
+  const proxy = new THREE.Mesh(
+    new THREE.BoxGeometry(widthCm / 100, heightCm / 100, depthCm / 100),
+    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false }),
+  );
+  proxy.position.y = heightCm / 200;
+  proxy.userData = {
+    kind: 'surface',
+    surfaceId: `${moduleState.id}:${type}`,
+    moduleId: moduleState.id,
+    moduleType: type,
+    moduleIndex,
+    selectionMode: 'module',
+    ...surfaceCapabilityUserData(moduleState.itemKey),
+    widthCm,
+    depthCm,
+    heightCm,
+  };
+  group.add(proxy);
+  return { group, proxy, widthM: widthCm / 100, depthM: depthCm / 100, heightM: heightCm / 100 };
+}
+
+function addShadowedMesh(group, geometry, material, x, y, z) {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(x, y, z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+  return mesh;
+}
+
+// Ayaklı vitrin: beyaz gövde + üstte cam fanus. Gövde/cam oranı ürün kararıdır
+// (100 cm toplamda 70 cm gövde, 30 cm cam); BOM tek kalem, çizim görünüm içindir.
+const FLOOR_SHOWCASE_GLASS_HEIGHT_RATIO = 0.3;
+
+function createFloorShowcaseModule(moduleState, moduleIndex, onSurfaceReady = null) {
+  const { group, proxy, widthM, depthM, heightM } = createFreeItemShell(moduleState, moduleIndex, 'floor-showcase');
+  const glassHeightM = heightM * FLOOR_SHOWCASE_GLASS_HEIGHT_RATIO;
+  const bodyHeightM = heightM - glassHeightM;
+  const plinthM = 0.05;
+  const plinthInsetM = 0.012;
+  const deckM = 0.02;
+  const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xf4f4f2, roughness: 0.62, metalness: 0.02 });
+  const plinthMaterial = new THREE.MeshStandardMaterial({ color: 0x8e9398, roughness: 0.4, metalness: 0.55 });
+  const deckMaterial = new THREE.MeshStandardMaterial({ color: 0xd9dcdf, roughness: 0.35, metalness: 0.4 });
+  const frameMaterial = new THREE.MeshStandardMaterial({ color: 0xb9bec3, roughness: 0.3, metalness: 0.8 });
+
+  addShadowedMesh(group, new THREE.BoxGeometry(widthM - plinthInsetM * 2, plinthM, depthM - plinthInsetM * 2),
+    plinthMaterial, 0, plinthM / 2, 0);
+  addShadowedMesh(group, new THREE.BoxGeometry(widthM, bodyHeightM - plinthM - deckM, depthM),
+    bodyMaterial, 0, plinthM + (bodyHeightM - plinthM - deckM) / 2, 0);
+  addShadowedMesh(group, new THREE.BoxGeometry(widthM, deckM, depthM), deckMaterial, 0, bodyHeightM - deckM / 2, 0);
+
+  // Gövdenin ön/sol/sağ yüzü düzenlenebilir yüzeydir (renk, görsel, Lightbox); seçim kutusu düzenlenmez.
+  Object.assign(proxy.userData, {
+    acceptsColor: false, acceptsImage: false, acceptsGlass: false, acceptsLightbox: false, acceptsMesh: false,
+  });
+  const surfaces = [proxy];
+  const faceBottomM = plinthM;
+  const faceHeightM = bodyHeightM - deckM - plinthM;
+  const faceY = faceBottomM + faceHeightM / 2;
+  const faceOffsetM = 0.002;
+  [
+    ['front', widthM, new THREE.Vector3(0, faceY, depthM / 2 + faceOffsetM), 0],
+    ['left', depthM, new THREE.Vector3(-widthM / 2 - faceOffsetM, faceY, 0), -Math.PI / 2],
+    ['right', depthM, new THREE.Vector3(widthM / 2 + faceOffsetM, faceY, 0), Math.PI / 2],
+  ].forEach(([role, faceWidthM, position, rotationY]) => {
+    const surfaceState = moduleState.faces?.[role];
+    if (!surfaceState) return;
+    const surface = new THREE.Mesh(new THREE.PlaneGeometry(faceWidthM, faceHeightM), panelFaceSurfaceMaterial(surfaceState));
+    surface.position.copy(position);
+    surface.rotation.y = rotationY;
+    surface.receiveShadow = true;
+    const selectionFrame = createSelectionFrame(faceWidthM, faceHeightM);
+    selectionFrame.visible = false;
+    surface.add(selectionFrame);
+    surface.userData = {
+      kind: 'surface',
+      moduleType: 'floor-showcase',
+      selectionMode: 'panel',
+      ...surfaceCapabilityUserData(moduleState.itemKey),
+      moduleIndex,
+      moduleId: moduleState.id,
+      widthCm: Math.round(faceWidthM * 100),
+      heightCm: Math.round(faceHeightM * 100),
+      stripIndex: 0,
+      stripNumber: 1,
+      surfaceRole: role,
+      surfaceId: surfaceState.id,
+      ...bindRendererSurfaceState(surfaceState),
+      selectionFrame,
+    };
+    group.add(surface);
+    surfaces.push(surface);
+    onSurfaceReady?.(surface);
+  });
+
+  const glass = new THREE.Mesh(
+    new THREE.BoxGeometry(widthM - 0.006, glassHeightM, depthM - 0.006),
+    new THREE.MeshPhysicalMaterial({
+      ...TABLE_GLASS_APPEARANCE,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      userData: { renderTransmission: TABLE_GLASS_RENDER_TRANSMISSION },
+    }),
+  );
+  glass.position.y = bodyHeightM + glassHeightM / 2;
+  glass.renderOrder = 2;
+  group.add(glass);
+
+  // Cam kenarlarında ince alüminyum çerçeve.
+  const frame = new THREE.LineSegments(
+    new THREE.EdgesGeometry(glass.geometry),
+    new THREE.LineBasicMaterial({ color: 0xa7adb3 }),
+  );
+  frame.position.copy(glass.position);
+  frame.raycast = () => {};
+  group.add(frame);
+
+  // İç spot: iki küçük gövde (ışık kaynağı değildir, yalnız görünüm).
+  [-1, 1].forEach((side) => {
+    const spot = addShadowedMesh(group, new THREE.CylinderGeometry(0.008, 0.012, 0.05, 12), frameMaterial,
+      side * (widthM / 2 - 0.04), bodyHeightM + glassHeightM - 0.05, -depthM / 2 + 0.04);
+    spot.rotation.x = Math.PI / 5;
+  });
+
+  return { group, surfaces };
+}
+
+// Broşürlük: iki dikme arasında öne eğik, delikli beyaz metal cepler ve taban plakası.
+const BROCHURE_STAND_POCKET_COUNT = 5;
+
+function createBrochureStandModule(moduleState, moduleIndex) {
+  const { group, proxy, widthM, depthM, heightM } = createFreeItemShell(moduleState, moduleIndex, 'brochure-stand');
+  const metal = new THREE.MeshStandardMaterial({ color: 0xf2f3f4, roughness: 0.42, metalness: 0.35 });
+  const baseM = 0.012;
+  addShadowedMesh(group, new THREE.BoxGeometry(widthM, baseM, depthM), metal, 0, baseM / 2, 0);
+
+  const pocketWidthM = widthM * 0.92;
+  const topM = heightM - 0.02;
+  const bottomM = 0.12;
+  const pitchM = (topM - bottomM) / BROCHURE_STAND_POCKET_COUNT;
+  const backZ = -depthM * 0.18;
+  const pocketTexture = createPerforatedTexture();
+  const pocketMaterial = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    roughness: 0.45,
+    metalness: 0.3,
+    alphaMap: pocketTexture,
+    transparent: true,
+    alphaTest: 0.5,
+    side: THREE.DoubleSide,
+  });
+  for (let index = 0; index < BROCHURE_STAND_POCKET_COUNT; index += 1) {
+    const y = bottomM + pitchM * index;
+    // Arka levha (broşür dayanağı) hafif arkaya yatık; ön dudak cebi tutar.
+    const back = addShadowedMesh(group, new THREE.PlaneGeometry(pocketWidthM, pitchM * 1.05), pocketMaterial,
+      0, y + pitchM / 2, backZ);
+    back.rotation.x = -0.18;
+    const lip = addShadowedMesh(group, new THREE.BoxGeometry(pocketWidthM, pitchM * 0.28, 0.004), metal,
+      0, y + pitchM * 0.14, backZ + depthM * 0.32);
+    lip.rotation.x = 0.35;
+    addShadowedMesh(group, new THREE.BoxGeometry(pocketWidthM, 0.004, depthM * 0.34), metal,
+      0, y + 0.002, backZ + depthM * 0.16);
+  }
+  [-1, 1].forEach((side) => {
+    addShadowedMesh(group, new THREE.BoxGeometry(0.008, topM - baseM, 0.012), metal,
+      side * (pocketWidthM / 2 + 0.004), baseM + (topM - baseM) / 2, backZ - 0.01);
+  });
+
+  return { group, surfaces: [proxy] };
+}
+
+let perforatedTexture = null;
+
+function createPerforatedTexture() {
+  if (perforatedTexture) return perforatedTexture;
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, size, size);
+  context.fillStyle = '#000000';
+  context.beginPath();
+  context.arc(size / 2, size / 2, size * 0.28, 0, Math.PI * 2);
+  context.fill();
+  perforatedTexture = new THREE.CanvasTexture(canvas);
+  perforatedTexture.wrapS = THREE.RepeatWrapping;
+  perforatedTexture.wrapT = THREE.RepeatWrapping;
+  perforatedTexture.repeat.set(4, 3);
+  return perforatedTexture;
 }
 
 function createUprightModule(moduleState, moduleIndex) {

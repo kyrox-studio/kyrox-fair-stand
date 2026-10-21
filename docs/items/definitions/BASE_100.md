@@ -13,7 +13,7 @@ Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKL
 `src/designState.js > createBaseModuleState` `getItem(itemKey|BASE_${width})` ile kanonik Item’dan default üretir; `itemKey` damgalar; `faces.front|left|right` editable aynı yapı korunur. `getCommercialItemForType('base')` kullanılmaz. Yüklemede `normalizeModuleItemState` `itemKey` doldurur; takma ad yok.
 
 ## Davranış ve renderer sınırı
-`moduleBehavior.js > base`: free, 50 cm snap, oturum alanı, `logical-fixture`. Placement type bazlıdır. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). `createBaseModule()` prosedürel renderer; top thickness/overhang görsel temsildir, iş tek kaynağı değildir.
+`moduleBehavior.js > base`: free, 10 cm snap, oturum alanı, `logical-fixture`. Placement type bazlıdır. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). `createBaseModule()` prosedürel renderer; top thickness/overhang görsel temsildir, iş tek kaynağı değildir.
 
 ## Regresyon
 `test/baseItemsContract.test.js`, `test/baseModule.test.js`, `test/baseRecipes.test.js`, `test/baseTopsItemContract.test.js`; E2E `e2e/base-items-contract.spec.mjs`.

@@ -43,11 +43,11 @@ test('wall-short default Z stays on the catalog item', () => {
   assert.equal(resolveSceneDimensions(getItem('wall_100_short_2')).heightCm, 100);
 });
 
-test('wall-short vertical step reuses the flat-panel 50 cm snap', () => {
-  assert.equal(getModulePlacementSnapCm('flat-panel'), 50);
+test('wall-short vertical step reuses the flat-panel 10 cm snap', () => {
+  assert.equal(getModulePlacementSnapCm('flat-panel'), 10);
   assert.equal(getModulePlacementSnapCm('tv'), 10);
-  assert.equal(stepWallShortFloorZCm(300, getModulePlacementSnapCm('flat-panel'), 50, STAND_HEIGHT_CM), 350);
-  assert.equal(stepWallShortFloorZCm(300, -getModulePlacementSnapCm('flat-panel'), 50, STAND_HEIGHT_CM), 250);
+  assert.equal(stepWallShortFloorZCm(300, getModulePlacementSnapCm('flat-panel'), 50, STAND_HEIGHT_CM), 310);
+  assert.equal(stepWallShortFloorZCm(300, -getModulePlacementSnapCm('flat-panel'), 50, STAND_HEIGHT_CM), 290);
   assert.equal(stepWallShortFloorZCm(20, 50, 50, STAND_HEIGHT_CM), 70);
 });
 
@@ -61,7 +61,7 @@ test('wall-short floor clamp keeps the bottom at or above 0', () => {
 test('50 cm wall-short ceiling is stand height minus body height', () => {
   const bounds = getWallShortFloorZBoundsCm(50, STAND_HEIGHT_CM);
   assert.equal(bounds.maxZCm, 450);
-  assert.deepEqual(climb(50), [0, 50, 100, 150, 200, 250, 300, 350, 400, 450]);
+  assert.deepEqual(climb(50), [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 310, 320, 330, 340, 350, 360, 370, 380, 390, 400, 410, 420, 430, 440, 450]);
   assert.equal(stepWallShortFloorZCm(450, 50, 50, STAND_HEIGHT_CM), 450);
   const liveCeilingCm = getStandDimensions().heightCm;
   assert.equal(
@@ -73,7 +73,7 @@ test('50 cm wall-short ceiling is stand height minus body height', () => {
 test('100 cm wall-short ceiling is stand height minus body height', () => {
   const bounds = getWallShortFloorZBoundsCm(100, STAND_HEIGHT_CM);
   assert.equal(bounds.maxZCm, 400);
-  assert.deepEqual(climb(100), [0, 50, 100, 150, 200, 250, 300, 350, 400]);
+  assert.deepEqual(climb(100), [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 310, 320, 330, 340, 350, 360, 370, 380, 390, 400]);
   assert.equal(stepWallShortFloorZCm(400, 50, 100, STAND_HEIGHT_CM), 400);
   assert.equal(stepWallShortFloorZCm(250, 50, 100, STAND_HEIGHT_CM), 300);
 });

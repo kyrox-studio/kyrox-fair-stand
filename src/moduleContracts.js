@@ -121,6 +121,8 @@ const TYPE_CONTRACT_PROFILE = Object.freeze({
   'mini-fridge': 'free-model-fixed',
   kettle: 'free-model-fixed',
   'coat-rack': 'free-model-fixed',
+  'floor-showcase': 'free-model-fixed',
+  'brochure-stand': 'free-model-fixed',
   'plastic-trash-bin': 'free-model-fixed',
   'box-block': 'free-editable',
   'tulle-fabric': 'free-editable',
@@ -138,6 +140,8 @@ const TYPE_SELF_BOM = Object.freeze(new Set([
   'mini-fridge',
   'kettle',
   'coat-rack',
+  'floor-showcase',
+  'brochure-stand',
   'plastic-trash-bin',
   'box-block',
 ]));

@@ -13,7 +13,7 @@ Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKL
 `createFlatPanelModuleState` Item’dan default üretir; 7 strip. Load hydrate; takma ad yok.
 
 ## Davranış ve renderer sınırı
-`WALL_BEHAVIOR`: duvar yerleşimi, 50 cm snap. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). Prosedürel renderer iş tek kaynağı değildir.
+`WALL_BEHAVIOR`: duvar yerleşimi, 10 cm snap. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). Prosedürel renderer iş tek kaynağı değildir.
 
 ## Regresyon
 `test/wallFlatPanelItemsContract.test.js`; E2E `e2e/wall-flat-panel-items-contract.spec.mjs`.

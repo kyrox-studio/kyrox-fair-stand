@@ -633,6 +633,34 @@ export function createCoatRackModuleState() {
   return createCommercialModuleState('coat-rack');
 }
 
+// Ayaklı vitrin gövdesinin ön/sol/sağ yüzü renk, görsel ve Lightbox alır (arka ve cam düzenlenmez).
+export const FLOOR_SHOWCASE_FACE_SLOTS = Object.freeze(['front', 'left', 'right']);
+const FLOOR_SHOWCASE_FACE_COLOR = '#f4f4f2';
+
+export function ensureFloorShowcaseFaces(moduleState) {
+  if (moduleState?.type !== 'floor-showcase') return moduleState;
+  if (!moduleState.faces || typeof moduleState.faces !== 'object' || Array.isArray(moduleState.faces)) {
+    moduleState.faces = {};
+  }
+  for (const slot of FLOOR_SHOWCASE_FACE_SLOTS) {
+    const face = moduleState.faces[slot];
+    if (!face || typeof face !== 'object' || Array.isArray(face)) {
+      moduleState.faces[slot] = createEditablePanelState(0, FLOOR_SHOWCASE_FACE_COLOR);
+    } else if (!face.id) {
+      face.id = createId('surface');
+    }
+  }
+  return moduleState;
+}
+
+export function createFloorShowcaseModuleState() {
+  return ensureFloorShowcaseFaces(createCommercialModuleState('floor-showcase'));
+}
+
+export function createBrochureStandModuleState() {
+  return createCommercialModuleState('brochure-stand');
+}
+
 export function createUprightModuleState(descriptor = {}) {
   const itemKey = descriptor.itemKey ?? 'upright_346_5';
   const item = getItem(itemKey);
@@ -881,6 +909,8 @@ const MODULE_STATE_FACTORIES = Object.freeze({
   'mini-fridge': () => createMiniFridgeModuleState(),
   kettle: () => createKettleModuleState(),
   'coat-rack': () => createCoatRackModuleState(),
+  'floor-showcase': () => createFloorShowcaseModuleState(),
+  'brochure-stand': () => createBrochureStandModuleState(),
   upright: (descriptor) => createUprightModuleState(descriptor),
   profile: (descriptor) => createProfileModuleState(descriptor),
   'plastic-trash-bin': () => createPlasticTrashBinModuleState(),
@@ -1031,6 +1061,8 @@ export function normalizeModuleItemState(moduleState) {
     }
     return moduleState;
   }
+
+  if (moduleState.type === 'floor-showcase') ensureFloorShowcaseFaces(moduleState);
 
   if (moduleState.type === 'counter') {
     const resolvedKey = resolveItemKey(moduleState);

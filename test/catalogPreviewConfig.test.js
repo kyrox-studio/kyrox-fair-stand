@@ -43,6 +43,8 @@ const ROOT_CLASS_BY_PREVIEW = Object.freeze({
   8: 'module-drag-door',
   21: 'module-drag-showcase',
   9: 'module-drag-panel',
+  29: 'module-drag-floor-showcase',
+  30: 'module-drag-brochure-stand',
 });
 
 function installDocument() {
@@ -91,10 +93,10 @@ function serializeNode(node) {
   };
 }
 
-test('60 görünür Item catalogPreview taşır; 47 gizli Item preview taşımaz', () => {
+test('62 görünür Item catalogPreview taşır; 47 gizli Item preview taşımaz', () => {
   const visible = listRegisteredItems().filter((item) => item.catalogVisible === true);
   const hidden = listRegisteredItems().filter((item) => item.catalogVisible !== true);
-  assert.equal(visible.length, 60);
+  assert.equal(visible.length, 62);
   assert.equal(hidden.length, 64);
 
   for (const item of visible) {
@@ -134,7 +136,7 @@ test('Catalog preview renderer yalnız catalogPreview key ile seçilir; type bra
   assert.doesNotMatch(picker, /item\.type/);
 
   const rendererKeys = listCatalogPreviewIds().sort();
-  assert.equal(rendererKeys.length, 28);
+  assert.equal(rendererKeys.length, 30);
   assert.deepEqual(rendererKeys, [...listCatalogPreviewIds()].sort());
   assert.match(CATALOG_SOURCE, /previewId,/);
   assert.match(CATALOG_SOURCE, /is catalogVisible without previewId/);
@@ -144,7 +146,7 @@ test('Catalog preview renderer yalnız catalogPreview key ile seçilir; type bra
   assert.match(catalogDoc, /Catalog preview renderer seçimi yalnız Item\.previewId üzerinden yapılır/);
 });
 
-test('60 Item catalogPreview dağılımı kilitlidir', () => {
+test('62 Item catalogPreview dağılımı kilitlidir', () => {
   const counts = {};
   for (const item of listCatalogItems()) {
     counts[item.previewId] = (counts[item.previewId] ?? 0) + 1;
@@ -177,13 +179,15 @@ test('60 Item catalogPreview dağılımı kilitlidir', () => {
     26: 3,
     27: 1,
     28: 2,
+    29: 1,
+    30: 1,
   });
 });
 
-test('60 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
+test('62 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
   installDocument();
   const projected = listCatalogItems();
-  assert.equal(projected.length, 60);
+  assert.equal(projected.length, 62);
 
   for (const module of projected) {
     const tree = serializeNode(createModuleCatalogPreview(module));

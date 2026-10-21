@@ -13,7 +13,7 @@ Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKL
 `createBaseModuleState` Item’dan default üretir; `itemKey` damgalar; üç editable face aynı yapı korunur. Load hydrate: `itemKey`. Alias yok. `getCommercialItemForType('base')` yok.
 
 ## Davranış ve renderer sınırı
-Type `base` ortak behavior (free, 50 cm snap, oturum alanı, logical-fixture). Prosedürel renderer kalınlık/overhang iş tek kaynağı değildir.
+Type `base` ortak behavior (free, 10 cm snap, oturum alanı, logical-fixture). Prosedürel renderer kalınlık/overhang iş tek kaynağı değildir.
 
 ## Regresyon
 `test/baseItemsContract.test.js`, mevcut base recipe/module/tops testleri; E2E `e2e/base-items-contract.spec.mjs`.

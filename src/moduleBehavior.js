@@ -12,7 +12,7 @@ const NO_OVERLAP_TYPES = Object.freeze([]);
 /** Kesit 1 bilinmeyen tip fallback — üretimde tip satırı bootstrap’tan gelir. */
 const DEFAULT_PLACEMENT_SLICE = Object.freeze({
   placement: 'wall',
-  moveSnapCm: 50,
+  moveSnapCm: 10,
   collision: 'segment',
 });
 
@@ -66,6 +66,8 @@ const KNOWN_BEHAVIOR_TYPE_KEYS = Object.freeze(new Set([
   'mini-fridge',
   'kettle',
   'coat-rack',
+  'floor-showcase',
+  'brochure-stand',
   'plastic-trash-bin',
   'box-block',
   'upright',
@@ -223,7 +225,7 @@ export function getModuleDefaultRotationDeg(moduleOrType) {
 }
 
 export function getModuleMoveSnapCm(moduleOrType) {
-  return Number(getModuleBehavior(moduleOrType).moveSnapCm) || 50;
+  return Number(getModuleBehavior(moduleOrType).moveSnapCm) || 10;
 }
 
 export function getModuleCollisionStrategy(moduleOrType) {

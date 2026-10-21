@@ -51,7 +51,7 @@ function wallModule(itemKey, xCm = 0) {
 test('raf kataloğu üç sıra kartı sunar; kartlar en dar üretim ürününe çözülür', () => {
   const cards = ['shelf_row_1', 'shelf_row_2', 'shelf_row_3'];
   assert.deepEqual([...listCatalogGroups().find((group) => group.id === 3).keys], [
-    'wall_showcase_100_3_350', 'wall_showcase_100_2_350', ...cards,
+    'wall_showcase_100_3_350', 'wall_showcase_100_2_350', ...cards, 'floor_showcase_100',
   ]);
   for (const [index, key] of cards.entries()) {
     assert.ok(getCatalogItem(key));

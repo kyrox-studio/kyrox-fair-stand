@@ -14,6 +14,8 @@ const PLACEABLE_ITEM_TYPES = new Set([
   'mini-fridge',
   'kettle',
   'coat-rack',
+  'floor-showcase',
+  'brochure-stand',
   'upright',
   'profile',
   'plastic-trash-bin',
@@ -53,6 +55,9 @@ const COLOR_ONLY_TYPES = new Set([
 ]);
 
 const LEAF_COLOR_IMAGE_TYPES = new Set(['door-leaf']);
+
+/** Gövde yüzü renk + görsel + Lightbox alır; cam/mesh yok (ayaklı vitrin). */
+const LIGHTBOX_FACE_TYPES = new Set(['floor-showcase']);
 
 /** Parent içinde çizilen parçalar. Kendi modül fabrikası yok; katalog şart değil. */
 const EMBEDDED_RENDER_TYPES = new Set([
@@ -98,13 +103,14 @@ export function surfaceFlagsForItem(itemKey, itemType) {
   }
   if (!PLACEABLE_ITEM_TYPES.has(itemType)) return { ...ALL_FALSE };
   const cover = PANEL_COVER_TYPES.has(itemType);
-  const imageColor = IMAGE_COLOR_TYPES.has(itemType);
+  const lightboxFace = LIGHTBOX_FACE_TYPES.has(itemType);
+  const imageColor = IMAGE_COLOR_TYPES.has(itemType) || lightboxFace;
   const colorOnly = COLOR_ONLY_TYPES.has(itemType);
   return {
     isRender: true,
     acceptsColor: imageColor || colorOnly,
     acceptsImage: imageColor,
-    acceptsLightbox: cover,
+    acceptsLightbox: cover || lightboxFace,
     acceptsGlass: cover,
     acceptsMesh: cover,
   };

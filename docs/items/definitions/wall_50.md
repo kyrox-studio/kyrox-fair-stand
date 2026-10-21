@@ -13,7 +13,7 @@ Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKL
 `createFlatPanelModuleState` `getItem(itemKey|width)` ile Item’dan default üretir; `itemKey` damgalar; 7 strip aynı yapı korunur. Yüklemede `normalizeModuleItemState` `itemKey` doldurur; takma ad yok.
 
 ## Davranış ve renderer sınırı
-`moduleBehavior.js > flat-panel`: `WALL_BEHAVIOR` — duvar yerleşimi, 50 cm snap. Placement/snap type bazlıdır. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). Prosedürel `createFlatPanelModule` iş tek kaynağı değildir.
+`moduleBehavior.js > flat-panel`: `WALL_BEHAVIOR` — duvar yerleşimi, 10 cm snap. Placement/snap type bazlıdır. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). Prosedürel `createFlatPanelModule` iş tek kaynağı değildir.
 
 ## Regresyon
 `test/wallFlatPanelItemsContract.test.js`; E2E `e2e/wall-flat-panel-items-contract.spec.mjs`.

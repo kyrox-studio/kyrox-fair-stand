@@ -14,6 +14,8 @@ const PLACEABLE_ITEM_TYPES = new Set([
   'mini-fridge',
   'kettle',
   'coat-rack',
+  'floor-showcase',
+  'brochure-stand',
   'upright',
   'profile',
   'plastic-trash-bin',

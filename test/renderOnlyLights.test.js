@@ -24,7 +24,7 @@ test('editor draws without shadows and render-only lights; Render Al turns both 
 });
 
 test('table glass refraction is on only while Render Al draws', () => {
-  assert.equal((scene.match(/userData: \{ renderTransmission: TABLE_GLASS_RENDER_TRANSMISSION \}/g) ?? []).length, 2);
+  assert.equal((scene.match(/userData: \{ renderTransmission: TABLE_GLASS_RENDER_TRANSMISSION \}/g) ?? []).length, 3);
   const capture = scene.slice(scene.indexOf('async function captureCurrentViewPng'), scene.indexOf('async function captureCurrentViewPng') + 4000);
   const on = capture.indexOf('material.transmission = material.userData.renderTransmission;');
   assert.ok(on > 0 && on < capture.indexOf('renderer.render(scene, camera);'));

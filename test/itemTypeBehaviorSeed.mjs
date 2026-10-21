@@ -4,7 +4,7 @@
 export const DEFAULT_ITEM_TYPE_BEHAVIOR_SLICE1 = Object.freeze({
   placement: 'wall',
   collision: 'segment',
-  moveSnapCm: 50,
+  moveSnapCm: 10,
 });
 
 export const DEFAULT_ITEM_TYPE_BEHAVIOR_SLICE2 = Object.freeze({
@@ -45,15 +45,15 @@ function s3(overrides = {}) {
 
 /** key → { placement, collision, moveSnapCm } */
 export const ITEM_TYPE_BEHAVIOR_SLICE1 = Object.freeze({
-  'flat-panel': Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 50 }),
-  'showcase-3': Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 50 }),
-  'showcase-2': Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 50 }),
+  'flat-panel': Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 10 }),
+  'showcase-3': Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 10 }),
+  'showcase-2': Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 10 }),
   shelf: Object.freeze({ placement: 'wall-overlay', collision: 'none', moveSnapCm: 10 }),
-  door: Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 50 }),
-  'base-wall': Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 50 }),
-  separator: Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 50 }),
-  counter: Object.freeze({ placement: 'free', collision: 'footprint', moveSnapCm: 50 }),
-  base: Object.freeze({ placement: 'free', collision: 'footprint', moveSnapCm: 50 }),
+  door: Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 10 }),
+  'base-wall': Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 10 }),
+  separator: Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 10 }),
+  counter: Object.freeze({ placement: 'free', collision: 'footprint', moveSnapCm: 10 }),
+  base: Object.freeze({ placement: 'free', collision: 'footprint', moveSnapCm: 10 }),
   'sofa-set-classic': Object.freeze({ placement: 'free', collision: 'footprint', moveSnapCm: 10 }),
   'sofa-single-classic': Object.freeze({ placement: 'free', collision: 'none', moveSnapCm: 10 }),
   'sofa-double-classic': Object.freeze({ placement: 'free', collision: 'none', moveSnapCm: 10 }),
@@ -65,15 +65,17 @@ export const ITEM_TYPE_BEHAVIOR_SLICE1 = Object.freeze({
   'mini-fridge': Object.freeze({ placement: 'free', collision: 'none', moveSnapCm: 10 }),
   kettle: Object.freeze({ placement: 'free', collision: 'none', moveSnapCm: 10 }),
   'coat-rack': Object.freeze({ placement: 'free', collision: 'none', moveSnapCm: 10 }),
+  'floor-showcase': Object.freeze({ placement: 'free', collision: 'footprint', moveSnapCm: 10 }),
+  'brochure-stand': Object.freeze({ placement: 'free', collision: 'footprint', moveSnapCm: 10 }),
   'plastic-trash-bin': Object.freeze({ placement: 'free', collision: 'none', moveSnapCm: 10 }),
   'box-block': Object.freeze({ placement: 'free', collision: 'none', moveSnapCm: 10 }),
-  'tulle-fabric': Object.freeze({ placement: 'free', collision: 'none', moveSnapCm: 50 }),
-  upright: Object.freeze({ placement: 'free', collision: 'footprint', moveSnapCm: 50 }),
-  profile: Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 50 }),
+  'tulle-fabric': Object.freeze({ placement: 'free', collision: 'none', moveSnapCm: 10 }),
+  upright: Object.freeze({ placement: 'free', collision: 'footprint', moveSnapCm: 10 }),
+  profile: Object.freeze({ placement: 'wall', collision: 'segment', moveSnapCm: 10 }),
   'indoor-plant-1': Object.freeze({ placement: 'free', collision: 'footprint', moveSnapCm: 10 }),
   'illuminated-foam': Object.freeze({ placement: 'wall-overlay', collision: 'none', moveSnapCm: 10 }),
   tv: Object.freeze({ placement: 'wall-overlay', collision: 'none', moveSnapCm: 10 }),
-  'led-floodlight': Object.freeze({ placement: 'top', collision: 'none', moveSnapCm: 20 }),
+  'led-floodlight': Object.freeze({ placement: 'top', collision: 'none', moveSnapCm: 10 }),
 });
 
 /** key → { magneticSnap, allowSideInsert, supportsWallOverlayMount, wallCapacity } */
@@ -98,6 +100,8 @@ export const ITEM_TYPE_BEHAVIOR_SLICE2 = Object.freeze({
   'mini-fridge': Object.freeze({ magneticSnap: 'none', allowSideInsert: true, supportsWallOverlayMount: false, wallCapacity: 'include' }),
   kettle: Object.freeze({ magneticSnap: 'none', allowSideInsert: true, supportsWallOverlayMount: false, wallCapacity: 'include' }),
   'coat-rack': Object.freeze({ magneticSnap: 'none', allowSideInsert: true, supportsWallOverlayMount: false, wallCapacity: 'include' }),
+  'floor-showcase': Object.freeze({ magneticSnap: 'none', allowSideInsert: true, supportsWallOverlayMount: false, wallCapacity: 'include' }),
+  'brochure-stand': Object.freeze({ magneticSnap: 'none', allowSideInsert: true, supportsWallOverlayMount: false, wallCapacity: 'include' }),
   'plastic-trash-bin': Object.freeze({ magneticSnap: 'none', allowSideInsert: true, supportsWallOverlayMount: false, wallCapacity: 'include' }),
   'box-block': Object.freeze({ magneticSnap: 'none', allowSideInsert: true, supportsWallOverlayMount: false, wallCapacity: 'include' }),
   'tulle-fabric': Object.freeze({ magneticSnap: 'none', allowSideInsert: true, supportsWallOverlayMount: false, wallCapacity: 'include' }),
@@ -131,6 +135,8 @@ export const ITEM_TYPE_BEHAVIOR_SLICE3 = Object.freeze({
   'mini-fridge': s3({ overlapWithTypes: ['kettle'] }),
   kettle: s3({ overlapWithTypes: ['mini-fridge'] }),
   'coat-rack': s3(),
+  'floor-showcase': s3(),
+  'brochure-stand': s3(),
   'plastic-trash-bin': s3(),
   'box-block': s3(),
   'tulle-fabric': s3(),

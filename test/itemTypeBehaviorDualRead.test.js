@@ -87,7 +87,7 @@ test('DB-only: bilinmeyen tip DEFAULT wall + standard policy + contact', () => {
   resetItemRegistry();
   const b = getModuleBehavior('__unknown-module-type__');
   assert.equal(b.placement, 'wall');
-  assert.equal(getModuleMoveSnapCm('__unknown-module-type__'), 50);
+  assert.equal(getModuleMoveSnapCm('__unknown-module-type__'), 10);
   assert.equal(b.magneticSnap, 'standard');
   assert.equal(b.allowSideInsert, true);
   assert.equal(b.connectionEndpoint, 'segment');

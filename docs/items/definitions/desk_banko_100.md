@@ -13,7 +13,7 @@ Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKL
 `src/designState.js > createCounterModuleState` `getItem(itemKey|width+shape)` ile kanonik Item’dan default üretir; `itemKey` damgalar; 6 editable face aynı yapı korunur. Yüklemede `normalizeModuleItemState` `itemKey` doldurur; takma ad yok.
 
 ## Davranış ve renderer sınırı
-`moduleBehavior.js > counter`: free, 50 cm snap. Placement type bazlıdır. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). Prosedürel renderer iş tek kaynağı değildir.
+`moduleBehavior.js > counter`: free, 10 cm snap. Placement type bazlıdır. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). Prosedürel renderer iş tek kaynağı değildir.
 
 ## Regresyon
 `test/deskBankoItemsContract.test.js`, `test/counterModule.test.js`, `test/counterRecipes.test.js`; E2E `e2e/desk-banko-items-contract.spec.mjs`.

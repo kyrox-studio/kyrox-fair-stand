@@ -103,6 +103,8 @@ test('shelf_100/150/200 Catalog’da Raf & Vitrin altında vitrinlerden sonra g�
     'shelf_row_1',
     'shelf_row_2',
     'shelf_row_3',
+    // 0074: ayaklı vitrin rafların ardından gelir.
+    'floor_showcase_100',
   ]);
   for (const itemKey of ['wall_shelf_2_100', 'wall_shelf_3_200']) {
     await expect(page.locator(`.module-drag-card[data-module-key="${itemKey}"]`)).toHaveCount(0);

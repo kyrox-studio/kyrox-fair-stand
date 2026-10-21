@@ -1898,7 +1898,8 @@ function createFreePlacement({
       );
 
   if (strictDepth) {
-    const edgeSnap = MODULE_PLACEMENT_SNAP_CM;
+    // Kenara yapışma yalnız bir adım (tür adımı) içinde; sabit 50 cm öğeyi uzaktan köşeye çekiyordu.
+    const edgeSnap = placementSnapCm;
     const useWallInnerFaces = usesWallInnerFaceBoundary({ type: moduleType });
     const wallFaceOffsetCm = standWallDepthCm() / 2;
     const activeWalls = useWallInnerFaces ? getAllowedWallIds(standType) : [];
