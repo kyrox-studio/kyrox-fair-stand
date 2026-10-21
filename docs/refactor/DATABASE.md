@@ -6,7 +6,7 @@ Lokal / sunucu PostgreSQL `fair_stand` şemasının yaşayan envanteri. “Üç 
 
 **Doğrulama (2026-09-24, `models.py` + Alembic head + `item_mapper.py` + `src/`):**
 
-1. Şema — aşağıdaki envanter; kolon adları `models.py` ile aynı. Alembic head: **`0067_group_templates`**. `0067_group_templates` organizasyon grup şablonu tablosunu (`fair_stand_group_templates`) ekler; şablon Item değildir. `0053_item_type_scene_behavior` sahne davranışını `fair_stand_item_type` satırından ayırır. `0043_panel_glass_family` ve `0044_panel_corner_glass_family` yeni kolon değildir; `panel_cam_*` / `panel_corner_cam_*` SKU satırıdır. `0057_foam_logo_item` gizli `foam_logo` production satırını ekler. `0061_drop_foam_logo_item` bu satırı siler. Strafor metrekare üretimi `illuminated-foam` kaydındadır. `0059_elektrik_panosu_item` gizli `elektrik_panosu` satırını yoksa ekler; proje listesi bunu modül reçetesinden ayrı, miktar 1 olarak yazar. `0064_tulle_fabric` görünen `tulle_fabric` sahne satırını ekler. Kalınlık item master `depth_cm` 0.4 değeridir. BOM miktarı en × boy / 10000 m² olarak aynı `itemKey` ile yazılır. `0065_metal_separator` gizli `metal_separator` satırını ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve `is_cost_enabled` açar. Katalogda görünmez. Ctrl ile seçilen tam dikdörtgen tek ölçü olur; Paneller satırı adet ve ölçüyü, Üretim satırı toplam m²’yi yazar.
+1. Şema — aşağıdaki envanter; kolon adları `models.py` ile aynı. Alembic head: **`0072_shelf_rows`**. `0067_group_templates` organizasyon grup şablonu tablosunu (`fair_stand_group_templates`) ekler; şablon Item değildir. `0053_item_type_scene_behavior` sahne davranışını `fair_stand_item_type` satırından ayırır. `0043_panel_glass_family` ve `0044_panel_corner_glass_family` yeni kolon değildir; `panel_cam_*` / `panel_corner_cam_*` SKU satırıdır. `0057_foam_logo_item` gizli `foam_logo` production satırını ekler. `0061_drop_foam_logo_item` bu satırı siler. Strafor metrekare üretimi `illuminated-foam` kaydındadır. `0059_elektrik_panosu_item` gizli `elektrik_panosu` satırını yoksa ekler; proje listesi bunu modül reçetesinden ayrı, miktar 1 olarak yazar. `0064_tulle_fabric` görünen `tulle_fabric` sahne satırını ekler. Kalınlık item master `depth_cm` 0.4 değeridir. BOM miktarı en × boy / 10000 m² olarak aynı `itemKey` ile yazılır. `0065_metal_separator` gizli `metal_separator` satırını ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve `is_cost_enabled` açar. Katalogda görünmez. Ctrl ile seçilen tam dikdörtgen tek ölçü olur; Paneller satırı adet ve ölçüyü, Üretim satırı toplam m²’yi yazar.
 2. `item_mapper.py` — her ürün kolonu JSON anahtarına (veya “bootstrap’a girmez”) bağlandı.
 3. Production `src/` grep — “Nerede” hücresi gerçek okuyucu dosyadır; okunmayan kolon **DATA / TEST_ONLY / SCHEMA_ONLY** yazılır.
 4. `ITEMS.md` (alan kuyruğu + onaylı şema), `CATALOG.md`, `ROTATION.md`, `SCENE_POSE.md`, `STAND_DIMENSIONS.md` — değer kopyalanmaz; işaret edilir.
@@ -527,3 +527,15 @@ Core `role_permissions` / permission lifecycle: Fair Stand DB’sinde yok; yetki
 3. Konu dosyası varsa oraya pointer (`ROTATION.md` gibi); değer kopyalama.
 4. Test: seed + getter fail-fast.
 5. `ITEMS.md` şemaya alındıysa oraya da.
+
+## 0072 — Raf genişlik aileleri (2026-10-21)
+
+Yerel veritabanında Alembic current ve heads: `0072_shelf_rows`. Migration mevcut tekli rafları gizler; üç aile kartı ve altı sıralı üretim ürünü ekler. Var olan raf reçetelerini ve kullanıcı ölçü ezmelerini güncellemez; yalnız eksik satırları ekler.
+
+| Tablo / alan | Bootstrap | Tüketim |
+|---|---|---|
+| `fair_stand_item_width_variants.family_item_key`, `item_key` | aile Item `widthVariants[]` | `items.js` genişlik aile çözümlemesi; `modulePlacement.js` hedef duvar; `main.js` çözülen kimliği kaydeder |
+| Tekli/sıralı `fair_stand_item_components` | `composition.items` | BOM ve `resolveShelfRows` gerçek tahta/sıra çözümlemesi |
+| Tahta `fair_stand_item_scene_dimensions` | `sceneDimensions` | `scene3d.js` kalınlık/derinlik: alan bazında sahne ölçüsü, yoksa fiziksel ölçü |
+
+Aile-varyant eşlemeleri iki Item FK, bileşik PK ve kendi kendine eşlemeyi engelleyen CHECK taşır. Admin klonlama ve seed de bu ilişkileri korur. Yukarıdaki eski envanter sayıları tarihli snapshot'tır; 0072 sonrasının güncel adetleri değildir. Yeni test fixture sayıları test seed'ine aittir; kullanıcı veritabanıyla aynı olmak zorunda değildir.

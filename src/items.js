@@ -501,6 +501,61 @@ export function getItem(itemKey) {
   return requireRegistry()[itemKey] ?? derivedItemByKey[itemKey] ?? null;
 }
 
+/**
+ * Genişlik ailesi (DB 0072 `fair_stand_item_width_variants`): katalog kartı (ör. "2 sıralı raf")
+ * takıldığı duvar modülünün genişliğine göre bir ürüne çözülür (shelf_row_2_150). Kartın kendisi
+ * de, ailedeki ürünler de aynı aileye çözülür; eşleme anahtar deseniyle değil DB satırıyla yapılır.
+ */
+export function getWidthVariantFamily(itemOrKey) {
+  const item = typeof itemOrKey === 'string' ? getItem(itemOrKey) : itemOrKey;
+  if (!item?.itemKey) return null;
+  if (Array.isArray(item.widthVariants) && item.widthVariants.length) return item;
+  return listRegisteredItems().find((candidate) => (
+    Array.isArray(candidate.widthVariants) && candidate.widthVariants.includes(item.itemKey)
+  )) ?? null;
+}
+
+/** Ailenin genişliğe göre ürünleri, genişliğe göre sıralı: [{ itemKey, widthCm }]. */
+export function listWidthVariants(itemOrKey) {
+  const family = getWidthVariantFamily(itemOrKey);
+  if (!family) return [];
+  return family.widthVariants
+    .map((itemKey) => ({ itemKey, widthCm: Number(getItem(itemKey)?.dimensions?.widthCm) }))
+    .filter((variant) => Number.isFinite(variant.widthCm) && variant.widthCm > 0)
+    .sort((a, b) => a.widthCm - b.widthCm);
+}
+
+/** Ailede bu genişlikteki ürün; yoksa null (ör. 50 cm duvara raf yok). */
+export function resolveWidthVariantItemKey(itemOrKey, widthCm) {
+  const width = Number(widthCm);
+  if (!Number.isFinite(width)) return null;
+  return listWidthVariants(itemOrKey).find((variant) => Math.abs(variant.widthCm - width) < 0.001)?.itemKey ?? null;
+}
+
+/**
+ * Raf sırası: sıralı raf reçetesindeki tekli raf (`shelf` tipli alt Item) ve adedi.
+ * Tekli rafın kendisi 1 sıradır. Sayı reçeteden gelir; Item'da ayrı sıra kolonu yoktur.
+ */
+export function resolveShelfRows(itemOrKey) {
+  const item = typeof itemOrKey === 'string' ? getItem(itemOrKey) : itemOrKey;
+  if (item?.type !== 'shelf') return null;
+  let count = 1;
+  let rowItem = item;
+  const visited = new Set();
+  while (rowItem.composition?.mode === 'recipe') {
+    if (visited.has(rowItem.itemKey)) throw new TypeError(`Cyclic shelf recipe: ${item.itemKey}`);
+    visited.add(rowItem.itemKey);
+    const row = (rowItem.composition.items ?? []).find((entry) => (
+      getItem(entry?.itemKey)?.type === 'shelf'
+      && Number.isInteger(Number(entry.quantity)) && Number(entry.quantity) > 0
+    ));
+    if (!row) break;
+    count *= Number(row.quantity);
+    rowItem = getItem(row.itemKey);
+  }
+  return { count, rowItem };
+}
+
 const EMBEDDED_RENDER_PART_TYPES = new Set([
   'panel',
   'separator-panel',

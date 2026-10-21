@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-panel-frame-look-v1",
+  "id": "fair-stand-shelf-width-variant-placement",
   "kind": "feature",
-  "summary": "Panel taşıyan duvar modüllerinde (düz panel, bazalı duvar, kapı, vitrin) çerçevenin dört kenarı aynı profil kesitiyle çizilir (addPanelModuleFrame); üst/alt profil yan dikmeyle aynı kalınlıktadır. Prosedürel kesit modül reçetesindeki profil Item'ının sahne ölçüsüdür (depth × height); reçetede profil yoksa stand frame_depth_cm ile kare. Stand frame_width_cm sahnede okunmaz. Panel yüzü profillerin 15 mm önünde (PANEL_FACE_OFFSET_M), durur ve çerçevenin dış kenarından dört yanda 4 cm içeride biter (PANEL_FRAME_INSET_M, fitPanelToFrameOpening); panel gövdesi reçetedeki panel Item kalınlığında; TV/raf/strafor wallFrontM aynı yüze oturur. Profil kenarlarına koyu ton kenar çizgisi. Baza, düz banko ve L bankoda da köşe dikmeleri ve raylar aynı kare kesit (addBoxModuleFrame), yüz panelleri profilin 15 mm önünde ve 4 cm içeride (placeBoxPanelFace). Bütün prosedürel profil ve dikmeler kanallı kesitle çizilir (profileGeometry.js: dört yüzde 2 cm ağız, 1,5 cm derinlik; dış ölçü aynı). Yalnız 3B görünüm; BOM, panelRailHeight, kayıt biçimi ve veritabanı değişmez. CI bağımlılık taraması: vite 8.2.1 → 8.3.5 (GHSA launch-editor yüksek önem), package-lock aralık içinde güncellendi; package.json değişmez.",
+  "summary": "Raf genişlik ailesi hedef duvarın genişliğinden çözülür; önizleme kaynak state değiştirmez, geçerli bırakmada ürün kimliği ve ölçüler birlikte işlenir. 50 cm duvar reddedilir. Sıralı raf renderer reçetedeki adet kadar ayrı tahta ve her tahtanın altında aydınlatma üretir; tahta kalınlığı alt Item ölçüsünden, aralık toplam Item yüksekliğinden gelir. Kullanım kılavuzu, DB envanteri ve raf Item tanımları güncellendi; 0072 upgrade/idempotency/downgrade ve kullanıcı ölçüsü koruma testi eklendi. Çok sıralı rafın üst tahtası duvarın içinde kalır (seamsFittingOverlayHeight). Gerçek kullanıcı akışı E2E: üretim listesi, eski proje, 50 cm ve duvar dışı ret, taşımada genişlik, bütün sıralarda ışık, tablet (shelf-rows-flow).",
   "owners": [
     "src/scene3d.js",
     "src/items.js",
@@ -181,6 +181,7 @@
       "vite.config.js"
     ],
     "affectedTests": [
+      "backend/tests/modules/fair_stand/test_shelf_rows_migration.py",
       "e2e/autosave-interval.spec.mjs",
       "e2e/base-items-contract.spec.mjs",
       "e2e/box-block-corners.spec.mjs",
@@ -230,6 +231,8 @@
       "e2e/reload-restore.spec.mjs",
       "e2e/selection-toolbar.spec.mjs",
       "e2e/shelf-items-contract.spec.mjs",
+      "e2e/shelf-rows-flow.spec.mjs",
+      "e2e/shelf-width-variant.spec.mjs",
       "e2e/smoke.spec.mjs",
       "e2e/stage-result-after-restore.spec.mjs",
       "e2e/view-cube-home.spec.mjs",
@@ -449,6 +452,8 @@
       "test/shelfLighting.test.js",
       "test/shelfModule.test.js",
       "test/shelfRecipeBom.test.js",
+      "test/shelfRowsRender.test.js",
+      "test/shelfWidthVariantPlacement.test.js",
       "test/showcaseAppearance.test.js",
       "test/showcaseBodyBoardsItemContract.test.js",
       "test/showcaseBodyColorRegression.test.js",
@@ -1045,7 +1050,10 @@
       "docs/refactor/STAND_DIMENSIONS.md",
       "docs/refactor/STAND_FRAME_REMOVAL.md",
       "docs/refactor/TYPE_BEHAVIORS_DB_ROADMAP.md",
-      "scripts/archive/README.md"
+      "scripts/archive/README.md",
+      "audit/FULL_SWEEP_STATE.md",
+      "audit/evidence/A06_PLACEMENT_MOVE_ROTATION_COLLISION_REFLOW.md",
+      "docs/items/definitions/shelf_rows.md"
     ],
     "relatedFindings": {
       "affected": [],
@@ -1068,10 +1076,11 @@
         "F-028",
         "F-029",
         "F-032",
-        "F-033"
+        "F-033",
+        "F-019"
       ]
     },
-    "notes": "Görsel değişiklik: panel duvarı çerçevesi dört kenarda aynı kare kesit, kenar çizgisi; paneller çerçeve açıklığına sığar. Kullanıcı lokalde dener."
+    "notes": "Raf genişliği items.js DB aile eşlemesinden gelir; modulePlacement hedef duvarı seçer, scene3d önizleme ve geçerli bırakmayı işler. F-019 için ikinci ölçü kaynağı eklenmez. Önceden var olan Claude katalog/seed değişiklikleri korunur. Son doğrulama: 1320 frontend, 174 backend testi geçti. Temiz sunucuda tam E2E: 187 başarılı/1 hazır olma yarışı; kart etkinlik kontrolleri eklenen ilgili dosyanın 15 testi tekrar geçti. Beklentiler gevşetilmedi. Nihai kapsam: 1321 frontend ve 174 backend başarılı; 188 testlik temiz E2E turunda 187 başarılı, kart hazır olma yarışı sonrası ilgili dosyanın 15 testi ve yeni raf akışının 4 testi başarılı. Test atlama/eşik gevşetme yok."
   },
   "tests": {
     "targeted": [
@@ -1084,7 +1093,10 @@
       "test/lCounterSideGeometry.test.js",
       "test/profileGeometry.test.js",
       "test/profileFieldPlacement.test.js",
-      "test/uprightFieldPlacement.test.js"
+      "test/uprightFieldPlacement.test.js",
+      "test/shelfWidthVariantPlacement.test.js",
+      "test/shelfRowsRender.test.js",
+      "test/helpGuide.test.js"
     ],
     "fullSuite": true,
     "build": true,
@@ -1112,18 +1124,22 @@
         "e2e/selection-toolbar.spec.mjs",
         "e2e/smoke.spec.mjs",
         "e2e/viewport-chrome-layout.spec.mjs",
-        "e2e/wall-height-matrix.spec.mjs"
+        "e2e/wall-height-matrix.spec.mjs",
+        "e2e/shelf-width-variant.spec.mjs",
+        "e2e/shelf-items-contract.spec.mjs",
+        "e2e/wall-height.spec.mjs",
+        "e2e/shelf-rows-flow.spec.mjs"
       ],
-      "reason": "Gerçek Chromium: sihirbazla L stand kurulur ve kaydedilir; ölçü hatası adımda; ✕ ile kart; ipuçları bir kez; tablette dokunuşla aynı akış. Bütün paket regresyon için çalışır."
+      "reason": "Raf genişlik seçimi tarayıcı modülleriyle 100/150/200 cm ve desteklenmeyen 50 cm duvarda doğrulanır."
     }
   },
   "risk": {
     "level": "medium",
-    "notes": "Profil kesiti tüm prosedürel çerçevelerde (baza, banko, separatör dahil) reçetedeki profil Item sahne ölçüsüne geçer; panel açıklığı buna göre daralır. Profil sahne ölçüsü eksikse modül render hatası verir (uydurma yok). Panel görsel alanı yeni panel yüzü ölçüsüne göre değişir; en alt ve en üst bant 4 cm kısalır, kayıtlı görseller yeni alana yeniden oturur."
+    "notes": "Katalog kartı yerine çözülen üretim Item kimliği saklanır. Çizici terminal tahta sahne/fiziksel ölçüsünü kullanır. Tam frontend/backend ve gerçek Chromium paketiyle doğrulanır."
   },
   "migration": {
-    "required": false,
-    "notes": "Kayıt biçimi ve veritabanı değişmez."
+    "required": true,
+    "notes": "0072_shelf_rows yerel head; yeni width_variants tablosu ve raf ürünleri eklenir. Upgrade tekrar çalıştırma, downgrade ve mevcut ölçülerin korunması testle doğrulanır."
   },
-  "rollback": "addPanelModuleFrame kaldırılır, panel genişliği yeniden profil kesitiyle daraltılır, eski 0,4 cm üst/alt ray kutuları geri gelir; resolveProceduralFrameCrossSectionCm yeniden stand frameWidthCm/frameDepthCm okur."
+  "rollback": "modulePlacement genişlik çözümlemesi ve scene3d resolvedModuleState önizleme/bırakma bağlantıları geri alınır; önceki yerel katalog ve migration değişiklikleri korunur."
 }

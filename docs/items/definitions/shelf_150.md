@@ -1,30 +1,13 @@
-# shelf_150 — Item Contract Definition
+# shelf_150 — Item sözleşmesi
 
-## Kanonik Item
+Kanonik ürün verisi ilişkisel Item store'undadır; bootstrap ile okunur. Bu belge ölçü değerlerinin ikinci kaynağı değildir.
 
-- `itemKey`: `shelf_150`
-- `type`: `shelf`
-- `unit`: `adet`
-- dimensions: `150 × 38 × 1.8 cm` (`widthCm × depthCm × heightCm`)
-- `sceneDimensions`: `widthCm=150`, `heightCm=1.8` (thickness karşılığı); `depthCm` fiziksel `dimensions.depthCm=38`
-- `material`: `sunta`
-- `defaultColor`: `0xffffff`
-- Catalog: `catalogVisible=true`, `categoryId=3`, `catalogItemIndex=4`, `catalogPreview=shelf`
+- Kimlik: shelf_150; tip: shelf; birim: adet.
+- Katalogda gizlidir. Tekli raf kartı shelf_row_1, hedef duvarın genişliğine göre bu ürüne çözülür.
+- Reçete: shelf_150_self × 1 + shelf_leg × 3. Tekli raf artık self BOM değildir; gerçek terminal tahta ve ayaklar yazılır.
+- 2/3 sıralı ürünler bu tekli rafı reçetede tekrarlar; duvar/panel üretmez.
+- Çizici reçeteyi shelf_150_self tahtasına kadar izler. Tahta kalınlığı ve derinliği alan bazında sceneDimensions ?? dimensions ile okunur. Toplam sıralı yükseklik ayrı parent Item ölçüsüdür.
+- Modül state'i gerçek ürün itemKey, type, ölçüler, shelfLightingOn ve overlay placement taşır. Başka duvara taşınırsa aile varyantı yeniden çözülür.
+- Sağ tık aydınlatması bütün sıralardaki LED ve spotlara uygulanır.
 
-## Sahiplik
-
-Intrinsic ürün gerçeğinin tek kaynağı `LEAF_ITEMS.shelf_150` kaydıdır. Raf kendisi Catalog’dan sürüklenebilen standalone Item’dır. `wall_shelf_*` parent Item yoktur.
-
-`createShelfModule()` tek fiziksel raf tahtası çizer: scene width × thickness × depth. Duvar/panel üretmez.
-
-## BOM / bileşim
-
-Tekil Item’dır. Self BOM: `shelf_150 × 1 adet`. `wall_shelf` recipe yoktur.
-
-## Kalıcılık
-
-Module state `itemKey`, `type`, `widthCm`, `depthCm`, `heightCm`, `shelfLightingOn` ve overlay `placement` taşır.
-
-## Regresyon
-
-`test/shelfCatalogPanelSeam.test.js`, `test/shelfItemsItemContract.test.js`, `test/shelfModule.test.js`.
+Regresyon: test/shelfWidthVariantPlacement.test.js, test/shelfRowsRender.test.js, test/shelfRecipeBom.test.js, e2e/shelf-items-contract.spec.mjs.

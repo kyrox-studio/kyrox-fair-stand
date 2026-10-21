@@ -20,6 +20,7 @@ from app.modules.fair_stand.infrastructure.models import (
     FairStandItemAssetModel,
     FairStandItemBodyPartModel,
     FairStandItemComponentModel,
+    FairStandItemWidthVariantModel,
     FairStandItemDimensionsModel,
     FairStandItemModel,
     FairStandItemSceneDimensionsModel,
@@ -47,6 +48,7 @@ def _stable_uuid(*parts: str) -> UUID:
 def _clear_catalog(session: Session) -> None:
     session.execute(delete(FairStandItemBodyPartModel))
     session.execute(delete(FairStandItemVideoWallModel))
+    session.execute(delete(FairStandItemWidthVariantModel))
     session.execute(delete(FairStandItemComponentModel))
     session.execute(delete(FairStandItemAssetModel))
     session.execute(delete(FairStandItemStripOccupancyModel))
@@ -246,6 +248,17 @@ def seed_fair_stand_catalog(session: Session) -> None:
                     parent_item_key=item_key,
                     body_role=part["body_role"],
                     child_item_key=part["child_item_key"],
+                )
+            )
+
+    session.flush()
+    # 0072: katalog kartı → genişliğe göre ürün; bütün Item'lar eklendikten sonra yazılır.
+    for row in CATALOG_SEED["items"]:
+        for variant_key in row.get("width_variants") or []:
+            session.add(
+                FairStandItemWidthVariantModel(
+                    family_item_key=row["item_key"],
+                    item_key=variant_key,
                 )
             )
 

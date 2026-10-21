@@ -26,6 +26,7 @@ from app.modules.fair_stand.infrastructure.models import (
     FairStandItemStripOccupancyModel,
     FairStandItemTypeModel,
     FairStandItemVideoWallModel,
+    FairStandItemWidthVariantModel,
     FairStandRuleModel,
     FairStandUnitModel,
 )
@@ -216,6 +217,7 @@ def _item_load_options():
         selectinload(FairStandItemModel.strip_occupancy),
         selectinload(FairStandItemModel.assets),
         selectinload(FairStandItemModel.components),
+        selectinload(FairStandItemModel.width_variants),
         selectinload(FairStandItemModel.assembly_parts),
         selectinload(FairStandItemModel.video_wall),
         selectinload(FairStandItemModel.body_parts),
@@ -967,6 +969,13 @@ class AdminItemsService:
                 height_matched=component.height_matched,
             )
             for component in list(source.components or [])
+        ]
+        clone.width_variants = [
+            FairStandItemWidthVariantModel(
+                family_item_key=clone.item_key,
+                item_key=variant.item_key,
+            )
+            for variant in list(source.width_variants or [])
         ]
         clone.assembly_parts = [
             FairStandItemAssemblyPartModel(

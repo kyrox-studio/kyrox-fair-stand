@@ -93,16 +93,16 @@ test('shelf_100/150/200 Catalog’da Raf & Vitrin altında vitrinlerden sonra g�
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await createBackWallStand(page, 'Shelf Catalog Order');
-  const { group } = await openSidebarCard(page, 'shelf_100');
+  const { group } = await openSidebarCard(page, 'shelf_row_1');
   const keys = await group.locator('.module-drag-card').evaluateAll((cards) => (
     cards.map((card) => card.getAttribute('data-module-key'))
   ));
   expect(keys).toEqual([
     'wall_showcase_100_3_350',
     'wall_showcase_100_2_350',
-    'shelf_100',
-    'shelf_150',
-    'shelf_200',
+    'shelf_row_1',
+    'shelf_row_2',
+    'shelf_row_3',
   ]);
   for (const itemKey of ['wall_shelf_2_100', 'wall_shelf_3_200']) {
     await expect(page.locator(`.module-drag-card[data-module-key="${itemKey}"]`)).toHaveCount(0);
@@ -110,7 +110,7 @@ test('shelf_100/150/200 Catalog’da Raf & Vitrin altında vitrinlerden sonra g�
   expect(errors).toEqual([]);
 });
 
-for (const itemKey of ['shelf_100', 'shelf_150', 'shelf_200']) {
+for (const itemKey of ['shelf_row_1', 'shelf_row_2', 'shelf_row_3']) {
   test(`${itemKey} catalog drag sığdığı wall/panel support span’ine overlay olarak eklenir`, async ({ page }) => {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
@@ -124,13 +124,21 @@ for (const itemKey of ['shelf_100', 'shelf_150', 'shelf_200']) {
     await dragShelfOntoValidSeam(page, itemKey);
 
     const project = await saveAndReadProject(page);
-    const shelf = project.modules.find((module) => module.itemKey === itemKey);
+    const shelf = project.modules.find((module) => module.type === 'shelf');
     expect(shelf).toBeTruthy();
     expect(shelf.type).toBe('shelf');
-    expect(shelf.widthCm).toBe(Number(itemKey.replace('shelf_', '')));
+    const rows = Number(itemKey.replace('shelf_row_', ''));
+    expect([100, 150, 200]).toContain(shelf.widthCm);
+    expect(shelf.itemKey).toBe(rows === 1 ? 'shelf_' + shelf.widthCm : itemKey + '_' + shelf.widthCm);
     expect(shelf.depthCm).toBe(38);
-    expect(shelf.heightCm).toBe(1.8);
+    expect(shelf.heightCm).toBe(1.8 + (rows - 1) * 50);
     expect(shelf.placement.wallId).toBe('back');
+    const host = project.modules.find((module) => module.type !== 'shelf'
+      && module.placement?.wallId === shelf.placement.wallId
+      && Math.abs(Number(module.placement.xCm) - Number(shelf.placement.xCm)) < 0.001
+      && Math.abs(Number(module.placement.yCm) - Number(shelf.placement.yCm)) < 0.001);
+    expect(host, 'raf hedef duvarın başlangıcına ve tam genişliğine oturmalı').toBeTruthy();
+    expect(shelf.widthCm).toBe(host.widthCm);
     expect(project.modules.some((module) => String(module.itemKey).startsWith('wall_shelf_'))).toBe(false);
 
     const wallUsedAfter = project.modules
@@ -146,11 +154,12 @@ test('shelf_100 drop sonrası ikinci serbest modül eklenir ve sahne rebuild zin
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await createBackWallStand(page, 'Shelf Then Fridge', 500);
-  await openSidebarCard(page, 'shelf_100');
-  await dragShelfOntoValidSeam(page, 'shelf_100');
+  await openSidebarCard(page, 'shelf_row_1');
+  await dragShelfOntoValidSeam(page, 'shelf_row_1');
 
   const afterShelf = await saveAndReadProject(page);
-  expect(afterShelf.modules.find((module) => module.itemKey === 'shelf_100')?.itemKey).toBe('shelf_100');
+  const placedShelf = afterShelf.modules.find((module) => module.type === 'shelf');
+  expect(placedShelf?.itemKey).toMatch(/^shelf_(100|150|200)$/);
 
   const fridgeCard = page.locator('.module-drag-card[data-module-key="mini_fridge_avanti"]').first();
   const fridgeGroup = page.locator('.module-drag-group', { has: fridgeCard });
@@ -170,7 +179,7 @@ test('shelf_100 drop sonrası ikinci serbest modül eklenir ve sahne rebuild zin
   });
 
   const afterFridge = await saveAndReadProject(page);
-  expect(afterFridge.modules.find((module) => module.itemKey === 'shelf_100')?.itemKey).toBe('shelf_100');
+  expect(afterFridge.modules.find((module) => module.id === placedShelf.id)?.itemKey).toBe(placedShelf.itemKey);
   expect(afterFridge.modules.find((module) => module.itemKey === 'mini_fridge_avanti')?.itemKey).toBe('mini_fridge_avanti');
   expect(afterFridge.modules.every((module) => Boolean(module.itemKey))).toBe(true);
   expect(errors).toEqual([]);

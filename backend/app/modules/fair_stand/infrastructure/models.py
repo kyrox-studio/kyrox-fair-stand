@@ -462,6 +462,11 @@ class FairStandItemModel(Base):
         cascade="all, delete-orphan",
         foreign_keys="FairStandItemAssemblyPartModel.parent_item_key",
     )
+    width_variants: Mapped[list["FairStandItemWidthVariantModel"]] = relationship(
+        back_populates="family",
+        cascade="all, delete-orphan",
+        foreign_keys="FairStandItemWidthVariantModel.family_item_key",
+    )
 
 
 class FairStandItemDimensionsModel(Base):
@@ -579,6 +584,35 @@ class FairStandItemComponentModel(Base):
     parent: Mapped[FairStandItemModel] = relationship(
         back_populates="components",
         foreign_keys=[parent_item_key],
+    )
+
+
+class FairStandItemWidthVariantModel(Base):
+    """Katalog kartı (aile) → takıldığı duvar genişliğine göre çözülen ürün (0072).
+
+    Ör. "2 sıralı raf" kartı → shelf_row_2_100 / _150 / _200. Genişlik varyant Item'ın
+    dimensions.width_cm değeridir; eşleme kodda anahtar deseniyle değil bu tabloyla yapılır.
+    """
+
+    __tablename__ = "fair_stand_item_width_variants"
+    __table_args__ = (
+        CheckConstraint("family_item_key <> item_key", name="ck_fair_stand_item_width_variants_self"),
+        Index("ix_fair_stand_item_width_variants_item", "item_key"),
+    )
+
+    family_item_key: Mapped[str] = mapped_column(
+        String(128),
+        ForeignKey("fair_stand_items.item_key", **CASCADE),
+        primary_key=True,
+    )
+    item_key: Mapped[str] = mapped_column(
+        String(128),
+        ForeignKey("fair_stand_items.item_key", **CASCADE),
+        primary_key=True,
+    )
+    family: Mapped[FairStandItemModel] = relationship(
+        back_populates="width_variants",
+        foreign_keys=[family_item_key],
     )
 
 

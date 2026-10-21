@@ -48,63 +48,26 @@ function wallModule(itemKey, xCm = 0) {
   return state;
 }
 
-test('A-C catalog: shelf_100/150/200 görünür, Raf & Vitrin, vitrinlerden sonra', () => {
-  for (const itemKey of SHELF_KEYS) {
-    const item = getItem(itemKey);
-    assert.equal(item.catalogVisible, true, itemKey);
-    assert.equal(item.categoryId, 3, itemKey);
-    assert.ok(getCatalogItem(itemKey), itemKey);
-  }
-
-  const group = listCatalogGroups().find((entry) => entry.id === 3);
-  assert.deepEqual([...group.keys], [
-    'wall_showcase_100_3_350',
-    'wall_showcase_100_2_350',
-    'shelf_100',
-    'shelf_150',
-    'shelf_200',
+test('raf kataloğu üç sıra kartı sunar; kartlar en dar üretim ürününe çözülür', () => {
+  const cards = ['shelf_row_1', 'shelf_row_2', 'shelf_row_3'];
+  assert.deepEqual([...listCatalogGroups().find((group) => group.id === 3).keys], [
+    'wall_showcase_100_3_350', 'wall_showcase_100_2_350', ...cards,
   ]);
-  assert.deepEqual(
-    listCatalogItems()
-      .filter((item) => item.previewId === 20 || item.itemKey.startsWith('wall_showcase_'))
-      .map((item) => item.itemKey),
-    ['wall_showcase_100_3_350', 'wall_showcase_100_2_350', 'shelf_100', 'shelf_150', 'shelf_200'],
-  );
-});
-
-test('D-E Catalog descriptor exact itemKey ile state ve scene width üretir', () => {
-  assert.equal(MODULE_STATE_TYPES.includes('shelf'), true);
-  const expected = Object.freeze({
-    shelf_100: 100,
-    shelf_150: 150,
-    shelf_200: 200,
-  });
-
-  for (const [itemKey, widthCm] of Object.entries(expected)) {
-    const descriptor = getCatalogItem(itemKey);
-    const state = createModuleStateFromDescriptor(descriptor);
-    assert.ok(state, itemKey);
-    assert.equal(state.itemKey, itemKey);
-    assert.equal(state.type, 'shelf');
-    assert.equal(state.widthCm, widthCm);
-    assert.equal(state.depthCm, 38);
-    assert.equal(state.heightCm, 1.8);
+  for (const [index, key] of cards.entries()) {
+    assert.ok(getCatalogItem(key));
+    const state = createModuleStateFromDescriptor(getCatalogItem(key));
+    assert.equal(state.itemKey, index === 0 ? 'shelf_100' : `shelf_row_${index + 1}_100`);
+    assert.equal(state.widthCm, 100);
+    assert.equal(state.heightCm, 1.8 + index * 50);
     assert.equal(state.shelfLightingOn, false);
     assert.equal(usesPanelSeamOverlaySnap(state), true);
     assert.equal(countsTowardWallCapacity(state), false);
-
-    const item = getItem(itemKey);
-    assert.deepEqual(
-      item.dimensions,
-      { widthCm, depthCm: 38, heightCm: 1.8 },
-    );
-    const scene = resolveSceneDimensions(item);
-    assert.equal(scene.widthCm, widthCm);
-    assert.equal(scene.heightCm, 1.8);
-    assert.equal(scene.depthCm, 38);
+  }
+  for (const key of SHELF_KEYS) {
+    assert.equal(getCatalogItem(key), null);
+    assert.equal(getItem(key).catalogVisible, false);
   }
 });
-
 test('F standalone renderer tek raf tahtası çizer; wall/panel üretmez', () => {
   const source = readFileSync(new URL('../src/scene3d.js', import.meta.url), 'utf8');
   const start = source.indexOf('function createShelfModule');
@@ -158,26 +121,26 @@ test('B-D raf sığdığı wall/panel support span’e bağlanır; taşarsa inva
   const shelf150On200 = snapShelf('shelf_150', 'wall_200_350', 100, 150);
   assert.equal(shelf150On200.ok, true);
   assert.equal(shelf150On200.seamHeightCm, 150);
-  assert.equal(shelf150On200.placement.xCm, 25);
+  assert.equal(shelf150On200.placement.xCm, 0);
 
   const shelf100On150 = snapShelf('shelf_100', 'wall_150_350', 75);
   assert.equal(shelf100On150.ok, true);
   assert.equal(shelf100On150.seamHeightCm, 100);
-  assert.equal(shelf100On150.placement.xCm, 25);
+  assert.equal(shelf100On150.placement.xCm, 0);
 
   const shelf100On200 = snapShelf('shelf_100', 'wall_200_350', 80);
   assert.equal(shelf100On200.ok, true);
   assert.equal(shelf100On200.seamHeightCm, 100);
-  assert.equal(shelf100On200.placement.xCm, 30);
+  assert.equal(shelf100On200.placement.xCm, 0);
 
   const shelf200On200 = snapShelf('shelf_200', 'wall_200_350', 80);
   assert.equal(shelf200On200.ok, true);
   assert.equal(shelf200On200.seamHeightCm, 100);
   assert.equal(shelf200On200.placement.xCm, 0);
 
-  assert.equal(snapShelf('shelf_150', 'wall_100_350', 50).ok, false);
-  assert.equal(snapShelf('shelf_200', 'wall_100_350', 50).ok, false);
-  assert.equal(snapShelf('shelf_200', 'wall_150_350', 75).ok, false);
+  assert.equal(snapShelf('shelf_150', 'wall_100_350', 50).ok, true);
+  assert.equal(snapShelf('shelf_200', 'wall_100_350', 50).ok, true);
+  assert.equal(snapShelf('shelf_200', 'wall_150_350', 75).ok, true);
   const shelf100On200Edge = snapShelf('shelf_100', 'wall_200_350', 10);
   assert.equal(shelf100On200Edge.ok, true);
   assert.equal(shelf100On200Edge.placement.xCm, 0);

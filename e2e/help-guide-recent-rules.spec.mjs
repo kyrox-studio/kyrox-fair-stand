@@ -33,5 +33,13 @@ test('help guide explains metal separator splitting, duplicate groups and placem
   const rules = guideSection(page, 'Önemli Kurallar ve Uyarılar');
   await rules.locator('summary').click();
   await expect(rules).toContainText('uyarı modülün adını ve sebebini yazar');
+  const shelves = guideSection(page, 'Raf Aydınlatması');
+  await shelves.locator('summary').click();
+  await expect(shelves).toContainText('Tekli raf');
+  await expect(shelves).toContainText('2 sıralı raf');
+  await expect(shelves).toContainText('3 sıralı raf');
+  await expect(shelves).toContainText('Raf genişliği takıldığı duvardan seçilir');
+  await expect(shelves).toContainText('Başka duvara taşıdığında genişlik yeniden seçilir');
+  await expect(shelves).toContainText('bütün raf sıralarına uygulanır');
   expect(errors).toEqual([]);
 });

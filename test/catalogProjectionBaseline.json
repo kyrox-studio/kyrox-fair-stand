@@ -25,9 +25,9 @@
     "box_block",
     "wall_showcase_100_3_350",
     "wall_showcase_100_2_350",
-    "shelf_100",
-    "shelf_150",
-    "shelf_200",
+    "shelf_row_1",
+    "shelf_row_2",
+    "shelf_row_3",
     "desk_banko_200",
     "desk_banko_150",
     "desk_banko_100",
@@ -188,18 +188,18 @@
       "previewId": 21
     },
     {
-      "itemKey": "shelf_100",
-      "label": "Raf 100 cm",
+      "itemKey": "shelf_row_1",
+      "label": "Tekli raf",
       "previewId": 20
     },
     {
-      "itemKey": "shelf_150",
-      "label": "Raf 150 cm",
+      "itemKey": "shelf_row_2",
+      "label": "2 sıralı raf",
       "previewId": 20
     },
     {
-      "itemKey": "shelf_200",
-      "label": "Raf 200 cm",
+      "itemKey": "shelf_row_3",
+      "label": "3 sıralı raf",
       "previewId": 20
     },
     {
@@ -408,9 +408,9 @@
       "keys": [
         "wall_showcase_100_3_350",
         "wall_showcase_100_2_350",
-        "shelf_100",
-        "shelf_150",
-        "shelf_200"
+        "shelf_row_1",
+        "shelf_row_2",
+        "shelf_row_3"
       ]
     },
     {

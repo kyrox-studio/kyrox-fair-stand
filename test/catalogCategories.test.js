@@ -33,7 +33,7 @@ const EXPECTED_GROUP_KEYS = Object.freeze({
   ]),
   3: Object.freeze([
     'wall_showcase_100_3_350', 'wall_showcase_100_2_350',
-    'shelf_100', 'shelf_150', 'shelf_200',
+    'shelf_row_1', 'shelf_row_2', 'shelf_row_3',
   ]),
   4: Object.freeze([
     'desk_banko_200', 'desk_banko_150', 'desk_banko_100',

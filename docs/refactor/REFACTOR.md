@@ -15,6 +15,18 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-21 — Raf: Tekli / 2 sıralı / 3 sıralı (migration 0072)
+
+**Katalog:** Raf & Vitrin altında üç kart: `shelf_row_1` Tekli raf, `shelf_row_2` 2 sıralı raf, `shelf_row_3` 3 sıralı raf. Kartta genişlik yok; `shelf_100/150/200` katalogdan çıktı (Tekli kartın ürünleri). Yeni tablo `fair_stand_item_width_variants` kart → ürün eşlemesini tutar; genişlik ürünün `dimensions.widthCm` değeridir (`getWidthVariantFamily`, `resolveWidthVariantItemKey`). Anahtar deseni ve `if (itemKey === …)` yok.
+
+**Ürünler ve BOM:** Tekli raf mevcut `shelf_W` (reçete `shelf_W_self` × 1 + `shelf_leg` × 2/3/3; canlıda vardı, migration yoksa ekler). Sıralı raf `shelf_row_n_W` = `shelf_W` × n: 2 sıralı 150 → 2 tahta + 6 ayak. Sıra sayısı Item kolonu değil, reçeteden okunur (`resolveShelfRows`).
+
+**Yerleşim:** Raf yalnız duvar/panel birleşimine oturur; genişlik takıldığı duvar modülünden çözülür, 50 cm duvar ve duvar dışı reddedilir, başka duvara taşınınca ürün ve genişlik yeniden çözülür (`snapPanelSeamOverlayPlacement` → `resolvedModuleState`). Alt tahta birleşime oturur; üst tahtalar 50 cm arayla ve duvarın içinde kalmalı (`seamsFittingOverlayHeight`).
+
+**Çizim ve ışık:** n ayrı tahta (kalınlık tekli tahtanın ölçüsünden), her sırada LED ve spot; `shelfLightingOn` hepsini birlikte açar. Raf ayağının DB ölçüsü yok; ayak çizilmez, yalnız BOM'dadır.
+
+**Kayıt:** Yeni alan yok; eski `shelf_100/150/200` kayıtları aynen Tekli raf olarak açılır, BOM değişmez.
+
 ## 2026-10-21 — Panel duvarı çerçevesi: dört kenar aynı kesit (görünüm)
 
 **Kesit kaynağı:** `resolveProceduralFrameCrossSectionCm` modül reçetesindeki ilk `profile` Item'ının sahne ölçüsünü okur (`depthCm` × `heightCm`; canlı yerel DB'de 10 × 10). Dikmeler de bu kesitle çizilir. Reçetesinde profil olmayan modülde kesit stand `frame_depth_cm` ile kare kutudur. Stand `frame_width_cm` sahnede okunmaz.

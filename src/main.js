@@ -922,7 +922,8 @@ function commitDroppedCatalogModule(moduleState, dropResult, catalogKey = null) 
   }
 
   const canonical = createCatalogModuleState(moduleState, {
-    itemKey: catalogKey || moduleState?.itemKey,
+    itemKey: getItem(catalogKey)?.widthVariants?.includes(moduleState?.itemKey)
+      ? moduleState.itemKey : (catalogKey || moduleState?.itemKey),
   });
   if (!canonical || !hasCanonicalModuleItemKey(canonical)) {
     return { ok: false, message: 'Katalog Item kimliği kaybolduğu için modül sahneye eklenmedi.' };

@@ -145,6 +145,8 @@ for (const wallHeight of [250, 300, 350, 400, 450, 500]) {
     const modulePanel = page.locator('details', { has: page.locator('#open-module-catalog') });
     if (!(await modulePanel.evaluate((el) => el.open))) await modulePanel.locator(':scope > summary').click();
     const card = page.locator('.module-drag-card[data-module-key="wall_100_350"]');
+    await expect(card).toHaveAttribute('aria-disabled', 'false');
+    await expect(card).toHaveAttribute('draggable', 'true');
     const group = page.locator('.module-drag-group', { has: card });
     if (!(await group.evaluate((el) => el.open))) await group.locator(':scope > summary').click();
     await card.scrollIntoViewIfNeeded();
