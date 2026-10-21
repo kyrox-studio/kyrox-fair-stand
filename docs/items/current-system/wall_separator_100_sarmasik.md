@@ -71,8 +71,8 @@ Separator WALL behavior kullanır. `snapPlacementToStand()` nedeniyle runtime pl
 `createSeparatorModule()` procedural frame ve slat geometri oluşturur:
 
 - stand height `350 cm`, depth `10 cm`,
-- dikey frame genişliği catalog `frameWidth = 5.5 cm`,
-- frame depth `10 cm`,
+- dikey ve yatay frame kesiti reçetedeki `profile_*` Item sahne ölçüsü (`resolveProceduralFrameCrossSectionCm`; yerel DB `10 × 10 cm`), profiller kanallı (`src/profileGeometry.js`),
+- frame depth aynı kesit,
 - `36` yatay slat,
 - slat yüksekliği `3.5 cm`,
 - slat gap `6 cm`,

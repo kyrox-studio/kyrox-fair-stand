@@ -185,6 +185,7 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/viewportToolbarController.js': frozenDomains('ui'),
   'src/wall.js': frozenDomains('composition', 'placement'),
   'src/wallPanelBand.js': frozenDomains('architecture', 'placement', 'renderer', 'behavior'),
+  'src/profileGeometry.js': frozenDomains('renderer', 'performance'),
   'src/wallReflow.js': frozenDomains('behavior', 'placement'),
 });
 

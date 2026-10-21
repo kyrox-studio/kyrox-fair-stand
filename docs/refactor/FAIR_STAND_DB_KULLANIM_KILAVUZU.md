@@ -1652,21 +1652,21 @@ Seed (varsayılan): tavan 350 / derinlik 10 / çerçeve 5.5×10 / panel ray **0.
 
 | | |
 |---|---|
-| **Ne** | Dikey profil **kesit genişliği** (cm) |
-| **Neden** | Görsel iskelet çizimi |
-| **Sahne** | Profil ray görseli |
-| **Karıştırma** | `frame_depth_cm` |
-| **Kod** | renderer via `STAND_DIMENSIONS` |
+| **Ne** | Eski dikey profil **kesit genişliği** (cm) |
+| **Neden** | 2026-10-21'den beri sahnede okunmaz; kolon ve CRM alanı kaldırılmayı bekler |
+| **Sahne** | Yok. Çerçeve kesiti modül reçetesindeki profil Item'ının sahne ölçüsüdür (`depth_cm` × `height_cm`) |
+| **Karıştırma** | `frame_depth_cm`, profil Item sahne ölçüsü |
+| **Kod** | `resolveProceduralFrameCrossSectionCm` okumaz |
 
 #### `frame_depth_cm`
 
 | | |
 |---|---|
-| **Ne** | Profil **kesit derinliği** (cm) |
-| **Neden** | Ray kalınlığı görseli |
-| **Sahne** | 3D iskelet |
-| **Karıştırma** | `frame_width_cm` |
-| **Kod** | renderer via `STAND_DIMENSIONS` |
+| **Ne** | Yedek profil **kesiti** (cm) |
+| **Neden** | Reçetesinde profil Item'ı olmayan modülde kare kesit (genişlik = derinlik) |
+| **Sahne** | Yalnız bu yedek durumda 3D çerçeve |
+| **Karıştırma** | Profil Item sahne ölçüsü (asıl kaynak) |
+| **Kod** | `resolveProceduralFrameCrossSectionCm` (`source: 'stand-dimensions'`) |
 
 #### `panel_rail_height_cm`
 

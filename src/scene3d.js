@@ -6,7 +6,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 import { getModuleCatalogItem, getModuleCatalogLabel } from './catalog.js';
 import { STAND_DIMENSIONS } from './standDimensions.js';
-import { WALL_PANEL_BAND_PITCH_CM, resolveModuleBandPitchCm } from './wallPanelBand.js';
+import { createSlottedProfileGeometry } from './profileGeometry.js';
+import { WALL_PANEL_BAND_PITCH_CM, fitPanelToFrameOpening, resolveModuleBandPitchCm } from './wallPanelBand.js';
 import {
   GLASS_APPEARANCE,
   TABLE_GLASS_APPEARANCE,
@@ -33,6 +34,7 @@ import {
   requireModuleSceneBoxCm,
   clampHeightToStandCeilingCm,
   getProceduralFrameCrossSectionM,
+  resolveRecipePanelThicknessCm,
   resolveSceneDimensions,
 } from './items.js';
 import {
@@ -230,6 +232,8 @@ function panelFaceSurfaceMaterial(surfaceState) {
   return material;
 }
 const PANEL_VERTICAL_CLEARANCE_M = 0;
+// Panel yüzü duvar/profil ön yüzünün 15 mm önünde durur; duvara asılan TV, raf ve strafor bu yüze oturur.
+const PANEL_FACE_OFFSET_M = 0.015;
 const MESH_FABRIC_OPACITY = 0.48;
 const FLOOR_COLOR = 0xe9edf1;
 const OUTER_FLOOR_COLOR = 0xd2d8df;
@@ -7191,7 +7195,7 @@ function createIlluminatedFoamModule(moduleState, moduleIndex, assetUrl) {
   const depthM = Math.max(0.005, Number(moduleState.depthCm || 3.5) / 100);
   const wallGapM = Math.max(0, Number(moduleState.wallGapCm || 1.5) / 100);
   const centerYM = 1.75;
-  const wallFrontM = STAND_DIMENSIONS.depth / 2 + 0.0015;
+  const wallFrontM = STAND_DIMENSIONS.depth / 2 + PANEL_FACE_OFFSET_M;
   const bodyBackZM = wallFrontM + wallGapM;
   const centerZM = bodyBackZM + depthM / 2;
 
@@ -7328,7 +7332,7 @@ function createTvModule(moduleState, moduleIndex) {
   }
   const depthM = Number(moduleState.depthCm || 5) / 100;
   const centerYM = 1.75;
-  const wallFrontM = STAND_DIMENSIONS.depth / 2 + 0.0015;
+  const wallFrontM = STAND_DIMENSIONS.depth / 2 + PANEL_FACE_OFFSET_M;
   const centerZM = wallFrontM + depthM / 2 + 0.003;
   const isVideoWall = rows > 1 || cols > 1;
 
@@ -7801,17 +7805,17 @@ function createUprightModule(moduleState, moduleIndex) {
     heightCm,
   };
 
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(thicknessM, heightM, depthM),
-    new THREE.MeshStandardMaterial({
-      color: frameColorForModule(moduleState),
-      metalness: 0.68,
-      roughness: 0.28,
-    }),
+  const frameMaterial = new THREE.MeshStandardMaterial({
+    color: frameColorForModule(moduleState),
+    metalness: 0.68,
+    roughness: 0.28,
+  });
+  const mesh = createFrameProfileMesh(
+    createSlottedProfileGeometry(thicknessM, heightM, depthM),
+    frameMaterial,
+    createFrameEdgeMaterial(frameMaterial),
   );
   mesh.position.y = heightM / 2;
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
   mesh.userData = {
     kind: 'surface',
     surfaceId: `${moduleState.id}:upright`,
@@ -7849,17 +7853,17 @@ function createProfileModule(moduleState, moduleIndex) {
     heightCm,
   };
 
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(widthM, railHeightM, thicknessM),
-    new THREE.MeshStandardMaterial({
-      color: frameColorForModule(moduleState),
-      metalness: 0.68,
-      roughness: 0.28,
-    }),
+  const frameMaterial = new THREE.MeshStandardMaterial({
+    color: frameColorForModule(moduleState),
+    metalness: 0.68,
+    roughness: 0.28,
+  });
+  const mesh = createFrameProfileMesh(
+    createSlottedProfileGeometry(widthM, railHeightM, thicknessM),
+    frameMaterial,
+    createFrameEdgeMaterial(frameMaterial),
   );
   mesh.position.y = railHeightM / 2;
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
   mesh.userData = {
     kind: 'surface',
     surfaceId: `${moduleState.id}:profile`,
@@ -8945,6 +8949,40 @@ function mountRecipeTopSurface(mesh, part, moduleState, moduleType, moduleIndex,
   onSurfaceReady?.(mesh);
 }
 
+// Baza ve banko çerçevesi: köşe dikmeleri ile alt/üst raylar aynı kare profil kesitinde
+// (getProceduralFrameCrossSectionM). railYs ray eksen kotlarıdır; 0 ve tepe kotundaki raylar
+// çerçeve kutusunun içinde kalacak şekilde kaydırılır.
+function addBoxModuleFrame(group, frameMaterial, { posts, rails, railYs, frameHeightM, profileM }) {
+  const edgeMaterial = createFrameEdgeMaterial(frameMaterial);
+  const addProfile = (geometry, x, y, z) => {
+    const profile = createFrameProfileMesh(geometry, frameMaterial, edgeMaterial);
+    profile.position.set(x, y, z);
+    group.add(profile);
+  };
+  const postGeometry = createSlottedProfileGeometry(profileM, frameHeightM, profileM);
+  posts.forEach(([x, z]) => addProfile(postGeometry.clone(), x, frameHeightM / 2, z));
+  const railCenterY = (y) => Math.min(Math.max(y, profileM / 2), frameHeightM - profileM / 2);
+  rails.forEach(({ axis, length, x, z }) => {
+    const geometry = axis === 'x'
+      ? createSlottedProfileGeometry(length, profileM, profileM)
+      : createSlottedProfileGeometry(profileM, profileM, length);
+    railYs.forEach((y) => addProfile(geometry.clone(), x, railCenterY(y), z));
+  });
+}
+
+// Baza/banko panel gövdesi reçetedeki panel Item kalınlığındadır; reçetede panel yoksa 12 mm.
+function resolveBoxPanelBackingDepth(moduleState) {
+  const thicknessCm = resolveRecipePanelThicknessCm(moduleState);
+  return thicknessCm == null ? 0.012 : Math.min(thicknessCm / 100, PANEL_FACE_OFFSET_M - 0.003);
+}
+
+// Baza/banko yüz paneli profil dış yüzünün PANEL_FACE_OFFSET_M önündedir; gövde yüzün 3 mm
+// arkasında durur. anchor dış çerçeve düzlemindeki yüz merkezi, outward dışa bakan birim vektördür.
+function placeBoxPanelFace(backing, surface, anchor, outward, backingDepth) {
+  surface.position.copy(anchor).addScaledVector(outward, PANEL_FACE_OFFSET_M);
+  backing.position.copy(anchor).addScaledVector(outward, PANEL_FACE_OFFSET_M - 0.003 - backingDepth / 2);
+}
+
 function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
   const widthCm = Number(moduleState.widthCm);
   const depthCm = Number(moduleState.depthCm) || 50;
@@ -8962,8 +9000,11 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
     frameHeightM - railHeightM - PANEL_VERTICAL_CLEARANCE_M,
     0.05,
   );
-  const frontPanelWidthM = Math.max(widthM - profileM * 2, 0.05);
-  const sidePanelWidthM = Math.max(depthM - profileM * 2, 0.05);
+  // Panel yüzü çerçevenin dış kenarından dört yanda PANEL_FRAME_INSET_M içeride biter.
+  const frontPanelWidthM = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.05);
+  const sidePanelWidthM = Math.max(depthM - PANEL_FRAME_INSET_M * 2, 0.05);
+  const railSpanXM = Math.max(widthM - profileM * 2, 0.02);
+  const railSpanZM = Math.max(depthM - profileM * 2, 0.02);
   const group = new THREE.Group();
   group.userData = {
     kind: 'module',
@@ -8980,48 +9021,21 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
     metalness: 0.68,
     roughness: 0.28,
   });
-  const addProfile = (geometry, position) => {
-    const mesh = new THREE.Mesh(geometry, frameMaterial.clone());
-    mesh.position.copy(position);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    group.add(mesh);
-    return mesh;
-  };
-
-  // Baza keeps its verified outer dimensions. Only the render language changes:
-  // banko-style thin Maxima rails, with no middle rail because each face is one panel.
-  const cornerPostGeometry = new THREE.BoxGeometry(profileM, frameHeightM, profileM);
-  [-1, 1].forEach((xSide) => {
-    [-1, 1].forEach((zSide) => {
-      addProfile(
-        cornerPostGeometry.clone(),
-        new THREE.Vector3(
-          xSide * (widthM / 2 - profileM / 2),
-          frameHeightM / 2,
-          zSide * (depthM / 2 - profileM / 2),
-        ),
-      );
-    });
-  });
-
+  // Baza dış ölçüsü korunur; ara yatay profil yok (her yüz tek panel).
   const railYs = [0, frameHeightM];
-  const frontRailGeometry = new THREE.BoxGeometry(frontPanelWidthM, railHeightM, frameDepthM);
-  railYs.forEach((y) => {
-    addProfile(
-      frontRailGeometry.clone(),
-      new THREE.Vector3(0, y, depthM / 2 - frameDepthM / 2),
-    );
-  });
-
-  const sideRailGeometry = new THREE.BoxGeometry(frameDepthM, railHeightM, sidePanelWidthM);
-  [-1, 1].forEach((xSide) => {
-    railYs.forEach((y) => {
-      addProfile(
-        sideRailGeometry.clone(),
-        new THREE.Vector3(xSide * (widthM / 2 - frameDepthM / 2), y, 0),
-      );
-    });
+  addBoxModuleFrame(group, frameMaterial, {
+    posts: [-1, 1].flatMap((xSide) => [-1, 1].map((zSide) => [
+      xSide * (widthM / 2 - profileM / 2),
+      zSide * (depthM / 2 - profileM / 2),
+    ])),
+    rails: [
+      { axis: 'x', length: railSpanXM, x: 0, z: depthM / 2 - frameDepthM / 2 },
+      { axis: 'z', length: railSpanZM, x: -(widthM / 2 - frameDepthM / 2), z: 0 },
+      { axis: 'z', length: railSpanZM, x: widthM / 2 - frameDepthM / 2, z: 0 },
+    ],
+    railYs,
+    frameHeightM,
+    profileM,
   });
 
   const top = new THREE.Mesh(
@@ -9038,24 +9052,26 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
   group.add(top);
 
   const surfaces = [];
-  const addPanelFace = (surfaceRole, surfaceState, faceWidthM, position, rotationY = 0) => {
+  const backingDepth = resolveBoxPanelBackingDepth(moduleState);
+  const { centerY: panelCenterY, panelHeight: fittedPanelHeightM } = fitPanelToFrameOpening(
+    frameHeightM / 2,
+    panelHeightM,
+    panelFrameOpening(0, frameHeightM),
+  );
+  const addPanelFace = (surfaceRole, surfaceState, faceWidthM, anchor, outward, rotationY = 0) => {
     if (!surfaceState) return;
     // Yüz mesh boyutu = prosedürel açıklık (module W/D/H). BOM panel W/H damgası
     // (panel_48_5 / panel_98 sırası) burada ezmez; aksi halde yan yüzler kayar.
     const faceWidth = faceWidthM;
-    const faceHeight = panelHeightM;
-    const faceDepth = 0.012;
+    const faceHeight = fittedPanelHeightM;
+    const faceDepth = backingDepth;
 
     const isGlass = Boolean(surfaceState.isGlass);
     const backing = new THREE.Mesh(
       new THREE.BoxGeometry(faceWidth, faceHeight, faceDepth),
       panelFaceBackingMaterial(isGlass),
     );
-    backing.position.copy(position);
     backing.rotation.y = rotationY;
-    if (surfaceRole === 'front') backing.position.z -= 0.006;
-    else if (surfaceRole === 'left') backing.position.x += 0.006;
-    else backing.position.x -= 0.006;
     backing.castShadow = !isGlass;
     backing.receiveShadow = true;
     group.add(backing);
@@ -9064,11 +9080,8 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
       new THREE.PlaneGeometry(faceWidth, faceHeight),
       panelFaceSurfaceMaterial(surfaceState),
     );
-    surface.position.copy(position);
     surface.rotation.y = rotationY;
-    if (surfaceRole === 'front') surface.position.z += 0.006;
-    else if (surfaceRole === 'left') surface.position.x -= 0.006;
-    else surface.position.x += 0.006;
+    placeBoxPanelFace(backing, surface, anchor, outward, backingDepth);
 
     const selectionFrame = createSelectionFrame(faceWidth, faceHeight);
     selectionFrame.visible = false;
@@ -9094,14 +9107,9 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
     onSurfaceReady?.(surface);
   };
 
-  const panelCenterY = frameHeightM / 2;
-  const frontZ = depthM / 2 - 0.006;
-  const leftX = -widthM / 2 + 0.006;
-  const rightX = widthM / 2 - 0.006;
-
-  addPanelFace('front', moduleState.faces?.front, frontPanelWidthM, new THREE.Vector3(0, panelCenterY, frontZ));
-  addPanelFace('left', moduleState.faces?.left, sidePanelWidthM, new THREE.Vector3(leftX, panelCenterY, 0), -Math.PI / 2);
-  addPanelFace('right', moduleState.faces?.right, sidePanelWidthM, new THREE.Vector3(rightX, panelCenterY, 0), Math.PI / 2);
+  addPanelFace('front', moduleState.faces?.front, frontPanelWidthM, new THREE.Vector3(0, panelCenterY, depthM / 2), new THREE.Vector3(0, 0, 1));
+  addPanelFace('left', moduleState.faces?.left, sidePanelWidthM, new THREE.Vector3(-widthM / 2, panelCenterY, 0), new THREE.Vector3(-1, 0, 0), -Math.PI / 2);
+  addPanelFace('right', moduleState.faces?.right, sidePanelWidthM, new THREE.Vector3(widthM / 2, panelCenterY, 0), new THREE.Vector3(1, 0, 0), Math.PI / 2);
   mountRecipeTopSurface(top, moduleState.renderParts?.tops?.[0], moduleState, 'base', moduleIndex, surfaces, onSurfaceReady);
 
   return { group, surfaces };
@@ -9126,8 +9134,11 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
     stripHeightM - railHeightM - PANEL_VERTICAL_CLEARANCE_M,
     0.05,
   );
-  const frontPanelWidthM = Math.max(widthM - profileM * 2 - 0.012, 0.05);
-  const sidePanelWidthM = Math.max(depthM - profileM * 2 - 0.012, 0.05);
+  // Panel yüzü çerçevenin dış kenarından dört yanda PANEL_FRAME_INSET_M içeride biter.
+  const frontPanelWidthM = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.05);
+  const sidePanelWidthM = Math.max(depthM - PANEL_FRAME_INSET_M * 2, 0.05);
+  const railSpanXM = Math.max(widthM - profileM * 2, 0.02);
+  const railSpanZM = Math.max(depthM - profileM * 2, 0.02);
   const group = new THREE.Group();
   group.userData = {
     kind: 'module',
@@ -9144,49 +9155,22 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
     metalness: 0.68,
     roughness: 0.28,
   });
-  const addProfile = (geometry, position) => {
-    const mesh = new THREE.Mesh(geometry, frameMaterial.clone());
-    mesh.position.copy(position);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    group.add(mesh);
-    return mesh;
-  };
-
-  // 4 visible Maxima corner posts.
-  const cornerPostGeometry = new THREE.BoxGeometry(profileM, frameHeightM, profileM);
-  [-1, 1].forEach((xSide) => {
-    [-1, 1].forEach((zSide) => {
-      addProfile(
-        cornerPostGeometry.clone(),
-        new THREE.Vector3(
-          xSide * (widthM / 2 - profileM / 2),
-          frameHeightM / 2,
-          zSide * (depthM / 2 - profileM / 2),
-        ),
-      );
-    });
-  });
-
-  // Ara yatay profil kaldırıldı; yalnız en alt ve en üst profil kalır.
+  // 4 köşe dikmesi; ara yatay profil kaldırıldı, yalnız en alt ve en üst profil kalır.
   const railYs = [0, frameHeightM];
   const frameDepthM = getProceduralFrameCrossSectionM(moduleState).frameDepth;
-  const frontRailGeometry = new THREE.BoxGeometry(frontPanelWidthM, railHeightM, frameDepthM);
-  railYs.forEach((y) => {
-    addProfile(
-      frontRailGeometry.clone(),
-      new THREE.Vector3(0, y, depthM / 2 - frameDepthM / 2),
-    );
-  });
-
-  const sideRailGeometry = new THREE.BoxGeometry(frameDepthM, railHeightM, sidePanelWidthM);
-  [-1, 1].forEach((xSide) => {
-    railYs.forEach((y) => {
-      addProfile(
-        sideRailGeometry.clone(),
-        new THREE.Vector3(xSide * (widthM / 2 - frameDepthM / 2), y, 0),
-      );
-    });
+  addBoxModuleFrame(group, frameMaterial, {
+    posts: [-1, 1].flatMap((xSide) => [-1, 1].map((zSide) => [
+      xSide * (widthM / 2 - profileM / 2),
+      zSide * (depthM / 2 - profileM / 2),
+    ])),
+    rails: [
+      { axis: 'x', length: railSpanXM, x: 0, z: depthM / 2 - frameDepthM / 2 },
+      { axis: 'z', length: railSpanZM, x: -(widthM / 2 - frameDepthM / 2), z: 0 },
+      { axis: 'z', length: railSpanZM, x: widthM / 2 - frameDepthM / 2, z: 0 },
+    ],
+    railYs,
+    frameHeightM,
+    profileM,
   });
 
   const top = new THREE.Mesh(
@@ -9203,30 +9187,31 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   group.add(top);
 
   const surfaces = [];
+  const backingDepth = resolveBoxPanelBackingDepth(moduleState);
+  const panelOpening = panelFrameOpening(0, frameHeightM);
+  const lowerPanel = fitPanelToFrameOpening(stripHeightM / 2, panelHeightM, panelOpening);
+  const upperPanel = fitPanelToFrameOpening(stripHeightM + stripHeightM / 2, panelHeightM, panelOpening);
   const addFace = (
     surfaceRole,
     panelLevel,
     surfaceState,
     faceWidthM,
-    position,
+    anchor,
+    outward,
     rotationY = 0,
   ) => {
     if (!surfaceState) return;
     // Banko yüzleri de module zarfına oturur; BOM child ölçüleri mesh’i ezmez.
     const faceWidth = faceWidthM;
-    const faceHeight = panelHeightM;
-    const faceDepth = 0.012;
+    const faceHeight = panelLevel === 'lower' ? lowerPanel.panelHeight : upperPanel.panelHeight;
+    const faceDepth = backingDepth;
 
     const isGlass = Boolean(surfaceState.isGlass);
     const backing = new THREE.Mesh(
       new THREE.BoxGeometry(faceWidth, faceHeight, faceDepth),
       panelFaceBackingMaterial(isGlass),
     );
-    backing.position.copy(position);
     backing.rotation.y = rotationY;
-    if (surfaceRole === 'front') backing.position.z -= 0.006;
-    else if (surfaceRole === 'left') backing.position.x += 0.006;
-    else backing.position.x -= 0.006;
     backing.castShadow = !isGlass;
     backing.receiveShadow = true;
     group.add(backing);
@@ -9235,11 +9220,8 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
       new THREE.PlaneGeometry(faceWidth, faceHeight),
       panelFaceSurfaceMaterial(surfaceState),
     );
-    surface.position.copy(position);
     surface.rotation.y = rotationY;
-    if (surfaceRole === 'front') surface.position.z += 0.006;
-    else if (surfaceRole === 'left') surface.position.x -= 0.006;
-    else surface.position.x += 0.006;
+    placeBoxPanelFace(backing, surface, anchor, outward, backingDepth);
 
     const selectionFrame = createSelectionFrame(faceWidth, faceHeight);
     selectionFrame.visible = false;
@@ -9267,18 +9249,18 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
     onSurfaceReady?.(surface);
   };
 
-  const lowerY = stripHeightM / 2;
-  const upperY = stripHeightM + stripHeightM / 2;
-  const frontZ = depthM / 2 - 0.006;
-  const leftX = -widthM / 2 + 0.006;
-  const rightX = widthM / 2 - 0.006;
+  const lowerY = lowerPanel.centerY;
+  const upperY = upperPanel.centerY;
+  const front = new THREE.Vector3(0, 0, 1);
+  const left = new THREE.Vector3(-1, 0, 0);
+  const right = new THREE.Vector3(1, 0, 0);
 
-  addFace('front', 'lower', moduleState.faces?.frontLower, frontPanelWidthM, new THREE.Vector3(0, lowerY, frontZ));
-  addFace('front', 'upper', moduleState.faces?.frontUpper, frontPanelWidthM, new THREE.Vector3(0, upperY, frontZ));
-  addFace('left', 'lower', moduleState.faces?.leftLower, sidePanelWidthM, new THREE.Vector3(leftX, lowerY, 0), -Math.PI / 2);
-  addFace('left', 'upper', moduleState.faces?.leftUpper, sidePanelWidthM, new THREE.Vector3(leftX, upperY, 0), -Math.PI / 2);
-  addFace('right', 'lower', moduleState.faces?.rightLower, sidePanelWidthM, new THREE.Vector3(rightX, lowerY, 0), Math.PI / 2);
-  addFace('right', 'upper', moduleState.faces?.rightUpper, sidePanelWidthM, new THREE.Vector3(rightX, upperY, 0), Math.PI / 2);
+  addFace('front', 'lower', moduleState.faces?.frontLower, frontPanelWidthM, new THREE.Vector3(0, lowerY, depthM / 2), front);
+  addFace('front', 'upper', moduleState.faces?.frontUpper, frontPanelWidthM, new THREE.Vector3(0, upperY, depthM / 2), front);
+  addFace('left', 'lower', moduleState.faces?.leftLower, sidePanelWidthM, new THREE.Vector3(-widthM / 2, lowerY, 0), left, -Math.PI / 2);
+  addFace('left', 'upper', moduleState.faces?.leftUpper, sidePanelWidthM, new THREE.Vector3(-widthM / 2, upperY, 0), left, -Math.PI / 2);
+  addFace('right', 'lower', moduleState.faces?.rightLower, sidePanelWidthM, new THREE.Vector3(widthM / 2, lowerY, 0), right, Math.PI / 2);
+  addFace('right', 'upper', moduleState.faces?.rightUpper, sidePanelWidthM, new THREE.Vector3(widthM / 2, upperY, 0), right, Math.PI / 2);
   mountRecipeTopSurface(top, moduleState.renderParts?.tops?.[0], moduleState, 'counter', moduleIndex, surfaces, onSurfaceReady);
 
   return { group, surfaces };
@@ -9298,31 +9280,32 @@ function createLCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   const frameHeightM = heightM - topThicknessM;
   const stripHeightM = frameHeightM / 2;
   const panelHeightM = Math.max(stripHeightM - railHeightM - PANEL_VERTICAL_CLEARANCE_M, 0.05);
-  const frontPanelM = Math.max(widthM - profileM * 2 - 0.012, 0.05);
-  const rightPanelM = Math.max(depthM - profileM * 2 - 0.012, 0.05);
-  const shortPanelM = Math.max(armM - profileM * 2 - 0.012, 0.05);
+  // Panel yüzü çerçevenin dış kenarından dört yanda PANEL_FRAME_INSET_M içeride biter.
+  const frontPanelM = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.05);
+  const rightPanelM = Math.max(depthM - PANEL_FRAME_INSET_M * 2, 0.05);
+  const shortPanelM = Math.max(armM - PANEL_FRAME_INSET_M * 2, 0.05);
   const group = new THREE.Group();
   group.userData = { kind:'module', moduleIndex, moduleId:moduleState.id, type:'counter', widthCm, depthCm, heightCm:100, counterShape:'L' };
   const frameMaterial = new THREE.MeshStandardMaterial({ color:frameColorForModule(moduleState), metalness:0.68, roughness:0.28 });
-  const addProfile = (geometry, position) => { const mesh = new THREE.Mesh(geometry, frameMaterial.clone()); mesh.position.copy(position); mesh.castShadow=true; mesh.receiveShadow=true; group.add(mesh); return mesh; };
-  const postGeometry = new THREE.BoxGeometry(profileM, frameHeightM, profileM);
-  [
-    [-widthM / 2 + profileM / 2, -depthM / 2 + profileM / 2],
-    [widthM / 2 - profileM / 2, -depthM / 2 + profileM / 2],
-    [widthM / 2 - profileM / 2, depthM / 2 - profileM / 2],
-    [widthM / 2 - armM + profileM / 2, depthM / 2 - profileM / 2],
-    [-widthM / 2 + profileM / 2, -depthM / 2 + armM - profileM / 2],
-  ].forEach(([x, z]) => addProfile(
-    postGeometry.clone(),
-    new THREE.Vector3(x, frameHeightM / 2, z),
-  ));
   const railYs=[0,stripHeightM,frameHeightM];
-  const addRailX=(length,x,z)=>railYs.forEach(y=>addProfile(new THREE.BoxGeometry(length,railHeightM,frameDepthM),new THREE.Vector3(x,y,z)));
-  const addRailZ=(length,x,z)=>railYs.forEach(y=>addProfile(new THREE.BoxGeometry(frameDepthM,railHeightM,length),new THREE.Vector3(x,y,z)));
-  addRailX(frontPanelM,0,-depthM/2+frameDepthM/2);
-  addRailZ(rightPanelM,widthM/2-frameDepthM/2,0);
-  addRailZ(shortPanelM,-widthM/2+frameDepthM/2,-depthM/2+armM/2);
-  addRailX(shortPanelM,widthM/2-armM/2,depthM/2-frameDepthM/2);
+  addBoxModuleFrame(group, frameMaterial, {
+    posts: [
+      [-widthM / 2 + profileM / 2, -depthM / 2 + profileM / 2],
+      [widthM / 2 - profileM / 2, -depthM / 2 + profileM / 2],
+      [widthM / 2 - profileM / 2, depthM / 2 - profileM / 2],
+      [widthM / 2 - armM + profileM / 2, depthM / 2 - profileM / 2],
+      [-widthM / 2 + profileM / 2, -depthM / 2 + armM - profileM / 2],
+    ],
+    rails: [
+      { axis: 'x', length: Math.max(widthM - profileM * 2, 0.02), x: 0, z: -depthM / 2 + frameDepthM / 2 },
+      { axis: 'z', length: Math.max(depthM - profileM * 2, 0.02), x: widthM / 2 - frameDepthM / 2, z: 0 },
+      { axis: 'z', length: Math.max(armM - profileM * 2, 0.02), x: -widthM / 2 + frameDepthM / 2, z: -depthM / 2 + armM / 2 },
+      { axis: 'x', length: Math.max(armM - profileM * 2, 0.02), x: widthM / 2 - armM / 2, z: depthM / 2 - frameDepthM / 2 },
+    ],
+    railYs,
+    frameHeightM,
+    profileM,
+  });
 
   const topMaterial = new THREE.MeshStandardMaterial({ color:0xf8fafc, roughness:0.58, metalness:0 });
   const recipeTops = [];
@@ -9356,19 +9339,27 @@ function createLCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   }
 
   const surfaces=[];
-  const addFace=(surfaceRole,panelLevel,surfaceState,faceWidthM,position,rotationY=0,outward=1)=>{
+  const backingDepth = resolveBoxPanelBackingDepth(moduleState);
+  const panelOpening = panelFrameOpening(0, frameHeightM);
+  const lowerPanel = fitPanelToFrameOpening(stripHeightM / 2, panelHeightM, panelOpening);
+  const upperPanel = fitPanelToFrameOpening(stripHeightM + stripHeightM / 2, panelHeightM, panelOpening);
+  // anchor dış çerçeve düzlemindeki yüz merkezidir; dışa bakan yön yüzün dönüşünden gelir.
+  const addFace=(surfaceRole,panelLevel,surfaceState,faceWidthM,anchor,rotationY=0)=>{
     if(!surfaceState)return;
+    const faceHeightM = panelLevel === 'lower' ? lowerPanel.panelHeight : upperPanel.panelHeight;
+    const outward = new THREE.Vector3(Math.round(Math.sin(rotationY)), 0, Math.round(Math.cos(rotationY)));
     const isGlass=Boolean(surfaceState.isGlass);
-    const backing=new THREE.Mesh(new THREE.BoxGeometry(faceWidthM,panelHeightM,0.012),panelFaceBackingMaterial(isGlass)); backing.position.copy(position); backing.rotation.y=rotationY; backing.castShadow=!isGlass; backing.receiveShadow=true; group.add(backing);
-    const surface=new THREE.Mesh(new THREE.PlaneGeometry(faceWidthM,panelHeightM),panelFaceSurfaceMaterial(surfaceState)); surface.position.copy(position); surface.rotation.y=rotationY; if(Math.abs(Math.sin(rotationY))<0.01)surface.position.z+=0.007*outward;else surface.position.x+=0.007*outward;
-    const selectionFrame=createSelectionFrame(faceWidthM,panelHeightM); selectionFrame.visible=false; surface.add(selectionFrame);
+    const backing=new THREE.Mesh(new THREE.BoxGeometry(faceWidthM,faceHeightM,backingDepth),panelFaceBackingMaterial(isGlass)); backing.rotation.y=rotationY; backing.castShadow=!isGlass; backing.receiveShadow=true; group.add(backing);
+    const surface=new THREE.Mesh(new THREE.PlaneGeometry(faceWidthM,faceHeightM),panelFaceSurfaceMaterial(surfaceState)); surface.rotation.y=rotationY;
+    placeBoxPanelFace(backing, surface, anchor, outward, backingDepth);
+    const selectionFrame=createSelectionFrame(faceWidthM,faceHeightM); selectionFrame.visible=false; surface.add(selectionFrame);
     surface.userData={kind:'surface',moduleType:'counter',counterShape:'L',selectionMode:'module',...surfaceCapabilityUserData(surfaceState?.itemKey ?? moduleState.itemKey),moduleIndex,moduleId:moduleState.id,widthCm,depthCm,stripIndex:panelLevel==='lower'?0:1,stripNumber:panelLevel==='lower'?1:2,surfaceRole,panelLevel,surfaceId:surfaceState.id,...bindRendererSurfaceState(surfaceState),selectionFrame,backing}; group.add(surface); surfaces.push(surface); onSurfaceReady?.(surface);
   };
-  const lowerY=stripHeightM/2, upperY=stripHeightM+stripHeightM/2;
-  addFace('front','lower',moduleState.faces?.frontLower,frontPanelM,new THREE.Vector3(0,lowerY,-depthM/2),Math.PI,-1); addFace('front','upper',moduleState.faces?.frontUpper,frontPanelM,new THREE.Vector3(0,upperY,-depthM/2),Math.PI,-1);
-  addFace('right','lower',moduleState.faces?.rightLower,rightPanelM,new THREE.Vector3(widthM/2,lowerY,0),Math.PI/2,1); addFace('right','upper',moduleState.faces?.rightUpper,rightPanelM,new THREE.Vector3(widthM/2,upperY,0),Math.PI/2,1);
-  addFace('left','lower',moduleState.faces?.leftLower,shortPanelM,new THREE.Vector3(-widthM/2,lowerY,-depthM/2+armM/2),-Math.PI/2,-1); addFace('left','upper',moduleState.faces?.leftUpper,shortPanelM,new THREE.Vector3(-widthM/2,upperY,-depthM/2+armM/2),-Math.PI/2,-1);
-  addFace('return','lower',moduleState.faces?.returnLower,shortPanelM,new THREE.Vector3(widthM/2-armM/2,lowerY,depthM/2),0,1); addFace('return','upper',moduleState.faces?.returnUpper,shortPanelM,new THREE.Vector3(widthM/2-armM/2,upperY,depthM/2),0,1);
+  const lowerY=lowerPanel.centerY, upperY=upperPanel.centerY;
+  addFace('front','lower',moduleState.faces?.frontLower,frontPanelM,new THREE.Vector3(0,lowerY,-depthM/2),Math.PI); addFace('front','upper',moduleState.faces?.frontUpper,frontPanelM,new THREE.Vector3(0,upperY,-depthM/2),Math.PI);
+  addFace('right','lower',moduleState.faces?.rightLower,rightPanelM,new THREE.Vector3(widthM/2,lowerY,0),Math.PI/2); addFace('right','upper',moduleState.faces?.rightUpper,rightPanelM,new THREE.Vector3(widthM/2,upperY,0),Math.PI/2);
+  addFace('left','lower',moduleState.faces?.leftLower,shortPanelM,new THREE.Vector3(-widthM/2,lowerY,-depthM/2+armM/2),-Math.PI/2); addFace('left','upper',moduleState.faces?.leftUpper,shortPanelM,new THREE.Vector3(-widthM/2,upperY,-depthM/2+armM/2),-Math.PI/2);
+  addFace('return','lower',moduleState.faces?.returnLower,shortPanelM,new THREE.Vector3(widthM/2-armM/2,lowerY,depthM/2),0); addFace('return','upper',moduleState.faces?.returnUpper,shortPanelM,new THREE.Vector3(widthM/2-armM/2,upperY,depthM/2),0);
   (moduleState.renderParts?.tops ?? []).forEach((part, index) => {
     mountRecipeTopSurface(recipeTops[index], part, moduleState, 'counter', moduleIndex, surfaces, onSurfaceReady);
   });
@@ -9389,7 +9380,7 @@ function createShelfModule(moduleState, moduleIndex) {
   }
 
   const centerYM = WALL_OVERLAY_DEFAULT_CENTER_CM / 100;
-  const wallFrontM = STAND_DIMENSIONS.depth / 2 + 0.0015;
+  const wallFrontM = STAND_DIMENSIONS.depth / 2 + PANEL_FACE_OFFSET_M;
   const centerZM = wallFrontM + depthM / 2;
   const shelfLightingOn = Boolean(moduleState.shelfLightingOn);
 
@@ -9648,8 +9639,84 @@ function positiveSceneCm(value) {
   return Number.isFinite(number) && number > 0 ? number : null;
 }
 
+// Panel taşıyan duvar modüllerinde (düz panel, bazalı duvar, kapı, vitrin) dört çerçeve kenarı
+// da aynı kare profil kesitiyle çizilir (getProceduralFrameCrossSectionM): kapalı alüminyum çerçeve.
+// Yalnız 3B görünümdür; modül kutusu, panel state'i, panelRailHeight ve BOM değişmez. Paneller
+// çerçevenin önünde durur ve dört kenardan PANEL_FRAME_INSET_M içeri girer; çerçeve panel çevresinde görünür.
+// Kenar çizgisi profil renginin koyu tonudur; profil rengi değişmez.
+const PANEL_FRAME_EDGE_SHADE = 0.55;
+
+function createFrameEdgeMaterial(frameMaterial) {
+  return new THREE.LineBasicMaterial({
+    color: frameMaterial.color.clone().multiplyScalar(PANEL_FRAME_EDGE_SHADE),
+  });
+}
+
+// Prosedürel profil: kesit kutusu + koyu ton kenar çizgisi (çizgi seçimi yakalamaz).
+function createFrameProfileMesh(geometry, frameMaterial, edgeMaterial) {
+  const profile = new THREE.Mesh(geometry, frameMaterial.clone());
+  profile.castShadow = true;
+  profile.receiveShadow = true;
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), edgeMaterial);
+  edges.raycast = () => {};
+  profile.add(edges);
+  return profile;
+}
+
+function addPanelModuleFrame(
+  group,
+  moduleState,
+  { widthM, frameBottomY, frameTopY, uprightTopY = frameTopY, uprightGap = null, frameMaterial },
+) {
+  const { frameWidth, frameDepth } = getProceduralFrameCrossSectionM(moduleState);
+  const frameHeight = Math.max(frameTopY - frameBottomY, 0.02);
+  const uprightHeight = Math.max(uprightTopY - frameBottomY, 0.02);
+  const railLength = Math.max(widthM - frameWidth * 2, 0.02);
+  const railHeight = Math.min(frameWidth, frameHeight / 2);
+  const edgeMaterial = createFrameEdgeMaterial(frameMaterial);
+
+  const addProfile = (geometry, x, y) => {
+    const profile = createFrameProfileMesh(geometry, frameMaterial, edgeMaterial);
+    profile.position.set(x, y, 0);
+    group.add(profile);
+  };
+
+  // uprightGap: dikmenin çizilmediği aralık (vitrin gövdesi orada kendi yan tahtasıyla kenar olur).
+  const uprightSegments = uprightGap
+    ? [[frameBottomY, uprightGap.bottomY], [uprightGap.topY, frameBottomY + uprightHeight]]
+    : [[frameBottomY, frameBottomY + uprightHeight]];
+  for (const [segmentBottom, segmentTop] of uprightSegments) {
+    if (segmentTop - segmentBottom <= 0) continue;
+    const uprightGeometry = createSlottedProfileGeometry(frameWidth, segmentTop - segmentBottom, frameDepth);
+    for (const side of [-1, 1]) {
+      addProfile(uprightGeometry.clone(), side * (widthM / 2 - frameWidth / 2), (segmentBottom + segmentTop) / 2);
+    }
+  }
+  const railGeometry = createSlottedProfileGeometry(railLength, railHeight, frameDepth);
+  addProfile(railGeometry.clone(), 0, frameBottomY + railHeight / 2);
+  addProfile(railGeometry.clone(), 0, frameTopY - railHeight / 2);
+}
+
+// Panel yüzü çerçevenin dış kenarından alt, üst, sağ ve sol 4 cm içeride biter.
+const PANEL_FRAME_INSET_M = 0.04;
+
+function panelFrameOpening(frameBottomY, frameTopY) {
+  return { bottomY: frameBottomY + PANEL_FRAME_INSET_M, topY: frameTopY - PANEL_FRAME_INSET_M };
+}
+
+// Panel gövdesi reçetedeki panel Item kalınlığında, yüzün hemen arkasında durur (profil ile arasında
+// PANEL_FACE_OFFSET_M boşluk görünür). Reçetede panel yoksa eski iç dolgu kutusu kalır.
+function resolvePanelSlab(moduleState, depth) {
+  const thicknessCm = resolveRecipePanelThicknessCm(moduleState);
+  if (thicknessCm == null) {
+    return { panelDepth: Math.max(depth - 0.026, 0.035), backingZ: 0 };
+  }
+  const panelDepth = Math.min(thicknessCm / 100, PANEL_FACE_OFFSET_M - 0.003);
+  // Yüz düzlemiyle gövde ön yüzü arasında 3 mm: uzaktan derinlik titremesi (z-fighting) olmaz.
+  return { panelDepth, backingZ: depth / 2 + PANEL_FACE_OFFSET_M - panelDepth / 2 - 0.003 };
+}
+
 function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
-  const { frameDepth } = getProceduralFrameCrossSectionM(moduleState);
   const moduleHeightCm = clampHeightToStandCeilingCm(Number(moduleState.heightCm));
   if (!Number.isFinite(moduleHeightCm) || moduleHeightCm <= 0) {
     throw new TypeError(`Item ${moduleState.itemKey ?? 'unknown'} is missing module heightCm for flat-panel.`);
@@ -9680,41 +9747,28 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
     roughness: 0.28,
   });
 
-  const profileGeometry = new THREE.BoxGeometry(getProceduralFrameCrossSectionM(moduleState).frameWidth, frameHeight, frameDepth);
-  for (const side of [-1, 1]) {
-    const profile = new THREE.Mesh(profileGeometry.clone(), frameMaterial.clone());
-    profile.position.set(
-      side * (widthM / 2 - getProceduralFrameCrossSectionM(moduleState).frameWidth / 2),
-      frameBottomY + frameHeight / 2,
-      0,
-    );
-    profile.castShadow = true;
-    group.add(profile);
-  }
+  // Ara yatay profiller yok; panel grubunda yalnız en alt ve en üst profil kalır.
+  addPanelModuleFrame(group, moduleState, {
+    widthM,
+    frameBottomY,
+    frameTopY: frameBottomY + frameHeight,
+    frameMaterial,
+  });
 
   const railHeight = STAND_DIMENSIONS.panelRailHeight;
-  const railGeometry = new THREE.BoxGeometry(
-    Math.max(widthM - getProceduralFrameCrossSectionM(moduleState).frameWidth * 2, 0.02),
-    railHeight,
-    frameDepth,
-  );
-
-  // Ara yatay profiller yok; panel grubunda yalnız en alt ve en üst profil kalır.
-  for (const y of [frameBottomY, frameBottomY + frameHeight]) {
-    const rail = new THREE.Mesh(railGeometry.clone(), frameMaterial.clone());
-    rail.position.set(0, y, 0);
-    rail.castShadow = true;
-    group.add(rail);
-  }
-
   const surfaces = [];
-  const innerWidth = Math.max(widthM - getProceduralFrameCrossSectionM(moduleState).frameWidth * 2 - 0.012, 0.02);
-  const panelHeight = stripHeight - railHeight - PANEL_VERTICAL_CLEARANCE_M;
-  const panelDepth = Math.max(depth - 0.026, 0.035);
+  const innerWidth = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.02);
+  const bandPanelHeight = stripHeight - railHeight - PANEL_VERTICAL_CLEARANCE_M;
+  const { panelDepth, backingZ } = resolvePanelSlab(moduleState, depth);
+  const panelOpening = panelFrameOpening(frameBottomY, frameBottomY + frameHeight);
 
   for (let visibleIndex = 0; visibleIndex < visibleStripCount; visibleIndex += 1) {
     const stripIndex = visibleIndex;
-    const centerY = visibleIndex * stripHeight + stripHeight / 2;
+    const { centerY, panelHeight } = fitPanelToFrameOpening(
+      visibleIndex * stripHeight + stripHeight / 2,
+      bandPanelHeight,
+      panelOpening,
+    );
     const surfaceState = moduleState.strips?.[stripIndex];
     if (!surfaceState) {
       console.warn('Eksik panel strip state atlandı:', moduleState.type, moduleState.id, stripIndex);
@@ -9733,7 +9787,7 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
         depthWrite: !isGlass,
       }),
     );
-    backing.position.set(0, centerY, 0);
+    backing.position.set(0, centerY, backingZ);
     backing.castShadow = !isGlass;
     backing.receiveShadow = true;
     group.add(backing);
@@ -9758,7 +9812,7 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
       paintMetalGrid(surface, innerWidth, panelHeight);
       backing.visible = false;
     }
-    surface.position.set(0, centerY, depth / 2 + 0.0015);
+    surface.position.set(0, centerY, depth / 2 + PANEL_FACE_OFFSET_M);
 
     const selectionFrame = createSelectionFrame(innerWidth, panelHeight);
     selectionFrame.visible = false;
@@ -9789,7 +9843,6 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
 
 
 function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
-  const { frameDepth } = getProceduralFrameCrossSectionM(moduleState);
   const { widthCm, heightCm, depthCm } = requireModuleSceneBoxCm(
     moduleState,
     ['widthCm', 'heightCm', 'depthCm'],
@@ -9817,31 +9870,17 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
     roughness: 0.28,
   });
 
-  const profileGeometry = new THREE.BoxGeometry(getProceduralFrameCrossSectionM(moduleState).frameWidth, height, frameDepth);
-  for (const side of [-1, 1]) {
-    const profile = new THREE.Mesh(profileGeometry.clone(), frameMaterial.clone());
-    profile.position.set(side * (widthM / 2 - getProceduralFrameCrossSectionM(moduleState).frameWidth / 2), height / 2, 0);
-    profile.castShadow = true;
-    group.add(profile);
-  }
-
-  const railGeometry = new THREE.BoxGeometry(
-    Math.max(widthM - getProceduralFrameCrossSectionM(moduleState).frameWidth * 2, 0.02),
-    railHeight,
-    frameDepth,
-  );
   // Kapılı panelde de ara yatay profiller yok; yalnız en alt ve en üst profil kalır.
-  const railYs = [0, height];
-  railYs.forEach((y) => {
-    const rail = new THREE.Mesh(railGeometry.clone(), frameMaterial.clone());
-    rail.position.set(0, y, 0);
-    rail.castShadow = true;
-    group.add(rail);
+  addPanelModuleFrame(group, moduleState, {
+    widthM,
+    frameBottomY: 0,
+    frameTopY: height,
+    frameMaterial,
   });
 
   const surfaces = [];
-  const innerWidth = Math.max(widthM - getProceduralFrameCrossSectionM(moduleState).frameWidth * 2 - 0.012, 0.02);
-  const panelDepth = Math.max(depth - 0.026, 0.035);
+  const innerWidth = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.02);
+  const { panelDepth, backingZ } = resolvePanelSlab(moduleState, depth);
 
   // Alt bölüm: kapalı kapı kanadı. Sahne düzleminden dışarı açılmaz.
   const doorState = moduleState.surface;
@@ -9849,7 +9888,12 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
   if (!doorLeafItem) {
     throw new TypeError(`Missing canonical door leaf Item for module ${moduleState.id}.`);
   }
-  const doorPanelHeight = Math.max(doorHeight - railHeight - 0.018, 0.1);
+  const panelOpening = panelFrameOpening(0, height);
+  const { centerY: doorCenterY, panelHeight: doorPanelHeight } = fitPanelToFrameOpening(
+    doorHeight / 2,
+    Math.max(doorHeight - railHeight - 0.018, 0.1),
+    panelOpening,
+  );
   const doorBacking = new THREE.Mesh(
     new THREE.BoxGeometry(innerWidth, doorPanelHeight, panelDepth),
     new THREE.MeshStandardMaterial({
@@ -9857,7 +9901,7 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
       roughness: 0.74,
     }),
   );
-  doorBacking.position.set(0, doorHeight / 2, 0);
+  doorBacking.position.set(0, doorCenterY, backingZ);
   doorBacking.castShadow = true;
   doorBacking.receiveShadow = true;
   group.add(doorBacking);
@@ -9873,7 +9917,7 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
       emissiveIntensity: 0,
     }),
   );
-  doorSurface.position.set(0, doorHeight / 2, depth / 2 + 0.0015);
+  doorSurface.position.set(0, doorCenterY, depth / 2 + PANEL_FACE_OFFSET_M);
   const doorSelectionFrame = createSelectionFrame(innerWidth, doorPanelHeight);
   doorSelectionFrame.visible = false;
   doorSurface.add(doorSelectionFrame);
@@ -9902,7 +9946,7 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
     new THREE.BoxGeometry(0.13, 0.032, 0.032),
     new THREE.MeshStandardMaterial({ color: 0x4b5563, metalness: 0.55, roughness: 0.3 }),
   );
-  handle.position.set(innerWidth / 2 - 0.13, doorHeight * 0.52, depth / 2 + 0.025);
+  handle.position.set(innerWidth / 2 - 0.13, doorHeight * 0.52, depth / 2 + PANEL_FACE_OFFSET_M + 0.0235);
   handle.castShadow = true;
   group.add(handle);
 
@@ -9910,8 +9954,11 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
   for (let index = 0; index < upperPanelCount; index += 1) {
     const surfaceState = moduleState.strips[index];
     if (!surfaceState) continue;
-    const centerY = doorHeight + index * stripHeight + stripHeight / 2;
-    const panelHeight = stripHeight - railHeight - PANEL_VERTICAL_CLEARANCE_M;
+    const { centerY, panelHeight } = fitPanelToFrameOpening(
+      doorHeight + index * stripHeight + stripHeight / 2,
+      stripHeight - railHeight - PANEL_VERTICAL_CLEARANCE_M,
+      panelOpening,
+    );
 
     const backing = new THREE.Mesh(
       new THREE.BoxGeometry(innerWidth, panelHeight, panelDepth),
@@ -9923,7 +9970,7 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
         depthWrite: !surfaceState.isGlass,
       }),
     );
-    backing.position.set(0, centerY, 0);
+    backing.position.set(0, centerY, backingZ);
     backing.castShadow = !surfaceState.isGlass;
     backing.receiveShadow = true;
     group.add(backing);
@@ -9948,7 +9995,7 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
       paintMetalGrid(surface, innerWidth, panelHeight);
       backing.visible = false;
     }
-    surface.position.set(0, centerY, depth / 2 + 0.0015);
+    surface.position.set(0, centerY, depth / 2 + PANEL_FACE_OFFSET_M);
 
     const selectionFrame = createSelectionFrame(innerWidth, panelHeight);
     selectionFrame.visible = false;
@@ -10007,7 +10054,7 @@ function createSeparatorModule(moduleState, moduleIndex) {
     roughness: 0.28,
   });
 
-  const profileGeometry = new THREE.BoxGeometry(frameWidth, height, frameDepth);
+  const profileGeometry = createSlottedProfileGeometry(frameWidth, height, frameDepth);
   for (const side of [-1, 1]) {
     const profile = new THREE.Mesh(profileGeometry.clone(), frameMaterial.clone());
     profile.position.set(side * (widthM / 2 - frameWidth / 2), height / 2, 0);
@@ -10015,7 +10062,7 @@ function createSeparatorModule(moduleState, moduleIndex) {
     group.add(profile);
   }
 
-  const crossRailGeometry = new THREE.BoxGeometry(
+  const crossRailGeometry = createSlottedProfileGeometry(
     Math.max(widthM - frameWidth * 2, 0.02),
     frameWidth,
     frameDepth,
@@ -10125,7 +10172,6 @@ function createShowcaseModule(moduleState, moduleIndex, onSurfaceReady) {
   const height = heightCm / 100;
   const depth = depthCm / 100;
   const widthM = widthCm / 100;
-  const { frameDepth } = getProceduralFrameCrossSectionM(moduleState);
 
   const stripCount = Array.isArray(moduleState?.strips) ? moduleState.strips.length : 0;
   const stripHeight = resolveModuleBandPitchCm(moduleState) / 100;
@@ -10157,31 +10203,21 @@ function createShowcaseModule(moduleState, moduleIndex, onSurfaceReady) {
 
   const frameMaterial = new THREE.MeshStandardMaterial({ color: frameColorForModule(moduleState), metalness: 0.68, roughness: 0.28 });
   const showcaseBodyMaterial = new THREE.MeshStandardMaterial({ color: bodyColor, metalness: 0, roughness: 0.72 });
-  const profileGeometry = new THREE.BoxGeometry(getProceduralFrameCrossSectionM(moduleState).frameWidth, height, frameDepth);
-  for (const side of [-1, 1]) {
-    const profile = new THREE.Mesh(profileGeometry.clone(), frameMaterial.clone());
-    profile.position.set(side * (widthM / 2 - getProceduralFrameCrossSectionM(moduleState).frameWidth / 2), height / 2, 0);
-    profile.castShadow = true;
-    group.add(profile);
-  }
-
   const railHeight = STAND_DIMENSIONS.panelRailHeight;
-  const innerWidth = Math.max(widthM - getProceduralFrameCrossSectionM(moduleState).frameWidth * 2 - 0.012, 0.02);
-  const railGeometry = new THREE.BoxGeometry(Math.max(widthM - getProceduralFrameCrossSectionM(moduleState).frameWidth * 2, 0.02), railHeight, frameDepth);
-  for (const y of [0, stripCount * stripHeight]) {
-    const rail = new THREE.Mesh(railGeometry.clone(), frameMaterial.clone());
-    rail.position.set(0, y, 0);
-    rail.castShadow = true;
-    group.add(rail);
-  }
+  const innerWidth = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.02);
 
   const surfaces = [];
-  const panelHeight = stripHeight - railHeight - PANEL_VERTICAL_CLEARANCE_M;
-  const panelDepth = Math.max(depth - 0.026, 0.035);
+  const bandPanelHeight = stripHeight - railHeight - PANEL_VERTICAL_CLEARANCE_M;
+  const { panelDepth, backingZ } = resolvePanelSlab(moduleState, depth);
+  const panelOpening = panelFrameOpening(0, stripCount * stripHeight);
   for (let stripIndex = 0; stripIndex < stripCount; stripIndex += 1) {
     const isOpeningStrip = stripIndex >= openingStartStrip && stripIndex < openingStartStrip + openingStripCount;
     if (isOpeningStrip) continue;
-    const centerY = stripIndex * stripHeight + stripHeight / 2;
+    const { centerY, panelHeight } = fitPanelToFrameOpening(
+      stripIndex * stripHeight + stripHeight / 2,
+      bandPanelHeight,
+      panelOpening,
+    );
     const surfaceState = moduleState.strips[stripIndex];
     if (!surfaceState) continue;
     const isGlass = Boolean(surfaceState.isGlass);
@@ -10194,7 +10230,7 @@ function createShowcaseModule(moduleState, moduleIndex, onSurfaceReady) {
         depthWrite: !isGlass,
       }),
     );
-    backing.position.set(0, centerY, 0);
+    backing.position.set(0, centerY, backingZ);
     backing.castShadow = !isGlass;
     backing.receiveShadow = true;
     group.add(backing);
@@ -10211,7 +10247,7 @@ function createShowcaseModule(moduleState, moduleIndex, onSurfaceReady) {
       paintMetalGrid(surface, innerWidth, panelHeight);
       backing.visible = false;
     }
-    surface.position.set(0, centerY, depth / 2 + 0.0015);
+    surface.position.set(0, centerY, depth / 2 + PANEL_FACE_OFFSET_M);
     const selectionFrame = createSelectionFrame(innerWidth, panelHeight);
     selectionFrame.visible = false;
     surface.add(selectionFrame);
@@ -10234,6 +10270,16 @@ function createShowcaseModule(moduleState, moduleIndex, onSurfaceReady) {
   const caseFrontZ = depth / 2;
   const caseCenterZ = caseFrontZ - showcaseDepth / 2;
   const bodyColorTargets = [];
+
+  // Vitrin gövdesi yüksekliğinde dikme çizilmez; profil gövdenin içinden geçiyormuş gibi görünmez.
+  addPanelModuleFrame(group, moduleState, {
+    widthM,
+    frameBottomY: 0,
+    frameTopY: stripCount * stripHeight,
+    uprightTopY: height,
+    uprightGap: { bottomY: bodyBottom, topY: bodyTop },
+    frameMaterial,
+  });
 
   const sidePanelGeometry = new THREE.BoxGeometry(bodyThickness, bodyHeight, showcaseDepth);
   for (const side of [-1, 1]) {

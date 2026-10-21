@@ -14,6 +14,15 @@ export function resolveModuleBandPitchCm(moduleState) {
   return WALL_PANEL_BAND_PITCH_CM;
 }
 
+// Bant paneli çerçeve içindeki panel alanına (alt kenar + iç pay … üst kenar − iç pay) kırpılır;
+// alan içindeki bantlar değişmez. Yalnız 3B görünümdür; strip state ve BOM bandı etkilemez.
+export function fitPanelToFrameOpening(bandCenterY, bandPanelHeight, opening) {
+  const bottom = Math.max(bandCenterY - bandPanelHeight / 2, opening.bottomY);
+  const top = Math.min(bandCenterY + bandPanelHeight / 2, opening.topY);
+  const panelHeight = Math.max(top - bottom, 0.01);
+  return { centerY: bottom + panelHeight / 2, panelHeight };
+}
+
 export function listInternalSeamHeightsCm({
   stripCount,
   pitchCm,

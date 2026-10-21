@@ -47,6 +47,8 @@ Six verified recipes consume this Item: `base-wall:100/150/200` use quantity `2`
 ## 15. Renderer / asset / override boundary — VAR
 Base/base-wall renderers create procedural post geometry and do not use `upright_49_5` as mesh identity. Production `49.5 cm / 8 cm` is not forced onto renderer geometry. Visual renderer constants remain explicit specialized render overrides.
 
+Görünüm (2026-10-21): parent modül çerçevesinde dikme kesiti reçetedeki `profile_*` Item'ının sahne ölçüsünden gelir (dikme Item'ı değil). Sahneye tek başına bırakılan `upright` modülü kendi sahne ölçüsüyle (`sceneDimensions ?? dimensions`) ve kanallı geometriyle (`src/profileGeometry.js`: dört yüzde 2 cm ağız, 1,5 cm derinlik) çizilir; duvar çerçevesiyle aynı görünmesi için sahne kesiti profille aynı olmalıdır.
+
 ## 16. Runtime owners — VAR
 Product metadata: `src/items.js`; quantities/composition: `src/moduleRecipes.js`; state/behavior/persistence: parent module runtime; renderer: `src/scene3d.js`.
 

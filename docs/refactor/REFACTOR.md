@@ -15,6 +15,16 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-21 — Panel duvarı çerçevesi: dört kenar aynı kesit (görünüm)
+
+**Kesit kaynağı:** `resolveProceduralFrameCrossSectionCm` modül reçetesindeki ilk `profile` Item'ının sahne ölçüsünü okur (`depthCm` × `heightCm`; canlı yerel DB'de 10 × 10). Dikmeler de bu kesitle çizilir. Reçetesinde profil olmayan modülde kesit stand `frame_depth_cm` ile kare kutudur. Stand `frame_width_cm` sahnede okunmaz.
+
+**Çerçeve (`addPanelModuleFrame`):** Düz panel, bazalı duvar, kapı ve vitrinde iki dikme ile alt/üst profil aynı kesitte; üst/alt profil artık 0,4 cm ray değil, dikmeyle aynı kalınlıkta. Profil kenarlarında koyu ton kenar çizgisi (`EdgesGeometry`, raycast yok). Panel yüzü profillerin önünde durur ve çerçevenin dış kenarından alt, üst, sağ ve sol 4 cm içeride biter (`PANEL_FRAME_INSET_M`); en alt ve en üst bant `fitPanelToFrameOpening` (`wallPanelBand.js`) ile kırpılır, aradaki bantlar değişmez. Panel yüzü duvar/profil ön yüzünün 15 mm önündedir (`PANEL_FACE_OFFSET_M`, eskiden 1,5 mm); panel gövdesi reçetedeki `panel` Item kalınlığında (`dimensions.depthCm`, örn. 0,8 cm) yüzün hemen arkasındadır (`resolveRecipePanelThicknessCm`; reçetede panel yoksa eski iç dolgu kutusu). Duvara asılan TV, raf ve strafor (`wallFrontM`) aynı yüze oturur. Çerçeve panelin çevresinde 4 cm şerit olarak görünür. Vitrinde dikme vitrin gövdesinin yüksekliğinde çizilmez (`uprightGap`); orada gövdenin yan tahtaları kenar olur.
+
+**Baza ve banko (düz + L):** Köşe dikmeleri ile alt/üst (L'de orta) raylar aynı kare profil kesitinde (`addBoxModuleFrame`, kenar çizgili); raylar artık 0,2 cm değil. Yüz panelleri profil dış yüzünün 15 mm önünde (`placeBoxPanelFace`) ve çerçevenin dış kenarından dört yanda 4 cm içeride; gövde reçetedeki panel Item kalınlığında (`resolveBoxPanelBackingDepth`, reçetede panel yoksa 12 mm). Tabla, ölçüler ve BOM değişmez.
+
+**Kanallı profil (`src/profileGeometry.js`):** Bütün prosedürel profil ve dikmeler (duvar/kapı/vitrin/ayırıcı çerçevesi, baza ve banko, tek başına `profile` ve `upright` modülleri) düz kutu yerine kesitten uzatılmış geometri: dört uzun yüzün ortasında 2 cm ağızlı, 1,5 cm derin boyuna kanal (`PROFILE_SLOT_WIDTH_M`, `PROFILE_SLOT_DEPTH_M`; ince kesitte ağız en fazla %40, derinlik %30). Dış ölçü kutuyla aynı. Profil başına çizim çağrısı değişmez (1 mesh + 1 kenar çizgisi); üçgen sayısı ~12'den ~100'e çıkar. Görsel alanı panel yüzünün ölçüsüdür. `panelRailHeight`, strip state, BOM ve kayıt biçimi değişmez.
+
 ## 2026-10-20 — Tablet kullanımı 1. aşama: seçim çubuğu, uzun basma, Döndür
 
 **Seçim çubuğu (`selectionToolbar.js`):** Tek öğe seçiliyken üstünde Döndür / Kopyala (sağa) / Sil / ⋯; toplu seçimde yalnız ⋯ (toplu menü). Konumu sahne bildirir: `createStandScene` 6. geri çağrısı `onSelectionAnchor`, her karede seçili modülün tepe ortasının ekran noktası (değişince); sürüklerken gizlenir. Stili modül kendisi ekler (CRM gömülü stil dosyasına girmez).

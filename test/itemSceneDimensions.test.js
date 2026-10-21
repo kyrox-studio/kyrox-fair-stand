@@ -165,11 +165,18 @@ test('resolveModuleSceneBoxCm state → scene → tavan', () => {
   assert.equal(box.heightCm, getStandDimensions().heightCm);
 });
 
-test('procedural frame cross-section stand dimensions frame_width/depth okur', () => {
+test('procedural frame cross-section reçetedeki profil Item sahne kesitini okur', () => {
   const parent = getItem('wall_separator_100_350');
+  const profile = getItem('profile_91');
+  const profileScene = resolveSceneDimensions(profile);
   const cross = getProceduralFrameCrossSectionM({ itemKey: parent.itemKey, type: parent.type });
-  assert.equal(cross.frameWidthCm, getStandDimensions().frameWidthCm);
+  // Profilde widthCm duvar açıklığıdır; kesit depth × height.
+  assert.equal(cross.frameWidthCm, profileScene.depthCm);
+  assert.equal(cross.frameDepthCm, profileScene.heightCm);
+});
+
+test('procedural frame cross-section reçetede profil yoksa stand derinliğiyle kare', () => {
+  const cross = getProceduralFrameCrossSectionM({ itemKey: 'missing_item_key' });
   assert.equal(cross.frameDepthCm, getStandDimensions().frameDepthCm);
-  assert.equal(cross.frameWidthCm, 5.5);
-  assert.equal(cross.frameDepthCm, 10);
+  assert.equal(cross.frameWidthCm, cross.frameDepthCm);
 });

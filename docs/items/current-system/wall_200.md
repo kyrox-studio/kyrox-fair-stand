@@ -415,15 +415,17 @@ Mevcut renderer geometrisi:
 |---|---:|
 | Nominal genişlik | `200 cm` |
 | Yükseklik | `350 cm` |
-| Nominal frame depth | `10 cm` |
-| Dikey profil genişliği | `4 cm` |
+| Frame depth | reçete profil sahne kesiti (yerel DB `10 cm`) |
+| Dikey profil genişliği | reçete profil sahne kesiti (yerel DB `10 cm`) |
 | Dikey profil adedi | `2` |
 | Panel sırası | `7` |
-| Render panel iç genişliği | yaklaşık `190.8 cm` |
-| Render panel yüksekliği | yaklaşık `49.6 cm` |
-| Panel backing depth | yaklaşık `7.4 cm` |
+| Render panel genişliği | `192 cm` (dört yanda 4 cm iç pay) |
+| Render panel yüksekliği | bant `49.6 cm`; en alt ve en üst bant 4 cm kısa |
+| Panel gövdesi | reçete `panel_*` kalınlığı (`0.8 cm`), yüz profilin 15 mm önünde |
 
-Renderer en alt ve en üst rail'i üretir. Ara 50 cm bölümlerde ayrı yatay profil geometrisi oluşturmaz; panel sıraları state/selection açısından yine 7 adettir.
+Çerçeve görünümü (2026-10-21, `addPanelModuleFrame`): iki dikme ile alt/üst profil aynı kare kesitte çizilir; kesit reçetedeki `profile_*` Item'ının sahne ölçüsüdür (`resolveProceduralFrameCrossSectionCm`, depth × height; yerel DB'de 10 × 10). Profiller kanallıdır (`src/profileGeometry.js`: dört yüzde 2 cm ağız, 1,5 cm derinlik). Panel yüzü profil yüzünün 15 mm önünde ve çerçevenin dış kenarından dört yanda 4 cm içeride biter; en alt ve en üst bant bu 4 cm kadar kısalır. Panel gövdesi reçetedeki `panel_*` Item kalınlığındadır (0,8 cm). Yalnız görünüm; strip state ve BOM değişmez.
+
+Renderer en alt ve en üst profili üretir. Ara 50 cm bölümlerde ayrı yatay profil geometrisi oluşturmaz; panel sıraları state/selection açısından yine 7 adettir.
 
 Panel state eksikse ilgili panel normal biçimde üretilemez ve renderer bunu hata/uyarı olarak ele alır.
 

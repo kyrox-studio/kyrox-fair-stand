@@ -24,7 +24,8 @@ test('baza renderer preserves existing width depth and height inputs', () => {
 
 test('baza face meshes use procedural aperture, not BOM panel stamp sizes', () => {
   assert.ok(baseBlock.includes('const faceWidth = faceWidthM;'));
-  assert.ok(baseBlock.includes('const faceHeight = panelHeightM;'));
+  assert.ok(baseBlock.includes('const faceHeight = fittedPanelHeightM;'));
+  assert.ok(baseBlock.includes('panelFrameOpening(0, frameHeightM)'));
   assert.equal(baseBlock.includes('partSpanM('), false);
 });
 

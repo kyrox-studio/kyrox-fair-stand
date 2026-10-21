@@ -47,6 +47,8 @@ No independent leaf relationship/reflow state. Parent modules own relationships.
 ## 15. Renderer / asset / override boundary — VAR
 Renderer builds procedural parent-module frame/post meshes and does not use `upright_346_5` as mesh identity. Production `346.5 cm / 8 cm` is not forced onto renderer geometry. Visual renderer constants remain explicit specialized render overrides; they are not a second product source of truth.
 
+Görünüm (2026-10-21): parent modül çerçevesinde dikme kesiti reçetedeki `profile_*` Item'ının sahne ölçüsünden gelir (dikme Item'ı değil). Sahneye tek başına bırakılan `upright` modülü kendi sahne ölçüsüyle (`sceneDimensions ?? dimensions`) ve kanallı geometriyle (`src/profileGeometry.js`: dört yüzde 2 cm ağız, 1,5 cm derinlik) çizilir; duvar çerçevesiyle aynı görünmesi için sahne kesiti profille aynı olmalıdır.
+
 ## 16. Runtime owners — VAR
 Product metadata: `src/items.js`; quantity/composition: `src/moduleRecipes.js`; module behavior/state/persistence: parent module runtime; renderer: `src/scene3d.js`.
 

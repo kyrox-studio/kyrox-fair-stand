@@ -43,3 +43,7 @@ Bu varyant `wall_showcase_100_2` kanonik parent Item'ının aynı recipe zinciri
 - `glass_shelf` bu renk override'ından etkilenmez.
 - Renderer board ölçülerini kanonik child Items'dan okur ve yalnız kanonik gövde board'ları ile `glass_shelf` geometrisini gösterir; BOM'da olmayan sahte beyaz ön kenar/çerçeve mesh'i eklemez.
 - Legacy persisted showcase state load sırasında kanonik `wall_showcase_100_2` identity/bodySurface'a normalize edilir.
+
+## Renderer görünümü (2026-10-21)
+
+`createShowcaseModule()` çerçevesi duvar paneliyle aynıdır (`addPanelModuleFrame`, kanallı profil, reçetedeki `profile_*` sahne kesiti). Paneller profil yüzünün 15 mm önünde ve dört yanda 4 cm içeride. Vitrin gövdesinin yüksekliğinde dikme çizilmez (`uprightGap`); orada gövdenin yan tahtaları kenar olur. Yalnız görünüm; state ve BOM değişmez.
