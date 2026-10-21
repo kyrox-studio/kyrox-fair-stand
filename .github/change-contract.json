@@ -2,9 +2,10 @@
   "schemaVersion": 2,
   "id": "fair-stand-vertical-move-upright-height",
   "kind": "feature",
-  "summary": "Dikey hareket ve taban referansı öğe ayarı (0076_vertical_move: fair_stand_items.vertical_move, z_reference). Ok tuşu dikey adayları ayara bağlı; profil ↑/↓ ile taşınır ve duvar tepesine göre gelir. Ölçü etiketleri sahne ölçüsünden; dikey öğede zemin/tavan uzaklığı. Dikme bırakılırken boy penceresi + 'Bir daha sorma' + sağ tık 'Dikme yüksekliği…'.",
+  "summary": "Dikey hareket ve taban referansı öğe ayarı (0076_vertical_move: fair_stand_items.vertical_move, z_reference). Ok tuşu dikey adayları ayara bağlı; profil ↑/↓ ile taşınır ve duvar tepesine göre gelir. Ölçü etiketleri sahne ölçüsünden; dikey öğede zemin/tavan uzaklığı. Dikme bırakılırken boy penceresi + 'Bir daha sorma' + sağ tık 'Dikme yüksekliği…'. 0077_upright_render: uzun dikmeler is_render true (bırakma hatası); pencere yalnız çizilebilir dikmeleri listeler.",
   "owners": [
     "backend/alembic/versions/0076_vertical_move.py",
+    "backend/alembic/versions/0077_upright_render.py",
     "backend/app/modules/fair_stand/application/admin_items.py",
     "backend/app/modules/fair_stand/application/item_mapper.py",
     "backend/app/modules/fair_stand/infrastructure/catalog_dump_seed.py",
@@ -910,7 +911,7 @@
   },
   "migration": {
     "required": true,
-    "notes": "0076_vertical_move; tekrar çalışır, geri alınır. Canlıya deploy ile (sahip onayı)."
+    "notes": "0076_vertical_move ve 0077_upright_render; tekrar çalışır. Canlıya deploy ile (sahip onayı)."
   },
   "rollback": "0076 downgrade; items/scene3d/main/moduleContextMenu/uprightHeight değişikliklerini geri al."
 }

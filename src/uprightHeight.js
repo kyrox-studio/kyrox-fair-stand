@@ -9,7 +9,8 @@ const UPRIGHT_REAL_HEIGHT_RATIO = 0.99;
 
 export function listUprightHeightItems() {
   return listRegisteredItems()
-    .filter((item) => item.type === 'upright' && Number(item.dimensions?.heightCm) > 0)
+    // Yalnız sahnede çizilebilen dikmeler (is_render); çizilemeyen boy seçilirse bırakma reddedilirdi.
+    .filter((item) => item.type === 'upright' && item.isRender !== false && Number(item.dimensions?.heightCm) > 0)
     .sort((a, b) => Number(a.dimensions.heightCm) - Number(b.dimensions.heightCm));
 }
 

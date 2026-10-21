@@ -59,6 +59,7 @@ test('dikme boyu: varsayılan seçili duvarın dikmesi; liste sistemdeki boylar'
   const heights = listUprightHeightItems().map((item) => Number(item.dimensions.heightCm));
   assert.deepEqual(heights, [...heights].sort((a, b) => a - b));
   assert.ok(heights.includes(346.5));
+  assert.ok(listUprightHeightItems().every((item) => item.isRender !== false));
   assert.equal(defaultUprightItemKeyForWallHeight(350), 'upright_346_5');
   const at250 = defaultUprightItemKeyForWallHeight(250);
   assert.ok(at250 == null || at250.startsWith('upright_'));
