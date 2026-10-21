@@ -261,8 +261,7 @@ fresh main
 → npm run e2e
 → PR
 → canonical CI
-→ merge
-→ post-merge main CI
+→ merge (yalnız PR CI yeşilken; main'de tekrar koşu yok)
 ```
 
 Core placement, behavior, catalog, persistence, renderer, BOM veya başka bir domain değişiyorsa ilgili regression aynı PR içinde eklenmeli/güncellenmelidir. Browser-visible etkisi olan değişiklik kendi Playwright E2E akışını da aynı PR içinde taşır.

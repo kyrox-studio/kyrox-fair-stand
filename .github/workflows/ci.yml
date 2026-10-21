@@ -1,8 +1,8 @@
 name: CI
 
+# Yalnız PR'da koşar: main ruleset'i zorunlu kontrol + strict ister; merge edilen ağaç
+# PR'da test edilen ağaçla aynıdır, main'de tekrar koşu gereksiz (kyrox-platform QUALITY_GATE §12).
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 

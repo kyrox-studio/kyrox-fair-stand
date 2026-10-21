@@ -282,7 +282,7 @@ Depo içeriği değişirse yalnız renderer içine obje eklenmez.
 16. Playwright/Chromium hazır değilse local runner/browser dependency'lerini kur.
 17. `npm run e2e` çalıştır.
 18. PR aç; canonical CI'nın `contract:verify → npm ci → npm test → python -m pytest → npm run build → Chromium → npm run e2e` zinciri yeşil olmalı.
-19. Merge sonrası post-merge main CI yeşil olmadan finding/iş tamamlandı sayılmaz.
+19. PR CI yeşil olmadan merge yapılmaz; `main` ruleset'i (zorunlu kontrol + strict) bunu zorlar. Merge edilen ağaç PR'da test edilen ağaçla aynıdır, merge sonrası `main`'de CI tekrar koşmaz.
 
 ---
 
@@ -306,7 +306,7 @@ Depo içeriği değişirse yalnız renderer içine obje eklenmez.
 - Multi-module automation kuralını yalnız UI callback içine gömmek.
 - Targeted regression olmadan davranış değişikliği tamamlamak.
 - Browser-impact değişiklikte targeted E2E olmadan işi tamamlamak.
-- Full test/build/E2E veya PR/post-merge CI doğrulanmadan işi kapalı saymak.
+- Full test/build/E2E veya PR CI doğrulanmadan işi kapalı saymak.
 
 ---
 

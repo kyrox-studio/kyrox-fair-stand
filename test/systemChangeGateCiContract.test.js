@@ -11,8 +11,8 @@ test('package exposes universal change-gate and Playwright E2E commands', () => 
   assert.equal(packageJson.scripts.e2e, 'playwright test');
 });
 
-test('canonical CI targets main with GitHub PR/push change-gate windows', () => {
-  assert.match(ciWorkflow, /push:\s*\n\s*branches: \[main\]/);
+test('canonical CI runs on PRs to main only; no post-merge push rerun', () => {
+  assert.doesNotMatch(ciWorkflow, /^\s*push:/m);
   assert.match(ciWorkflow, /pull_request:\s*\n\s*branches: \[main\]/);
   assert.doesNotMatch(ciWorkflow, /git fetch origin Version2/);
   assert.doesNotMatch(ciWorkflow, /CHANGE_GATE_BASE:/);
