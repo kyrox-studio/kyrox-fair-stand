@@ -18,10 +18,10 @@ Bu dosya insan/AI için **okunabilir katalog indeksi**dir. Runtime source-of-tru
 
 Bu snapshot `Version2` üzerindeki `MODULE_CATALOG_KEYS` ve `MODULE_CONTRACT_ASSIGNMENTS` ile eşleşmek zorundadır; `test/systemModuleCatalogDoc.test.js` drift olduğunda CI'yi kırar.
 
-- Catalog entries: **62**
+- Catalog entries: **63**
 - BOM mode `recipe`: **28**
 - BOM mode `self`: **15**
-- BOM mode `decision-required`: **19**
+- BOM mode `decision-required`: **20**
 - Katalog dışı explicit runtime module: **1** (`illuminated-foam`)
 - Katalog dışı module BOM mode `decision-required`: **1**
 
@@ -88,6 +88,7 @@ Aşağıdaki blok test tarafından `MODULE_CATALOG_KEYS` ile **sıra dahil bireb
 - `extra_long_planter_200`
 - `tulle_fabric`
 - `brochure_stand`
+- `glass_bar_table`
 - `tv_42`
 - `tv_55`
 - `video_wall_2x2`
@@ -118,7 +119,7 @@ Bu bölüm navigasyon içindir; ölçü/recipe source-of-truth değildir.
 
 ### Mobilya / Depo / Bitki
 
-`furniture_sofa_set_classic`, `furniture_sofa_single_classic`, `furniture_sofa_double_classic`, `furniture_coffee_table_classic`, `furniture_table_chair_set_eames`, `chair_eames`, `glass_table`, `furniture_bar_stool_classic`, `mini_fridge_avanti`, `kettle`, `coat_rack`, `plastic_trash_bin`, `extra_indoor_plant_1`, `extra_long_planter_100`, `extra_long_planter_150`, `extra_long_planter_200`, `tulle_fabric`, `brochure_stand`
+`furniture_sofa_set_classic`, `furniture_sofa_single_classic`, `furniture_sofa_double_classic`, `furniture_coffee_table_classic`, `furniture_table_chair_set_eames`, `chair_eames`, `glass_table`, `furniture_bar_stool_classic`, `mini_fridge_avanti`, `kettle`, `coat_rack`, `plastic_trash_bin`, `extra_indoor_plant_1`, `extra_long_planter_100`, `extra_long_planter_150`, `extra_long_planter_200`, `tulle_fabric`, `brochure_stand`, `glass_bar_table`
 
 ### Medya / Işık
 
@@ -134,11 +135,11 @@ Duvar/panel, separatör, vitrin, depo kapısı, düz/L banko ve baza ailelerinin
 
 `mini_fridge_avanti`, `kettle`, `coat_rack`, `floor_showcase_100`, `brochure_stand`, `plastic_trash_bin`, `box_block`, `upright_346_5`, `profile_190`, `profile_140_5`, `profile_91`, `profile_41_5` leaf/self BOM Item'dır. Canonical birim `adet`; `src/itemBom.js > resolveItemBom(itemKey)` aynı `itemKey` için `quantity=1` üretir. Child recipe yoktur. Parent duvar reçetelerindeki `upright_346_5 ×2` ve `profile_*` parent miktarları bu saha örneğinden ayrıdır.
 
-### `decision-required` — 19 katalog kaydı
+### `decision-required` — 20 katalog kaydı
 
 Şu katalog aileleri için Final BOM sınıflandırması henüz ürün/üretim kararı bekler:
 
-- mobilya setleri / tekli-çiftli koltuk / sehpa / Eames sandalye / cam masa / bar taburesi
+- mobilya setleri / tekli-çiftli koltuk / sehpa / Eames sandalye / cam masa / bar masası / bar taburesi
 - yapay bitki / uzun saksılar
 - TV 42 / 55 / 65
 - Video Wall 2×2 / 3×3

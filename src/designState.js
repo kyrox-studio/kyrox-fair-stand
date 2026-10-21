@@ -550,8 +550,9 @@ export function createBaseModuleState(widthCmOrDescriptor) {
   return state;
 }
 
-function createFurnitureModuleState(type) {
-  const item = getFurnitureItemForType(type);
+function createFurnitureModuleState(type, itemKey = null) {
+  const explicit = itemKey ? getItem(itemKey) : null;
+  const item = explicit?.type === type ? explicit : getFurnitureItemForType(type);
   if (!item) return null;
   const state = {
     id: createId('module'),
@@ -597,8 +598,9 @@ export function createEamesChairModuleState() {
   return createFurnitureModuleState('chair');
 }
 
-export function createGlassTableModuleState() {
-  return createFurnitureModuleState('table-glass');
+// Cam masa ailesi: glass_table (74 cm) ve glass_bar_table (bar masası, 108 cm) aynı tür ve çizim.
+export function createGlassTableModuleState(descriptor = {}) {
+  return createFurnitureModuleState('table-glass', descriptor?.itemKey ?? 'glass_table');
 }
 
 export function createBarStoolModuleState() {
@@ -904,7 +906,7 @@ const MODULE_STATE_FACTORIES = Object.freeze({
   'coffee-table-classic': () => createCoffeeTableClassicModuleState(),
   'table-chair-set-eames': () => createEamesTableChairSetModuleState(),
   chair: () => createEamesChairModuleState(),
-  'table-glass': () => createGlassTableModuleState(),
+  'table-glass': (descriptor) => createGlassTableModuleState(descriptor),
   'bar-stool': () => createBarStoolModuleState(),
   'mini-fridge': () => createMiniFridgeModuleState(),
   kettle: () => createKettleModuleState(),
@@ -1119,7 +1121,10 @@ export function normalizeModuleItemState(moduleState) {
     || moduleState.type === 'bar-stool'
   ) {
     const resolvedKey = resolveItemKey(moduleState);
-    if (resolvedKey && getFurnitureItemForType(moduleState.type)?.itemKey === resolvedKey) {
+    const sameFamily = moduleState.type === 'table-glass'
+      ? getItem(resolvedKey)?.type === 'table-glass'
+      : getFurnitureItemForType(moduleState.type)?.itemKey === resolvedKey;
+    if (resolvedKey && sameFamily) {
       moduleState.itemKey = resolvedKey;
       const item = getItem(resolvedKey);
       if (Object.hasOwn(item, 'visualRotationYDeg') && !Object.hasOwn(moduleState, 'visualRotationYDeg')) {

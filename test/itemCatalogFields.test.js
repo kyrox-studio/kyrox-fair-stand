@@ -97,6 +97,7 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
       'extra_long_planter_200',
       'tulle_fabric',
       'brochure_stand',
+      'glass_bar_table',
     ]),
   }),
   Object.freeze({
@@ -154,7 +155,7 @@ test('mevcut katalog Item listesi ve grup sırası değişmemiştir', () => {
 
 test('106 Item katalog metadata alanlarını taşır ve canlı katalog üyeliğiyle birebir örtüşür', () => {
   const items = listRegisteredItems();
-  assert.equal(items.length, 126);
+  assert.equal(items.length, 127);
 
   let visibleCount = 0;
   let missingVisible = 0;

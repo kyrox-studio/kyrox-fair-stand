@@ -97,7 +97,7 @@ export function describeSurfaceSelection(surfaces, modules = []) {
     }
 
     if (moduleType === 'table-glass') {
-      const item = getFurnitureItemForType('table-glass');
+      const item = getItem(modules[moduleIndex]?.itemKey) ?? getFurnitureItemForType('table-glass');
       return result('Modül ' + (moduleIndex + 1) + ' · ' + item.name + ' · cam masa sabittir.');
     }
 

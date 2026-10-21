@@ -15,6 +15,10 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-22 — Bar masası (migration 0075)
+
+`glass_bar_table` "Bar Masası": cam masa ailesinin (`table-glass`) 108 cm ürünü; ayrı tür açılmadı. `0075_glass_bar_table` satırı `glass_table`'dan kopyalar (birim, maliyet bayrağı, önizleme, dönüş, yüzey bayrakları) ve Extra kategorisinin sonuna koyar. `createGlassTableModuleState(descriptor)` kartın `itemKey`'ini kullanır (varsayılan `glass_table`); açılışta aynı ailedeki anahtar korunur; `createGlassTableModule` ve seçim metni Item'ı modülden okur; ayak `heightM - 0.04` uzunluğundadır. Testler: `test/glassBarTable.test.js`, `backend/tests/modules/fair_stand/test_glass_bar_table_migration.py`.
+
 ## 2026-10-21 — Zemin ızgarası, tepeden ışık, 10 cm adım, ayaklı vitrin ve broşürlük; kopyada Shift+R
 
 **Izgara:** Stand zemininde 1 m kalın, 50 cm ince çizgi (`createStandFloorGrid`); yalnız stand alanında, seçim ışınına takılmaz. Yalnız yerleştirme önizlemesi (katalog, kopya, taşıma) görünürken çizilir, boşta gizli (`setStandFloorGridActive`, `syncPlacementGhostDom`). Yalnız görüntüdür; Render Al'a girmez.

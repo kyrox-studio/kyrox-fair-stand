@@ -8809,8 +8809,10 @@ function addProceduralGlassTable(group, tableItem) {
   top.receiveShadow = true;
   group.add(top);
 
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.70, 20), metalMaterial.clone());
-  stem.position.set(0, 0.37, 0);
+  // Ayak tabladan tablaya uzanır: 74 cm masada 0,70 m, 108 cm bar masasında 1,04 m.
+  const stemLengthM = heightM - 0.04;
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, stemLengthM, 20), metalMaterial.clone());
+  stem.position.set(0, 0.02 + stemLengthM / 2, 0);
   stem.castShadow = true;
   group.add(stem);
 
@@ -8823,7 +8825,7 @@ function addProceduralGlassTable(group, tableItem) {
 
 
 function createGlassTableModule(moduleState, moduleIndex) {
-  const item = getItem('glass_table');
+  const item = getItem(moduleState.itemKey ?? 'glass_table');
   const widthCm = Number(moduleState.widthCm || item.dimensions.widthCm);
   const depthCm = Number(moduleState.depthCm || item.dimensions.depthCm);
   const heightCm = Number(moduleState.heightCm || item.dimensions.heightCm);

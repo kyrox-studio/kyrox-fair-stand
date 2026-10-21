@@ -56,6 +56,7 @@
     "extra_long_planter_200",
     "tulle_fabric",
     "brochure_stand",
+    "glass_bar_table",
     "tv_42",
     "tv_55",
     "video_wall_2x2",
@@ -345,6 +346,11 @@
       "previewId": 30
     },
     {
+      "itemKey": "glass_bar_table",
+      "label": "Bar Masası",
+      "previewId": 11
+    },
+    {
       "itemKey": "tv_42",
       "label": "TV 42\"",
       "previewId": 26
@@ -464,7 +470,8 @@
         "extra_long_planter_150",
         "extra_long_planter_200",
         "tulle_fabric",
-        "brochure_stand"
+        "brochure_stand",
+        "glass_bar_table"
       ]
     },
     {
