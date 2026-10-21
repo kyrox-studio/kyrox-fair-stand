@@ -15,6 +15,22 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-21 — Zemin ızgarası, tepeden ışık, 10 cm adım, ayaklı vitrin ve broşürlük; kopyada Shift+R
+
+**Izgara:** Stand zemininde 1 m kalın, 50 cm ince çizgi (`createStandFloorGrid`); yalnız stand alanında, seçim ışınına takılmaz. Yalnız yerleştirme önizlemesi (katalog, kopya, taşıma) görünürken çizilir, boşta gizli (`setStandFloorGridActive`, `syncPlacementGhostDom`). Yalnız görüntüdür; Render Al'a girmez.
+
+**Ölçü katmanı:** Tek öğe seçiliyken zeminde taban alanı (turuncu kesikli) ve genişlik/derinlik/yükseklik etiketi (cm; seçim çerçevesinin kutusundan, çerçeve payı düşülür). Yerleştirme önizlemesi görünürken öğeden stand kenarlarına dört uzaklık çizgisi ve metre etiketi (kenara yaslı olan çizilmez). Etiketler DOM (`.scene-measure-label`), çizgiler `measure-overlay`; her çizilen karede güncellenir (`syncMeasureOverlay`), Render Al'a girmez.
+
+**Işık:** Ana yönsel ışık stand merkezine tepeden bakar, hafif öne/sağa eğik (`KEY_LIGHT_OFFSET`, `aimKeyLightAtStand`); gölge kamerası standı kapsar. Editörde gölge kapalı kalır, gölgeler "Render Al" çıktısındadır.
+
+**Adım:** Bütün öğe türlerinde taşıma adımı 10 cm (migration `0073_move_snap_10cm`; seed ve frontend varsayılanı da 10). Banko ve kısa duvarın dikey adımı da 10 cm olur.
+
+**Yeni öğeler (migration `0074_showcase_brochure`):** `floor_showcase_100` "Ayaklı Vitrin 100" (100 × 40, 70 cm gövde + 30 cm cam fanus) ve `brochure_stand` "Broşürlük" (30 × 30 × 150, 5 cep). Tekil Item, BOM 1 adet; serbest yerleşim, taban alanı çakışması. Vitrin gövdesinin ön/sol/sağ yüzü renk, görsel ve Lightbox alır (`faces.front/left/right`, `ensureFloorShowcaseFaces`; panel seçim modu). Prosedürel çizim `createFloorShowcaseModule`, `createBrochureStandModule` (ortak `createFreeItemShell`). Tanım: `docs/items/definitions/floor_showcase_100.md`, `brochure_stand.md`.
+
+**Hata:** Serbest öğe stand kenarına 50 cm'den yakınsa kenara (köşede iki kenara birden) çekiliyordu; sabit `MODULE_PLACEMENT_SNAP_CM` yerine tür adımı (10 cm) kullanılır (`createFreePlacement`, `test/standEdgeSnap.test.js`).
+
+**Hata:** Kopya/katalog yerleştirirken Shift+R seçili kalan asıl öğeyi de döndürüyordu. Yerleştirme dinleyicisi Shift+R'yi yakalama aşamasında tüketir (`moduleDragSidebar.js`, `stopImmediatePropagation`); sahne dinleyicisine ulaşmaz.
+
 ## 2026-10-21 — Dik bağlantı yalnız dikme olan noktaya
 
 Ürün kararı: tek duvarın ortasında dikme yoktur; dik duvar (kısa ya da tam boy) oraya bağlanamaz. Yerleşim (`collisionSegmentsOverlap`): iki ince duvar dik kesiştiğinde ikisinin de ucu birleşimdeyse (L ya da iki duvarın birleşim ucunda T) izin; yalnız birinin ucu diğerinin ortasındaysa çakışma, mesaj `MID_WALL_TEE_MESSAGE` "Dik bağlantı yalnız dikme olan noktaya yapılır.". Magnetic snap (`getSegmentSnapCoordinates`) yalnız hedefin uçlarını aday üretir; 50 cm'lik ara noktalar kalktı. Kayıtlı eski yerleşimler yerinde kalır; taşınınca yeni kurala uyar. Testler `test/modulePlacement.test.js` ürün kararına göre güncellendi.

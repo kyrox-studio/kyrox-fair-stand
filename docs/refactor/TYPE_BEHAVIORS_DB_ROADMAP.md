@@ -18,7 +18,7 @@ Kaynak: eskiden `TYPE_BEHAVIORS[item.type]`; kesit 1–3 alanları artık `fair_
 | Alan | Ne işe yarar | Değerler |
 |---|---|---|
 | `placement` | Modül sahneye nasıl oturur (duvar hattı / serbest / overlay / üst) | `wall` \| `free` \| `wall-overlay` \| `top` |
-| `moveSnapCm` | Sürüklerken XY ızgara adımı (cm); manyetik/top-rail değil | pratikte `50` / `10` / `20` |
+| `moveSnapCm` | Sürüklerken XY ızgara adımı (cm); manyetik/top-rail değil | 0073 sonrası bütün türlerde `10` |
 | `allowSideInsert` | Yanına başka modül sokulabilir mi | `true` \| `false` |
 | `collision` | Çarpışma gövdesi: şerit / taban / yok | `segment` \| `footprint` \| `none` |
 | `magneticSnap` | Manyetik hizalama stratejisi (ızgara değil) | `standard` \| `none` \| `short-up-joint` |
@@ -115,7 +115,7 @@ DB `CHECK` (veya Postgres enum) — JS string’leriyle **birebir aynı** kalsı
 | `boundary_snap` | `stand-edge`, `wall-inner-face` |
 | `wall_capacity` | `include`, `exclude` |
 | `collision_height` | `full` (şimdilik; genişlerse CHECK güncelle) |
-| `move_snap_cm` | `INTEGER CHECK (move_snap_cm > 0)` — pratik seed: 10 / 20 / 50 |
+| `move_snap_cm` | `INTEGER CHECK (move_snap_cm > 0)` — seed: 10 (0073 sonrası bütün türler) |
 | `allow_side_insert` | `BOOLEAN NOT NULL` |
 | `supports_wall_overlay_mount` | `BOOLEAN NOT NULL` |
 | `ghost_*` | `kind` örn. `silhouette`; `renderer` örn. `module-silhouette`; `opacity` 0–1 |

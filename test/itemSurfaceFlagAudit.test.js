@@ -33,6 +33,10 @@ function expectedFlags(item) {
   if (item.type === 'tulle-fabric') {
     return { isRender: true, color: true, image: false, lightbox: false, glass: false, mesh: false };
   }
+  if (item.type === 'floor-showcase') {
+    // Ayaklı vitrin gövdesinin ön/sol/sağ yüzü: renk, görsel, Lightbox.
+    return { isRender: true, color: true, image: true, lightbox: true, glass: false, mesh: false };
+  }
   if (item.type === 'box-block') {
     return { isRender: true, color: true, image: true, lightbox: true, glass: false, mesh: true };
   }
@@ -47,7 +51,7 @@ function expectedFlags(item) {
 
 test('every catalog item surface flag matches the scene audit', () => {
   const items = listRegisteredItems();
-  assert.equal(items.length, 124);
+  assert.equal(items.length, 126);
   for (const item of items) {
     const expected = expectedFlags(item);
     assert.deepEqual({

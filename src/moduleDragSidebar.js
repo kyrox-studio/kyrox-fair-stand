@@ -309,6 +309,8 @@ export function createModuleDragSidebar({
       && !event.altKey;
     if (!isShiftR) return;
     event.preventDefault();
+    // Yerleştirilen (katalog/kopya) önizleme Shift+R'yi tüketir; sahnedeki seçili öğe dönmez.
+    event.stopImmediatePropagation();
     const deltaDeg = resolveModuleRotationDeltaDeg(activeModuleState, -90);
     // Katalog sürükleme, mevcut modül sürükleme ve durağan seçim aynı dönüş politikasını paylaşır.
     // Geçerli önizleme geçersiz/kırmızı olsa bile istenen açıyı ilerletmeye devam et.
@@ -323,7 +325,7 @@ export function createModuleDragSidebar({
         rotationLocked,
       );
     }
-  });
+  }, { capture: true });
 
   function armPlacement(source) {
     if (!enabled || !canDrag() || !source) return false;

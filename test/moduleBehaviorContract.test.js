@@ -29,7 +29,7 @@ test('unknown module types remain distinguishable from declared catalog behavior
   assert.equal(hasExplicitModuleBehavior('__unknown-module-type__'), false);
   assert.deepEqual(getModuleBehavior('__unknown-module-type__'), {
     placement: 'wall',
-    moveSnapCm: 50,
+    moveSnapCm: 10,
     allowSideInsert: true,
     collision: 'segment',
     magneticSnap: 'standard',

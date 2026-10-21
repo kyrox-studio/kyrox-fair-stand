@@ -40,6 +40,9 @@ _COLOR_ONLY_TYPES = frozenset(
 
 _LEAF_COLOR_IMAGE_TYPES = frozenset({"door-leaf"})
 
+# Gövde yüzü renk + görsel + Lightbox alır; cam/mesh yok (ayaklı vitrin ön/sol/sağ yüz).
+_LIGHTBOX_FACE_TYPES = frozenset({"floor-showcase"})
+
 # Parent içinde çizilen parçalar. Katalog ve modül fabrikası yok.
 _EMBEDDED_RENDER_TYPES = frozenset(
     {
@@ -87,13 +90,14 @@ def surface_flags_for_item(item_key: str, item_type: str) -> dict[str, bool]:
         }
 
     cover = item_type in _PANEL_COVER_TYPES
-    image_color = item_type in _IMAGE_COLOR_TYPES
+    lightbox_face = item_type in _LIGHTBOX_FACE_TYPES
+    image_color = item_type in _IMAGE_COLOR_TYPES or lightbox_face
     color_only = item_type in _COLOR_ONLY_TYPES
     return {
         "is_render": True,
         "accepts_color": image_color or color_only,
         "accepts_image": image_color,
-        "accepts_lightbox": cover,
+        "accepts_lightbox": cover or lightbox_face,
         "accepts_glass": cover,
         "accepts_mesh": cover,
     }

@@ -17,11 +17,11 @@ from app.modules.fair_stand.infrastructure.seed_catalog import seed_fair_stand_c
 
 
 def test_behavior_slice1_matches_known_types():
-    assert behavior_slice1_for_type("flat-panel") == ("wall", "segment", 50)
+    assert behavior_slice1_for_type("flat-panel") == ("wall", "segment", 10)
     assert behavior_slice1_for_type("shelf") == ("wall-overlay", "none", 10)
-    assert behavior_slice1_for_type("led-floodlight") == ("top", "none", 20)
-    assert behavior_slice1_for_type("upright") == ("free", "footprint", 50)
-    assert behavior_slice1_for_type("unknown-type") == ("wall", "segment", 50)
+    assert behavior_slice1_for_type("led-floodlight") == ("top", "none", 10)
+    assert behavior_slice1_for_type("upright") == ("free", "footprint", 10)
+    assert behavior_slice1_for_type("unknown-type") == ("wall", "segment", 10)
 
 
 def test_seeded_item_types_match_type_behaviors_slice1(db_session):

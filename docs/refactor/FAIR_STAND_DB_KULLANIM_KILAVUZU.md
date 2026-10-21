@@ -72,8 +72,8 @@ Sahne davranışının büyük kısmı **Item tipi** (`fair_stand_item_type`) ve
 ┌─────────────────────────────────────────────────────────────────┐
 │  TİP DAVRANIŞI (fair_stand_item_type)                           │
 │  Aynı tipteki TÜM SKU’lar aynı paketi miras alır.                │
-│  Örn: placement=wall, move_snap_cm=50, magnetic_snap=standard   │
-│  → duvara mı oturur, sürüklerken 50 cm ızgara, manyetik joint   │
+│  Örn: placement=wall, move_snap_cm=10, magnetic_snap=standard   │
+│  → duvara mı oturur, sürüklerken 10 cm ızgara, manyetik joint   │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -87,7 +87,7 @@ Sahne davranışının büyük kısmı **Item tipi** (`fair_stand_item_type`) ve
 | Soru | Nereye bak |
 |---|---|
 | Modül duvara mı, zeminde mi, overlay mi? | Item **tipi** → `placement` |
-| Sürüklerken 10 / 20 / 50 cm adım? | Item **tipi** → `move_snap_cm` |
+| Sürüklerken kaç cm adım (bugün hepsi 10)? | Item **tipi** → `move_snap_cm` |
 | Short-up dikme birleşimi? | Item **tipi** → `magnetic_snap` = `short-up-joint` |
 | Projektör profile nasıl snap olur? | **Kural** `top-rail` + item `snap_requires` / host `snap_provides` veya kural↔tip link |
 | Çarpışma kutusu şerit mi taban mı? | Item **tipi** → `collision` |

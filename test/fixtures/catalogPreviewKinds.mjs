@@ -29,4 +29,6 @@ export const CATALOG_PREVIEW_KIND_FIXTURE = [
   { id: 26, displayName: 'TV', markup: '<div class="module-drag-tv"></div>', cssCode: '', sortIndex: 26, isActive: true },
   { id: 27, displayName: 'Dikme', markup: '<div class="module-drag-upright"></div>', cssCode: '', sortIndex: 27, isActive: true },
   { id: 28, displayName: 'Video wall', markup: '<div class="module-drag-tv is-video-wall" data-video-wall></div>', cssCode: '', sortIndex: 28, isActive: true },
+  { id: 29, displayName: 'Ayaklı vitrin', markup: '<div class="module-drag-floor-showcase"></div>', cssCode: '', sortIndex: 29, isActive: true },
+  { id: 30, displayName: 'Broşürlük', markup: '<div class="module-drag-brochure-stand"></div>', cssCode: '', sortIndex: 30, isActive: true },
 ].map((row) => ({ ...row, cssCode: CATALOG_PREVIEW_SILHOUETTE_CSS }));

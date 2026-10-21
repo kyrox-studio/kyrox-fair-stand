@@ -20,7 +20,7 @@ COLLISION_HEIGHT_VALUES = frozenset({"full"})
 
 DEFAULT_PLACEMENT = "wall"
 DEFAULT_COLLISION = "segment"
-DEFAULT_MOVE_SNAP_CM = 50
+DEFAULT_MOVE_SNAP_CM = 10
 DEFAULT_MAGNETIC_SNAP = "standard"
 DEFAULT_ALLOW_SIDE_INSERT = True
 DEFAULT_SUPPORTS_WALL_OVERLAY_MOUNT = True
@@ -40,15 +40,15 @@ NON_SCENE_ITEM_TYPE_KEYS = frozenset({"production"})
 
 # key → (placement, collision, move_snap_cm)
 TYPE_BEHAVIOR_SLICE1: dict[str, tuple[str, str, int]] = {
-    "flat-panel": ("wall", "segment", 50),
-    "showcase-3": ("wall", "segment", 50),
-    "showcase-2": ("wall", "segment", 50),
+    "flat-panel": ("wall", "segment", 10),
+    "showcase-3": ("wall", "segment", 10),
+    "showcase-2": ("wall", "segment", 10),
     "shelf": ("wall-overlay", "none", 10),
-    "door": ("wall", "segment", 50),
-    "base-wall": ("wall", "segment", 50),
-    "separator": ("wall", "segment", 50),
-    "counter": ("free", "footprint", 50),
-    "base": ("free", "footprint", 50),
+    "door": ("wall", "segment", 10),
+    "base-wall": ("wall", "segment", 10),
+    "separator": ("wall", "segment", 10),
+    "counter": ("free", "footprint", 10),
+    "base": ("free", "footprint", 10),
     "sofa-set-classic": ("free", "footprint", 10),
     "sofa-single-classic": ("free", "none", 10),
     "sofa-double-classic": ("free", "none", 10),
@@ -60,15 +60,17 @@ TYPE_BEHAVIOR_SLICE1: dict[str, tuple[str, str, int]] = {
     "mini-fridge": ("free", "none", 10),
     "kettle": ("free", "none", 10),
     "coat-rack": ("free", "none", 10),
+    "floor-showcase": ("free", "footprint", 10),
+    "brochure-stand": ("free", "footprint", 10),
     "plastic-trash-bin": ("free", "none", 10),
     "box-block": ("free", "none", 10),
-    "tulle-fabric": ("free", "none", 50),
-    "upright": ("free", "footprint", 50),
-    "profile": ("wall", "segment", 50),
+    "tulle-fabric": ("free", "none", 10),
+    "upright": ("free", "footprint", 10),
+    "profile": ("wall", "segment", 10),
     "indoor-plant-1": ("free", "footprint", 10),
     "illuminated-foam": ("wall-overlay", "none", 10),
     "tv": ("wall-overlay", "none", 10),
-    "led-floodlight": ("top", "none", 20),
+    "led-floodlight": ("top", "none", 10),
 }
 
 # key → (magnetic_snap, allow_side_insert, supports_wall_overlay_mount, wall_capacity)
@@ -93,6 +95,8 @@ TYPE_BEHAVIOR_SLICE2: dict[str, tuple[str, bool, bool, str]] = {
     "mini-fridge": ("none", True, False, "include"),
     "kettle": ("none", True, False, "include"),
     "coat-rack": ("none", True, False, "include"),
+    "floor-showcase": ("none", True, False, "include"),
+    "brochure-stand": ("none", True, False, "include"),
     "plastic-trash-bin": ("none", True, False, "include"),
     "box-block": ("none", True, False, "include"),
     "tulle-fabric": ("none", True, False, "include"),
@@ -164,6 +168,8 @@ TYPE_BEHAVIOR_SLICE3: dict[str, _Slice3] = {
     "mini-fridge": _s3(overlap=("kettle",)),
     "kettle": _s3(overlap=("mini-fridge",)),
     "coat-rack": _s3(),
+    "floor-showcase": _s3(),
+    "brochure-stand": _s3(),
     "plastic-trash-bin": _s3(),
     "box-block": _s3(),
     "tulle-fabric": _s3(),

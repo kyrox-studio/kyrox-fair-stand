@@ -28,6 +28,7 @@
     "shelf_row_1",
     "shelf_row_2",
     "shelf_row_3",
+    "floor_showcase_100",
     "desk_banko_200",
     "desk_banko_150",
     "desk_banko_100",
@@ -54,6 +55,7 @@
     "extra_long_planter_150",
     "extra_long_planter_200",
     "tulle_fabric",
+    "brochure_stand",
     "tv_42",
     "tv_55",
     "video_wall_2x2",
@@ -203,6 +205,11 @@
       "previewId": 20
     },
     {
+      "itemKey": "floor_showcase_100",
+      "label": "Ayaklı Vitrin 100",
+      "previewId": 29
+    },
+    {
       "itemKey": "desk_banko_200",
       "label": "Banko 200",
       "previewId": 7
@@ -333,6 +340,11 @@
       "previewId": 9
     },
     {
+      "itemKey": "brochure_stand",
+      "label": "Broşürlük",
+      "previewId": 30
+    },
+    {
       "itemKey": "tv_42",
       "label": "TV 42\"",
       "previewId": 26
@@ -410,7 +422,8 @@
         "wall_showcase_100_2_350",
         "shelf_row_1",
         "shelf_row_2",
-        "shelf_row_3"
+        "shelf_row_3",
+        "floor_showcase_100"
       ]
     },
     {
@@ -450,7 +463,8 @@
         "extra_long_planter_100",
         "extra_long_planter_150",
         "extra_long_planter_200",
-        "tulle_fabric"
+        "tulle_fabric",
+        "brochure_stand"
       ]
     },
     {

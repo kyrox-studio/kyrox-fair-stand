@@ -26,7 +26,7 @@ const EXPECTED_SELECT = [
 test('floor Items use existing floorType keys and stay off the module catalog', () => {
   const items = listFloorItems();
   assert.deepEqual(items.map((item) => item.itemKey), EXPECTED_SELECT.map(([key]) => key));
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 60);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 62);
 
   for (const [itemKey, selectLabel] of EXPECTED_SELECT) {
     const item = getFloorItem(itemKey);

@@ -18,9 +18,9 @@ Bu dosya insan/AI için **okunabilir katalog indeksi**dir. Runtime source-of-tru
 
 Bu snapshot `Version2` üzerindeki `MODULE_CATALOG_KEYS` ve `MODULE_CONTRACT_ASSIGNMENTS` ile eşleşmek zorundadır; `test/systemModuleCatalogDoc.test.js` drift olduğunda CI'yi kırar.
 
-- Catalog entries: **60**
+- Catalog entries: **62**
 - BOM mode `recipe`: **28**
-- BOM mode `self`: **13**
+- BOM mode `self`: **15**
 - BOM mode `decision-required`: **19**
 - Katalog dışı explicit runtime module: **1** (`illuminated-foam`)
 - Katalog dışı module BOM mode `decision-required`: **1**
@@ -60,6 +60,7 @@ Aşağıdaki blok test tarafından `MODULE_CATALOG_KEYS` ile **sıra dahil bireb
 - `shelf_row_1`
 - `shelf_row_2`
 - `shelf_row_3`
+- `floor_showcase_100`
 - `desk_banko_200`
 - `desk_banko_150`
 - `desk_banko_100`
@@ -86,6 +87,7 @@ Aşağıdaki blok test tarafından `MODULE_CATALOG_KEYS` ile **sıra dahil bireb
 - `extra_long_planter_150`
 - `extra_long_planter_200`
 - `tulle_fabric`
+- `brochure_stand`
 - `tv_42`
 - `tv_55`
 - `video_wall_2x2`
@@ -108,7 +110,7 @@ Bu bölüm navigasyon içindir; ölçü/recipe source-of-truth değildir.
 
 ### Raf & Vitrin
 
-`wall_showcase_100_3`, `wall_showcase_100_2`, `shelf_row_1`, `shelf_row_2`, `shelf_row_3`
+`wall_showcase_100_3`, `wall_showcase_100_2`, `shelf_row_1`, `shelf_row_2`, `shelf_row_3`, `floor_showcase_100`
 
 ### Banko & Baza
 
@@ -116,7 +118,7 @@ Bu bölüm navigasyon içindir; ölçü/recipe source-of-truth değildir.
 
 ### Mobilya / Depo / Bitki
 
-`furniture_sofa_set_classic`, `furniture_sofa_single_classic`, `furniture_sofa_double_classic`, `furniture_coffee_table_classic`, `furniture_table_chair_set_eames`, `chair_eames`, `glass_table`, `furniture_bar_stool_classic`, `mini_fridge_avanti`, `kettle`, `coat_rack`, `plastic_trash_bin`, `extra_indoor_plant_1`, `extra_long_planter_100`, `extra_long_planter_150`, `extra_long_planter_200`, `tulle_fabric`
+`furniture_sofa_set_classic`, `furniture_sofa_single_classic`, `furniture_sofa_double_classic`, `furniture_coffee_table_classic`, `furniture_table_chair_set_eames`, `chair_eames`, `glass_table`, `furniture_bar_stool_classic`, `mini_fridge_avanti`, `kettle`, `coat_rack`, `plastic_trash_bin`, `extra_indoor_plant_1`, `extra_long_planter_100`, `extra_long_planter_150`, `extra_long_planter_200`, `tulle_fabric`, `brochure_stand`
 
 ### Medya / Işık
 
@@ -128,9 +130,9 @@ Bu bölüm navigasyon içindir; ölçü/recipe source-of-truth değildir.
 
 Duvar/panel, separatör, vitrin, depo kapısı, düz/L banko ve baza ailelerinin contract'ı `recipe` modundadır. Gerçek recipe çözümü `src/moduleRecipes.js` tarafından yapılır ve contract testleri recipe-backed kayıtların gerçekten resolve olduğunu doğrular.
 
-### `self` — 12 katalog kaydı
+### `self` — 14 katalog kaydı
 
-`mini_fridge_avanti`, `kettle`, `coat_rack`, `plastic_trash_bin`, `box_block`, `upright_346_5`, `profile_190`, `profile_140_5`, `profile_91`, `profile_41_5` leaf/self BOM Item'dır. Canonical birim `adet`; `src/itemBom.js > resolveItemBom(itemKey)` aynı `itemKey` için `quantity=1` üretir. Child recipe yoktur. Parent duvar reçetelerindeki `upright_346_5 ×2` ve `profile_*` parent miktarları bu saha örneğinden ayrıdır.
+`mini_fridge_avanti`, `kettle`, `coat_rack`, `floor_showcase_100`, `brochure_stand`, `plastic_trash_bin`, `box_block`, `upright_346_5`, `profile_190`, `profile_140_5`, `profile_91`, `profile_41_5` leaf/self BOM Item'dır. Canonical birim `adet`; `src/itemBom.js > resolveItemBom(itemKey)` aynı `itemKey` için `quantity=1` üretir. Child recipe yoktur. Parent duvar reçetelerindeki `upright_346_5 ×2` ve `profile_*` parent miktarları bu saha örneğinden ayrıdır.
 
 ### `decision-required` — 19 katalog kaydı
 

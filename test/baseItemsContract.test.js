@@ -77,7 +77,7 @@ for (const itemKey of BASE_KEYS) {
 
     assert.equal(getModuleBehavior(state).placement, 'free');
     assert.equal(getModuleBehavior(state).connectionEndpoint, 'logical-fixture');
-    assert.equal(getModuleBehavior(state).moveSnapCm, 50);
+    assert.equal(getModuleBehavior(state).moveSnapCm, 10);
 
     const contract = resolveModuleContract(itemKey);
     assert.equal(contract.bom.mode, 'recipe');

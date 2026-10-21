@@ -53,7 +53,7 @@ test('led_floodlight: canonical identity, catalog and hydrate', () => {
   const behavior = getModuleBehavior(state);
   assert.equal(behavior.placement, 'top');
   assert.equal(behavior.wallCapacity, 'exclude');
-  assert.equal(behavior.moveSnapCm, 20);
+  assert.equal(behavior.moveSnapCm, 10);
   assert.equal(getModuleRotationStepDeg(state), 90);
 
   const contract = resolveModuleContract('led_floodlight');

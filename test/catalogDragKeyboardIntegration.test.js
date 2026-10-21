@@ -16,3 +16,9 @@ test('catalog drag uses only Shift+R and advances clockwise without validity gat
 test('catalog drag help text documents Shift+R clockwise rotation', () => {
   assert.match(source, /Shift\+R: saat yönünde döndür/);
 });
+
+test('placement Shift+R rotates only the ghost, never the selected scene module', () => {
+  // Kopya/katalog yerleştirmede seçili kalan asıl öğe dönmemeli (sahne dinleyicisine ulaşmaz).
+  assert.match(source, /event\.preventDefault\(\);\s*\/\/.*\s*event\.stopImmediatePropagation\(\);\s*const deltaDeg = resolveModuleRotationDeltaDeg/);
+  assert.match(source, /rotationLocked,\s*\);\s*\}\s*\}, \{ capture: true \}\);\s*function armPlacement/);
+});

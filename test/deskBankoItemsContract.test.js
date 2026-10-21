@@ -119,7 +119,7 @@ for (const itemKey of BANKO_KEYS) {
     assert.equal(byWidth.itemKey, itemKey);
 
     assert.equal(getModuleBehavior(state).placement, 'free');
-    assert.equal(getModuleBehavior(state).moveSnapCm, 50);
+    assert.equal(getModuleBehavior(state).moveSnapCm, 10);
     if (isL) {
       assert.equal(getModuleDefaultRotationDeg(state), 270);
       assert.equal(getModuleRotationStepDeg(state), 90);

@@ -21,6 +21,8 @@ PLACEABLE_ITEM_TYPES = frozenset(
         "mini-fridge",
         "kettle",
         "coat-rack",
+        "floor-showcase",
+        "brochure-stand",
         "upright",
         "profile",
         "plastic-trash-bin",

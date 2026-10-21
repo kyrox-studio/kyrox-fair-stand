@@ -83,7 +83,7 @@ for (const itemKey of WALL_KEYS) {
     assert.equal(byWidth.itemKey, itemKey);
 
     assert.equal(getModuleBehavior(state).placement, 'wall');
-    assert.equal(getModuleBehavior(state).moveSnapCm, 50);
+    assert.equal(getModuleBehavior(state).moveSnapCm, 10);
     assert.equal(getModuleRotationStepDeg(state), 90);
 
     const contract = resolveModuleContract(itemKey);
@@ -269,7 +269,7 @@ test('wall_200_short_2 skips floor collisions but keeps wall snap policy', () =>
 
   const behavior = getModuleBehavior(hanging);
   assert.equal(behavior.magneticSnap, 'standard');
-  assert.equal(behavior.moveSnapCm, 50);
+  assert.equal(behavior.moveSnapCm, 10);
   assert.equal(behavior.collision, 'segment');
   assert.equal(behavior.collisionHeight, 'full');
   assert.deepEqual(getModuleCollisionHeightRangeCm(hanging), { minCm: 250, maxCm: 350 });

@@ -76,7 +76,7 @@ test('production type is classification-only and the print items stay out of the
     assert.equal(getModuleBehavior('flat-panel').placement, 'wall');
     assert.equal(getModuleBehavior('profile').placement, 'wall');
     assert.equal(getModuleBehavior('floor').placement, 'wall');
-    assert.equal(getModuleBehavior({ type: 'flat-panel' }).moveSnapCm, 50);
+    assert.equal(getModuleBehavior({ type: 'flat-panel' }).moveSnapCm, 10);
 
     const catalogKeys = new Set(listCatalogItems().map((item) => item.itemKey));
     const floorKeys = new Set(listFloorItems().map((item) => item.itemKey));

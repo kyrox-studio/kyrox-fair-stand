@@ -25,6 +25,19 @@ test('help guide explains metal separator splitting, duplicate groups and placem
   const mouse = guideSection(page, 'Mouse Kontrolleri');
   await mouse.locator('summary').click();
   await expect(mouse).toContainText('Kopyadaki metal separatör kendi grubunu alır');
+  await expect(mouse).toContainText('Shift+R yalnız kopyayı döndürür');
+
+  const move = guideSection(page, 'Modül Taşıma, Döndürme ve Yerleşim');
+  await move.locator('summary').click();
+  await expect(move).toContainText('Bütün modüller 10 cm adımla hareket eder');
+  await expect(move).toContainText('1 m kalın, 50 cm ince çizgiler çıkar; bırakınca kaybolur');
+  await expect(move).toContainText('standın dört kenarına uzaklık');
+  await expect(move).toContainText('köşeye çekilmez');
+
+  const showcase = guideSection(page, 'Ayaklı Vitrin ve Broşürlük');
+  await showcase.locator('summary').click();
+  await expect(showcase).toContainText('ön, sol ve sağ yüzüne sağ tıkla renk, görsel ve Lightbox');
+  await expect(showcase).toContainText('Üretim listesine tek kalem, 1 adet');
 
   const foam = guideSection(page, 'Işıklı Strafor');
   await foam.locator('summary').click();

@@ -255,6 +255,8 @@ function requireRegistry() {
 
 const COMMERCIAL_TYPES = Object.freeze(new Set([
   'coat-rack',
+  'floor-showcase',
+  'brochure-stand',
   'kettle',
   'mini-fridge',
   'plastic-trash-bin',

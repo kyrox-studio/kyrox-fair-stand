@@ -20,10 +20,10 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     shelf_unit = next(item for item in body["items"] if item["itemKey"] == "shelf_100")
     assert "unitName" not in shelf_unit
     assert len(body["categories"]) == 6
-    assert len(body["items"]) == 127  # 0068: 5 yükseklik dikmesi; 0072: 3 raf tahtası + 3 kart + 6 sıralı raf
+    assert len(body["items"]) == 129  # 0068: 5 yükseklik dikmesi; 0072: 3 raf tahtası + 3 kart + 6 sıralı raf; 0074: vitrin + broşürlük
     visible = [item for item in body["items"] if item["catalogVisible"] is True]
     hidden = [item for item in body["items"] if item["catalogVisible"] is not True]
-    assert len(visible) == 60
+    assert len(visible) == 62
     assert len(hidden) == 67  # 0068: 5 gizli dikme; 0072: 3 tekli raf gizlenir, 3 tahta + 6 sıralı raf gizli
     shelf = next(item for item in body["items"] if item["itemKey"] == "shelf_100")
     assert shelf["categoryId"] == 3
@@ -69,7 +69,7 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     behavior = next(row for row in body["itemTypes"] if row["key"] == "tulle-fabric")
     assert behavior["placement"] == "free"
     assert behavior["collision"] == "none"
-    assert behavior["moveSnapCm"] == 50
+    assert behavior["moveSnapCm"] == 10
     sofa = next(item for item in body["items"] if item["itemKey"] == "furniture_sofa_single_classic")
     assert sofa["modelFile"] == "bej_koltuk_1_ciftli_2_tekli.glb"
     tv = next(item for item in body["items"] if item["type"] == "tv")
@@ -112,7 +112,7 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     assert all("innerCorner" not in item.get("composition", {}) for item in body["items"])
     assert "FairStandItemModel" not in body
     assert "SQLAlchemy" not in body
-    assert len(body["previewKinds"]) == 28
+    assert len(body["previewKinds"]) == 30
     assert body["standDimensions"] == {
         "heightCm": 350.0,
         "depthCm": 10.0,
