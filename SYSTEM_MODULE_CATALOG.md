@@ -57,9 +57,9 @@ Aşağıdaki blok test tarafından `MODULE_CATALOG_KEYS` ile **sıra dahil bireb
 - `box_block`
 - `wall_showcase_100_3_350`
 - `wall_showcase_100_2_350`
-- `shelf_100`
-- `shelf_150`
-- `shelf_200`
+- `shelf_row_1`
+- `shelf_row_2`
+- `shelf_row_3`
 - `desk_banko_200`
 - `desk_banko_150`
 - `desk_banko_100`
@@ -108,7 +108,7 @@ Bu bölüm navigasyon içindir; ölçü/recipe source-of-truth değildir.
 
 ### Raf & Vitrin
 
-`wall_showcase_100_3`, `wall_showcase_100_2`, `shelf_100`, `shelf_150`, `shelf_200`
+`wall_showcase_100_3`, `wall_showcase_100_2`, `shelf_row_1`, `shelf_row_2`, `shelf_row_3`
 
 ### Banko & Baza
 
@@ -130,7 +130,7 @@ Duvar/panel, separatör, vitrin, depo kapısı, düz/L banko ve baza ailelerinin
 
 ### `self` — 12 katalog kaydı
 
-`mini_fridge_avanti`, `kettle`, `coat_rack`, `plastic_trash_bin`, `box_block`, `upright_346_5`, `profile_190`, `profile_140_5`, `profile_91`, `profile_41_5`, `shelf_100`, `shelf_150`, `shelf_200` leaf/self BOM Item'dır. Canonical birim `adet`; `src/itemBom.js > resolveItemBom(itemKey)` aynı `itemKey` için `quantity=1` üretir. Child recipe yoktur. Parent duvar reçetelerindeki `upright_346_5 ×2` ve `profile_*` parent miktarları bu saha örneğinden ayrıdır.
+`mini_fridge_avanti`, `kettle`, `coat_rack`, `plastic_trash_bin`, `box_block`, `upright_346_5`, `profile_190`, `profile_140_5`, `profile_91`, `profile_41_5` leaf/self BOM Item'dır. Canonical birim `adet`; `src/itemBom.js > resolveItemBom(itemKey)` aynı `itemKey` için `quantity=1` üretir. Child recipe yoktur. Parent duvar reçetelerindeki `upright_346_5 ×2` ve `profile_*` parent miktarları bu saha örneğinden ayrıdır.
 
 ### `decision-required` — 19 katalog kaydı
 
@@ -158,3 +158,7 @@ Yeni katalog modülü veya katalog kimliği değişikliği yapıldığında:
 3. bu dokümandaki katalog anahtarı snapshot'ı güncellenir;
 4. `npm test` içindeki `systemModuleCatalogDoc` regresyonu snapshot ile runtime katalog arasında drift olmadığını doğrular;
 5. full test + build yeşil olmadan değişiklik tamamlanmış sayılmaz.
+
+### Raf aile kartları ve üretim ürünleri (0072)
+
+`shelf_row_1`, `shelf_row_2`, `shelf_row_3` katalog aile kartlarıdır; kendi başlarına üretim ürünü olarak sahneye kaydedilmezler. `fair_stand_item_width_variants` eşlemesi hedef duvar genişliğinden `shelf_W` veya `shelf_row_n_W` ürününü seçer. Üretim ürünleri recipe BOM kullanır: sıralı raf → tekli raf × sıra adedi → tahta + ayaklar. Kartın governance BOM profilini gerçek üretim reçetesi olarak kullanma. Tahta sahne ölçüleri `sceneDimensions ?? dimensions`; BOM fiziksel/reçete kaynağını korur.

@@ -16,7 +16,7 @@ test('canonical state construction registry instantiates every catalog entry', (
     const state = createModuleStateFromDescriptor(descriptor);
     assert.ok(state, `${itemKey} must resolve to a runtime module state`);
     assert.equal(state.type, getItem(itemKey).type, `${itemKey} type must come from Item`);
-    assert.equal(state.itemKey, itemKey, `${itemKey} identity must be attached automatically by the canonical constructor`);
+    assert.equal(state.itemKey, getItem(itemKey).widthVariants?.[0] ?? itemKey, `${itemKey} kanonik ürün kimliğine çözülmeli`);
     assert.equal(Object.hasOwn(state, 'catalogKey'), false, `${itemKey} must not write a second product identity`);
   }
 });

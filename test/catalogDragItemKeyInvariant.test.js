@@ -1,3 +1,4 @@
+import { getItem } from '../src/items.js';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,7 +9,7 @@ import {
   hasCanonicalModuleItemKey,
 } from '../src/designState.js';
 
-const SHELF_KEYS = Object.freeze(['shelf_100', 'shelf_150', 'shelf_200']);
+const SHELF_KEYS = Object.freeze(['shelf_row_1', 'shelf_row_2', 'shelf_row_3']);
 const MAIN_SOURCE = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 const SIDEBAR_SOURCE = readFileSync(new URL('../src/moduleDragSidebar.js', import.meta.url), 'utf8');
 
@@ -20,8 +21,8 @@ test('catalog-visible Item drag state keeps canonical itemKey from Item master',
     const fromKey = createModuleStateFromCatalogKey(catalogItem.itemKey);
     assert.ok(fromDto, catalogItem.itemKey);
     assert.ok(fromKey, catalogItem.itemKey);
-    assert.equal(fromDto.itemKey, catalogItem.itemKey);
-    assert.equal(fromKey.itemKey, catalogItem.itemKey);
+    assert.equal(fromDto.itemKey, getItem(catalogItem.itemKey).widthVariants?.[0] ?? catalogItem.itemKey);
+    assert.equal(fromKey.itemKey, fromDto.itemKey);
     assert.equal(fromDto.type, fromKey.type);
     assert.equal(hasCanonicalModuleItemKey(fromDto), true, catalogItem.itemKey);
     assert.equal(hasCanonicalModuleItemKey(fromKey), true, catalogItem.itemKey);
@@ -33,7 +34,7 @@ test('shelf_100/150/200 catalog card → drag state itemKey is exact and width/t
     const catalog = getCatalogItem(itemKey);
     const state = createModuleStateFromCatalogKey(itemKey);
     assert.equal(catalog.itemKey, itemKey);
-    assert.equal(state.itemKey, itemKey);
+    assert.equal(state.itemKey, getItem(itemKey).widthVariants[0]);
     assert.equal(state.type, 'shelf');
     assert.equal(hasCanonicalModuleItemKey(state), true);
   }
@@ -54,7 +55,7 @@ test('drop commit rehydrates from catalog key and does not keep a shelf without 
   assert.match(MAIN_SOURCE, /currentModules = previousModules/);
   // Kart kodu kontrolü sürüyor; duvar yüksekliğine çevrilmiş kod (wall_100_300) ana koduyla (wall_100_350) karşılaştırılır.
   assert.match(SIDEBAR_SOURCE, /const stateCatalogKey = getItem\(state\?\.itemKey\)\?\.wallHeightBaseItemKey \?\? state\?\.itemKey;/);
-  assert.match(SIDEBAR_SOURCE, /if \(!state \|\| stateCatalogKey !== moduleKey\)/);
+  assert.ok(SIDEBAR_SOURCE.includes('widthVariants?.includes(state.itemKey)'));
   assert.match(SIDEBAR_SOURCE, /catalogKey = activeCard\?\.dataset\.moduleKey \?\? state\?\.itemKey/);
   assert.match(SIDEBAR_SOURCE, /onDrop\?\.\(state, event\.clientX, event\.clientY, rotationZDeg, isRotationLocked, catalogKey\)/);
 });

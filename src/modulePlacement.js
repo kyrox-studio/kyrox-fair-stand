@@ -1,5 +1,5 @@
 import { STAND_DIMENSIONS, getStandDimensions } from './standDimensions.js';
-import { getItem, isWallShortFamilyDescriptor, resolveItemDefaultZCm, resolveSceneDimensions } from './items.js';
+import { getItem, getWidthVariantFamily, resolveWidthVariantItemKey, resolveShelfRows, isWallShortFamilyDescriptor, resolveItemDefaultZCm, resolveSceneDimensions } from './items.js';
 import {
   allowsThinWallEndpointContact,
   canModulesOverlapByBehavior,
@@ -282,10 +282,17 @@ export function overlayZCmFromSeamHeight(seamHeightCm, panelThicknessCm) {
   return Number(seamHeightCm) + Number(panelThicknessCm) / 2 - WALL_OVERLAY_DEFAULT_CENTER_CM;
 }
 
+// Overlay'in alt kenarı birleşime oturur; tamamı (çok sıralı rafta üst tahta dahil) duvarın içinde kalmalı.
+function seamsFittingOverlayHeight(validSeams, occupancyRange, heightCm) {
+  const maxCm = Number(occupancyRange?.maxCm);
+  if (!Number.isFinite(maxCm)) return validSeams;
+  return validSeams.filter((seam) => seam + Number(heightCm) <= maxCm + EPSILON_CM);
+}
+
 export function listInternalSeamsInOccupancyRange(occupancyRange, hostModule = null) {
   const minCm = Number(occupancyRange?.minCm);
   const maxCm = Number(occupancyRange?.maxCm);
-  if (hostModule?.strips?.length > 1) {
+  if (Array.isArray(hostModule?.strips)) {
     return listFlatPanelModuleSeamHeightsCm(hostModule, { minCm, maxCm });
   }
   const pitchCm = WALL_PANEL_BAND_PITCH_CM;
@@ -379,15 +386,49 @@ function overlayPlacementFromPointer(moduleState, wallPoint) {
   });
 }
 
+function shelfBoardHeightRanges(moduleState, placement) {
+  const item = getItem(moduleState?.itemKey);
+  const rows = resolveShelfRows(item);
+  if (!rows) return [];
+  const thickness = Number(resolveSceneDimensions(rows.rowItem).heightCm);
+  const height = rows.count === 1 ? thickness : Number(resolveSceneDimensions(item).heightCm);
+  const pitch = rows.count > 1 ? (height - thickness) / (rows.count - 1) : 0;
+  const bottom = Number(placement.zCm || 0) + WALL_OVERLAY_DEFAULT_CENTER_CM - height / 2;
+  return Array.from({ length: rows.count }, (_, index) => ({
+    minCm: bottom + index * pitch, maxCm: bottom + index * pitch + thickness,
+  }));
+}
+
+function overlapsPlacedShelf(moduleState, placement, modules) {
+  const span = getPlacementInterval(placement, moduleState.widthCm);
+  if (!span) return false;
+  const rows = shelfBoardHeightRanges(moduleState, placement);
+  return modules.some((other) => {
+    if (other.id === moduleState.id || other.type !== 'shelf' || !other.placement) return false;
+    if (normalizeModuleRotationZDeg(other.placement.rotationZDeg) !== normalizeModuleRotationZDeg(placement.rotationZDeg)) return false;
+    const otherSpan = getPlacementInterval(other.placement, other.widthCm);
+    if (!otherSpan || otherSpan.axis !== span.axis) return false;
+    const crossField = span.axis === 'x' ? 'yCm' : 'xCm';
+    if (Math.abs(Number(other.placement[crossField]) - Number(placement[crossField])) > EPSILON_CM) return false;
+    if (Math.min(span.endCm, otherSpan.endCm) - Math.max(span.startCm, otherSpan.startCm) <= EPSILON_CM) return false;
+    const occupiedRows = shelfBoardHeightRanges(other, other.placement);
+    return rows.some((row) => occupiedRows.some((occupied) => (
+      Math.min(row.maxCm, occupied.maxCm) - Math.max(row.minCm, occupied.minCm) > EPSILON_CM
+    )));
+  });
+}
+
 export function snapPanelSeamOverlayPlacement({
   moduleState,
   wallPoint,
   modules = [],
 } = {}) {
-  const widthCm = Number(moduleState?.widthCm);
-  const heightCm = Number(moduleState?.heightCm);
+  let widthCm = Number(moduleState?.widthCm);
+  let heightCm = Number(moduleState?.heightCm);
+  const family = getWidthVariantFamily(moduleState?.itemKey);
+  let resolvedModuleState = moduleState;
   const hitHeightCm = Number(wallPoint?.absoluteHeightCm);
-  const fallback = overlayPlacementFromPointer(moduleState, wallPoint);
+  let fallback = overlayPlacementFromPointer(moduleState, wallPoint);
   const invalidMessage = 'Rafı iki panel arasındaki birleşime bırak.';
   const missingHostMessage = 'Rafı sığdığı duvar veya panel üzerine bırak.';
 
@@ -403,7 +444,7 @@ export function snapPanelSeamOverlayPlacement({
 
   const hosts = listFittingWallCapacityHosts({
     modules,
-    widthCm,
+    widthCm: family ? EPSILON_CM : widthCm,
     wallId: wallPoint.wallId,
     supportModuleId: wallPoint.supportModuleId ?? null,
   });
@@ -418,13 +459,28 @@ export function snapPanelSeamOverlayPlacement({
     }
   }
 
+  if (family && target) {
+    const itemKey = resolveWidthVariantItemKey(family, target.widthCm);
+    if (!itemKey) {
+      return { ok: false, placement: fallback, seamHeightCm: null, message: 'Bu duvar genişliğine uygun raf yok.' };
+    }
+    const dimensions = resolveSceneDimensions(getItem(itemKey));
+    resolvedModuleState = { ...moduleState, itemKey, ...dimensions };
+    widthCm = Number(resolvedModuleState.widthCm);
+    heightCm = Number(resolvedModuleState.heightCm);
+    fallback = overlayPlacementFromPointer(resolvedModuleState, wallPoint);
+  }
   const clamped = target ? clampPlacementToHost(fallback, widthCm, target) : null;
   if (!target?.placement || !clamped) {
     return { ok: false, placement: fallback, seamHeightCm: null, message: missingHostMessage };
   }
 
   const occupancyRange = getModuleCollisionHeightRangeCm(target);
-  const validSeams = listInternalSeamsInOccupancyRange(occupancyRange, target);
+  const validSeams = seamsFittingOverlayHeight(
+    listInternalSeamsInOccupancyRange(occupancyRange, target),
+    occupancyRange,
+    heightCm,
+  );
 
   let seamHeightCm = null;
   let seamDistanceCm = Number.POSITIVE_INFINITY;
@@ -454,11 +510,13 @@ export function snapPanelSeamOverlayPlacement({
         : overlayZCmFromSeamHeight(validSeams[0] ?? 0, heightCm)),
   });
 
+  const occupied = snapped && overlapsPlacedShelf(resolvedModuleState, placement, modules);
   return {
-    ok: snapped,
+    ok: snapped && !occupied,
+    resolvedModuleState,
     placement,
     seamHeightCm: snapped ? seamHeightCm : null,
-    message: snapped ? null : invalidMessage,
+    message: occupied ? 'Bu panel birleşiminde zaten raf var.' : (snapped ? null : invalidMessage),
   };
 }
 
@@ -489,14 +547,20 @@ export function stepPanelSeamOverlayPlacement({
     const maxStart = hostInterval.endCm - widthCm;
     const nextStart = clamp(interval.startCm + Number(horizontalDeltaCm), hostInterval.startCm, maxStart);
     if (!Number.isFinite(nextStart) || nearlyEqual(nextStart, interval.startCm)) return null;
-    return createModulePlacement({
+    const next = createModulePlacement({
       ...placement,
       xCm: interval.axis === 'x' ? nextStart : placement.xCm,
       yCm: interval.axis === 'y' ? nextStart : placement.yCm,
     });
+    return overlapsPlacedShelf(moduleState, next, modules) ? null : next;
   }
 
-  const validSeams = listInternalSeamsInOccupancyRange(getModuleCollisionHeightRangeCm(target), target);
+  const targetRange = getModuleCollisionHeightRangeCm(target);
+  const validSeams = seamsFittingOverlayHeight(
+    listInternalSeamsInOccupancyRange(targetRange, target),
+    targetRange,
+    heightCm,
+  );
   if (!validSeams.length) return null;
 
   const currentBottomCm = Number(placement.zCm) + WALL_OVERLAY_DEFAULT_CENTER_CM - heightCm / 2;
@@ -511,10 +575,11 @@ export function stepPanelSeamOverlayPlacement({
   const nextIndex = index + Number(seamDelta);
   if (nextIndex < 0 || nextIndex >= validSeams.length) return null;
 
-  return createModulePlacement({
+  const next = createModulePlacement({
     ...placement,
     zCm: overlayZCmFromSeamHeight(validSeams[nextIndex], heightCm),
   });
+  return overlapsPlacedShelf(moduleState, next, modules) ? null : next;
 }
 
 export function getModulePlacementSnapCm(moduleType) {

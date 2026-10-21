@@ -20,17 +20,34 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     shelf_unit = next(item for item in body["items"] if item["itemKey"] == "shelf_100")
     assert "unitName" not in shelf_unit
     assert len(body["categories"]) == 6
-    assert len(body["items"]) == 115  # 0068: 5 yükseklik dikmesi
+    assert len(body["items"]) == 127  # 0068: 5 yükseklik dikmesi; 0072: 3 raf tahtası + 3 kart + 6 sıralı raf
     visible = [item for item in body["items"] if item["catalogVisible"] is True]
     hidden = [item for item in body["items"] if item["catalogVisible"] is not True]
     assert len(visible) == 60
-    assert len(hidden) == 55  # 0068: 5 gizli dikme
+    assert len(hidden) == 67  # 0068: 5 gizli dikme; 0072: 3 tekli raf gizlenir, 3 tahta + 6 sıralı raf gizli
     shelf = next(item for item in body["items"] if item["itemKey"] == "shelf_100")
     assert shelf["categoryId"] == 3
     assert "catalogCategory" not in shelf
     assert all("catalogKey" not in category for category in body["categories"])
     assert all(isinstance(category["id"], int) for category in body["categories"])
     assert shelf["previewId"] == 20
+    # 0072: tekli raf katalogdan çıkar, kartın varyantıdır; reçetesi tahta + ayak.
+    assert shelf["catalogVisible"] is False
+    assert shelf["composition"] == {
+        "mode": "recipe",
+        "items": [{"itemKey": "shelf_100_self", "quantity": 1}, {"itemKey": "shelf_leg", "quantity": 2}],
+    }
+    cards = {item["itemKey"]: item for item in body["items"] if item["itemKey"].startswith("shelf_row_") and item.get("widthVariants")}
+    assert {key: (card["name"], card["catalogVisible"], card["widthVariants"]) for key, card in cards.items()} == {
+        "shelf_row_1": ("Tekli raf", True, ["shelf_100", "shelf_150", "shelf_200"]),
+        "shelf_row_2": ("2 sıralı raf", True, ["shelf_row_2_100", "shelf_row_2_150", "shelf_row_2_200"]),
+        "shelf_row_3": ("3 sıralı raf", True, ["shelf_row_3_100", "shelf_row_3_150", "shelf_row_3_200"]),
+    }
+    two_row_150 = next(item for item in body["items"] if item["itemKey"] == "shelf_row_2_150")
+    assert two_row_150["catalogVisible"] is False
+    assert two_row_150["composition"] == {"mode": "recipe", "items": [{"itemKey": "shelf_150", "quantity": 2}]}
+    assert two_row_150["dimensions"]["widthCm"] == 150
+    assert two_row_150["sceneDimensions"]["heightCm"] == 51.8
     assert "catalogPreview" not in shelf
     chair = next(item for item in body["items"] if item["itemKey"] == "chair_eames")
     assert chair["modelFile"] == "eames_chair.glb"

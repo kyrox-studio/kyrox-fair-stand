@@ -169,6 +169,11 @@ def map_item(row) -> ItemAggregate:
             ]
         payload["composition"] = composition
 
+    # 0072: katalog kartı (aile) → duvar genişliğine göre çözülen ürünler.
+    width_variants = sorted(variant.item_key for variant in (row.width_variants or []))
+    if width_variants:
+        payload["widthVariants"] = width_variants
+
     assembly_rows = sorted(
         row.assembly_parts or [],
         key=lambda part: (part.child_item_key, int(part.instance_index)),

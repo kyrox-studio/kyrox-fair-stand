@@ -36,6 +36,7 @@ import {
   getProceduralFrameCrossSectionM,
   resolveRecipePanelThicknessCm,
   resolveSceneDimensions,
+  resolveShelfRows,
 } from './items.js';
 import {
   buildLiveAssemblyParts,
@@ -3276,7 +3277,7 @@ export function createStandScene(
       wallPoint,
       modules: getRenderedModuleStates(),
     });
-    showPlacementGhost(moduleState, snapped.placement, snapped.ok);
+    showPlacementGhost(snapped.resolvedModuleState ?? moduleState, snapped.placement, snapped.ok);
     if (snapped.ok) clearPlacementFeedback();
     else {
       showPlacementFeedback(snapped.message ?? 'Rafı iki panel arasındaki birleşime bırak.', {
@@ -3287,6 +3288,7 @@ export function createStandScene(
 
     return {
       ok: snapped.ok,
+      resolvedModuleState: snapped.resolvedModuleState,
       placement: { ...snapped.placement },
       message: snapped.message ?? null,
       plan: {
@@ -3564,6 +3566,7 @@ export function createStandScene(
       rotationLocked,
     );
     disposePlacementGhost();
+    if (result.ok && result.resolvedModuleState) Object.assign(moduleState, result.resolvedModuleState);
     if (result.ok) clearPlacementFeedback();
     else showPlacementFeedback(result.message ?? 'Bu konuma modül yerleştirilemez.', {
       clientX,
@@ -3630,6 +3633,7 @@ export function createStandScene(
         }
         dragSession.preview = {
           placement: result.placement,
+          resolvedModuleState: result.resolvedModuleState,
           valid: result.ok,
           message: result.message ?? null,
           plan: result.plan,
@@ -4117,6 +4121,17 @@ export function createStandScene(
         const moduleState = moduleGroup?.userData?.moduleState;
         if (!moduleGroup || !moduleState) return;
 
+        if (moduleId === session.moduleState.id && preview.resolvedModuleState
+          && moduleState.itemKey !== preview.resolvedModuleState.itemKey) {
+          Object.assign(moduleState, preview.resolvedModuleState);
+          const replacement = createShelfModule(moduleState, moduleGroup.userData.moduleIndex);
+          surfaceMeshes = surfaceMeshes.filter((surface) => surface.userData?.moduleId !== moduleId);
+          disposeObject(moduleGroup);
+          moduleGroup.clear();
+          moduleGroup.add(...replacement.group.children.slice());
+          Object.assign(moduleGroup.userData, replacement.group.userData);
+          surfaceMeshes.push(...replacement.surfaces);
+        }
         moduleState.placement = { ...placement };
         moduleGroup.userData.placement = { ...placement };
         applyPlacementToGroup(moduleGroup, placement, moduleState.widthCm);
@@ -9366,17 +9381,27 @@ function createLCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   return {group,surfaces};
 }
 
-function createShelfModule(moduleState, moduleIndex) {
+export function createShelfModule(moduleState, moduleIndex) {
   const item = getItem(moduleState.itemKey);
   if (!item || item.type !== 'shelf') {
     throw new TypeError(`Missing canonical shelf Item for ${moduleState.itemKey}.`);
   }
 
   const widthM = Number(moduleState.widthCm) / 100;
-  const depthM = Number(item.dimensions.depthCm) / 100;
-  const thicknessM = Number(item.dimensions.heightCm) / 100;
+  const { count, rowItem } = resolveShelfRows(item);
+  const rowDimensions = resolveSceneDimensions(rowItem);
+  const itemDimensions = resolveSceneDimensions(item);
+  const depthM = Number(rowDimensions.depthCm) / 100;
+  const thicknessM = Number(rowDimensions.heightCm) / 100;
+  const heightM = count === 1 ? thicknessM : Number(itemDimensions.heightCm) / 100;
+  // Toplam yükseklik ve tek raf kalınlığı kanonik Item ölçüleridir.
+  const rowPitchM = count > 1 ? (heightM - thicknessM) / (count - 1) : 0;
   if (![widthM, depthM, thicknessM].every(Number.isFinite) || widthM <= 0 || depthM <= 0 || thicknessM <= 0) {
     throw new TypeError(`Missing canonical shelf dimensions for ${item.itemKey}.`);
+  }
+  if (!Number.isFinite(heightM) || heightM < thicknessM
+    || (count > 1 && rowPitchM <= thicknessM)) {
+    throw new TypeError(`Missing canonical shelf row spacing for ${item.itemKey}.`);
   }
 
   const centerYM = WALL_OVERLAY_DEFAULT_CENTER_CM / 100;
@@ -9392,96 +9417,101 @@ function createShelfModule(moduleState, moduleIndex) {
     type: 'shelf',
     moduleType: 'shelf',
     widthCm: Number(moduleState.widthCm),
-    depthCm: Number(item.dimensions.depthCm),
-    heightCm: Number(item.dimensions.heightCm),
+    depthCm: depthM * 100,
+    heightCm: heightM * 100,
     shelfLightingOn,
   };
 
-  const shelf = new THREE.Mesh(
-    new THREE.BoxGeometry(widthM, thicknessM, depthM),
-    new THREE.MeshStandardMaterial({
-      color: item.defaultColor,
-      roughness: 0.78,
-      metalness: 0,
-    }),
-  );
-  shelf.position.set(0, centerYM, centerZM);
-  shelf.castShadow = true;
-  shelf.receiveShadow = true;
-  shelf.userData = {
-    kind: 'surface',
-    moduleType: 'shelf',
-    moduleIndex,
-    moduleId: moduleState.id,
-    selectionMode: 'module',
-    ...surfaceCapabilityUserData(moduleState.itemKey),
-  };
-  group.add(shelf);
-
-  const shelfBottomY = centerYM - thicknessM / 2;
-  const ledStripWidthM = Math.max(widthM - 0.04, 0.08);
-  const ledStripDepthM = 0.016;
-  const ledStripThicknessM = 0.006;
-  const ledCenterZM = wallFrontM + depthM * 0.78;
-
-  const ledStrip = new THREE.Mesh(
-    new THREE.BoxGeometry(ledStripWidthM, ledStripThicknessM, ledStripDepthM),
-    new THREE.MeshStandardMaterial({
-      color: 0xfff4df,
-      emissive: 0xffe3bd,
-      emissiveIntensity: 3.2,
-      roughness: 0.28,
-      metalness: 0,
-    }),
-  );
-  ledStrip.position.set(
-    0,
-    shelfBottomY - ledStripThicknessM / 2 - 0.001,
-    ledCenterZM,
-  );
-  ledStrip.visible = shelfLightingOn;
-  ledStrip.userData.kind = 'decoration';
-  ledStrip.userData.role = 'shelf-under-led-strip';
-  group.add(ledStrip);
-
-  const spotOffsets = [-widthM * 0.25, widthM * 0.25];
-  spotOffsets.forEach((spotX) => {
-    const spot = new THREE.SpotLight(
-      0xfff2dc,
-      14,
-      1.0,
-      0.68,
-      0.82,
-      1.6,
+  const surfaces = [];
+  for (let rowIndex = 0; rowIndex < count; rowIndex += 1) {
+    const rowCenterYM = centerYM - (heightM - thicknessM) / 2 + rowIndex * rowPitchM;
+    const shelf = new THREE.Mesh(
+      new THREE.BoxGeometry(widthM, thicknessM, depthM),
+      new THREE.MeshStandardMaterial({
+        color: item.defaultColor,
+        roughness: 0.78,
+        metalness: 0,
+      }),
     );
-    spot.position.set(
-      spotX,
-      shelfBottomY - 0.018,
-      wallFrontM + depthM * 0.76,
+    shelf.position.set(0, rowCenterYM, centerZM);
+    shelf.castShadow = true;
+    shelf.receiveShadow = true;
+    shelf.userData = {
+      kind: 'surface',
+      moduleType: 'shelf',
+      moduleIndex,
+      moduleId: moduleState.id,
+      selectionMode: 'module',
+      ...surfaceCapabilityUserData(moduleState.itemKey),
+    };
+    group.add(shelf);
+    surfaces.push(shelf);
+
+    const shelfBottomY = rowCenterYM - thicknessM / 2;
+    const ledStripWidthM = Math.max(widthM - 0.04, 0.08);
+    const ledStripDepthM = 0.016;
+    const ledStripThicknessM = 0.006;
+    const ledCenterZM = wallFrontM + depthM * 0.78;
+
+    const ledStrip = new THREE.Mesh(
+      new THREE.BoxGeometry(ledStripWidthM, ledStripThicknessM, ledStripDepthM),
+      new THREE.MeshStandardMaterial({
+        color: 0xfff4df,
+        emissive: 0xffe3bd,
+        emissiveIntensity: 3.2,
+        roughness: 0.28,
+        metalness: 0,
+      }),
     );
-    spot.target.position.set(
-      spotX,
-      Math.max(0.04, shelfBottomY - 0.58),
-      wallFrontM + depthM * 1.02,
+    ledStrip.position.set(
+      0,
+      shelfBottomY - ledStripThicknessM / 2 - 0.001,
+      ledCenterZM,
     );
-    spot.visible = shelfLightingOn;
-    spot.castShadow = false;
-    spot.layers.set(RENDER_ONLY_LIGHT_LAYER);
-    spot.userData.kind = 'decoration';
-    spot.userData.role = 'shelf-under-light';
-    group.add(spot, spot.target);
-  });
+    ledStrip.visible = shelfLightingOn;
+    ledStrip.userData.kind = 'decoration';
+    ledStrip.userData.role = 'shelf-under-led-strip';
+    group.add(ledStrip);
+
+    const spotOffsets = [-widthM * 0.25, widthM * 0.25];
+    spotOffsets.forEach((spotX) => {
+      const spot = new THREE.SpotLight(
+        0xfff2dc,
+        14,
+        1.0,
+        0.68,
+        0.82,
+        1.6,
+      );
+      spot.position.set(
+        spotX,
+        shelfBottomY - 0.018,
+        wallFrontM + depthM * 0.76,
+      );
+      spot.target.position.set(
+        spotX,
+        Math.max(0.04, shelfBottomY - 0.58),
+        wallFrontM + depthM * 1.02,
+      );
+      spot.visible = shelfLightingOn;
+      spot.castShadow = false;
+      spot.layers.set(RENDER_ONLY_LIGHT_LAYER);
+      spot.userData.kind = 'decoration';
+      spot.userData.role = 'shelf-under-light';
+      group.add(spot, spot.target);
+    });
+  }
 
   group.userData.selectionBounds = Object.freeze({
     widthM,
-    heightM: thicknessM,
+    heightM,
     depthM,
-    centerX: shelf.position.x,
-    centerY: shelf.position.y,
-    centerZ: shelf.position.z,
+    centerX: 0,
+    centerY: centerYM,
+    centerZ: centerZM,
   });
 
-  return { group, surfaces: [shelf] };
+  return { group, surfaces };
 }
 
 function createItemAssemblyModule(moduleState, moduleIndex, catalogItem) {

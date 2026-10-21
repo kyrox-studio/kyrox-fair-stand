@@ -204,7 +204,7 @@ export function createModuleDragSidebar({
     const state = createModuleState?.(module, moduleKey);
     // Duvar standın yüksekliğine çevrilir (wall_100_350 kartı → wall_100_300); ana kod kartla aynı olmalı.
     const stateCatalogKey = getItem(state?.itemKey)?.wallHeightBaseItemKey ?? state?.itemKey;
-    if (!state || stateCatalogKey !== moduleKey) return null;
+    if (!state || (stateCatalogKey !== moduleKey && !getItem(moduleKey)?.widthVariants?.includes(state.itemKey))) return null;
     return state;
   }
 

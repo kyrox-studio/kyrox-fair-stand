@@ -94,7 +94,7 @@ function resolveProvider(host, spec) {
 /** Host-local panel band seam heights (cm from host bottom). Recipe strips / pitch. */
 export function listVirtualShelfRailHeightsCm(host) {
   const fromStrips = listFlatPanelModuleSeamHeightsCm(host);
-  if (fromStrips.length) return fromStrips;
+  if (Array.isArray(host?.strips)) return fromStrips;
   const heightCm = hostHeightCm(host);
   const pitchCm = resolveModuleBandPitchCm(host);
   const stripCount = Math.max(1, Math.floor(heightCm / pitchCm));

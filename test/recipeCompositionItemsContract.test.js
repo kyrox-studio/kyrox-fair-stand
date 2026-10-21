@@ -8,6 +8,15 @@ function childTuples(entries) {
 }
 
 const EXPECTED_RECIPE_ITEMS = Object.freeze({
+  shelf_100: [['shelf_100_self', 1], ['shelf_leg', 2]],
+  shelf_150: [['shelf_150_self', 1], ['shelf_leg', 3]],
+  shelf_200: [['shelf_200_self', 1], ['shelf_leg', 3]],
+  shelf_row_2_100: [['shelf_100', 2]],
+  shelf_row_2_150: [['shelf_150', 2]],
+  shelf_row_2_200: [['shelf_200', 2]],
+  shelf_row_3_100: [['shelf_100', 3]],
+  shelf_row_3_150: [['shelf_150', 3]],
+  shelf_row_3_200: [['shelf_200', 3]],
   wall_door_100_350: [['profile_91', 1], ['upright_346_5', 2], ['panel_98', 3], ['connector_start', 2], ['connector_single', 5], ['door_leaf_100', 1]],
   base_100: [['profile_91', 4], ['profile_41_5', 4], ['upright_49_5', 4], ['panel_98', 2], ['panel_48_5', 2], ['connector_start', 8], ['connector_single', 8], ['base_top_107_50', 1]],
   base_150: [['profile_140_5', 4], ['profile_41_5', 4], ['upright_49_5', 4], ['panel_147_5', 2], ['panel_48_5', 2], ['connector_start', 8], ['connector_single', 8], ['base_top_157_50', 1]],
@@ -41,7 +50,7 @@ const EXPECTED_RECIPE_ITEMS = Object.freeze({
 
 test('recipe parents keep composition.items equal to the proven former recipe copy', () => {
   const parents = listRegisteredItems().filter((item) => item.composition?.mode === 'recipe');
-  assert.equal(parents.length, 28);
+  assert.equal(parents.length, 37);
   assert.deepEqual(parents.map((item) => item.itemKey).sort(), Object.keys(EXPECTED_RECIPE_ITEMS).sort());
 
   for (const item of parents) {
@@ -63,7 +72,7 @@ test('cluster parents keep composition.items without recipe mode', () => {
   );
   assert.deepEqual(
     clusters.map((item) => item.itemKey).sort(),
-    ['furniture_sofa_set_classic', 'furniture_table_chair_set_eames'],
+    ['furniture_sofa_set_classic', 'furniture_table_chair_set_eames', 'shelf_100_self', 'shelf_150_self', 'shelf_200_self'],
   );
   for (const item of clusters) {
     assert.equal(item.composition.innerCorner, undefined, item.itemKey);

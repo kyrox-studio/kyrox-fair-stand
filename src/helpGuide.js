@@ -240,6 +240,8 @@ function listGuideSections() {
   {
     title: 'Raf Aydınlatması',
     html: `
+      <p><strong>Raf &amp; Vitrin</strong> kataloğunda <strong>Tekli raf</strong>, <strong>2 sıralı raf</strong> veya <strong>3 sıralı raf</strong> seç. Kartı duvar veya panel üzerindeki iki panelin birleşimine bırak. Raf genişliği takıldığı duvardan seçilir; uygun genişlik yoksa yerleştirme reddedilir. Başka duvara taşıdığında genişlik yeniden seçilir.</p>
+      <p>2 ve 3 sıralı raflar ayrı tahtalar halinde görünür. Sağ tık menüsündeki aydınlatma seçimi bütün raf sıralarına uygulanır. Editörde LED şeritler parlar; yüzeye düşen ışık Render Al sırasında görünür.</p>
       <p>Raf modülünde sağ tık menüsünde <strong>Raf altı aydınlatmayı aç / kapat</strong> seçeneği görünür. Bu seçenek sadece destekleyen raf modüllerinde gösterilir.</p>
     `,
   },

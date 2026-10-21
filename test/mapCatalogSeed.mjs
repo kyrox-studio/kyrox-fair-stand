@@ -117,6 +117,7 @@ function mapItem(row) {
     }
     item.composition = composition;
   }
+  if ((row.width_variants || []).length) item.widthVariants = [...row.width_variants].sort();
   if (row.video_wall) {
     item.videoWall = {
       rows: row.video_wall.rows,

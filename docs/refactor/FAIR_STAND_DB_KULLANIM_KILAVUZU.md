@@ -205,6 +205,10 @@ Motor: moving item’ın requires kuralı = host’un provides (item FK veya rec
 
 ### 4.3 Raf → panel (örnek)
 
+Katalogda `shelf_row_1` (Tekli raf), `shelf_row_2` ve `shelf_row_3` aile kartları görünür. `fair_stand_item_width_variants` her kartı genişlik ürünlerine bağlar. Hedef duvar 100/150/200 cm ise karşılık gelen üretim Item'ı seçilir; 50 cm duvarda eşleşme yoktur. Kaydedilen modülün `itemKey` alanı kart değil çözülen üründür; başka duvara taşınınca aynı aileden yeniden çözülür.
+
+Sıralı rafın reçetesi `shelf_W × sıra adedi`; tekli rafın reçetesi `shelf_W_self × 1 + shelf_leg × kayıtlı adet`tir. Çizici reçeteyi gerçek tahta Item'ına kadar izler. Tahta kalınlığı ve derinliği alan bazında **`sceneDimensions ?? dimensions`** ile okunur; üretim ölçülerini değiştirmez. Tekli rafın görsel yüksekliği tahta kalınlığıdır. Sıralı rafın toplam görsel yüksekliği kendi Item ölçüsünden, sıra aralığı bu yükseklik ile tahta kalınlığından hesaplanır. Her sırada ayrı tahta ve aydınlatma çizilir. Fiziksel/BOM ölçüsünü değiştirmek sahne ezmesini kaldırmaz; görünümü değiştirmek için tahta Item'ının sahne ölçüsünü düzenle.
+
 | Parça | Ayar |
 |---|---|
 | Kural | `shelf-rail`, face=`front`, edge=`top` |

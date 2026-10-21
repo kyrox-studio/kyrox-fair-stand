@@ -2,7 +2,7 @@ from sqlalchemy import inspect, select
 
 from app.modules.fair_stand.application.cycle_validation import CyclicItemCompositionError, assert_acyclic_components
 from app.modules.fair_stand.infrastructure.catalog_seed_data import CATALOG_SEED
-from app.modules.fair_stand.infrastructure.models import FairStandCategoryModel, FairStandItemComponentModel, FairStandItemModel
+from app.modules.fair_stand.infrastructure.models import FairStandCategoryModel, FairStandItemComponentModel, FairStandItemModel, FairStandItemWidthVariantModel
 from app.modules.fair_stand.infrastructure.seed_catalog import seed_fair_stand_catalog
 
 
@@ -17,9 +17,15 @@ def test_seed_is_idempotent_and_matches_canonical_counts(db_session):
     visible = [item for item in items if item.catalog_visible]
 
     assert len(categories) == 6
-    assert len(items) == 115
-    assert len(visible) == 60
-    assert len(components) == 184
+    assert len(items) == 127  # 0072: +3 raf tahtası, +3 kart, +6 sıralı raf
+    assert len(visible) == 60  # 0072: 3 tekli raf gizlendi, 3 kart göründü
+    assert len(components) == 199  # 0072: tekli raf reçetesi 6 + tahta ayakları 3 + sıralı raf 6
+    width_variants = db_session.scalars(select(FairStandItemWidthVariantModel)).all()
+    assert sorted((row.family_item_key, row.item_key) for row in width_variants) == [
+        ("shelf_row_1", "shelf_100"), ("shelf_row_1", "shelf_150"), ("shelf_row_1", "shelf_200"),
+        ("shelf_row_2", "shelf_row_2_100"), ("shelf_row_2", "shelf_row_2_150"), ("shelf_row_2", "shelf_row_2_200"),
+        ("shelf_row_3", "shelf_row_3_100"), ("shelf_row_3", "shelf_row_3_150"), ("shelf_row_3", "shelf_row_3_200"),
+    ]
     assert {item.item_key for item in items} == {row["item_key"] for row in CATALOG_SEED["items"]}
     assert {category.catalog_name for category in categories} == {
         row["catalog_name"] for row in CATALOG_SEED["categories"]

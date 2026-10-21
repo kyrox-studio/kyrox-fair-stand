@@ -95,7 +95,7 @@ test('60 görünür Item catalogPreview taşır; 47 gizli Item preview taşımaz
   const visible = listRegisteredItems().filter((item) => item.catalogVisible === true);
   const hidden = listRegisteredItems().filter((item) => item.catalogVisible !== true);
   assert.equal(visible.length, 60);
-  assert.equal(hidden.length, 52);
+  assert.equal(hidden.length, 64);
 
   for (const item of visible) {
     assert.equal(typeof item.previewId, 'number', item.itemKey);
@@ -104,6 +104,11 @@ test('60 görünür Item catalogPreview taşır; 47 gizli Item preview taşımaz
   }
 
   for (const item of hidden) {
+    if (item.type === 'shelf') {
+      assert.equal(item.previewId, 20, item.itemKey);
+      assert.equal(getCatalogItem(item.itemKey), null);
+      continue;
+    }
     assert.equal(Object.hasOwn(item, 'previewId'), false, item.itemKey);
   }
 });

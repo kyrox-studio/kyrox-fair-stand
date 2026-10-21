@@ -15,6 +15,7 @@ import {
   getItemType,
   itemHasSceneRender,
   listEmbeddedRenderParts,
+  listWidthVariants,
   requireSceneDimension,
   resolveItemKey,
   resolveSceneDimensions,
@@ -790,7 +791,11 @@ export function createTvModuleState(descriptor = {}) {
 
 export function createShelfModuleState(descriptor = {}) {
   const itemKey = descriptor?.itemKey;
-  const item = itemKey ? getItem(itemKey) : null;
+  // Katalog kartı (Tekli / 2 / 3 sıralı raf) en dar ürünüyle başlar; duvara takılınca
+  // genişlik duvar modülünden yeniden çözülür (resolveWidthVariantItemKey).
+  const variantKey = listWidthVariants(itemKey).find((variant) => variant.itemKey)?.itemKey;
+  const sourceItem = itemKey ? getItem(itemKey) : null;
+  const item = sourceItem?.widthVariants?.length && variantKey ? getItem(variantKey) : sourceItem;
   if (item?.type !== 'shelf') return null;
   const state = {
     id: createId('module'),
@@ -884,7 +889,7 @@ export function createModuleStateFromDescriptor(
   const state = factory(merged, { imageAssetId });
   if (!state) return null;
 
-  if (item) state.itemKey = item.itemKey;
+  if (item && !item.widthVariants?.length) state.itemKey = item.itemKey;
   if (state.type === 'shelf' && !hasCanonicalModuleItemKey(state)) return null;
 
   if (preservePlacement && descriptor.placement) {
