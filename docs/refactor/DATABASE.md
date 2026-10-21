@@ -374,8 +374,8 @@ Tek satır `id = 1`. Item değildir. `STAND_DIMENSIONS.md`.
 | `id` | — | Singleton; CHECK `id = 1`. (Postgres sequence default var, ikinci satır CHECK’ten geçmez.) | İkinci zarf yok | CHECK `ck_fair_stand_dimensions_singleton` |
 | `height_cm` | `heightCm` | Tavan (cm) | Max zarf | `src/standDimensions.js` |
 | `depth_cm` | `depthCm` | Duvar kalınlığı (cm) | Omurga / overlay | aynı |
-| `frame_width_cm` | `frameWidthCm` | Dikey profil kesit (cm) | Görsel iskelet | renderer via `STAND_DIMENSIONS.*` (m getter) |
-| `frame_depth_cm` | `frameDepthCm` | Profil derinlik (cm) | Görsel iskelet | aynı |
+| `frame_width_cm` | `frameWidthCm` | Dikey profil kesit (cm) | Sahne kesiti değil (2026-10-21'den beri okunmuyor); kesit modül reçetesindeki profil Item'ının sahne ölçüsüdür | yalnız CRM ayar formu / bootstrap |
+| `frame_depth_cm` | `frameDepthCm` | Profil derinlik (cm) | Reçetesinde profil olmayan modülde kare kesit (genişlik = derinlik) | `resolveProceduralFrameCrossSectionCm` |
 | `panel_rail_height_cm` | `panelRailHeightCm` | İki panel arası ray boşluğu (cm) | Mesh ray yüksekliği | `scene3d` ← `STAND_DIMENSIONS.panelRailHeight` |
 | `created_at` / `updated_at` | yok | Audit | — | DB |
 

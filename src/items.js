@@ -739,15 +739,13 @@ export function resolveModuleSceneBoxCm(moduleState, { clampToStandCeiling = tru
   return Object.freeze({ widthCm, heightCm, depthCm, item, scene });
 }
 
-const PROCEDURAL_FRAME_CROSS_SECTION_TYPES = Object.freeze(new Set(['profile', 'upright']));
-
-function firstRecipeProfileOrUprightItem(parentItem) {
+function firstRecipeChildItem(parentItem, type) {
   const rows = parentItem?.composition?.mode === 'recipe' ? parentItem.composition.items : null;
   if (!Array.isArray(rows)) return null;
   for (const row of rows) {
     const childKey = row?.itemKey ?? null;
     const child = childKey ? getItem(childKey) : null;
-    if (child && PROCEDURAL_FRAME_CROSS_SECTION_TYPES.has(child.type)) {
+    if (child?.type === type) {
       return child;
     }
   }
@@ -777,18 +775,30 @@ function crossSectionCmFromFrameItem(frameItem) {
 }
 
 /**
- * Prosedürel aluminyum kesiti: `fair_stand_dimensions.frame_width_cm` / `frame_depth_cm`
- * (bootstrap → STAND_DIMENSIONS). Leaf recipe kesiti saklı kalır (`crossSectionCmFromFrameItem`)
- * ama sahne şimdilik stand zarfını okur.
+ * Prosedürel aluminyum kesiti: modül reçetesindeki profil Item'ının sahne kesiti
+ * (`fair_stand_item_scene_dimensions` depth × height). Dört çerçeve kenarı (dikmeler dahil) bu
+ * kesitle çizilir; stand `frame_width_cm` sahne kesitine girmez. Reçetesinde profil olmayan
+ * modülde kesit kare kutudur: genişlik = derinlik = stand `frame_depth_cm`.
  */
-export function resolveProceduralFrameCrossSectionCm(_moduleState) {
+export function resolveProceduralFrameCrossSectionCm(moduleState) {
+  const profileItem = firstRecipeChildItem(getItem(moduleState?.itemKey), 'profile');
+  if (profileItem) {
+    return Object.freeze({ ...crossSectionCmFromFrameItem(profileItem), source: 'recipe-profile-scene' });
+  }
   const stand = getStandDimensions();
   return Object.freeze({
-    frameWidthCm: stand.frameWidthCm,
+    frameWidthCm: stand.frameDepthCm,
     frameDepthCm: stand.frameDepthCm,
     frameItemKey: null,
     source: 'stand-dimensions',
   });
+}
+
+/** Reçetedeki panel Item'ının kalınlığı (`dimensions.depthCm`); reçetede panel yoksa null. */
+export function resolveRecipePanelThicknessCm(moduleState) {
+  const panelItem = firstRecipeChildItem(getItem(moduleState?.itemKey), 'panel');
+  const thicknessCm = Number(panelItem?.dimensions?.depthCm);
+  return Number.isFinite(thicknessCm) && thicknessCm > 0 ? thicknessCm : null;
 }
 
 export function getProceduralFrameCrossSectionM(moduleState) {

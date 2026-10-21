@@ -146,10 +146,12 @@ for (const wallHeight of HEIGHTS) {
       expect(moduleState.itemKey, label).toBe(expectedKey);
       if (expectedStrips) expect(moduleState.strips?.length, label).toBe(expectedStrips(bands));
       // Tepe: her ürün (kısa duvar dahil) duvar tepesinde biter. Yüzey payı yükseklikten
-      // bağımsızdır: panel ailesi +4,8 cm (üst panel yüzeyi), ayırıcı −0,5 cm (350'deki gibi).
+      // bağımsızdır: panel ailesi +1,0 cm (üst panel yüzeyi çerçevenin üst kenarından 4 cm
+      // içeride biter, PANEL_FRAME_INSET_M), ayırıcı −3,0 cm (lata alanı üst profilin altında biter;
+      // kesit reçetedeki profil Item sahne ölçüsü, test kataloğunda 8 cm).
       const top = tops[moduleState.id];
       expect(Number.isFinite(top), `${label} sahnede yüzey yok`).toBe(true);
-      const offsetM = /separator/.test(catalogKey) ? -0.005 : 0.048;
+      const offsetM = /separator/.test(catalogKey) ? -0.030 : 0.010;
       expect(Math.abs(top - (wallHeight / 100 + offsetM)), `${label} tepe ${top}`).toBeLessThan(0.005);
     });
     expect(errors).toEqual([]);

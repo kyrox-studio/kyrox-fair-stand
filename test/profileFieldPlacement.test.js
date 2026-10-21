@@ -157,7 +157,7 @@ test('field profile renderer is a thick top rail, not a 4mm line or a 7-strip pa
   const fn = source.slice(source.indexOf('function createProfileModule'), source.indexOf('function createKettleModule'));
   assert.match(fn, /requireModuleSceneBoxCm/);
   assert.doesNotMatch(fn, /getStraightWallNominalWidthForProfileItem/);
-  assert.match(fn, /BoxGeometry\(widthM, railHeightM, thicknessM\)/);
+  assert.match(fn, /createSlottedProfileGeometry\(widthM, railHeightM, thicknessM\)/);
   assert.match(fn, /mesh\.position\.y = railHeightM \/ 2/);
   assert.doesNotMatch(fn, /STAND_DIMENSIONS/);
   assert.match(fn, /frameColorForModule\(moduleState\)/);

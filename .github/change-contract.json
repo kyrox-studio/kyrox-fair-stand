@@ -1,19 +1,18 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-new-project-wizard-v1",
+  "id": "fair-stand-panel-frame-look-v1",
   "kind": "feature",
-  "summary": "Yeni proje sihirbazı: yeni projede boş sahnede 3 adım (stand tipi, ölçü + duvar yüksekliği + depo, özet + Oluştur); mevcut kurulum alanlarını, readSceneSetupFromControls doğrulamasını ve Sahneyi Oluştur akışını kullanır, mevcut proje açılınca çıkmaz. İlk sahneden sonra 3 ipucu bir kez (localStorage fairStandTipsSeen). Playwright storageState ipuçlarını görülmüş sayar. Depo seçimi tek liste (Depo yok + ölçüler), depo seçiliyken içerik kutusu ve açıklaması açılır; sol menü alt alta, sihirbazda aynı. BOM, kayıt biçimi ve veritabanı değişmez.",
+  "summary": "Panel taşıyan duvar modüllerinde (düz panel, bazalı duvar, kapı, vitrin) çerçevenin dört kenarı aynı profil kesitiyle çizilir (addPanelModuleFrame); üst/alt profil yan dikmeyle aynı kalınlıktadır. Prosedürel kesit modül reçetesindeki profil Item'ının sahne ölçüsüdür (depth × height); reçetede profil yoksa stand frame_depth_cm ile kare. Stand frame_width_cm sahnede okunmaz. Panel yüzü profillerin 15 mm önünde (PANEL_FACE_OFFSET_M), durur ve çerçevenin dış kenarından dört yanda 4 cm içeride biter (PANEL_FRAME_INSET_M, fitPanelToFrameOpening); panel gövdesi reçetedeki panel Item kalınlığında; TV/raf/strafor wallFrontM aynı yüze oturur. Profil kenarlarına koyu ton kenar çizgisi. Baza, düz banko ve L bankoda da köşe dikmeleri ve raylar aynı kare kesit (addBoxModuleFrame), yüz panelleri profilin 15 mm önünde ve 4 cm içeride (placeBoxPanelFace). Bütün prosedürel profil ve dikmeler kanallı kesitle çizilir (profileGeometry.js: dört yüzde 2 cm ağız, 1,5 cm derinlik; dış ölçü aynı). Yalnız 3B görünüm; BOM, panelRailHeight, kayıt biçimi ve veritabanı değişmez.",
   "owners": [
-    "src/newProjectWizard.js",
-    "src/onboardingTips.js",
-    "src/main.js",
-    "src/helpGuide.js",
-    "playwright.config.mjs",
-    "index.html",
-    "src/configuratorMarkup.js"
+    "src/scene3d.js",
+    "src/items.js",
+    "src/wallPanelBand.js",
+    "src/profileGeometry.js"
   ],
   "sourceOfTruth": [
-    "src/scene3d.js"
+    "src/scene3d.js",
+    "src/items.js",
+    "src/profileGeometry.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -153,6 +152,7 @@
       "src/printAreaBom.js",
       "src/productionBomPanel.css",
       "src/productionBomPanel.js",
+      "src/profileGeometry.js",
       "src/projectActionSaveGuard.js",
       "src/projectBom.js",
       "src/projectImportValidation.js",
@@ -387,6 +387,7 @@
       "test/panel197ItemContract.test.js",
       "test/panelCamFamily.test.js",
       "test/panelCorner192ItemContract.test.js",
+      "test/panelFrameOpening.test.js",
       "test/panelGlassBom.test.js",
       "test/panelGlassRestore.test.js",
       "test/panelMultiSelectRule.test.js",
@@ -397,6 +398,7 @@
       "test/productionItemType.test.js",
       "test/profile190ItemContract.test.js",
       "test/profileFieldPlacement.test.js",
+      "test/profileGeometry.test.js",
       "test/profileIntrinsicProperties.test.js",
       "test/profilesItemContract.test.js",
       "test/projectActionSaveGuard.test.js",
@@ -539,11 +541,13 @@
       "audit/remediation/A03_F011_CLOSURE.md",
       "audit/remediation/A03_F012_CLOSURE.md",
       "audit/remediation/A04_F013_CLOSURE.md",
+      "audit/remediation/A07_F017_CLOSURE.md",
       "audit/remediation/A10_F027_CLOSURE.md",
       "audit/remediation/A11_F029_CLOSURE.md",
       "audit/remediation/A13_F032_CLOSURE.md",
       "docs/AUTOSAVE_INTEGRATION_NOTES.md",
       "docs/assets/PUBLIC_MODEL_ATTRIBUTION.md",
+      "docs/items/ITEM_CONSOLIDATION_PLAN.md",
       "docs/items/ITEM_LIST.md",
       "docs/items/audit/BIRLESIK_ENVANTER.md",
       "docs/items/audit/DEFAULT_OVERRIDE_HARITASI.md",
@@ -747,6 +751,7 @@
       "docs/items/audit/properties/properties/media.videoWallRows.md",
       "docs/items/audit/properties/properties/media.widthCm.md",
       "docs/items/audit/properties/properties/name.md",
+      "docs/items/audit/properties/properties/parents.cluster.md",
       "docs/items/audit/properties/properties/parents.innerCorner.md",
       "docs/items/audit/properties/properties/parents.recipe.md",
       "docs/items/audit/properties/properties/parents.showcaseBody.md",
@@ -790,9 +795,16 @@
       "docs/items/audit/properties/properties/state.visualRotationYDeg.md",
       "docs/items/audit/properties/properties/state.wallGapCm.md",
       "docs/items/audit/properties/properties/state.widthCm.md",
+      "docs/items/audit/properties/properties/static.bodyItems.glassShelfItemKey.md",
+      "docs/items/audit/properties/properties/static.bodyItems.horizontalItemKey.md",
+      "docs/items/audit/properties/properties/static.bodyItems.sideItemKey.md",
+      "docs/items/audit/properties/properties/static.composition.items.md",
       "docs/items/audit/properties/properties/static.composition.mode.md",
       "docs/items/audit/properties/properties/static.composition.moduleType.md",
       "docs/items/audit/properties/properties/static.composition.nominalWidthCm.md",
+      "docs/items/audit/properties/properties/static.composition.options.shape.md",
+      "docs/items/audit/properties/properties/static.composition.options.shelfCount.md",
+      "docs/items/audit/properties/properties/static.connectorType.md",
       "docs/items/audit/properties/properties/static.defaultColor.md",
       "docs/items/audit/properties/properties/static.dimensions.catalogHeightCm.md",
       "docs/items/audit/properties/properties/static.dimensions.depthCm.md",
@@ -932,9 +944,16 @@
       "docs/items/current-system/wall_shelf_3_100.md",
       "docs/items/current-system/wall_shelf_3_150.md",
       "docs/items/current-system/wall_shelf_3_200.md",
+      "docs/items/current-system/wall_showcase_100_2.md",
+      "docs/items/current-system/wall_showcase_100_3.md",
+      "docs/items/definitions/BASE_100.md",
       "docs/items/definitions/BASE_150.md",
       "docs/items/definitions/BASE_200.md",
       "docs/items/definitions/COAT_RACK.md",
+      "docs/items/definitions/EXTRA_INDOOR_PLANT_1.md",
+      "docs/items/definitions/EXTRA_LONG_PLANTER_100.md",
+      "docs/items/definitions/EXTRA_LONG_PLANTER_150.md",
+      "docs/items/definitions/EXTRA_LONG_PLANTER_200.md",
       "docs/items/definitions/KETTLE.md",
       "docs/items/definitions/MINI_FRIDGE_AVANTI.md",
       "docs/items/definitions/PLASTIC_TRASH_BIN.md",
@@ -947,13 +966,30 @@
       "docs/items/definitions/base_top_107_50.md",
       "docs/items/definitions/base_top_157_50.md",
       "docs/items/definitions/base_top_206_50.md",
+      "docs/items/definitions/chair_eames.md",
       "docs/items/definitions/connector_corner.md",
       "docs/items/definitions/connector_double.md",
       "docs/items/definitions/connector_single.md",
       "docs/items/definitions/connector_start.md",
+      "docs/items/definitions/desk_banko_100.md",
+      "docs/items/definitions/desk_banko_100_L.md",
+      "docs/items/definitions/desk_banko_150.md",
+      "docs/items/definitions/desk_banko_150_L.md",
+      "docs/items/definitions/desk_banko_200.md",
+      "docs/items/definitions/desk_banko_200_L.md",
       "docs/items/definitions/door_100.md",
       "docs/items/definitions/door_leaf_100.md",
+      "docs/items/definitions/furniture_bar_stool_classic.md",
+      "docs/items/definitions/furniture_coffee_table_classic.md",
+      "docs/items/definitions/furniture_sofa_double_classic.md",
+      "docs/items/definitions/furniture_sofa_set_classic.md",
+      "docs/items/definitions/furniture_sofa_single_classic.md",
+      "docs/items/definitions/furniture_table_chair_set_eames.md",
       "docs/items/definitions/glass_shelf.md",
+      "docs/items/definitions/glass_table.md",
+      "docs/items/definitions/hali.md",
+      "docs/items/definitions/illuminated-foam.md",
+      "docs/items/definitions/karolaj.md",
       "docs/items/definitions/led_floodlight.md",
       "docs/items/definitions/panel_147_5.md",
       "docs/items/definitions/panel_197.md",
@@ -988,6 +1024,10 @@
       "docs/items/definitions/wall_150.md",
       "docs/items/definitions/wall_200.md",
       "docs/items/definitions/wall_50.md",
+      "docs/items/definitions/wall_separator_100.md",
+      "docs/items/definitions/wall_separator_100_sarmasik.md",
+      "docs/items/definitions/wall_separator_50.md",
+      "docs/items/definitions/wall_separator_50_sarmasik.md",
       "docs/items/door_100_full_system_audit.md",
       "docs/items/inventory/ITEM_CAPABILITY_INVENTORY.md",
       "docs/refactor/CATALOG.md",
@@ -1002,7 +1042,9 @@
       "docs/refactor/ROTATION.md",
       "docs/refactor/SCENE_POSE.md",
       "docs/refactor/STAND_DIMENSIONS.md",
-      "docs/refactor/TYPE_BEHAVIORS_DB_ROADMAP.md"
+      "docs/refactor/STAND_FRAME_REMOVAL.md",
+      "docs/refactor/TYPE_BEHAVIORS_DB_ROADMAP.md",
+      "scripts/archive/README.md"
     ],
     "relatedFindings": {
       "affected": [],
@@ -1028,22 +1070,20 @@
         "F-033"
       ]
     },
-    "notes": "Görsel değişiklik: editörde gölge ve spot ışık yok (lens/LED şerit parlar); Render Al çıktısı ışıklı ve gölgeli. Kullanıcı rehberi güncellendi."
+    "notes": "Görsel değişiklik: panel duvarı çerçevesi dört kenarda aynı kare kesit, kenar çizgisi; paneller çerçeve açıklığına sığar. Kullanıcı lokalde dener."
   },
   "tests": {
     "targeted": [
-      "test/autosaveController.test.js",
-      "test/autosaveMainIntegration.test.js",
-      "test/catalogDragItemKeyInvariant.test.js",
-      "test/ctrlMultiSelect.test.js",
-      "test/helpGuide.test.js",
-      "test/lightboxFabric.test.js",
-      "test/metalSeparator.test.js",
-      "test/moduleBehaviorPolicy.test.js",
-      "test/projectActionSaveGuard.test.js",
-      "test/projectOpenTiming.test.js",
-      "test/scene3dPublicContract.test.js",
-      "test/systemChangeGate.test.js"
+      "test/horizontalPanelRails.test.js",
+      "test/itemSceneDimensions.test.js",
+      "test/baseRenderStyle.test.js",
+      "test/showcaseDepthDirection.test.js",
+      "test/tv42Module.test.js",
+      "test/panelFrameOpening.test.js",
+      "test/lCounterSideGeometry.test.js",
+      "test/profileGeometry.test.js",
+      "test/profileFieldPlacement.test.js",
+      "test/uprightFieldPlacement.test.js"
     ],
     "fullSuite": true,
     "build": true,
@@ -1070,18 +1110,19 @@
         "e2e/project-open-timing.spec.mjs",
         "e2e/selection-toolbar.spec.mjs",
         "e2e/smoke.spec.mjs",
-        "e2e/viewport-chrome-layout.spec.mjs"
+        "e2e/viewport-chrome-layout.spec.mjs",
+        "e2e/wall-height-matrix.spec.mjs"
       ],
       "reason": "Gerçek Chromium: sihirbazla L stand kurulur ve kaydedilir; ölçü hatası adımda; ✕ ile kart; ipuçları bir kez; tablette dokunuşla aynı akış. Bütün paket regresyon için çalışır."
     }
   },
   "risk": {
-    "level": "low",
-    "notes": "Yeni UI katmanı; sağ tık, seçim ve sürükleme yolları korunur."
+    "level": "medium",
+    "notes": "Profil kesiti tüm prosedürel çerçevelerde (baza, banko, separatör dahil) reçetedeki profil Item sahne ölçüsüne geçer; panel açıklığı buna göre daralır. Profil sahne ölçüsü eksikse modül render hatası verir (uydurma yok). Panel görsel alanı yeni panel yüzü ölçüsüne göre değişir; en alt ve en üst bant 4 cm kısalır, kayıtlı görseller yeni alana yeniden oturur."
   },
   "migration": {
     "required": false,
-    "notes": "Kayıt biçimi değişmez."
+    "notes": "Kayıt biçimi ve veritabanı değişmez."
   },
-  "rollback": "selectionToolbar.js ve main.js bağlantısı kaldırılır; scene3d uzun basma dinleyicisi ve onSelectionAnchor geri alınır."
+  "rollback": "addPanelModuleFrame kaldırılır, panel genişliği yeniden profil kesitiyle daraltılır, eski 0,4 cm üst/alt ray kutuları geri gelir; resolveProceduralFrameCrossSectionCm yeniden stand frameWidthCm/frameDepthCm okur."
 }

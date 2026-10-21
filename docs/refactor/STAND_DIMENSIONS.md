@@ -26,13 +26,13 @@ Kaynak: PostgreSQL `fair_stand_dimensions` → catalog bootstrap `standDimension
 |---|---|---|
 | `heightCm` | `height_cm` | Duvar tavanı (cm). Overlay Y 0…heightCm. Max zarf. |
 | `depthCm` | `depth_cm` | Duvar kalınlığı (cm). Omurga çarpışması (`wall-backbone`). TV/raf ön yüzü `depthCm/2`. |
-| `frameWidthCm` | `frame_width_cm` | Prosedürel aluminyum kesit genişliği (cm). |
-| `frameDepthCm` | `frame_depth_cm` | Prosedürel aluminyum kesit derinliği (cm). |
+| `frameWidthCm` | `frame_width_cm` | Sahnede okunmaz (2026-10-21). Prosedürel kesit reçetedeki profil Item'ının sahne ölçüsüdür. |
+| `frameDepthCm` | `frame_depth_cm` | Yalnız reçetesinde profil olmayan modülde kare kesit (genişlik = derinlik). |
 | `panelRailHeightCm` | `panel_rail_height_cm` | İki panel arası ray boşluğu (cm); sahne `STAND_DIMENSIONS.panelRailHeight` (m). |
 
 Seed (varsayılan): 350 / 10 / 5.5 / 10 / 0.4 cm.
 
-Prosedürel aluminyum **kesit** (eski `frame_*`): `upright_346_5` item W/D — bkz. `STAND_FRAME_REMOVAL.md`.
+Prosedürel aluminyum **kesit**: modül reçetesindeki ilk `profile` Item'ının sahne ölçüsü (`depthCm` × `heightCm`, `fair_stand_item_scene_dimensions`); dört çerçeve kenarı (dikmeler dahil) bu kesitle çizilir — bkz. `STAND_FRAME_REMOVAL.md`.
 
 Panel bandı pitch ve slot sayısı **ürün BOM +** `src/wallPanelBand.js` (`WALL_PANEL_BAND_PITCH_CM`). Eski `strip_count` / `strip_height_cm` kolonları migration `0019_drop_stand_strip_grid` ile kaldırıldı.
 
