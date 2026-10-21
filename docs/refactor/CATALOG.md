@@ -149,10 +149,10 @@ Yeni görünen Item için Catalog içine kart satırı yazılmaz.
 | 2 | Panel Ek Modül | 2 | 14 |
 | 3 | Raf & Vitrin | 3 | 6 |
 | 4 | Banko & Baza | 4 | 9 |
-| 5 | Extra | 5 | 18 |
+| 5 | Extra | 5 | 19 |
 | 6 | Elektronik & Aydınlatma | 6 | 6 |
 
-Toplam görünür Item: **62**. Kayıtlı Item: **126**.
+Toplam görünür Item: **63**. Kayıtlı Item: **127**.
 
 ---
 

@@ -100,6 +100,7 @@ Aşağıdaki mevcut liste korunur. Bu Item'ların Tekil/Bileşik ve parametrik d
 | 42 | `furniture_table_chair_set_eames` | Eames Masa Sandalye Takımı | **`table-chair-set-eames` · Item kümesi** |
 | 43 | `chair_eames` | Eames Sandalye | **`chair` · Tekil Item** |
 | 44 | `glass_table` | Cam Masa | **`table-glass` · Tekil Item** |
+| 44a | `glass_bar_table` | Bar Masası | **`table-glass` · Tekil Item** · cam masa ile aynı, yükseklik 108 cm (0075) |
 | 45 | `furniture_bar_stool_classic` | Bar Taburesi | `bar-stool` |
 | 46 | `MINI_FRIDGE_AVANTI` | Mini Buzdolabı | **`mini-fridge` · Tekil Item · Tamam · self BOM `1 adet`** |
 | 47 | `KETTLE` | Kettle | **`kettle` · Tekil Item · Tamam · self BOM `1 adet`** |

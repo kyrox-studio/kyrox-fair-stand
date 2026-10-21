@@ -1,5 +1,7 @@
 # glass_table — Kanonik Item
 
+Aynı ailede `glass_bar_table` "Bar Masası" vardır (migration `0075_glass_bar_table`): tür, çizim, davranış ve BOM politikası aynıdır; yalnız yükseklik 108 cm. Çizim `createGlassTableModule` modülün `itemKey`'inden okunur, ayak masa yüksekliğine göre uzar.
+
 Migration öncesi tam envanter: [current-system/glass_table](../current-system/glass_table.md).
 Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
 
