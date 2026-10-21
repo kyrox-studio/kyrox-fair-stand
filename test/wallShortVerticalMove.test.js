@@ -7,6 +7,7 @@ import {
   applyItemPlacementZCm,
   getItem,
   isWallShortFamilyDescriptor,
+  itemMovesVertically,
   resolveItemDefaultZCm,
   resolveSceneDimensions,
 } from '../src/items.js';
@@ -145,13 +146,18 @@ test('collision range follows the moved bottom without a new collision rule', ()
   assert.equal(range.maxCm, 250);
 });
 
-test('vertical Z is limited to the wall-short family', () => {
+test('vertical Z on wall-placed items comes from DB vertical_move (short walls and profiles, not full walls)', () => {
   assert.equal(isWallShortFamilyDescriptor({ itemKey: 'wall_50_short_1' }), true);
   assert.equal(isWallShortFamilyDescriptor({ itemKey: 'wall_200_short_2' }), true);
   assert.equal(isWallShortFamilyDescriptor({ itemKey: 'wall_200_350', type: 'flat-panel' }), false);
   assert.equal(isWallShortFamilyDescriptor({ type: 'tv', itemKey: 'tv_42' }), false);
   const source = fs.readFileSync(new URL('../src/scene3d.js', import.meta.url), 'utf8');
-  assert.match(source, /if \(isWallShortFamilyDescriptor\(moduleState\)\)/);
+  assert.equal(itemMovesVertically('wall_50_short_1'), true);
+  assert.equal(itemMovesVertically('wall_200_short_2'), true);
+  assert.equal(itemMovesVertically('profile_190'), true);
+  assert.equal(itemMovesVertically('wall_200_350'), false);
+  assert.match(source, /const canMoveVertically = itemMovesVertically\(moduleState\);/);
+  assert.match(source, /if \(canMoveVertically && getModuleBehavior\(moduleState\)\.placement === 'wall'\) \{/);
   assert.match(source, /stepWallShortFloorZCm\(currentZCm, bestArrowMove\.deltaCm, moduleState\.heightCm\)/);
   assert.match(source, /desiredPlacement\.zCm = Number\(moduleState\.placement\.zCm \|\| 0\);/);
 });

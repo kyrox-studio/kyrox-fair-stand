@@ -13,6 +13,7 @@ import {
   addFlatPanelBackStrips,
   createModuleStateFromCatalogKey,
   createModuleStateFromDescriptor,
+  createUprightModuleState,
   duplicateModuleState,
   hasCanonicalModuleItemKey,
   normalizeModuleItemState,
@@ -115,7 +116,13 @@ import { DEFAULT_SELECTION_HINT, describeFloorAreaSelection, describeFloorSelect
 import { createSidebarController } from './sidebarController.js';
 import { createViewportToolbarController } from './viewportToolbarController.js';
 import { formatCapacityPopup, renderStageResult as renderStageResultInto, renderWallResult } from './stageFeedback.js';
-import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
+import {
+  defaultUprightItemKeyForWallHeight,
+  readUprightHeightPreference,
+  requestUprightHeight,
+  writeUprightHeightPreference,
+} from './uprightHeight.js';
+import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
 import {
@@ -1276,6 +1283,40 @@ function changeContextShelfLighting(context, enabled) {
     : 'Raf altı aydınlatma kapatıldı.';
 }
 
+function applyUprightItemKey(moduleState, itemKey) {
+  const upright = createUprightModuleState({ itemKey });
+  if (!upright) return false;
+  moduleState.itemKey = upright.itemKey;
+  moduleState.widthCm = upright.widthCm;
+  moduleState.depthCm = upright.depthCm;
+  moduleState.heightCm = upright.heightCm;
+  return true;
+}
+
+// Dikme boyu: null = dikme değil (menü gizli); dikmede mevcut itemKey.
+function getContextUprightHeightState(context) {
+  const index = findContextModuleIndex(context);
+  const moduleState = index >= 0 ? currentModules[index] : null;
+  return moduleState?.type === 'upright' ? moduleState.itemKey : null;
+}
+
+async function changeContextUprightHeight(context) {
+  const index = findContextModuleIndex(context);
+  const moduleState = index >= 0 ? currentModules[index] : null;
+  if (moduleState?.type !== 'upright') return;
+  const choice = await requestUprightHeight({
+    selectedItemKey: moduleState.itemKey,
+    remember: Boolean(readUprightHeightPreference()),
+  });
+  if (!choice) return;
+  // Çentik kalkarsa sonraki dikmede yine sorulur.
+  writeUprightHeightPreference(choice.remember ? choice.itemKey : null);
+  if (choice.itemKey === moduleState.itemKey) return;
+  if (!applyUprightItemKey(moduleState, choice.itemKey)) return;
+  selectionInfo.textContent = `Dikme yüksekliği: ${getItem(choice.itemKey)?.name ?? choice.itemKey}.`;
+  rebuildWall({ resetView: false });
+}
+
 // Arka yüz paneli: null = bu modülde yok (menü gizli), true/false = takılı mı.
 function getContextBackPanelState(context) {
   const index = findContextModuleIndex(context);
@@ -1446,6 +1487,8 @@ const moduleContextMenu = createModuleContextMenu({
   onShelfLightingChange: changeContextShelfLighting,
   getBackPanelState: getContextBackPanelState,
   onBackPanelChange: changeContextBackPanels,
+  getUprightHeightState: getContextUprightHeightState,
+  onUprightHeight: (context) => { void changeContextUprightHeight(context); },
   onLockChange: changeModuleLock,
   onRotate: (context) => scene3d.rotateModuleById(context.moduleId),
   onGroupAction: (action, context) => handleGroupAction(action, {
@@ -1823,6 +1866,22 @@ moduleDragSidebar = createModuleDragSidebar({
         moduleState.widthCm = dimensions.widthCm;
         moduleState.heightCm = dimensions.heightCm;
       }
+      if (moduleState?.type === 'upright') {
+        // Varsayılan seçili duvar yüksekliğinin dikmesi; "Bir daha sorma" tercihi varsa sorulmaz.
+        let itemKey = readUprightHeightPreference();
+        if (!itemKey) {
+          const choice = await requestUprightHeight({
+            selectedItemKey: defaultUprightItemKeyForWallHeight(getActiveWallLineHeightCm()),
+          });
+          if (!choice) {
+            scene3d.clearCatalogModuleDrag();
+            return;
+          }
+          itemKey = choice.itemKey;
+          if (choice.remember) writeUprightHeightPreference(itemKey);
+        }
+        applyUprightItemKey(moduleState, itemKey);
+      }
       if (moduleState?.type === 'box-block') {
         const dimensions = await requestBoxBlockDimensions({
           widthCm: moduleState.widthCm,
@@ -1839,7 +1898,9 @@ moduleDragSidebar = createModuleDragSidebar({
         moduleState.heightCm = dimensions.heightCm;
         moduleState.opacity = dimensions.opacity;
       }
-      const committed = commitDroppedCatalogModule(moduleState, result, catalogKey);
+      // Dikmede kart tek (upright_346_5); kayıt seçilen boyun anahtarıyla yapılır.
+      const commitKey = moduleState?.type === 'upright' ? moduleState.itemKey : catalogKey;
+      const committed = commitDroppedCatalogModule(moduleState, result, commitKey);
       if (!committed.ok) {
         renderWallResult(committed.message ?? 'Modül bu konuma bırakılamadı.', true);
       }

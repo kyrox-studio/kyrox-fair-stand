@@ -326,6 +326,10 @@ class FairStandItemModel(Base):
             "snap_requires_rule_id IS NULL OR snap_provides_rule_id IS NULL",
             name="ck_fair_stand_items_snap_rule_xor",
         ),
+        CheckConstraint(
+            "z_reference IN ('floor', 'wall-top')",
+            name="ck_fair_stand_items_z_reference",
+        ),
         Index("ix_fair_stand_items_item_type", "item_type"),
         Index("ix_fair_stand_items_category_id", "category_id"),
         Index("ix_fair_stand_items_preview_id", "preview_id"),
@@ -396,6 +400,10 @@ class FairStandItemModel(Base):
     variant: Mapped[str | None] = mapped_column(String(64), nullable=True)
     eye_count: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     default_z_cm: Mapped[Decimal] = mapped_column(Numeric(8, 2), nullable=False, default=Decimal("0"), server_default="0")
+    # default_z_cm neye göre: zemin ya da katalog duvar tepesi (350); wall-top seçili duvar yüksekliği farkı kadar kayar.
+    z_reference: Mapped[str] = mapped_column(String(16), nullable=False, default="floor", server_default="floor")
+    # Sahnede ↑/↓ ile dikey taşınır; seçiliyken/taşırken zemin ve tavan uzaklığı gösterilir.
+    vertical_move: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
     snap_target_item_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
     snap_anchor: Mapped[str | None] = mapped_column(String(16), nullable=True)
     snap_requires_rule_id: Mapped[int | None] = mapped_column(

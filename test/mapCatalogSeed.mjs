@@ -3,6 +3,7 @@ import { applyItemRotationFields } from './itemRotationSeed.mjs';
 import { applyItemSurfaceFlags } from './itemSurfaceFlagsSeed.mjs';
 import { applyItemSnapFields, SNAP_RULE_FIXTURE } from './itemSnapSeed.mjs';
 import { applyItemScenePose } from './itemScenePoseSeed.mjs';
+import { applyItemVerticalFields } from './itemVerticalSeed.mjs';
 import { buildItemTypeBootstrapRows, ITEM_TYPE_BEHAVIOR_SLICE1 } from './itemTypeBehaviorSeed.mjs';
 
 export const CANONICAL_STAND_DIMENSIONS = Object.freeze({
@@ -137,6 +138,7 @@ function mapItem(row) {
   assign('defaultRotationDeg', row.default_rotation_deg);
   assign('sideInsertRotation', row.side_insert_rotation);
   applyItemRotationFields(item);
+  applyItemVerticalFields(item);
   if (row.is_render != null) {
     item.isRender = Boolean(row.is_render);
     item.acceptsColor = Boolean(row.accepts_color);

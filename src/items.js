@@ -616,12 +616,21 @@ export function getActiveWallLineHeightCm() {
 export function resolveItemDefaultZCm(itemOrKey) {
   const item = typeof itemOrKey === 'string' ? getItem(itemOrKey) : itemOrKey;
   const defaultZCm = readCm(item?.defaultZCm) ?? readCm(item?.dimensions?.mountHeightCm) ?? 0;
-  // Kısa duvarın DB tabanı 350 cm duvar tepesine göredir (short_2 250, short_1 300); duvar
-  // yüksekliği farklıysa aynı farkla iner/çıkar (250'de 150 / 200).
-  if (isWallShortFamilyDescriptor(item) && readCm(item?.defaultZCm) != null) {
+  // z_reference = wall-top (DB): değer 350 cm duvar tepesine göredir (kısa duvar 250/300,
+  // profil 340); seçili duvar yüksekliği farkı kadar iner/çıkar (250'de 150/200, profil 240).
+  if (item?.zReference === 'wall-top' && readCm(item?.defaultZCm) != null) {
     return defaultZCm + (activeWallLineHeightCm - CATALOG_WALL_LINE_HEIGHT_CM);
   }
   return defaultZCm;
+}
+
+/** DB vertical_move: sahnede ↑/↓ ile dikey taşınır; zemin/tavan uzaklığı gösterilir. */
+export function itemMovesVertically(itemOrState) {
+  if (!itemOrState) return false;
+  const item = typeof itemOrState === 'string'
+    ? getItem(itemOrState)
+    : (itemOrState.itemKey ? getItem(itemOrState.itemKey) : itemOrState);
+  return item?.verticalMove === true;
 }
 
 export const SNAP_FACES = Object.freeze(['front', 'back', 'top', 'bottom', 'left', 'right']);

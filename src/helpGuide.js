@@ -123,6 +123,9 @@ function listGuideSections() {
       <p>Modüller serbestçe görünse de bırakıldıkları konum sistem kurallarıyla doğrulanır. Stand sınırı, çarpışma ve modülün kendi snap adımı kontrol edilir.</p>
       <ul>
         <li>Bütün modüller 10 cm adımla hareket eder (duvar, banko, mobilya, projektör dahil).</li>
+        <li><strong>Dikey taşıma:</strong> TV, strafor, tül, raf, küp blok, LED projektör, kısa duvar ve profil seçiliyken <strong>↑ / ↓</strong> ile 10 cm iner/çıkar; zemini ve duvar tepesini geçmez. Bu öğelerde ölçülerin yanında zemine ve tavana (duvar tepesine) uzaklık da yazar. Hangi öğenin dikey taşındığı öğe kaydındaki ayardır.</li>
+        <li><strong>Profil</strong> seçili duvar yüksekliğinin tepesinde gelir (250 cm duvarda 240 cm'de).</li>
+        <li><strong>Dikme:</strong> Katalogdan bırakılınca boy sorulur; seçili duvar yüksekliğinin dikmesi seçili gelir. <strong>Bir daha sorma, aynı ölçüde getir</strong> işaretlenirse sonraki dikmeler sormadan o boyda gelir (bu tarayıcıda). Sağ tık <strong>Dikme yüksekliği…</strong> boyu değiştirir; çentik oradan kaldırılınca yeniden sorulur.</li>
         <li>Serbest öğe stand kenarına 10 cm'den yakın bırakılırsa kenara yaslanır; daha uzaktaysa bıraktığın yerde kalır, köşeye çekilmez.</li>
         <li><strong>Izgara:</strong> Taşırken, kopyalarken veya katalogdan yerleştirirken stand zemininde 1 m kalın, 50 cm ince çizgiler çıkar; bırakınca kaybolur. Izgara yalnız göz içindir, öğe 10 cm adımla oturur.</li>
         <li><strong>Ölçüler:</strong> Tek öğe seçiliyken zeminde kapladığı alan kesikli çizilir; genişlik, derinlik ve yükseklik cm olarak yazar. Taşırken öğeden standın dört kenarına uzaklık metre olarak gösterilir; kenara yaslı taraf çizilmez. Ölçüler Render Al görseline girmez.</li>

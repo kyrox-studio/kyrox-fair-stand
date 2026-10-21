@@ -15,6 +15,15 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-22 — Dikey hareket ve taban referansı DB'den; zemin/tavan ölçüsü; dikme boyu (migration 0076)
+
+**DB:** `fair_stand_items.vertical_move` ve `z_reference` (`0076_vertical_move`; seed `item_vertical_seed.py`, test aynası `test/itemVerticalSeed.mjs`; admin okur/yazar/kopyalar). Kural: TV, strafor, tül, raf, küp blok, LED projektör, profil ve kısa duvarlar dikey taşınır; profil ve kısa duvar `wall-top`.
+
+**Kod:** `itemMovesVertically` (items.js). Ok tuşunda dikey adaylar yalnız bu ayar açıkken (`verticalAllowed`); kısa duvar yolu artık "duvar yerleşimli ve dikey hareketli" her öğede (profil dahil). `resolveItemDefaultZCm` kısa duvar varyant kontrolü yerine `zReference === 'wall-top'`. Profil 250 cm duvarda 240'ta gelir.
+
+**Ölçü katmanı:** Etiketler öğenin sahne ölçüsü (state `widthCm/depthCm/heightCm` = `resolveSceneDimensions`; 90/270° en↔derinlik). Dikey hareketli öğede zemin ve duvar tepesi uzaklığı (`measureFloorCeiling`, `is-height`). Ölçü kutusu üst grubun matrisiyle okunur (ok tuşu sonrası güncel).
+
+**Dikme:** `src/uprightHeight.js`: bırakırken boy penceresi (varsayılan seçili duvarın dikmesi), "Bir daha sorma, aynı ölçüde getir" (localStorage `fairStand.uprightHeightItemKey`), sağ tık "Dikme yüksekliği…" aynı pencere; çentik kalkınca tercih silinir. Kayıt seçilen boyun `itemKey`'iyle yapılır.
 ## 2026-10-22 — Yeni stand duvarları varsayılan kilitli
 
 Stand oluşturma akışındaki `createAutomaticWallState` otomatik duvarları

@@ -33,6 +33,8 @@ export function createModuleContextMenu({
   onShelfLightingChange,
   getBackPanelState,
   onBackPanelChange,
+  getUprightHeightState,
+  onUprightHeight,
   onLockChange,
   onGroupAction,
   onRotate,
@@ -72,6 +74,7 @@ export function createModuleContextMenu({
     <div class="module-context-separator"></div>
     <button type="button" role="menuitem" data-module-action="toggle-shelf-light" hidden>Raf altı aydınlatmayı aç</button>
     <button type="button" role="menuitem" data-module-action="toggle-back-panels" hidden>Arka yüze panel ekle</button>
+    <button type="button" role="menuitem" data-module-action="upright-height" hidden>Dikme yüksekliği…</button>
     <button type="button" role="menuitem" data-module-action="add-right">Ekle Sağ Tarafa…</button>
     <button type="button" role="menuitem" data-module-action="add-left">Ekle Sol Tarafa…</button>
     <button type="button" role="menuitem" class="module-context-advanced-toggle" aria-expanded="false" hidden>Gelişmiş ▸</button>
@@ -123,6 +126,7 @@ export function createModuleContextMenu({
   const fabricLightingButton = menu.querySelector('[data-module-action="toggle-fabric-light"]');
   const shelfLightingButton = menu.querySelector('[data-module-action="toggle-shelf-light"]');
   const backPanelButton = menu.querySelector('[data-module-action="toggle-back-panels"]');
+  const uprightHeightButton = menu.querySelector('[data-module-action="upright-height"]');
   const foamResizeButton = menu.querySelector('[data-module-action="resize-foam"]');
   const imageResizeButton = menu.querySelector('[data-module-action="resize-image"]');
   const addRightButton = menu.querySelector('[data-module-action="add-right"]');
@@ -575,6 +579,9 @@ export function createModuleContextMenu({
     backPanelButton.hidden = backPanelState == null;
     backPanelButton.textContent = backPanelState ? 'Arka yüz panellerini kaldır' : 'Arka yüze panel ekle';
     setDisabled(backPanelButton, locked);
+    // Dikme boyu yalnız dikmede (getUprightHeightState null değilse).
+    uprightHeightButton.hidden = (getUprightHeightState?.(context) ?? null) == null;
+    setDisabled(uprightHeightButton, locked);
     const showSideInsert = allowsModuleSideInsert(context);
     addRightButton.hidden = !showSideInsert;
     addLeftButton.hidden = !showSideInsert;
@@ -687,6 +694,13 @@ export function createModuleContextMenu({
       const nextState = !Boolean(getShelfLightingState?.(context));
       close();
       onShelfLightingChange?.(context, nextState);
+      return;
+    }
+
+    if (action === 'upright-height') {
+      if ((getUprightHeightState?.(context) ?? null) == null) return;
+      close();
+      onUprightHeight?.(context);
       return;
     }
 
