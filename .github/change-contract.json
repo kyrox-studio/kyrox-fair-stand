@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "fair-stand-panel-frame-look-v1",
   "kind": "feature",
-  "summary": "Panel taşıyan duvar modüllerinde (düz panel, bazalı duvar, kapı, vitrin) çerçevenin dört kenarı aynı profil kesitiyle çizilir (addPanelModuleFrame); üst/alt profil yan dikmeyle aynı kalınlıktadır. Prosedürel kesit modül reçetesindeki profil Item'ının sahne ölçüsüdür (depth × height); reçetede profil yoksa stand frame_depth_cm ile kare. Stand frame_width_cm sahnede okunmaz. Panel yüzü profillerin 15 mm önünde (PANEL_FACE_OFFSET_M), durur ve çerçevenin dış kenarından dört yanda 4 cm içeride biter (PANEL_FRAME_INSET_M, fitPanelToFrameOpening); panel gövdesi reçetedeki panel Item kalınlığında; TV/raf/strafor wallFrontM aynı yüze oturur. Profil kenarlarına koyu ton kenar çizgisi. Baza, düz banko ve L bankoda da köşe dikmeleri ve raylar aynı kare kesit (addBoxModuleFrame), yüz panelleri profilin 15 mm önünde ve 4 cm içeride (placeBoxPanelFace). Bütün prosedürel profil ve dikmeler kanallı kesitle çizilir (profileGeometry.js: dört yüzde 2 cm ağız, 1,5 cm derinlik; dış ölçü aynı). Yalnız 3B görünüm; BOM, panelRailHeight, kayıt biçimi ve veritabanı değişmez.",
+  "summary": "Panel taşıyan duvar modüllerinde (düz panel, bazalı duvar, kapı, vitrin) çerçevenin dört kenarı aynı profil kesitiyle çizilir (addPanelModuleFrame); üst/alt profil yan dikmeyle aynı kalınlıktadır. Prosedürel kesit modül reçetesindeki profil Item'ının sahne ölçüsüdür (depth × height); reçetede profil yoksa stand frame_depth_cm ile kare. Stand frame_width_cm sahnede okunmaz. Panel yüzü profillerin 15 mm önünde (PANEL_FACE_OFFSET_M), durur ve çerçevenin dış kenarından dört yanda 4 cm içeride biter (PANEL_FRAME_INSET_M, fitPanelToFrameOpening); panel gövdesi reçetedeki panel Item kalınlığında; TV/raf/strafor wallFrontM aynı yüze oturur. Profil kenarlarına koyu ton kenar çizgisi. Baza, düz banko ve L bankoda da köşe dikmeleri ve raylar aynı kare kesit (addBoxModuleFrame), yüz panelleri profilin 15 mm önünde ve 4 cm içeride (placeBoxPanelFace). Bütün prosedürel profil ve dikmeler kanallı kesitle çizilir (profileGeometry.js: dört yüzde 2 cm ağız, 1,5 cm derinlik; dış ölçü aynı). Yalnız 3B görünüm; BOM, panelRailHeight, kayıt biçimi ve veritabanı değişmez. CI bağımlılık taraması: vite 8.2.1 → 8.3.5 (GHSA launch-editor yüksek önem), package-lock aralık içinde güncellendi; package.json değişmez.",
   "owners": [
     "src/scene3d.js",
     "src/items.js",
@@ -96,6 +96,7 @@
       "docs/items/audit/hedef/ATOMIK_MEKANIZMA.html",
       "docs/items/audit/report/MEKANIZMA_PARAMETRE.html",
       "index.html",
+      "package-lock.json",
       "package.json",
       "pw-4193.config.mjs",
       "scripts/archive/add-tv-sizes.py",
