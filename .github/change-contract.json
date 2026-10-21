@@ -1,18 +1,24 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-shelf-width-variant-placement",
+  "id": "fair-stand-flat-panel-back-strips",
   "kind": "feature",
-  "summary": "Raf genişlik ailesi hedef duvarın genişliğinden çözülür; önizleme kaynak state değiştirmez, geçerli bırakmada ürün kimliği ve ölçüler birlikte işlenir. 50 cm duvar reddedilir. Sıralı raf renderer reçetedeki adet kadar ayrı tahta ve her tahtanın altında aydınlatma üretir; tahta kalınlığı alt Item ölçüsünden, aralık toplam Item yüksekliğinden gelir. Kullanım kılavuzu, DB envanteri ve raf Item tanımları güncellendi; 0072 upgrade/idempotency/downgrade ve kullanıcı ölçüsü koruma testi eklendi. Çok sıralı rafın üst tahtası duvarın içinde kalır (seamsFittingOverlayHeight). Gerçek kullanıcı akışı E2E: üretim listesi, eski proje, 50 cm ve duvar dışı ret, taşımada genişlik, bütün sıralarda ışık, tablet (shelf-rows-flow). Kapı üstü panellerde birleşimler gerçek stripIndex üzerinden çözülür; 250–500 cm standlarda panel bölgesinin dış alt/üst sınırı reddedilir. Aynı panel birleşimindeki raf tahtası çakışması yeni bırakma ve klavye taşımasında engellenir; çok sıralı her tahta ayrı kontrol edilir.",
+  "summary": "Düz duvar ailesine (wall_50/100/150/200, kısa duvarlar) arka yüz paneli: flat-panel state isteğe bağlı backStrips (strips ile aynı yapı, ayrı kimlik; açılışta bant sayısı ön yüzü izler, kopya yeni kimlik alır). Sağ tık 'Arka yüze panel ekle / Arka yüz panellerini kaldır'. Arka paneller ön yüzün aynası, ayrı seçim düzlemi (planeKey :back). BOM arka bant başına reçete paneli ekler (wall_100 iki yüz: 2 profil, 2 dikme, 14 panel); cam/metal/baskı alanı arka yüzü de sayar. Köşe paneli yüz bazlı: komşu duvar yüzün önündeyse o yüz panel_corner olur (partnerOnBack, backSwapModuleIds); T'de gövde mevcut payCorner kuralıyla düz kalır; aparat kuralı değişmez. Migration yok; eski projeler değişmez. Dik bağlantı yalnız dikme olan noktaya: tek duvarın ortasına dik duvar reddedilir (MID_WALL_TEE_MESSAGE), magnetic snap yalnız uçlara aday üretir.",
   "owners": [
-    "src/scene3d.js",
-    "src/items.js",
-    "src/wallPanelBand.js",
-    "src/profileGeometry.js"
+    "src/designState.js",
+    "src/helpGuide.js",
+    "src/main.js",
+    "src/moduleContextMenu.js",
+    "src/modulePlacement.js",
+    "src/panelGlassBom.js",
+    "src/printAreaBom.js",
+    "src/projectBom.js",
+    "src/relationshipBom.js",
+    "src/scene3d.js"
   ],
   "sourceOfTruth": [
-    "src/scene3d.js",
-    "src/items.js",
-    "src/profileGeometry.js"
+    "src/designState.js",
+    "src/projectBom.js",
+    "src/relationshipBom.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -200,6 +206,7 @@
       "e2e/f023-atomic-project-delete.spec.mjs",
       "e2e/f027-scene-reset.spec.mjs",
       "e2e/f028-reset-features.spec.mjs",
+      "e2e/flat-panel-back-strips.spec.mjs",
       "e2e/floor-area.spec.mjs",
       "e2e/floor-items-contract.spec.mjs",
       "e2e/free-props-collision-none.spec.mjs",
@@ -297,6 +304,7 @@
       "test/developerEntrypointDocs.test.js",
       "test/doorCompositeItemContract.test.js",
       "test/doorLeafItemContract.test.js",
+      "test/doorShelfPanelSeams.test.js",
       "test/eamesTableChairSetContract.test.js",
       "test/emptyCatalogBootstrap.test.js",
       "test/f017RendererSurfacePersist.test.js",
@@ -307,6 +315,7 @@
       "test/fixtures/catalogPreviewCss.mjs",
       "test/fixtures/catalogPreviewKinds.mjs",
       "test/fixtures/itemCatalogSeed.json",
+      "test/flatPanelBackStrips.test.js",
       "test/floorArea.test.js",
       "test/floorItemsContract.test.js",
       "test/freePropsCollisionNone.test.js",
@@ -504,8 +513,7 @@
       "test/wallShortProfileSnapCollision.test.js",
       "test/wallShortRelationshipBom.test.js",
       "test/wallShortVerticalMove.test.js",
-      "test/wallShowcaseItemContract.test.js",
-      "test/doorShelfPanelSeams.test.js"
+      "test/wallShowcaseItemContract.test.js"
     ],
     "affectedDocs": [
       "AGENTS.md",
@@ -1085,20 +1093,12 @@
   },
   "tests": {
     "targeted": [
-      "test/horizontalPanelRails.test.js",
-      "test/itemSceneDimensions.test.js",
-      "test/baseRenderStyle.test.js",
-      "test/showcaseDepthDirection.test.js",
-      "test/tv42Module.test.js",
-      "test/panelFrameOpening.test.js",
-      "test/lCounterSideGeometry.test.js",
-      "test/profileGeometry.test.js",
-      "test/profileFieldPlacement.test.js",
-      "test/uprightFieldPlacement.test.js",
-      "test/shelfWidthVariantPlacement.test.js",
-      "test/shelfRowsRender.test.js",
+      "test/flatPanelBackStrips.test.js",
+      "test/ctrlMultiSelect.test.js",
+      "test/panelMultiSelectRule.test.js",
+      "test/relationshipBomJoints.test.js",
       "test/helpGuide.test.js",
-      "test/doorShelfPanelSeams.test.js"
+      "test/modulePlacement.test.js"
     ],
     "fullSuite": true,
     "build": true,
@@ -1113,6 +1113,7 @@
         "e2e/duplicate-metal-separator.spec.mjs",
         "e2e/f020-save-before-project-actions.spec.mjs",
         "e2e/f027-scene-reset.spec.mjs",
+        "e2e/flat-panel-back-strips.spec.mjs",
         "e2e/group-template.spec.mjs",
         "e2e/help-guide-recent-rules.spec.mjs",
         "e2e/metal-separator-bom-gap.spec.mjs",
@@ -1124,24 +1125,24 @@
         "e2e/plastic-trash-bin-module.spec.mjs",
         "e2e/project-open-timing.spec.mjs",
         "e2e/selection-toolbar.spec.mjs",
+        "e2e/shelf-items-contract.spec.mjs",
+        "e2e/shelf-rows-flow.spec.mjs",
+        "e2e/shelf-width-variant.spec.mjs",
         "e2e/smoke.spec.mjs",
         "e2e/viewport-chrome-layout.spec.mjs",
         "e2e/wall-height-matrix.spec.mjs",
-        "e2e/shelf-width-variant.spec.mjs",
-        "e2e/shelf-items-contract.spec.mjs",
-        "e2e/wall-height.spec.mjs",
-        "e2e/shelf-rows-flow.spec.mjs"
+        "e2e/wall-height.spec.mjs"
       ],
-      "reason": "Raf genişlik seçimi tarayıcı modülleriyle 100/150/200 cm ve desteklenmeyen 50 cm duvarda doğrulanır."
+      "reason": "Sağ tık menüsü, arka panel çizimi, seçim ve üretim listesi tarayıcıda doğrulanır."
     }
   },
   "risk": {
     "level": "medium",
-    "notes": "Katalog kartı yerine çözülen üretim Item kimliği saklanır. Çizici terminal tahta sahne/fiziksel ölçüsünü kullanır. Tam frontend/backend ve gerçek Chromium paketiyle doğrulanır."
+    "notes": "Köşe paneli artık yüz bazlı; arka paneli olmayan modüllerde ön yüz kuralı aynı. Seçim düzlemi anahtarı arka yüzde ayrıldı. T gövdesi kararı açık (OPEN_WORK E.6)."
   },
   "migration": {
-    "required": true,
-    "notes": "0072_shelf_rows yerel head; yeni width_variants tablosu ve raf ürünleri eklenir. Upgrade tekrar çalıştırma, downgrade ve mevcut ölçülerin korunması testle doğrulanır."
+    "required": false,
+    "notes": "backStrips isteğe bağlı alan; eski kayıtlar olduğu gibi açılır."
   },
-  "rollback": "modulePlacement genişlik çözümlemesi ve scene3d resolvedModuleState önizleme/bırakma bağlantıları geri alınır; önceki yerel katalog ve migration değişiklikleri korunur."
+  "rollback": "backStrips alanı ve menü komutu kaldırılır; projectBom/relationshipBom arka yüz dalları silinir; kayıtlı backStrips yok sayılır."
 }

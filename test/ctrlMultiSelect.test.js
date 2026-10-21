@@ -15,8 +15,9 @@ test('Ctrl/Cmd left click is captured before OrbitControls and selects a rectang
   assert.doesNotMatch(scene, /function toggleSurfaceSelection\(mesh\)/);
   assert.match(scene, /const canRectangleSelect = rectangleSelect[\s\S]*selectionMode === 'panel'[\s\S]*selectRectangleTo\(hit\.object\)/);
   assert.match(scene, /function getSurfaceSelectionPlaneMeta\(surface\)/);
-  assert.match(scene, /planeKey: `wall:\$\{wallId\}`/);
-  assert.match(scene, /planeKey: `free:\$\{axis\}:\$\{quantizedCrossCm\}`/);
+  // Arka yüz paneli ayrı seçim düzlemidir (`:back` eki).
+  assert.match(scene, /planeKey: `wall:\$\{wallId\}\$\{surface\.userData\.panelSide === 'back' \? ':back' : ''\}`/);
+  assert.match(scene, /planeKey: `free:\$\{axis\}:\$\{quantizedCrossCm\}\$\{surface\.userData\.panelSide === 'back' \? ':back' : ''\}`/);
   assert.match(scene, /anchorMeta\.planeKey !== targetMeta\.planeKey/);
   assert.match(scene, /createConnectedPanelModulePath/);
   assert.match(scene, /anchorMeta\.wallId === 'free' \|\| targetMeta\.wallId === 'free'/);

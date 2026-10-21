@@ -7,7 +7,9 @@ test('Ctrl/Cmd panel range selection is based on panel presence, not module type
   const scene = readFileSync(new URL('../src/scene3d.js', import.meta.url), 'utf8');
   assert.match(scene, /surface\.userData\.selectionMode === 'panel'/);
   assert.match(scene, /const result = createPanelRangeSelection\(/);
-  assert.match(scene, /\.filter\(\(surface\) => surface\.userData\.selectionMode === 'panel'\)/);
+  // Aralık yalnız çapanın yüzündeki (ön / arka) panellerden kurulur.
+  assert.match(scene, /const isAnchorSidePanel = \(surface\) => surface\.userData\.selectionMode === 'panel'\s*&& \(surface\.userData\.panelSide \?\? 'front'\) === anchorSide;/);
+  assert.match(scene, /\.filter\(\(surface\) => isAnchorSidePanel\(surface\)\)/);
 });
 
 

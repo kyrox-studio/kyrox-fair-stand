@@ -75,6 +75,7 @@ function listGuideSections() {
         <li><strong>Mesh (Delikli) Brandaya Çevir / Mesh Brandadan Çıkar:</strong> Aynı panel bloğunu gerçek delik maskeli Mesh Branda olarak kullanır; deliklerden sahnenin arkası görünür.</li>
         <li><strong>Lightbox aydınlatmayı aç / kapat:</strong> Bez yüzeyinin aydınlatmasını kontrol eder.</li>
         <li><strong>Raf altı aydınlatmayı aç / kapat:</strong> Raf modülündeki LED görünümünü kontrol eder.</li>
+        <li><strong>Arka yüze panel ekle / Arka yüz panellerini kaldır:</strong> Düz duvarın (50, 100, 150, 200 cm ve kısa duvarlar) arka yüzüne de panel takar; arka paneller ön yüz gibi seçilir, görsel, cam, Lightbox ve metal alır. Üretim listesinde tek çerçeve, iki yüz panel sayılır; köşede içe bakan yüz köşe paneline döner.</li>
         <li><strong>Ekle Sağ / Sol Tarafa…:</strong> Hedef modülün yanına katalogdan yeni modül ekler.</li>
       </ul>
     `,

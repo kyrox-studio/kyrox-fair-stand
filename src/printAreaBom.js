@@ -44,18 +44,24 @@ function moduleSegment(module) {
   return modulePanelSegment(module?.placement, width);
 }
 
+// Arka yüz bantları ön yüzle aynı modül sırasında ama ayrı bir sütun numarası alanında kümelenir.
+const BACK_FACE_INDEX_OFFSET = 1_000_000;
+
 function collectStripFaces(modules) {
   const faces = [];
   modules.forEach((module, moduleIndex) => {
     const segment = moduleSegment(module);
-    const strips = Array.isArray(module?.strips) ? module.strips : [];
-    strips.forEach((strip, fallbackIndex) => {
+    const front = Array.isArray(module?.strips) ? module.strips : [];
+    const back = Array.isArray(module?.backStrips) ? module.backStrips : [];
+    // Arka yüz ayrı baskı yüzeyidir: kendi sütun sırasında kümelenir, ön yüzle birleşmez.
+    const sides = [[front, moduleIndex], [back, BACK_FACE_INDEX_OFFSET + moduleIndex]];
+    sides.forEach(([strips, faceModuleIndex]) => strips.forEach((strip, fallbackIndex) => {
       if (!strip || typeof strip !== 'object') return;
       const size = panelSizeCm(strip);
       if (!size) return;
       const stripIndex = Number.isInteger(strip.stripIndex) ? strip.stripIndex : fallbackIndex;
       faces.push({
-        moduleIndex,
+        moduleIndex: faceModuleIndex,
         segment,
         stripIndex,
         widthCm: size.width,
@@ -71,7 +77,7 @@ function collectStripFaces(modules) {
         fabricImageAssetId: strip.fabricImageAssetId || null,
         fabricColor: typeof strip.fabricColor === 'string' ? strip.fabricColor : null,
       });
-    });
+    }));
   });
   return faces;
 }

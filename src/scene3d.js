@@ -1732,7 +1732,7 @@ export function createStandScene(
       if (![pathCm, crossCm, widthCm].every(Number.isFinite) || widthCm <= 0) return null;
       return {
         wallId,
-        planeKey: `wall:${wallId}`,
+        planeKey: `wall:${wallId}${surface.userData.panelSide === 'back' ? ':back' : ''}`,
         pathCm,
         axis,
         crossCm,
@@ -1761,7 +1761,7 @@ export function createStandScene(
 
     return {
       wallId,
-      planeKey: `free:${axis}:${quantizedCrossCm}`,
+      planeKey: `free:${axis}:${quantizedCrossCm}${surface.userData.panelSide === 'back' ? ':back' : ''}`,
       pathCm,
       axis,
       crossCm,
@@ -1777,6 +1777,10 @@ export function createStandScene(
     const anchorMesh = surfaceMeshes.find(
       (surface) => surface.userData.surfaceId === selectionAnchorSurfaceId,
     ) ?? [...selectedSurfaces][0] ?? mesh;
+    // Ön ve arka yüz panelleri ayrı seçim düzlemidir; aralık yalnız çapanın yüzünde kurulur.
+    const anchorSide = anchorMesh.userData.panelSide ?? 'front';
+    const isAnchorSidePanel = (surface) => surface.userData.selectionMode === 'panel'
+      && (surface.userData.panelSide ?? 'front') === anchorSide;
 
     if (!selectionAnchorSurfaceId) {
       selectionAnchorSurfaceId = anchorMesh.userData.surfaceId ?? null;
@@ -1791,7 +1795,7 @@ export function createStandScene(
     if (anchorModuleId && anchorModuleId === targetModuleId) {
       const modulePanels = surfaceMeshes
         .filter((surface) => (
-          surface.userData.selectionMode === 'panel'
+          isAnchorSidePanel(surface)
           && surface.userData.moduleId === anchorModuleId
           && Number.isInteger(Number(surface.userData.stripIndex))
         ))
@@ -1829,7 +1833,7 @@ export function createStandScene(
       if (anchorMeta.wallId === 'free' || targetMeta.wallId === 'free') {
         const freeModuleMeta = [...new Map(
           surfaceMeshes
-            .filter((surface) => surface.userData.selectionMode === 'panel')
+            .filter((surface) => isAnchorSidePanel(surface))
             .map((surface) => getSurfaceSelectionPlaneMeta(surface))
             .filter((meta) => meta?.moduleId && (meta.axis === 'x' || meta.axis === 'y'))
             .map((meta) => [meta.moduleId, meta]),
@@ -1847,7 +1851,7 @@ export function createStandScene(
         const freePathSet = new Set(freePath.moduleIds);
         const freePathPanels = surfaceMeshes
           .filter((surface) => (
-            surface.userData.selectionMode === 'panel'
+            isAnchorSidePanel(surface)
             && freePathSet.has(surface.userData.moduleId)
           ))
           .map((surface) => ({
@@ -1885,7 +1889,7 @@ export function createStandScene(
       if (!wallIds.includes(anchorMeta.wallId) || !wallIds.includes(targetMeta.wallId)) return;
 
       const wallPanels = surfaceMeshes
-        .filter((surface) => surface.userData.selectionMode === 'panel')
+        .filter((surface) => isAnchorSidePanel(surface))
         .map((surface) => ({ surface, meta: getSurfaceSelectionPlaneMeta(surface) }))
         .filter((entry) => wallIds.includes(entry.meta?.wallId))
         .map(({ surface }) => ({
@@ -1921,7 +1925,7 @@ export function createStandScene(
     }
 
     const planePanels = surfaceMeshes
-      .filter((surface) => surface.userData.selectionMode === 'panel')
+      .filter((surface) => isAnchorSidePanel(surface))
       .map((surface) => ({ surface, meta: getSurfaceSelectionPlaneMeta(surface) }))
       .filter((entry) => entry.meta?.planeKey === anchorMeta.planeKey);
 
@@ -9792,18 +9796,15 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
   const { panelDepth, backingZ } = resolvePanelSlab(moduleState, depth);
   const panelOpening = panelFrameOpening(frameBottomY, frameBottomY + frameHeight);
 
-  for (let visibleIndex = 0; visibleIndex < visibleStripCount; visibleIndex += 1) {
-    const stripIndex = visibleIndex;
+  // Ön yüz `strips`, arka yüz `backStrips` (isteğe bağlı): arka paneller ön yüzün aynasıdır,
+  // profilin arka yüzünün PANEL_FACE_OFFSET_M gerisinde durur ve dışa (−Z) bakar.
+  const addPanel = (surfaceState, stripIndex, panelSide) => {
+    const back = panelSide === 'back';
     const { centerY, panelHeight } = fitPanelToFrameOpening(
-      visibleIndex * stripHeight + stripHeight / 2,
+      stripIndex * stripHeight + stripHeight / 2,
       bandPanelHeight,
       panelOpening,
     );
-    const surfaceState = moduleState.strips?.[stripIndex];
-    if (!surfaceState) {
-      console.warn('Eksik panel strip state atlandı:', moduleState.type, moduleState.id, stripIndex);
-      continue;
-    }
     // Açıklık = modül sahne genişliği (wall item) − stand dikme kesiti. Yaprak panel ölçüsü mesh’i ezmez.
     const isGlass = Boolean(surfaceState.isGlass);
 
@@ -9817,7 +9818,7 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
         depthWrite: !isGlass,
       }),
     );
-    backing.position.set(0, centerY, backingZ);
+    backing.position.set(0, centerY, back ? -backingZ : backingZ);
     backing.castShadow = !isGlass;
     backing.receiveShadow = true;
     group.add(backing);
@@ -9842,7 +9843,8 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
       paintMetalGrid(surface, innerWidth, panelHeight);
       backing.visible = false;
     }
-    surface.position.set(0, centerY, depth / 2 + PANEL_FACE_OFFSET_M);
+    surface.position.set(0, centerY, (back ? -1 : 1) * (depth / 2 + PANEL_FACE_OFFSET_M));
+    if (back) surface.rotation.y = Math.PI;
 
     const selectionFrame = createSelectionFrame(innerWidth, panelHeight);
     selectionFrame.visible = false;
@@ -9858,6 +9860,7 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
       widthCm,
       stripIndex,
       stripNumber: stripIndex + 1,
+      ...(back ? { panelSide: 'back' } : {}),
       surfaceId: surfaceState.id,
       ...bindRendererSurfaceState(surfaceState),
       selectionFrame,
@@ -9866,6 +9869,20 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
     group.add(surface);
     surfaces.push(surface);
     onSurfaceReady?.(surface);
+  };
+
+  for (let stripIndex = 0; stripIndex < visibleStripCount; stripIndex += 1) {
+    const surfaceState = moduleState.strips?.[stripIndex];
+    if (!surfaceState) {
+      console.warn('Eksik panel strip state atlandı:', moduleState.type, moduleState.id, stripIndex);
+      continue;
+    }
+    addPanel(surfaceState, stripIndex, 'front');
+  }
+  if (Array.isArray(moduleState.backStrips)) {
+    moduleState.backStrips.forEach((surfaceState, stripIndex) => {
+      if (surfaceState && stripIndex < visibleStripCount) addPanel(surfaceState, stripIndex, 'back');
+    });
   }
 
   return { group, surfaces };

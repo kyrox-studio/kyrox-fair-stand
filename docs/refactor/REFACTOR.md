@@ -15,6 +15,20 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-21 — Dik bağlantı yalnız dikme olan noktaya
+
+Ürün kararı: tek duvarın ortasında dikme yoktur; dik duvar (kısa ya da tam boy) oraya bağlanamaz. Yerleşim (`collisionSegmentsOverlap`): iki ince duvar dik kesiştiğinde ikisinin de ucu birleşimdeyse (L ya da iki duvarın birleşim ucunda T) izin; yalnız birinin ucu diğerinin ortasındaysa çakışma, mesaj `MID_WALL_TEE_MESSAGE` "Dik bağlantı yalnız dikme olan noktaya yapılır.". Magnetic snap (`getSegmentSnapCoordinates`) yalnız hedefin uçlarını aday üretir; 50 cm'lik ara noktalar kalktı. Kayıtlı eski yerleşimler yerinde kalır; taşınınca yeni kurala uyar. Testler `test/modulePlacement.test.js` ürün kararına göre güncellendi.
+
+## 2026-10-21 — Düz duvara arka yüz paneli
+
+**State:** `flat-panel` (wall_50/100/150/200, kısa duvarlar) isteğe bağlı `backStrips` taşır; yapı `strips` ile aynı, kimlikler ayrı. Alan yoksa arka yüz boştur; eski projeler değişmez, migration yok. Açılışta arka bant sayısı ön yüzü izler (`alignFlatPanelBackStrips`); kopya yeni kimlik alır. Sahip: `src/designState.js` (`supportsFlatPanelBackStrips`, `addFlatPanelBackStrips`, `removeFlatPanelBackStrips`).
+
+**Menü:** Sağ tık "Arka yüze panel ekle / Arka yüz panellerini kaldır" (yalnız düz duvar ailesi; kaldırırken arka yüzde görsel/cam/Lightbox/metal varsa onay).
+
+**Çizim ve seçim:** Arka paneller ön yüzün aynası (profilin 15 mm gerisinde, 4 cm iç pay, −Z'ye bakar; `userData.panelSide = 'back'`). Ön ve arka yüz ayrı seçim düzlemidir (`planeKey` `:back` eki; aralık seçimi çapanın yüzünde kurulur).
+
+**BOM:** Arka bant başına reçete paneli eklenir (`collectBackPanelSurfaces`, `panelLinesFromSurfaces`): `wall_100` iki yüz = 2 × `profile_91`, 2 × `upright_346_5`, 14 × `panel_98`. Cam/metal arka bantlar ayrıca ayrılır; baskı alanı arka görselleri ayrı yüzey olarak sayar. Köşe kuralı yüz bazlı: komşu duvar yüzün önündeyse o yüzün panelleri `panel_corner_*` olur (`partnerOnFront` / `partnerOnBack`, `backSwapModuleIds`). L ve U'da içe bakan yüzler köşe, dışa bakanlar düz; T'de kolun iki yüzü köşe, gövde mevcut T kuralıyla (`payCorner: false`) düz kalır. Bağlantı aparatı kuralı değişmez.
+
 ## 2026-10-21 — Raf: Tekli / 2 sıralı / 3 sıralı (migration 0072)
 
 **Katalog:** Raf & Vitrin altında üç kart: `shelf_row_1` Tekli raf, `shelf_row_2` 2 sıralı raf, `shelf_row_3` 3 sıralı raf. Kartta genişlik yok; `shelf_100/150/200` katalogdan çıktı (Tekli kartın ürünleri). Yeni tablo `fair_stand_item_width_variants` kart → ürün eşlemesini tutar; genişlik ürünün `dimensions.widthCm` değeridir (`getWidthVariantFamily`, `resolveWidthVariantItemKey`). Anahtar deseni ve `if (itemKey === …)` yok.

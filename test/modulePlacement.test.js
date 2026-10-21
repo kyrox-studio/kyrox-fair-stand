@@ -12,6 +12,7 @@ import {
   snapPlacementToModules,
   rotateModulePlacementAroundCenter,
   validatePlacementAgainstModules,
+  MID_WALL_TEE_MESSAGE,
 } from '../src/modulePlacement.js';
 
 test('snaps module coordinates to 50 cm increments', () => {
@@ -155,14 +156,15 @@ test('free parallel walls may overlap in axis range when they are on different g
   assert.equal(result.ok, true);
 });
 
-test('free L and T joins are allowed but a plus crossing is rejected', () => {
+test('T joins only at a shared upright; a stem into the middle of one wall and a plus crossing are rejected', () => {
   const horizontal = {
     id: 'horizontal',
     widthCm: 300,
     placement: { xCm: 100, yCm: 200, zCm: 0, rotationZDeg: 0, wallId: 'free' },
   };
 
-  const tJoin = validatePlacementAgainstModules({
+  // Tek duvarın ortasında dikme yok: dik bağlantı reddedilir, ayrı mesajla.
+  const midWall = validatePlacementAgainstModules({
     moduleId: 't',
     widthCm: 100,
     placement: { xCm: 250, yCm: 100, zCm: 0, rotationZDeg: 90, wallId: 'free' },
@@ -171,7 +173,34 @@ test('free L and T joins are allowed but a plus crossing is rejected', () => {
     standXCm: 800,
     standYCm: 600,
   });
+  assert.equal(midWall.ok, false);
+  assert.equal(midWall.message, MID_WALL_TEE_MESSAGE);
+
+  // İki duvarın birleştiği noktada (ortak dikme) T kabul edilir.
+  const left = { id: 'left', widthCm: 150, placement: { xCm: 100, yCm: 200, zCm: 0, rotationZDeg: 0, wallId: 'free' } };
+  const right = { id: 'right', widthCm: 150, placement: { xCm: 250, yCm: 200, zCm: 0, rotationZDeg: 0, wallId: 'free' } };
+  const tJoin = validatePlacementAgainstModules({
+    moduleId: 't',
+    widthCm: 100,
+    placement: { xCm: 250, yCm: 100, zCm: 0, rotationZDeg: 90, wallId: 'free' },
+    modules: [left, right],
+    standType: 'u-stand',
+    standXCm: 800,
+    standYCm: 600,
+  });
   assert.equal(tJoin.ok, true);
+
+  // Uçta L kabul edilir.
+  const lJoin = validatePlacementAgainstModules({
+    moduleId: 'l',
+    widthCm: 100,
+    placement: { xCm: 400, yCm: 100, zCm: 0, rotationZDeg: 90, wallId: 'free' },
+    modules: [horizontal],
+    standType: 'u-stand',
+    standXCm: 800,
+    standYCm: 600,
+  });
+  assert.equal(lJoin.ok, true);
 
   const plusCross = validatePlacementAgainstModules({
     moduleId: 'plus',
@@ -324,7 +353,7 @@ test('magnetic snap creates an L connection at a target endpoint', () => {
   });
 });
 
-test('magnetic snap creates a T connection on a 50 cm point along target body', () => {
+test('magnetic snap offers no T connection in the middle of a wall (no upright there)', () => {
   const modules = [{
     id: 'target',
     widthCm: 300,
@@ -342,10 +371,8 @@ test('magnetic snap creates a T connection on a 50 cm point along target body', 
     standYCm: 600,
   });
 
-  assert.equal(result?.snapKind, 'tee');
-  assert.deepEqual(result?.placement, {
-    xCm: 250, yCm: 200, zCm: 0, rotationZDeg: 90, wallId: 'free',
-  });
+  assert.notEqual(result?.snapKind, 'tee');
+  assert.notEqual(result?.placement?.xCm, 250);
 });
 
 test('magnetic snap preserves 270 degree facing and ignores distant targets', () => {

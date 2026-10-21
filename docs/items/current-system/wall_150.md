@@ -177,6 +177,8 @@ Cover-mode geçişlerinde glass ve fabric state birbirini temizleyen yollar kull
 
 ## Context menu
 
+**Arka yüz paneli (2026-10-21):** Sağ tık "Arka yüze panel ekle / Arka yüz panellerini kaldır" modüle `backStrips` ekler/siler (ön yüzle aynı bant sayısı ve reçete paneli, ayrı görsel/cam/Lightbox/metal). BOM tek çerçeve ve iki yüz panel sayar; köşede içe bakan yüz `panel_corner_*` olur, T'de gövde düz kalır. Sahip: `src/designState.js`, BOM `src/projectBom.js` + `src/relationshipBom.js`.
+
 `moduleContextMenu.js` içindeki modül menüsü şu temel aksiyonları içerir:
 
 ```text
