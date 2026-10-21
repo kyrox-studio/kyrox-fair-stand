@@ -207,7 +207,7 @@ test('eski tekli raflar aynen açılır; sıralı raflar her genişlikte reçete
   expect(errors).toEqual([]);
 });
 
-test('raf 50 cm duvara ve duvar dışına bırakılamaz; taşınınca genişliği yeni duvardan alır', async ({ page }) => {
+test('raf taşınınca genişliği yeni duvardan alır', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await exposeScene(page);
@@ -224,11 +224,23 @@ test('raf 50 cm duvara ve duvar dışına bırakılamaz; taşınınca genişliğ
   await page.mouse.move(to.x, to.y, { steps: 20 });
   await expect.poll(() => page.evaluate(() => document.querySelector('#viewport > canvas').dataset.placementGhost)).toBe('valid');
   await page.mouse.up();
-  let project = await saveAndReadProject(page);
-  let moved = project.modules.find((module) => module.id === shelf.id);
+  const project = await saveAndReadProject(page);
+  const moved = project.modules.find((module) => module.id === shelf.id);
   expect(moved.itemKey).toBe('shelf_row_2_200');
   expect(moved.widthCm).toBe(200);
   expect(moved.placement.xCm).toBe(wall200.placement.xCm);
+  expect(wall100.widthCm).toBe(100);
+  expect(errors).toEqual([]);
+});
+
+test('200 cm raftan 50 cm duvara taşıma reddedilir; kayıtlı raf korunur', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await exposeScene(page);
+  const opened = await openProjectWithShelves(page, 'E2E Raf Dar Duvar', [['shelf_row_2', 2, 100]]);
+  const [, , wall200, wall50] = opened.modules.filter((module) => module.type === 'flat-panel');
+  const shelf = opened.modules.find((module) => module.type === 'shelf');
+  expect(shelf.itemKey).toBe('shelf_row_2_200');
 
   // 50'lik duvara taşıma reddedilir: raf yerinde ve genişliğinde kalır.
   const back = await shelfBoardPoint(page, shelf.id);
@@ -238,10 +250,22 @@ test('raf 50 cm duvara ve duvar dışına bırakılamaz; taşınınca genişliğ
   await page.mouse.move(onFifty.x, onFifty.y, { steps: 20 });
   await expect.poll(() => page.evaluate(() => document.querySelector('#viewport > canvas').dataset.placementGhost)).not.toBe('valid');
   await page.mouse.up();
-  project = await saveAndReadProject(page);
-  moved = project.modules.find((module) => module.id === shelf.id);
+  const project = await saveAndReadProject(page);
+  const moved = project.modules.find((module) => module.id === shelf.id);
   expect(moved.itemKey).toBe('shelf_row_2_200');
+  expect(moved.widthCm).toBe(200);
   expect(moved.placement.xCm).toBe(wall200.placement.xCm);
+  expect(moved.placement).toEqual(shelf.placement);
+  expect(project.modules.filter((module) => module.type === 'shelf')).toHaveLength(1);
+  expect(errors).toEqual([]);
+});
+
+test('katalog rafı 50 cm duvara veya duvar dışına bırakılamaz', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await exposeScene(page);
+  const opened = await openProjectWithShelves(page, 'E2E Raf Geçersiz Bırakma', [['shelf_row_2', 2, 100]]);
+  const [wall100, , , wall50] = opened.modules.filter((module) => module.type === 'flat-panel');
 
   // Katalogdan 50'lik duvara ve boş zemine bırakma: raf eklenmez.
   await page.locator('details', { has: page.locator('#open-module-catalog') }).locator(':scope > summary').click();
@@ -264,7 +288,7 @@ test('raf 50 cm duvara ve duvar dışına bırakılamaz; taşınınca genişliğ
     }, point);
     expect(accepted).not.toBe('valid');
   }
-  project = await saveAndReadProject(page);
+  const project = await saveAndReadProject(page);
   expect(project.modules.filter((module) => module.type === 'shelf')).toHaveLength(1);
   expect(wall100.widthCm).toBe(100);
   expect(errors).toEqual([]);
