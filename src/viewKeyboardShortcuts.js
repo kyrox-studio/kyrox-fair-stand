@@ -17,6 +17,7 @@ export function resolveViewKeyboardShortcut(event = {}) {
   }
   // Tasarım geçmişi: Ctrl/Cmd+Z geri al; Ctrl/Cmd+Y ve Ctrl/Cmd+Shift+Z ileri al.
   if (ctrlOrMeta && !alt) {
+    if (key === 'a' && !shift) return Object.freeze({ type: 'select-all' });
     if (key === 'z') return Object.freeze({ type: shift ? 'redo' : 'undo' });
     if (key === 'y' && !shift) return Object.freeze({ type: 'redo' });
   }

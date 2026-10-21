@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
+
+test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
 async function createStand(page) {
   await page.goto('/');
@@ -38,6 +41,7 @@ async function saveAndReadProject(page) {
 
 async function removeModules(page, modules) {
   for (const moduleState of modules) {
+    await unlockModuleForFixture(page, moduleState);
     page.once('dialog', async (dialog) => dialog.accept());
     await page.evaluate((moduleId) => {
       window.dispatchEvent(new CustomEvent('fair-stand:delete-selected-module', {
@@ -56,6 +60,8 @@ test('wall showcase catalog Items persist canonical identity and grouped body co
   const initialProject = await saveAndReadProject(page);
   expect(initialProject).not.toBeNull();
   expect(initialProject.modules.length).toBeGreaterThanOrEqual(2);
+  // Ekleme planı kalan duvarı da kaydırabilir; düzenlenecek zincirin kilidini aç.
+  for (const moduleState of initialProject.modules) await unlockModuleForFixture(page, moduleState);
   await removeModules(page, initialProject.modules.slice(0, 2));
 
   const open = page.locator('#open-module-catalog');

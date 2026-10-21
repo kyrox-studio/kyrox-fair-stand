@@ -14,6 +14,14 @@ export function isModuleLocked(moduleState) {
   return moduleState?.locked === true || moduleState?.group?.locked === true;
 }
 
+/** Toplu silme atomiktir: seçimde kilit varsa hiçbir öğe silinmez. */
+export function planSelectionRemoval(modules = [], moduleIds = []) {
+  const ids = new Set(moduleIds);
+  const selected = modules.filter((moduleState) => ids.has(moduleState.id));
+  const blockedIds = selected.filter(isModuleLocked).map((moduleState) => moduleState.id);
+  return { ok: selected.length > 0 && blockedIds.length === 0, moduleIds: selected.map((moduleState) => moduleState.id), blockedIds };
+}
+
 /** Modülleri kilitler ya da kilidini açar; değişen modül sayısını döndürür. */
 export function setModulesLocked(modules = [], moduleIds = [], locked = true) {
   const ids = new Set(moduleIds);

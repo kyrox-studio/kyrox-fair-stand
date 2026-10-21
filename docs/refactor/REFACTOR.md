@@ -15,6 +15,34 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-22 — Yeni stand duvarları varsayılan kilitli
+
+Stand oluşturma akışındaki `createAutomaticWallState` otomatik duvarları
+mevcut proje örneği alanı `locked: true` ile oluşturur. Otomatik arka/yan duvarlar
+ve depo planına göre yeniden oluşturulan duvar parçaları aynı varsayılanı alır.
+Lambalar, depo içeriği ve katalogdan elle eklenen modüller bu değişikliğe girmez.
+Mevcut kayıtların kilit durumu açılışta değiştirilmez. Sağ tık → **Kilidi aç** ile
+taşıma ve silme yeniden kullanılabilir; kilitliyken renk ve görsel düzenlenebilir.
+Kilit normal proje kaydıyla korunur; Item, BOM veya Alembic değişikliği yoktur.
+Kullanıcı kılavuzu: uygulamadaki **Yardım → Sağ tık menüsü**.
+Kılavuzdaki **Ayaklı Vitrin ve Broşürlük** ürün ölçüleri bölümü kaldırıldı;
+ürün tanımları kendi Item belgelerinde tutulur.
+
+## 2026-10-22 — Tümünü seçme ve toplu işlemler
+
+Sahne aktifken Ctrl/Cmd+A bütün sahne modüllerini mevcut çoklu seçim mekanizmasıyla
+seçer; stand zemini ve zarfı seçilmez. Metin alanları ve sahne dışındaki kontroller
+tarayıcının kendi kısayollarını kullanır. Menüden toplu kilit, kilit açma, grup kurma,
+tamamı seçilen grupları çözme ve silme yapılır. Seçim çubuğunda ve Delete tuşunda
+da toplu silme kullanılabilir. Kilitli öğe içeren silme işlemi bütünüyle reddedilir;
+tek onay iptal edilirse seçimdeki hiçbir öğe değişmez.
+
+Grup kilidi yalnız grubun tamamı seçiliyse toplu kilit açma ile kaldırılır.
+Toplu çözme yalnız tamamı seçilen gruplara uygulanır; bunlardan biri kilitliyse
+hiçbir grup çözülmez. Parçaların konumu korunur ve mevcut kenara bağlanma kuralı
+çalışır. İşlemler mevcut proje örneği alanlarını ve geçmiş mekanizmasını kullanır;
+yeni DB alanı, Alembic migration veya BOM değişikliği yoktur.
+
 ## 2026-10-22 — Bar masası (migration 0075)
 
 `glass_bar_table` "Bar Masası": cam masa ailesinin (`table-glass`) 108 cm ürünü; ayrı tür açılmadı. `0075_glass_bar_table` satırı `glass_table`'dan kopyalar (birim, maliyet bayrağı, önizleme, dönüş, yüzey bayrakları) ve Extra kategorisinin sonuna koyar. `createGlassTableModuleState(descriptor)` kartın `itemKey`'ini kullanır (varsayılan `glass_table`); açılışta aynı ailedeki anahtar korunur; `createGlassTableModule` ve seçim metni Item'ı modülden okur; ayak `heightM - 0.04` uzunluğundadır. Testler: `test/glassBarTable.test.js`, `backend/tests/modules/fair_stand/test_glass_bar_table_migration.py`.

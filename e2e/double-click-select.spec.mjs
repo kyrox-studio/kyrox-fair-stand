@@ -101,6 +101,11 @@ test('double click selects the whole wall module; Ctrl+click adds and removes mo
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
   await expect(menu.locator('.module-context-title')).toContainText('2 öğe seçili');
   await expect(menu.getByRole('menuitem', { name: 'Grup oluştur…' })).toBeVisible();
+  await expect(menu.locator('.module-context-title')).toContainText('2 kilitli');
+  await expect(menu.getByRole('menuitem', { name: 'Seçilenlerin kilidini aç' })).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: 'Seçilenleri sil' })).toBeDisabled();
+  await menu.getByRole('menuitem', { name: 'Seçilenlerin kilidini aç' }).click();
+  await page.mouse.click(second.x, second.y, { button: 'right' });
   await expect(menu.getByRole('menuitem', { name: 'Seçilenleri kilitle' })).toBeVisible();
   expect(errors).toEqual([]);
 });

@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
+
+test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
 async function createBackWallStand(page, projectName) {
   await page.goto('/');
@@ -38,6 +41,7 @@ async function saveAndReadProject(page) {
 
 async function removeModules(page, modules) {
   for (const moduleState of modules) {
+    await unlockModuleForFixture(page, moduleState);
     page.once('dialog', async (dialog) => dialog.accept());
     await page.evaluate((moduleId) => {
       window.dispatchEvent(new CustomEvent('fair-stand:delete-selected-module', {
