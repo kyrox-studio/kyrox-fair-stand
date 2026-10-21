@@ -7,7 +7,9 @@ import { resolveItemBom } from './itemBom.js';
 import {
   applyGlassPanelSplit,
   applyMetalSeparatorSplit,
+  collectBackPanelSurfaces,
   collectPanelSurfaces,
+  panelLinesFromSurfaces,
   summarizeGlassMoves,
 } from './panelGlassBom.js';
 import {
@@ -58,7 +60,21 @@ function aggregateLines(lineLists) {
   return Array.from(aggregated.values(), (line) => Object.freeze(line));
 }
 
-function resolveModuleEntry(moduleState, index, { swapCornerPanels = false, swapBands = null } = {}) {
+function mergeBomLines(lines, extra) {
+  const next = lines.map((line) => ({ ...line }));
+  for (const line of extra) {
+    const existing = next.find((entry) => entry.itemKey === line.itemKey && entry.unit === line.unit);
+    if (existing) existing.quantity += line.quantity;
+    else next.push({ ...line });
+  }
+  return next;
+}
+
+function resolveModuleEntry(moduleState, index, {
+  swapCornerPanels = false,
+  swapBands = null,
+  swapBackPanels = false,
+} = {}) {
   const moduleId = moduleState?.id ?? null;
   const itemKey = moduleState?.itemKey ?? null;
 
@@ -109,6 +125,13 @@ function resolveModuleEntry(moduleState, index, { swapCornerPanels = false, swap
       const swapped = applyCornerPanelBandSwap(recipeLines, collected, swapBands);
       lines = swapped.lines;
       surfaces = swapped.surfaces;
+    }
+    // Arka yüz panelleri: bant başına bir panel; arka yüz köşede ise köşe paneline döner.
+    const backCollected = collectBackPanelSurfaces(moduleState);
+    if (backCollected.length) {
+      const backSurfaces = swapBackPanels ? applyCornerPanelSwapToSurfaces(backCollected) : backCollected;
+      lines = mergeBomLines(lines, panelLinesFromSurfaces(backSurfaces));
+      surfaces = [...surfaces, ...backSurfaces];
     }
     const glassSplit = applyGlassPanelSplit(lines, surfaces);
     const split = applyMetalSeparatorSplit(glassSplit.lines, surfaces);
@@ -287,21 +310,24 @@ export function resolveProjectBom(modules = [], stand = null, assetNames = null)
   if (preview.appliedJointCount > 0) {
     for (const moduleId of preview.swapModuleIds) swapIds.add(moduleId);
   }
+  const backSwapIds = new Set(preview.appliedJointCount > 0 ? preview.backSwapModuleIds ?? [] : []);
   const bandByModule = new Map();
   for (const entry of wallShort.panelSwaps ?? []) {
     if (swapIds.has(entry.moduleId)) continue;
     bandByModule.set(entry.moduleId, entry.bands);
   }
-  if (swapIds.size > 0 || bandByModule.size > 0) {
+  if (swapIds.size > 0 || bandByModule.size > 0 || backSwapIds.size > 0) {
     moduleEntries = list.map((moduleState, index) => {
       const moduleId = moduleIdentity(moduleState, index);
+      const swapBackPanels = backSwapIds.has(moduleId);
       if (swapIds.has(moduleId)) {
-        return resolveModuleEntry(moduleState, index, { swapCornerPanels: true });
+        return resolveModuleEntry(moduleState, index, { swapCornerPanels: true, swapBackPanels });
       }
       const bands = bandByModule.get(moduleId);
       if (bands?.length) {
-        return resolveModuleEntry(moduleState, index, { swapBands: bands });
+        return resolveModuleEntry(moduleState, index, { swapBands: bands, swapBackPanels });
       }
+      if (swapBackPanels) return resolveModuleEntry(moduleState, index, { swapBackPanels });
       return moduleEntries[index];
     });
   }

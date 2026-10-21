@@ -333,14 +333,28 @@ function partnerOnFront(self, partner, point) {
   return body.x * self.frontX + body.y * self.frontY > 0;
 }
 
+/**
+ * The other module's body lies on this module's back face (arka yüz paneli, `backStrips`).
+ * T'nin gövdeye dikilen kolu (partner noktadan geçer) iki yüzde de köşededir.
+ */
+function partnerOnBack(self, partner, point) {
+  if (!self || !partner || !point || self.axis === partner.axis) return false;
+  const body = bodyDirectionFromPoint(partner, point);
+  if (!body) return true;
+  return body.x * self.frontX + body.y * self.frontY < 0;
+}
+
 function cornerCharge(participant, partners, point) {
   const side = cornerSide(participant.role, recipeSingleCount(participant.itemKey), recipeBandCount(participant.itemKey));
   if (!side) return null;
   const faces = partners.some((partner) => partnerOnFront(participant, partner, point));
+  const backFaces = partners.some((partner) => partnerOnBack(participant, partner, point));
   return {
     singleRemove: faces ? side.singleRemove : 0,
     cornerAdd: faces ? side.cornerAdd : 0,
     swapPanels: faces && side.swapPanels,
+    // Bağlantı aparatı (singleRemove/cornerAdd) yalnız ön yüz kuralıyla kalır; arka yüz yalnız paneli değiştirir.
+    swapBackPanels: backFaces && side.swapPanels,
   };
 }
 
@@ -403,6 +417,7 @@ function jointAdjustmentCounts(joint) {
     let single = 0;
     let corner = 0;
     const swapModuleIds = [];
+    const backSwapModuleIds = [];
     const charges = [];
     for (const participant of joint.participants) {
       if (participant.payCorner === false) continue;
@@ -412,11 +427,12 @@ function jointAdjustmentCounts(joint) {
       single -= side.singleRemove;
       corner += side.cornerAdd;
       if (side.swapPanels) swapModuleIds.push(participant.moduleId);
+      if (side.swapBackPanels) backSwapModuleIds.push(participant.moduleId);
       const charge = connectorCharge(participant.moduleId, side);
       if (charge) charges.push(charge);
     }
     const upright = -(Math.max(joint.participants.length, 2) - 1);
-    return { upright, single, double: 0, corner, swapModuleIds, charges };
+    return { upright, single, double: 0, corner, swapModuleIds, backSwapModuleIds, charges };
   }
 
   const [a, b] = joint.participants;
@@ -454,6 +470,10 @@ function jointAdjustmentCounts(joint) {
       swapModuleIds: [
         ...(sideA.swapPanels ? [a.moduleId] : []),
         ...(sideB.swapPanels ? [b.moduleId] : []),
+      ],
+      backSwapModuleIds: [
+        ...(sideA.swapBackPanels ? [a.moduleId] : []),
+        ...(sideB.swapBackPanels ? [b.moduleId] : []),
       ],
       charges: [connectorCharge(a.moduleId, sideA), connectorCharge(b.moduleId, sideB)].filter(Boolean),
     };
@@ -671,6 +691,7 @@ function buildPlan(joints) {
     teeSingle: 0,
     teeCorners: 0,
     swapModuleIds: [],
+    backSwapModuleIds: [],
     moduleCharges: new Map(),
   };
 
@@ -703,12 +724,14 @@ function buildPlan(joints) {
       plan.cornerSingle += Math.abs(adjustment.single);
       plan.cornerConnectors += adjustment.corner;
       plan.swapModuleIds.push(...adjustment.swapModuleIds);
+      plan.backSwapModuleIds.push(...(adjustment.backSwapModuleIds ?? []));
     } else if (joint.kind === 'tee') {
       plan.teeCount += 1;
       plan.teeUpright += Math.abs(adjustment.upright);
       plan.teeSingle += Math.abs(adjustment.single);
       plan.teeCorners += adjustment.corner;
       plan.swapModuleIds.push(...adjustment.swapModuleIds);
+      plan.backSwapModuleIds.push(...(adjustment.backSwapModuleIds ?? []));
     } else {
       plan.endCount += 1;
       plan.endUpright += Math.abs(adjustment.upright);
@@ -718,6 +741,7 @@ function buildPlan(joints) {
   }
 
   plan.swapModuleIds = [...new Set(plan.swapModuleIds)];
+  plan.backSwapModuleIds = [...new Set(plan.backSwapModuleIds)];
   plan.moduleCharges = [...plan.moduleCharges.values()];
   return plan;
 }
@@ -796,6 +820,7 @@ export function applyRelationshipBomAdjustments(lines = [], joints = []) {
       appliedCornerCount: 0,
       appliedTeeCount: 0,
       swapModuleIds: Object.freeze([]),
+      backSwapModuleIds: Object.freeze([]),
       moduleCharges: Object.freeze([]),
       notes: Object.freeze([]),
     });
@@ -815,6 +840,7 @@ export function applyRelationshipBomAdjustments(lines = [], joints = []) {
       appliedCornerCount: 0,
       appliedTeeCount: 0,
       swapModuleIds: Object.freeze([]),
+      backSwapModuleIds: Object.freeze([]),
       moduleCharges: Object.freeze([]),
       notes: Object.freeze([
         `Birleşim düzeltmesi atlandı: yetersiz stok (dikme ${uprightHave}/${uprightNeed}, tekli ${singleHave}/${singleNeed}).`,
@@ -829,6 +855,7 @@ export function applyRelationshipBomAdjustments(lines = [], joints = []) {
     appliedCornerCount: plan.cornerCount,
     appliedTeeCount: plan.teeCount,
     swapModuleIds: Object.freeze(plan.swapModuleIds),
+    backSwapModuleIds: Object.freeze(plan.backSwapModuleIds),
     moduleCharges: Object.freeze(plan.moduleCharges.map((charge) => Object.freeze({ ...charge }))),
     notes: Object.freeze(adjustmentNotes(plan)),
   });

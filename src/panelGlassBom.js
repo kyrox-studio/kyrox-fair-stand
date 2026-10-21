@@ -33,6 +33,27 @@ function withRecipePanelKeys(surfaces, parts) {
   });
 }
 
+/** Arka yüz paneli (`backStrips`): panel kimliği ön yüzle aynı duvar reçetesinden gelir. */
+export function collectBackPanelSurfaces(moduleState) {
+  if (!Array.isArray(moduleState?.backStrips)) return [];
+  return withRecipePanelKeys(moduleState.backStrips, recipePanelParts(moduleState));
+}
+
+/** Arka yüz panelleri BOM satırı: aynı panel kimliği başına bir adet (birim Item'dan). */
+export function panelLinesFromSurfaces(surfaces = []) {
+  const lines = new Map();
+  for (const surface of surfaces) {
+    const item = surface?.itemKey ? getItem(surface.itemKey) : null;
+    if (!item) continue;
+    const unit = item.unit ?? 'adet';
+    const key = `${item.itemKey}\u0000${unit}`;
+    const current = lines.get(key);
+    if (current) current.quantity += 1;
+    else lines.set(key, { itemKey: item.itemKey, name: item.name, quantity: 1, unit, material: item.material ?? null, item });
+  }
+  return [...lines.values()];
+}
+
 export function collectPanelSurfaces(moduleState) {
   const parts = recipePanelParts(moduleState);
   const surfaces = [];

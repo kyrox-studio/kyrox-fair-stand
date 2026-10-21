@@ -31,6 +31,8 @@ export function createModuleContextMenu({
   onFabricLightingChange,
   getShelfLightingState,
   onShelfLightingChange,
+  getBackPanelState,
+  onBackPanelChange,
   onLockChange,
   onGroupAction,
   onRotate,
@@ -68,6 +70,7 @@ export function createModuleContextMenu({
     <button type="button" role="menuitem" data-module-action="resize-image" hidden>Görseli ölçülendir…</button>
     <div class="module-context-separator"></div>
     <button type="button" role="menuitem" data-module-action="toggle-shelf-light" hidden>Raf altı aydınlatmayı aç</button>
+    <button type="button" role="menuitem" data-module-action="toggle-back-panels" hidden>Arka yüze panel ekle</button>
     <button type="button" role="menuitem" data-module-action="add-right">Ekle Sağ Tarafa…</button>
     <button type="button" role="menuitem" data-module-action="add-left">Ekle Sol Tarafa…</button>
     <button type="button" role="menuitem" class="module-context-advanced-toggle" aria-expanded="false" hidden>Gelişmiş ▸</button>
@@ -118,6 +121,7 @@ export function createModuleContextMenu({
   const meshModeButton = menu.querySelector('[data-module-action="toggle-mesh"]');
   const fabricLightingButton = menu.querySelector('[data-module-action="toggle-fabric-light"]');
   const shelfLightingButton = menu.querySelector('[data-module-action="toggle-shelf-light"]');
+  const backPanelButton = menu.querySelector('[data-module-action="toggle-back-panels"]');
   const foamResizeButton = menu.querySelector('[data-module-action="resize-foam"]');
   const imageResizeButton = menu.querySelector('[data-module-action="resize-image"]');
   const addRightButton = menu.querySelector('[data-module-action="add-right"]');
@@ -559,6 +563,11 @@ export function createModuleContextMenu({
     shelfLightingButton.textContent = shelfLightingOn
       ? 'Raf altı aydınlatmayı kapat'
       : 'Raf altı aydınlatmayı aç';
+    // Arka yüz paneli yalnız düz duvar ailesinde (getBackPanelState null değilse) gösterilir.
+    const backPanelState = getBackPanelState?.(context) ?? null;
+    backPanelButton.hidden = backPanelState == null;
+    backPanelButton.textContent = backPanelState ? 'Arka yüz panellerini kaldır' : 'Arka yüze panel ekle';
+    setDisabled(backPanelButton, locked);
     const showSideInsert = allowsModuleSideInsert(context);
     addRightButton.hidden = !showSideInsert;
     addLeftButton.hidden = !showSideInsert;
@@ -671,6 +680,14 @@ export function createModuleContextMenu({
       const nextState = !Boolean(getShelfLightingState?.(context));
       close();
       onShelfLightingChange?.(context, nextState);
+      return;
+    }
+
+    if (action === 'toggle-back-panels') {
+      const current = getBackPanelState?.(context);
+      if (current == null) return;
+      close();
+      onBackPanelChange?.(context, !current);
       return;
     }
 

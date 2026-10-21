@@ -10,11 +10,14 @@ import {
   planAutomaticDepotLampPlacements,
 } from './automaticWall.js';
 import {
+  addFlatPanelBackStrips,
   createModuleStateFromCatalogKey,
   createModuleStateFromDescriptor,
   duplicateModuleState,
   hasCanonicalModuleItemKey,
   normalizeModuleItemState,
+  removeFlatPanelBackStrips,
+  supportsFlatPanelBackStrips,
   totalWallWidthCm,
   moduleWidths,
 } from './designState.js';
@@ -1245,6 +1248,32 @@ function changeContextShelfLighting(context, enabled) {
     : 'Raf altı aydınlatma kapatıldı.';
 }
 
+// Arka yüz paneli: null = bu modülde yok (menü gizli), true/false = takılı mı.
+function getContextBackPanelState(context) {
+  const index = findContextModuleIndex(context);
+  const moduleState = index >= 0 ? currentModules[index] : null;
+  if (!supportsFlatPanelBackStrips(moduleState)) return null;
+  return Array.isArray(moduleState.backStrips);
+}
+
+function changeContextBackPanels(context, enabled) {
+  const index = findContextModuleIndex(context);
+  const moduleState = index >= 0 ? currentModules[index] : null;
+  if (!supportsFlatPanelBackStrips(moduleState)) return;
+  if (enabled) {
+    if (!addFlatPanelBackStrips(moduleState)) return;
+    selectionInfo.textContent = 'Arka yüze panel eklendi.';
+  } else {
+    const decorated = (moduleState.backStrips ?? []).some((strip) => (
+      strip?.imageAssetId || strip?.fabricGroupId || strip?.isGlass || strip?.isMetalSeparator
+    ));
+    if (decorated && !window.confirm('Arka yüzdeki görsel ve panel ayarları silinecek. Devam edilsin mi?')) return;
+    if (!removeFlatPanelBackStrips(moduleState)) return;
+    selectionInfo.textContent = 'Arka yüz panelleri kaldırıldı.';
+  }
+  rebuildWall({ resetView: false });
+}
+
 function changeContextFabricMode(context, enabled) {
   if (!(context?.supportsLightbox ?? context?.supportsFabric)) return;
 
@@ -1387,6 +1416,8 @@ const moduleContextMenu = createModuleContextMenu({
   onFabricLightingChange: changeContextFabricLighting,
   getShelfLightingState: getContextShelfLightingState,
   onShelfLightingChange: changeContextShelfLighting,
+  getBackPanelState: getContextBackPanelState,
+  onBackPanelChange: changeContextBackPanels,
   onLockChange: changeModuleLock,
   onRotate: (context) => scene3d.rotateModuleById(context.moduleId),
   onGroupAction: (action, context) => handleGroupAction(action, {

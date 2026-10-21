@@ -891,7 +891,9 @@ function collisionSegmentsOverlap(a, moduleA, b, moduleB) {
     const thinEndpointJoin = horizontalDepth <= standWallDepthCm() + EPSILON_CM
       && verticalDepth <= standWallDepthCm() + EPSILON_CM;
     if (!thinEndpointJoin) return true;
-    return !horizontalEndpoint && !verticalEndpoint;
+    // Dik bağlantı yalnız dikme olan noktada: ikisinin de ucu birleşimdeyse L ya da T (komşu duvarla
+    // ortak dikme). Yalnız birinin ucu diğerinin ortasındaysa orada dikme yoktur; çakışma sayılır.
+    return !(horizontalEndpoint && verticalEndpoint);
   }
 
   const verticalHalfDepth = verticalDepth / 2;
@@ -1057,6 +1059,25 @@ function wallShortProfileExemptIds(candidate, modules, snapTargetModuleId, snapK
   return exempt;
 }
 
+export const MID_WALL_TEE_MESSAGE = 'Dik bağlantı yalnız dikme olan noktaya yapılır.';
+
+// İki ince duvar dik kesişir ve yalnız birinin ucu diğerinin ortasına (dikmesiz yere) gelir.
+function isMidWallTeeContact(moduleA, moduleB) {
+  const segmentsA = getModuleCollisionSegments(moduleA);
+  const segmentsB = getModuleCollisionSegments(moduleB);
+  return segmentsA.some(({ segment: a, module: ma }) => segmentsB.some(({ segment: b, module: mb }) => {
+    if (a.axis === b.axis) return false;
+    if (getModuleCollisionDepthCm(ma) > standWallDepthCm() + EPSILON_CM) return false;
+    if (getModuleCollisionDepthCm(mb) > standWallDepthCm() + EPSILON_CM) return false;
+    const horizontal = a.axis === 'x' ? a : b;
+    const vertical = a.axis === 'y' ? a : b;
+    const onHorizontal = vertical.fixedCm >= horizontal.startCm - EPSILON_CM && vertical.fixedCm <= horizontal.endCm + EPSILON_CM;
+    const onVertical = horizontal.fixedCm >= vertical.startCm - EPSILON_CM && horizontal.fixedCm <= vertical.endCm + EPSILON_CM;
+    if (!onHorizontal || !onVertical) return false;
+    return pointIsSegmentEndpoint(horizontal, vertical.fixedCm) !== pointIsSegmentEndpoint(vertical, horizontal.fixedCm);
+  }));
+}
+
 export function placementsOverlap(moduleA, moduleB) {
   if (canModulesOverlapByBehavior(moduleA, moduleB)) return false;
   if (getModuleCollisionStrategy(moduleA) === 'none' || getModuleCollisionStrategy(moduleB) === 'none') {
@@ -1135,7 +1156,7 @@ export function validatePlacementAgainstModules({
   if (collision) {
     return {
       ok: false,
-      message: 'Başka bir modülle çakışıyor.',
+      message: isMidWallTeeContact(candidate, collision) ? MID_WALL_TEE_MESSAGE : 'Başka bir modülle çakışıyor.',
       collisionModuleId: collision.id,
     };
   }
@@ -1200,19 +1221,12 @@ export function withStandEdgeWallIds(modules = [], standType, standXCm) {
   });
 }
 
+// Dik bağlantı noktası yalnız dikme olan yerdir: hedef modülün iki ucu. Modülün ortasında dikme
+// yoktur; T, iki duvarın birleştiği uçta (ortak dikme) kurulur.
 function getSegmentSnapCoordinates(segment) {
-  const coordinates = [];
-  for (
-    let coordinate = segment.startCm;
-    coordinate <= segment.endCm + EPSILON_CM;
-    coordinate += MODULE_PLACEMENT_SNAP_CM
-  ) {
-    coordinates.push(Math.min(coordinate, segment.endCm));
-  }
-  if (!coordinates.some((coordinate) => nearlyEqual(coordinate, segment.endCm))) {
-    coordinates.push(segment.endCm);
-  }
-  return coordinates;
+  return nearlyEqual(segment.startCm, segment.endCm)
+    ? [segment.startCm]
+    : [segment.startCm, segment.endCm];
 }
 
 function createEndpointConnectionPlacement({
@@ -1719,8 +1733,7 @@ export function snapPlacementToModules({
       });
     }
 
-    // Dik modül: hedef modül boyunca her 50 cm bağlantı noktasını aday yap.
-    // Hedefin ucundaki bağlantı L, gövde üzerindeki bağlantı T olur.
+    // Dik modül: hedefin uçları aday (dikme olan nokta). Uçta komşu duvar varsa bağlantı T olur.
     getSegmentSnapCoordinates(target).forEach((coordinateCm) => {
       const pointXCm = target.axis === 'x' ? coordinateCm : target.fixedCm;
       const pointYCm = target.axis === 'y' ? coordinateCm : target.fixedCm;

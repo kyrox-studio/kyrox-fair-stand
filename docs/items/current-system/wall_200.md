@@ -289,7 +289,7 @@ Runtime placement motoru modüller arasında aday bağlantılar üretebilir:
 
 - aynı eksende gerçek uç-uca bağlantı,
 - 90° köşe bağlantısı,
-- uygun durumda T bağlantısı,
+- T bağlantısı yalnız iki duvarın birleştiği uçta (ortak dikme); tek duvarın ortasına dik bağlantı reddedilir (2026-10-21),
 - stand boundary bağlantısı.
 
 Bu davranış yalnız wall chain placement'ından ibaret değildir; free placement tarafında da module-to-module snap hesapları vardır.
@@ -523,6 +523,8 @@ Kaynak:
 ---
 
 ## 18. Context menu
+
+**Arka yüz paneli (2026-10-21):** Sağ tık "Arka yüze panel ekle / Arka yüz panellerini kaldır" modüle `backStrips` ekler/siler (ön yüzle aynı bant sayısı ve reçete paneli, ayrı görsel/cam/Lightbox/metal). BOM tek çerçeve ve iki yüz panel sayar (2 × `profile_190`, 2 × dikme, 14 × `panel_197`); köşede içe bakan yüz `panel_corner_192` olur, T'de gövde düz kalır. Sahip: `src/designState.js`, BOM `src/projectBom.js` + `src/relationshipBom.js`.
 
 `wall_200` üzerinde mevcut module context aksiyonları:
 

@@ -228,6 +228,52 @@ export function createFlatPanelModuleState(widthCmOrDescriptor) {
   return state;
 }
 
+/** Arka yüze panel takılabilen modül: düz duvar ailesi (wall_50/100/150/200, kısa duvarlar). */
+export function supportsFlatPanelBackStrips(moduleState) {
+  return moduleState?.type === 'flat-panel'
+    && Array.isArray(moduleState.strips)
+    && getItem(moduleState.itemKey)?.type === 'flat-panel';
+}
+
+function createFlatPanelBackStrips(moduleState) {
+  const item = getItem(moduleState.itemKey);
+  const color = recipeSurfaceColor(item, ['panel', 'separator-panel']);
+  const backStrips = moduleState.strips.map((strip, index) => createEditablePanelState(
+    Number.isInteger(strip?.stripIndex) ? strip.stripIndex : index,
+    color,
+  ));
+  stampRenderParts(backStrips, item, ['panel', 'separator-panel']);
+  return backStrips;
+}
+
+/** Arka yüze panel ekler: ön yüzle aynı bant sayısı, aynı reçete paneli; görsel/renk ayrı tutulur. */
+export function addFlatPanelBackStrips(moduleState) {
+  if (!supportsFlatPanelBackStrips(moduleState) || Array.isArray(moduleState.backStrips)) return false;
+  moduleState.backStrips = createFlatPanelBackStrips(moduleState);
+  return true;
+}
+
+export function removeFlatPanelBackStrips(moduleState) {
+  if (!Array.isArray(moduleState?.backStrips)) return false;
+  delete moduleState.backStrips;
+  return true;
+}
+
+// Arka bant sayısı ön yüzü izler (ör. duvar yüksekliği değişince); fazlası atılır, eksiği eklenir.
+function alignFlatPanelBackStrips(moduleState) {
+  if (!Array.isArray(moduleState.backStrips)) return;
+  if (!supportsFlatPanelBackStrips(moduleState)) {
+    delete moduleState.backStrips;
+    return;
+  }
+  const fresh = createFlatPanelBackStrips(moduleState);
+  moduleState.backStrips = fresh.map((created, index) => {
+    const saved = moduleState.backStrips[index];
+    return saved && typeof saved === 'object' ? { ...created, ...saved, stripIndex: created.stripIndex } : created;
+  });
+  ensureMissingRenderPartMeasure(moduleState.backStrips, getItem(moduleState.itemKey), ['panel', 'separator-panel']);
+}
+
 const SEPARATOR_PLAIN_WIDTH_TO_ITEM_KEY = Object.freeze({
   50: 'wall_separator_50_350',
   100: 'wall_separator_100_350',
@@ -1004,6 +1050,7 @@ export function normalizeModuleItemState(moduleState) {
       if (occupancy) moduleState.stripOccupancy = occupancy;
       applySceneFootprint(moduleState, item, ['widthCm', 'heightCm']);
       ensureMissingRenderPartMeasure(moduleState.strips, item, ['panel', 'separator-panel']);
+      alignFlatPanelBackStrips(moduleState);
     }
     return moduleState;
   }
@@ -1156,6 +1203,14 @@ export function duplicateModuleState(moduleState) {
   delete duplicate.group;
   if (Array.isArray(duplicate.strips)) {
     duplicate.strips = duplicate.strips.map((strip, stripIndex) => ({
+      ...strip,
+      id: createId('surface'),
+      stripIndex: Number.isInteger(strip.stripIndex) ? strip.stripIndex : stripIndex,
+      imageTransform: strip.imageTransform ? { ...strip.imageTransform } : createDefaultImageTransform(),
+    }));
+  }
+  if (Array.isArray(duplicate.backStrips)) {
+    duplicate.backStrips = duplicate.backStrips.map((strip, stripIndex) => ({
       ...strip,
       id: createId('surface'),
       stripIndex: Number.isInteger(strip.stripIndex) ? strip.stripIndex : stripIndex,
