@@ -42,3 +42,10 @@ test('editable target guard covers form and contenteditable fields', () => {
   assert.equal(isEditableKeyboardTarget({ tagName: 'DIV', isContentEditable: true }), true);
   assert.equal(isEditableKeyboardTarget({ tagName: 'CANVAS' }), false);
 });
+
+test('Ctrl/Cmd+A tümünü seçer; Shift veya Alt ile çalışmaz', () => {
+  assert.deepEqual(resolveViewKeyboardShortcut({ key: 'a', ctrlKey: true }), { type: 'select-all' });
+  assert.deepEqual(resolveViewKeyboardShortcut({ key: 'A', metaKey: true }), { type: 'select-all' });
+  assert.equal(resolveViewKeyboardShortcut({ key: 'a', ctrlKey: true, shiftKey: true }), null);
+  assert.equal(resolveViewKeyboardShortcut({ key: 'a', ctrlKey: true, altKey: true }), null);
+});

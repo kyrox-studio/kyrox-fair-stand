@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
+
+test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
 async function createBackWallStand(page, projectName) {
   await page.goto('/');
@@ -63,6 +66,8 @@ test('one metal group with a gap on the wall is listed as separate sheets', asyn
   const advancedToggle = menu.locator('.module-context-advanced-toggle');
   if ((await advancedToggle.getAttribute('aria-expanded')) !== 'true') await advancedToggle.click();
   await menu.locator('[data-module-action="toggle-metal-separator"]').click();
+
+  await unlockModuleForFixture(page, walls[1]);
 
   // Ortadaki modül silinir; kalan iki panel aynı grupta ama arada 200 cm boşluk var.
   await page.evaluate((moduleId) => {

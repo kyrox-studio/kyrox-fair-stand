@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
+
+test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
 // Stand kurulumunda seçilen duvar yüksekliği: otomatik duvar o yükseklikteki düz duvardır
 // (wall_*_250), sahnede o boyda çizilir ve projeyle kaydedilir.
@@ -7,11 +10,30 @@ async function exposeScene(page) {
   await page.route('**/src/scene3d.js*', async (route) => {
     const response = await route.fetch();
     const body = (await response.text()).replace(
+      'const controls = new OrbitControls(camera, renderer.domElement);',
+      'const controls = new OrbitControls(camera, renderer.domElement); window.__sceneCamera = camera;',
+    ).replace(
       '  let surfaceMeshes = [];',
       '  let surfaceMeshes = []; window.__sceneSurfaces = () => surfaceMeshes;',
     );
     await route.fulfill({ response, body });
   });
+}
+
+async function wallContextMenu(page, moduleId) {
+  const point = await page.evaluate((id) => {
+    const mesh = window.__sceneSurfaces().find((surface) => surface.userData.moduleId === id && surface.userData.stripIndex === 3);
+    mesh.updateMatrixWorld(true);
+    mesh.geometry.computeBoundingBox();
+    const center = mesh.geometry.boundingBox.getCenter(mesh.position.clone().set(0, 0, 0)).applyMatrix4(mesh.matrixWorld);
+    center.project(window.__sceneCamera);
+    const box = document.querySelector('#viewport > canvas').getBoundingClientRect();
+    return { x: box.left + (center.x + 1) * box.width / 2, y: box.top + (1 - center.y) * box.height / 2 };
+  }, moduleId);
+  await page.mouse.click(point.x, point.y, { button: 'right' });
+  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  await expect(menu).toBeVisible();
+  return menu;
 }
 
 async function createBackWallStand(page, { wallHeight, projectName }) {
@@ -76,6 +98,7 @@ test('250 cm stand builds 250 cm walls with 5 bands and keeps the height', async
     expect(wall.itemKey).toMatch(/^wall_(50|100|150|200)_250$/);
     expect(wall.heightCm).toBe(250);
     expect(wall.strips).toHaveLength(5);
+    expect(wall.locked).toBe(true);
   }
   expect(await wallTopMeters(page)).toBeCloseTo(2.5, 1);
   expect(errors).toEqual([]);
@@ -90,16 +113,43 @@ test('default stand stays 350 cm', async ({ page }) => {
   for (const wall of walls) {
     expect(wall.itemKey).toMatch(/^wall_(50|100|150|200)_350$/);
     expect(wall.strips).toHaveLength(7);
+    expect(wall.locked).toBe(true);
   }
   expect(await wallTopMeters(page)).toBeCloseTo(3.5, 1);
+});
+
+test('otomatik duvar kilidi silmeyi engeller; kullanıcı kilidi açınca kayıt ve açılışta açık kalır', async ({ page }) => {
+  await exposeScene(page);
+  await createBackWallStand(page, { projectName: 'E2E Duvar kilidi' });
+  const initial = await savedProject(page);
+  const walls = initial.modules.filter((module) => module.type === 'flat-panel');
+  expect(walls.length).toBeGreaterThan(1);
+  expect(walls.every((wall) => wall.locked === true)).toBe(true);
+  const wall = walls[0];
+  const menu = await wallContextMenu(page, wall.id);
+  await expect(menu.locator('[data-module-action="delete"]')).toBeDisabled();
+  await expect(menu.locator('[data-module-action="toggle-lock"]')).toHaveText('Kilidi aç');
+  await menu.locator('[data-module-action="toggle-lock"]').click();
+  const unlocked = await savedProject(page);
+  expect(unlocked.modules.find((module) => module.id === wall.id).locked).toBeUndefined();
+  expect(unlocked.modules.filter((module) => module.type === 'flat-panel' && module.id !== wall.id).every((module) => module.locked === true)).toBe(true);
+  await page.reload();
+  await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, initial.id);
+  await page.locator('#open-project').click();
+  await expect(page.locator('#project-status')).toContainText('Açıldı:');
+  const reopened = await wallContextMenu(page, wall.id);
+  await expect(reopened.locator('[data-module-action="toggle-lock"]')).toHaveText('Kilitle');
+  await expect(reopened.locator('[data-module-action="delete"]')).toBeEnabled();
 });
 
 test('250 cm stand: door and showcases from the catalog take the stand height', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  await exposeScene(page);
   await createBackWallStand(page, { wallHeight: 250, projectName: 'E2E Duvar 250 Kapı' });
   const initial = await savedProject(page);
   // Otomatik sırt duvarında yer açmak için iki parça silinir.
+  for (const module of initial.modules) await unlockModuleForFixture(page, module);
   for (const wall of initial.modules.filter((module) => Array.isArray(module.strips)).slice(0, 2)) {
     page.once('dialog', (dialog) => dialog.accept());
     await page.evaluate((moduleId) => {
@@ -175,6 +225,8 @@ for (const wallHeight of [250, 300, 350, 400, 450, 500]) {
     await createBackWallStand(page, { wallHeight, projectName: `E2E Kapı ${wallHeight}` });
     const initial = await savedProject(page);
     const wall = initial.modules.find((module) => Array.isArray(module.strips));
+    // Kapı çizimi testindeki yeni yerleşim kalan duvarları da kaydırabilir.
+    for (const module of initial.modules) await unlockModuleForFixture(page, module);
     page.once('dialog', (dialog) => dialog.accept());
     await page.evaluate((moduleId) => {
       window.dispatchEvent(new CustomEvent('fair-stand:delete-selected-module', { detail: { moduleId } }));

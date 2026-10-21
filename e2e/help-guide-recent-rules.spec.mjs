@@ -34,10 +34,16 @@ test('help guide explains metal separator splitting, duplicate groups and placem
   await expect(move).toContainText('standın dört kenarına uzaklık');
   await expect(move).toContainText('köşeye çekilmez');
 
-  const showcase = guideSection(page, 'Ayaklı Vitrin ve Broşürlük');
-  await showcase.locator('summary').click();
-  await expect(showcase).toContainText('ön, sol ve sağ yüzüne sağ tıkla renk, görsel ve Lightbox');
-  await expect(showcase).toContainText('Üretim listesine tek kalem, 1 adet');
+  await expect(guideSection(page, 'Ayaklı Vitrin ve Broşürlük')).toHaveCount(0);
+  const context = guideSection(page, 'Sağ Tık Menüsü');
+  await context.locator('summary').click();
+  await expect(context).toContainText('otomatik kurulan duvarlar kilitli gelir');
+  await expect(context).toContainText('Kilidi aç');
+  await expect(context).toContainText('Seçilen grupları çöz');
+  const keyboard = guideSection(page, 'Klavye Kısayolları');
+  await keyboard.locator('summary').click();
+  await expect(keyboard).toContainText('Ctrl/Cmd + A');
+  await expect(keyboard).toContainText('Seçimde kilitli öğe varsa hiçbirini silmez');
 
   const foam = guideSection(page, 'Işıklı Strafor');
   await foam.locator('summary').click();

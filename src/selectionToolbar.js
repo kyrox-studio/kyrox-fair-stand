@@ -63,7 +63,7 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
     multi: () => setMultiSelect(multiSelect ? false : (anchor?.kind === 'panel' ? 'panel' : 'module')),
   };
   const singleOnly = [...bar.querySelectorAll('[data-selection-action]')]
-    .filter((button) => !['more', 'multi'].includes(button.dataset.selectionAction));
+    .filter((button) => !['more', 'multi', 'delete'].includes(button.dataset.selectionAction));
   let anchor = null;
   // false | 'panel' (tek seferlik parmak taraması) | 'module' (dokunduğun modülü ekle/çıkar).
   let multiSelect = false;
@@ -121,7 +121,7 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
       if (!anchor) return;
     } else {
       allButtons.forEach((button) => { button.hidden = false; });
-      // Toplu seçimde yalnız ⋯ (toplu menü: grup, kilit) ve çoklu modül.
+      // Toplu seçimde silme, ⋯ (toplu menü) ve çoklu modül kullanılabilir.
       singleOnly.forEach((button) => { button.hidden = anchor.count > 1; });
       syncMultiButton();
       bar.hidden = false;

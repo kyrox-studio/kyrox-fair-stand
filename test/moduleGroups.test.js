@@ -9,6 +9,7 @@ import {
   addToGroup,
   createGroup,
   dissolveGroup,
+  dissolveSelectedGroups,
   findGroupConflicts,
   getGroupBounds,
   getGroupMembers,
@@ -21,6 +22,7 @@ import {
   removeFromGroup,
   renameGroup,
   setGroupLocked,
+  unlockFullySelectedGroups,
   validateModuleGroups,
 } from '../src/moduleGroups.js';
 import { isModuleLocked } from '../src/moduleLock.js';
@@ -47,6 +49,31 @@ function backPanel(id, xCm) {
     placement: { xCm, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
   };
 }
+
+test('toplu kilit açma yalnız tamamı seçilen grupları açar', () => {
+  const modules = [box('a', 100, 100), box('b', 200, 100), box('c', 300, 100), box('d', 400, 100)];
+  createGroup(modules, ['a', 'b'], { id: 'g1', name: 'Bir' });
+  createGroup(modules, ['c', 'd'], { id: 'g2', name: 'İki' });
+  setGroupLocked(modules, 'g1', true);
+  setGroupLocked(modules, 'g2', true);
+  assert.deepEqual(unlockFullySelectedGroups(modules, ['a', 'b', 'c']), ['g1']);
+  assert.equal(isModuleLocked(modules[0]), false);
+  assert.equal(isModuleLocked(modules[2]), true);
+});
+
+test('toplu grup çözme kilitte atomiktir; seçilmemiş grubu ve konumları korur', () => {
+  const modules = [box('a', 100, 100), box('b', 200, 100), box('c', 300, 100), box('d', 400, 100)];
+  createGroup(modules, ['a', 'b'], { id: 'g1', name: 'Bir' });
+  createGroup(modules, ['c', 'd'], { id: 'g2', name: 'İki' });
+  setGroupLocked(modules, 'g2', true);
+  const before = structuredClone(modules);
+  assert.equal(dissolveSelectedGroups(modules, ['a', 'b', 'c', 'd']).ok, false);
+  assert.deepEqual(modules, before);
+  assert.deepEqual(dissolveSelectedGroups(modules, ['a', 'b', 'c']), { ok: true, count: 1 });
+  assert.equal(modules[0].group, undefined);
+  assert.equal(modules[2].group.id, 'g2');
+  assert.deepEqual(modules.map((module) => module.placement), before.map((module) => module.placement));
+});
 
 function leftPanel(id, yCm) {
   return {

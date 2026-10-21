@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
+
+test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
 const WALL_LINE_HEIGHT_CM = 350;
 
@@ -67,9 +70,11 @@ test('F-010 automatic wall construction reaches persisted runtime state through 
   expect(walls.map((moduleState) => moduleState.widthCm)).toEqual([200, 200, 100]);
   expect(walls.every((moduleState) => moduleState.itemKey === wallFlatPanelItemKey(moduleState.widthCm))).toBe(true);
   expect(walls.every((moduleState) => moduleState.placement?.wallId === 'back')).toBe(true);
+  expect(walls.every((moduleState) => moduleState.locked === true)).toBe(true);
   expect(lamps).toHaveLength(3);
   expect(lamps.every((moduleState) => moduleState.itemKey === 'led_floodlight')).toBe(true);
   expect(lamps.every((moduleState) => moduleState.placement?.wallId === 'back')).toBe(true);
+  expect(lamps.every((moduleState) => moduleState.locked !== true)).toBe(true);
   expect(project.modules).toHaveLength(walls.length + lamps.length);
   expect(pageErrors).toEqual([]);
 });
@@ -93,6 +98,7 @@ test('F-010 catalog construction persists a module created through the real pick
   const removedModule = initialProject.modules[0];
   expect(removedModule.itemKey).toBe(wallFlatPanelItemKey(removedModule.widthCm));
 
+  for (const moduleState of initialProject.modules) await unlockModuleForFixture(page, moduleState);
   page.once('dialog', async (dialog) => dialog.accept());
   await page.evaluate((moduleId) => {
     window.dispatchEvent(new CustomEvent('fair-stand:delete-selected-module', {
@@ -145,6 +151,7 @@ test('F-010 door catalog construction persists canonical door_leaf_100 child sta
   expect(initialProject).not.toBeNull();
   expect(initialProject.modules.length).toBeGreaterThan(0);
   const removable = initialProject.modules.slice(0, 2);
+  for (const moduleState of initialProject.modules) await unlockModuleForFixture(page, moduleState);
   for (const moduleState of removable) {
     page.once('dialog', async (dialog) => dialog.accept());
     await page.evaluate((moduleId) => {

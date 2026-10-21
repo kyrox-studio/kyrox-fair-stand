@@ -215,6 +215,24 @@ export function setGroupLocked(modules = [], groupId, locked) {
   return { ok: true, count: members.length, locked: locked === true };
 }
 
+/** Grubun tamamı seçiliyse toplu kilit açma grup kilidini de kaldırır. */
+export function unlockFullySelectedGroups(modules = [], moduleIds = []) {
+  const selected = new Set(moduleIds);
+  const groups = listGroups(modules).filter((group) => group.locked && group.moduleIds.every((id) => selected.has(id)));
+  groups.forEach((group) => setGroupLocked(modules, group.id, false));
+  return groups.map((group) => group.id);
+}
+
+/** Yalnız tamamı seçilen grupları çözer; kilitli grup varsa hiçbirini değiştirmez. */
+export function dissolveSelectedGroups(modules = [], moduleIds = [], { stand = null } = {}) {
+  const selected = new Set(moduleIds);
+  const groups = listGroups(modules).filter((group) => group.moduleIds.every((id) => selected.has(id)));
+  if (groups.some((group) => group.locked)) return { ok: false, reason: 'locked', message: GROUP_LOCKED_MESSAGE };
+  if (!groups.length) return { ok: false, reason: 'missing', message: 'Tamamı seçili bir grup yok.' };
+  groups.forEach((group) => dissolveGroup(modules, group.id, { stand }));
+  return { ok: true, count: groups.length };
+}
+
 // Duvar kalınlığı kadar ince öğeler (panel, kapı) kenar çizgisine ortalanır; motor da
 // (modulePlacement.hasStrictDepthBounds) bu öğelerde derinliği sınıra katmaz.
 function standWallDepthCm() {

@@ -59,6 +59,7 @@ export function createModuleContextMenu({
     <button type="button" role="menuitem" data-module-action="group-duplicate" hidden>Grubu çoğalt</button>
     <button type="button" role="menuitem" data-module-action="group-remove-member" hidden>Bu parçayı gruptan çıkar</button>
     <button type="button" role="menuitem" data-module-action="group-dissolve" hidden>Grubu çöz</button>
+    <button type="button" role="menuitem" data-module-action="group-dissolve-selection" hidden>Seçilen grupları çöz</button>
     <button type="button" role="menuitem" data-module-action="group-delete" class="danger" hidden>Grubu sil</button>
     <div class="module-context-separator module-context-group-separator" hidden></div>
     <button type="button" role="menuitem" data-module-action="toggle-lock">Kilitle</button>
@@ -186,13 +187,15 @@ export function createModuleContextMenu({
     hideGroupButtons();
     if (!options) return;
     groupButtons['group-create'].hidden = options.canCreate !== true;
+    groupButtons['group-dissolve-selection'].hidden = options.canDissolve !== true;
+    setDisabled(groupButtons['group-dissolve-selection'], options.dissolveLocked === true, GROUP_LOCKED_HINT);
     const target = options.addTarget;
     groupButtons['group-add'].hidden = !target;
     if (target) {
       groupButtons['group-add'].textContent = `Gruba ekle: ${target.name}`;
       setDisabled(groupButtons['group-add'], target.locked === true, GROUP_LOCKED_HINT);
     }
-    groupSeparator.hidden = groupButtons['group-create'].hidden && groupButtons['group-add'].hidden;
+    groupSeparator.hidden = groupButtons['group-create'].hidden && groupButtons['group-add'].hidden && groupButtons['group-dissolve-selection'].hidden;
   }
 
   // Toplu seçim menüsü: yalnız toplu kilit komutları; tek öğe komutları gizlenir.
@@ -207,6 +210,9 @@ export function createModuleContextMenu({
     syncAdvancedSection();
     lockSelectionButton.hidden = lockedCount >= ids.length;
     unlockSelectionButton.hidden = lockedCount === 0;
+    deleteButton.hidden = false;
+    deleteButton.textContent = 'Seçilenleri sil';
+    setDisabled(deleteButton, lockedCount > 0);
     showMultiGroupSection(context.groupOptions);
   }
   const pickerTitle = pickerBackdrop.querySelector('#module-picker-title');
@@ -504,6 +510,7 @@ export function createModuleContextMenu({
     }
 
     const locked = Boolean(context.locked);
+    deleteButton.textContent = 'Sil';
     const group = context.group ?? null;
     showSingleGroupSection(group);
     lockButton.hidden = false;

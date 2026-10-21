@@ -70,6 +70,7 @@ import {
   MODULE_LOCKED_MESSAGE,
   guardPlanAgainstLocks,
   isModuleLocked,
+  planSelectionRemoval,
   setModulesLocked,
 } from './moduleLock.js';
 import {
@@ -77,6 +78,7 @@ import {
   addToGroup,
   createGroup,
   dissolveGroup,
+  dissolveSelectedGroups,
   getGroupMembers,
   getModuleGroup,
   listGroups,
@@ -86,6 +88,7 @@ import {
   removeFromGroup,
   renameGroup,
   setGroupLocked,
+  unlockFullySelectedGroups,
 } from './moduleGroups.js';
 import { createModuleGroupPanel } from './moduleGroupPanel.js';
 import { createGroupTemplatePanel } from './groupTemplatePanel.js';
@@ -442,6 +445,8 @@ const selectionToolbar = createSelectionToolbar({
     if (context) copyContextModule(context);
   },
   onDelete: (point) => {
+    const selectedIds = scene3d.getSelectedModuleIds();
+    if (selectedIds.length > 1) return deleteSelectedModules(selectedIds);
     const context = scene3d.getSelectionContext(point);
     if (context) deleteContextModule(context);
   },
@@ -636,6 +641,7 @@ function findContextModuleIndex(context) {
 }
 
 function deleteContextModule(context) {
+  if (context?.multiModuleIds?.length > 1) return deleteSelectedModules(context.multiModuleIds);
   if (moduleDeleteConfirmOpen) return;
   const index = findContextModuleIndex(context);
   if (index < 0 || index >= currentModules.length) return;
@@ -660,6 +666,28 @@ function deleteContextModule(context) {
   if (!confirmed) return;
 
   commitModuleRemoval(index);
+}
+
+function deleteSelectedModules(moduleIds) {
+  if (moduleDeleteConfirmOpen) return;
+  const plan = planSelectionRemoval(currentModules, moduleIds);
+  if (!plan.ok) {
+    if (plan.blockedIds.length) reportGroupResult('Seçimde kilitli öğeler var. Silmek için önce kilitlerini açın.', true);
+    return;
+  }
+  moduleDeleteConfirmOpen = true;
+  let confirmed;
+  try {
+    confirmed = window.confirm(`Seçilen ${plan.moduleIds.length} öğe silinecek. Renk ve görsel düzenlemeleri de kaybolacak. Devam edilsin mi?`);
+  } finally {
+    queueMicrotask(() => { moduleDeleteConfirmOpen = false; });
+  }
+  if (!confirmed) return;
+  const ids = new Set(plan.moduleIds);
+  currentModules = currentModules.filter((moduleState) => !ids.has(moduleState.id));
+  scene3d.clearSelection();
+  syncSceneToModules();
+  reportGroupResult(`${ids.size} öğe silindi.`);
 }
 
 function onDeleteSelectedModule(event) {
@@ -1521,7 +1549,7 @@ function describeModuleLockSelection(message, selectedModuleIds = []) {
   const lockedCount = selectedModuleIds.filter((id) => isModuleLocked(byId.get(id))).length;
   if (selectedModuleIds.length > 1) {
     return `${selectedModuleIds.length} öğe seçili${lockedCount ? ` · ${lockedCount} kilitli` : ''}. `
-      + 'Shift+tık ile ekle/çıkar; sağ tık ile hepsini kilitle veya kilidini aç.';
+      + 'Ctrl/Cmd+tık ile ekle/çıkar; Ctrl/Cmd+A ile tümünü seç; sağ tık ile toplu işlemler.';
   }
   return lockedCount ? `${message} · Kilitli` : message;
 }
@@ -1531,6 +1559,7 @@ function describeModuleLockSelection(message, selectedModuleIds = []) {
 function changeModuleLock(moduleIds, locked) {
   // Kilitli grubun üyesi tek başına açılamaz; grup kilidi gruptan açılır.
   if (!locked) {
+    unlockFullySelectedGroups(currentModules, moduleIds);
     const byId = new Map(currentModules.map((module) => [module.id, module]));
     const groupLockedIds = moduleIds.filter((id) => getModuleGroup(byId.get(id))?.locked === true
       && byId.get(id)?.locked !== true);
@@ -1544,6 +1573,7 @@ function changeModuleLock(moduleIds, locked) {
     }
   }
   const changed = setModulesLocked(currentModules, moduleIds, locked);
+  renderModuleGroupPanel();
   const count = moduleIds.length;
   const subject = count > 1 ? `${count} öğe` : 'Öğe';
   selectionInfo.textContent = locked
@@ -1598,7 +1628,9 @@ function describeSelectionGroupOptions(selectedIds, byId) {
     const outsiders = selectedIds.filter((id) => getModuleGroup(byId.get(id))?.id !== group.id);
     if (outsiders.length) addTarget = { id: group.id, name: group.name, locked: group.locked === true };
   }
-  return { canCreate: selectedIds.length >= 2, addTarget };
+  const selected = new Set(selectedIds);
+  const completeGroups = listGroups(currentModules).filter((group) => group.moduleIds.every((id) => selected.has(id)));
+  return { canCreate: selectedIds.length >= 2, addTarget, canDissolve: completeGroups.length > 0, dissolveLocked: completeGroups.some((group) => group.locked) };
 }
 
 function reportGroupResult(message, isError = false) {
@@ -1617,6 +1649,15 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
   if (!currentStand) return;
   const stand = getGroupStand();
   const group = groupId ? listGroups(currentModules).find((candidate) => candidate.id === groupId) : null;
+
+  if (action === 'group-dissolve-selection') {
+    const capturedContent = captureModuleContent();
+    const result = dissolveSelectedGroups(currentModules, moduleIds ?? [], { stand });
+    if (!result.ok) return reportGroupResult(result.message, true);
+    syncSceneAfterModuleChange(capturedContent);
+    reportGroupResult(`${result.count} grup çözüldü; parçalar yerinde kaldı.`);
+    return;
+  }
 
   if (action === 'group-create') {
     const ids = moduleIds ?? [];
@@ -1918,11 +1959,13 @@ function activeWallHeightCm() {
 
 /** Otomatik duvar parçası: seçilen yükseklikteki düz duvar. */
 function createAutomaticWallState(widthCm, wallHeightCm) {
-  return createModuleStateFromDescriptor({
+  const moduleState = createModuleStateFromDescriptor({
     type: 'flat-panel',
     widthCm,
     itemKey: resolveAutomaticWallFlatPanelItemKey(widthCm, wallHeightCm),
   });
+  moduleState.locked = true;
+  return moduleState;
 }
 
 function readSceneSetupFromControls() {
@@ -3518,6 +3561,27 @@ function onDesignHistoryKeyDown(event) {
 window.addEventListener('keydown', onDesignHistoryKeyDown);
 window.addEventListener('keydown', onCopyPasteKeyDown);
 
+function onSceneSelectionKeyDown(event) {
+  if (event.defaultPrevented || event.repeat || !currentStand || isEditableKeyboardTarget(event.target)) return;
+  const target = event.target;
+  if (target !== document.body && !viewport.contains(target)
+    && !target?.closest?.('.selection-toolbar, .module-context-menu')) return;
+  const shortcut = resolveViewKeyboardShortcut(event);
+  if (shortcut?.type === 'select-all') {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    moduleContextMenu.close();
+    scene3d.selectModulesById(currentModules.map((moduleState) => moduleState.id));
+  } else if (String(event.key).toLowerCase() === 'delete' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    const ids = scene3d.getSelectedModuleIds();
+    if (ids.length <= 1) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    deleteSelectedModules(ids);
+  }
+}
+window.addEventListener('keydown', onSceneSelectionKeyDown, { capture: true });
+
 designUndoButton?.addEventListener('click', () => runDesignHistory('undo'));
 designRedoButton?.addEventListener('click', () => runDesignHistory('redo'));
 
@@ -4150,6 +4214,7 @@ const historicalEditWatch = setInterval(() => {
     clearInterval(designHistoryWatch);
     window.removeEventListener('keydown', onDesignHistoryKeyDown);
     window.removeEventListener('keydown', onCopyPasteKeyDown);
+    window.removeEventListener('keydown', onSceneSelectionKeyDown, true);
     window.removeEventListener('pointerup', scheduleDesignHistoryCapture);
     window.removeEventListener('keyup', scheduleDesignHistoryCapture);
     document.removeEventListener('change', scheduleDesignHistoryCapture);

@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
+
+test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
 // Kopyanın panelinin ekran noktası için sahne yüzeyleri ve kamera testte açılır.
 async function exposeScene(page) {
@@ -85,6 +88,7 @@ test('duplicating a panel with a metal separator gives the copy its own metal gr
   // Otomatik sırt duvarında yalnız ilk modülü bırak; sağ tarafta çoğaltma için yer aç.
   const initialProject = await saveAndReadProject(page);
   for (const moduleState of initialProject.modules.slice(1)) {
+    await unlockModuleForFixture(page, moduleState);
     await page.evaluate((moduleId) => {
       window.dispatchEvent(new CustomEvent('fair-stand:delete-selected-module', {
         detail: { moduleId },

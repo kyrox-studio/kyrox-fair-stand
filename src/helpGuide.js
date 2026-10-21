@@ -44,7 +44,8 @@ function listGuideSections() {
         <tr><th>H</th><td>Home görünüşüne döner. L Stand Sağ’da sol-ön köşeden bakar. Diğer stand tiplerinde sağ-ön köşeden bakar. ViewCube ⌂ aynı görünüşü açar.</td></tr>
         <tr><th>Shift + R</th><td>Seçili modülü saat yönünde döndürür. Sürükleme sırasında da kullanılabilir.</td></tr>
         <tr><th>↑ ↓ ← →</th><td>Seçili modülü kendi snap adımına göre ekranda görülen yöne taşır.</td></tr>
-        <tr><th>Delete</th><td>Sahnede tek modül seçiliyse modülü siler (kilitli değilse). Görsel kütüphanesinde bir görsel seçili/odaktaysa görsel silme uyarısını açar.</td></tr>
+        <tr><th>Ctrl/Cmd + A</th><td>Sahne aktifken sahnedeki bütün öğeleri seçer; stand zemini ve sınırları seçime girmez. Metin alanında normal metin seçimi çalışır. Sağ tık veya seçim çubuğundaki ⋯ ile toplu işlemleri aç.</td></tr>
+        <tr><th>Delete</th><td>Seçili öğeyi veya öğeleri onaydan sonra siler. Seçimde kilitli öğe varsa hiçbirini silmez; önce kilitleri aç. Görsel kütüphanesinde bir görsel seçili/odaktaysa görsel silme uyarısını açar.</td></tr>
         <tr><th>Ctrl/Cmd + C / V</th><td>Ctrl/Cmd + C seçili modülü kopyalar ve yerleştirmeye başlar; Ctrl/Cmd + V son kopyayla yeniden başlar. Her tıklama bir kopya bırakır, Esc bitirir.</td></tr>
         <tr><th>Ctrl/Cmd + Z</th><td>Tasarımdaki son değişikliği geri alır: taşıma, döndürme, ekleme, silme, çoğaltma, renk, görsel, cam, separatör, kumaş, kilit ve zemin. Üst banttaki <strong>Geri al</strong> düğmesi de aynı işi yapar.</td></tr>
         <tr><th>Ctrl/Cmd + Y veya Ctrl/Cmd + Shift + Z</th><td>Geri alınanı ileri alır. Üst banttaki <strong>İleri al</strong> düğmesi de aynı işi yapar.</td></tr>
@@ -62,6 +63,8 @@ function listGuideSections() {
       <p>Menü içeriği seçilen modül veya panelin desteklediği özelliklere göre değişir.</p>
       <ul>
         <li><strong>Kilitle / Kilidi aç:</strong> Öğeyi bulunduğu yere sabitler. Kilitli öğe sürüklenemez, ok tuşlarıyla taşınamaz, döndürülemez, boyutlandırılamaz ve silinemez. Yanına ekleme veya başka bir öğenin taşınması onu kaydıracaksa işlem yapılmaz. Renk, görsel, cam, separatör ve kumaş kilitliyken de değiştirilebilir. Kilit projeyle kaydedilir. Çift tık + Ctrl/Cmd + tık ile toplu seçimde menü <strong>Seçilenleri kilitle / Seçilenlerin kilidini aç</strong> olur.</li>
+        <li><strong>Yeni stand duvarları:</strong> Stand oluşturulurken otomatik kurulan duvarlar kilitli gelir. Taşımak veya silmek için sağ tık → <strong>Kilidi aç</strong>. Kilitliyken renk ve görsel düzenlenebilir.</li>
+        <li><strong>Toplu işlemler:</strong> Ctrl/Cmd + A ile tüm öğeleri seç veya çift tık + Ctrl/Cmd + tık ile seçim yap. Menüden <strong>Seçilenleri kilitle</strong>, <strong>Seçilenlerin kilidini aç</strong>, <strong>Grup oluştur</strong>, <strong>Seçilen grupları çöz</strong> ve <strong>Seçilenleri sil</strong> uygulanır. Kilitli grubun tamamı seçiliyse toplu kilit açma grubun kilidini de açar. Yalnız tamamı seçili gruplar çözülebilir; kilitli gruplar önce açılmalıdır. Silme tek onayla yapılır, iptal edilirse hiçbir öğe değişmez.</li>
         <li><strong>Sil:</strong> Modülü sahneden kaldırır. Kilitli öğede pasiftir.</li>
         <li><strong>Boyutlandır…:</strong> Işıklı Strafor seçiliyken mevcut X/Y ölçülerini açar; yeni ölçüler girildiğinde aynı modül konumu ve ışık rengi korunarak yeniden boyutlandırılır.</li>
         <li><strong>Ölçü / opacity…:</strong> Kutu blok seçiliyken genişlik, derinlik, yükseklik ve 0–1 opacity açılır. Yüzler, renk ve taşıma <strong>Kutu Blok</strong> bölümündedir.</li>
@@ -94,7 +97,7 @@ function listGuideSections() {
         <li><strong>Sağ tık menüsü (gruptaki öğe):</strong> Grubu yeniden adlandır, Grubu kilitle / kilidini aç, Grubu çoğalt, Bu parçayı gruptan çıkar, Grubu çöz, Grubu sil.</li>
         <li><strong>Grubu kilitle:</strong> Bütün parçalar kilitli olur: taşınamaz, döndürülemez, boyutlandırılamaz ve silinemez. Kilitli gruptaki tek parçanın kilidi açılamaz; önce grubun kilidi açılır. Kilitliyken adlandırma ve çoğaltma yapılabilir.</li>
         <li><strong>Grubu çoğalt:</strong> Bütün parçalar renk ve görselleriyle kopyalanır; kopya “… (kopya)” adıyla yeni, kilitsiz bir grup olur ve grubun yanına (sağ, sol, ön veya arka) konur. Standda yer yoksa uyarı verilir ve hiçbir şey eklenmez.</li>
-        <li><strong>Grubu sil:</strong> “Grubun tamamı silinecek (N parça)” onayı istenir. Delete tuşu yalnız seçili parçayı siler.</li>
+        <li><strong>Grubu sil:</strong> “Grubun tamamı silinecek (N parça)” onayı istenir. Delete tek seçimde seçili parçayı, çoklu seçimde seçilen öğeleri siler; kilitli öğe varsa silmez.</li>
         <li><strong>Grubu çöz / gruptan çıkar:</strong> Parçalar yerinde kalır. Kenardan ayrılmış duvar parçası hâlâ aynı kenar çizgisindeyse kenara geri bağlanır. Grupta tek parça kalırsa grup kendiliğinden çözülür.</li>
         <li><strong>Şablon olarak kaydet:</strong> Gruplar kartında grubun <strong>Şablon olarak kaydet</strong> düğmesi grubu organizasyonun şablon kataloğuna kaydeder. Şablona parçalar (Item), ölçüleri, birbirine göre yerleri, açıları, renkleri, cam panel ve metal separatör ataması girer. <strong>Görseller, Lightbox ve Mesh şablona girmez</strong>; logo ve TV ekranı boş gelir. Şablon bir Item değildir; maliyet ve üretim listesi parçalardan çıkar.</li>
         <li><strong>Şablonlarım kartı:</strong> Organizasyonun şablonlarını listeler. <strong>Yerleştir</strong> şablonu standın ortasına (yer yoksa ilk boş yere) yeni ve kilitsiz bir grup olarak koyar; sonra grubu sürükleyerek yerine taşırsın. Katalogda artık olmayan parça atlanır ve yazılır. <strong>Adlandır</strong> ve <strong>Sil</strong> şablonu değiştirir; sahnedeki gruplar etkilenmez. Şablonu güncellemek yoktur: silip yeniden kaydedilir. Şablonlar CRM içinden (oturumla) kullanılır; yetkiler proje yetkileridir.</li>
@@ -178,16 +181,6 @@ function listGuideSections() {
       <h4>Işık rengini değiştirme</h4>
       <p>Işıklı Straforu seçtiğinde sol taraftaki <strong>Seçili yüzey</strong> bölümünde <strong>Işıklı Strafor · Işık rengi</strong> kontrolü görünür. Renk seçici yalnızca arkadaki halo ışığını değiştirir; SVG'nin ön yüz renklerini değiştirmez.</p>
       <p class="help-guide-note">Yerleştirme sırasında Esc tuşu ile işlem iptal edilebilir. Strafor, duvar üstü modül gibi taşınır ve kendi hareket snap adımını kullanır. Yerleştirilemezse uyarı modülün adıyla ve gerçek sebeple çıkar (ör. Başka modülle çakışıyor.).</p>
-    `,
-  },
-  {
-    title: 'Ayaklı Vitrin ve Broşürlük',
-    html: `
-      <ul>
-        <li><strong>Ayaklı Vitrin 100</strong> (Raf & Vitrin): 100 × 40 cm, toplam 100 cm; 70 cm gövde, üstte 30 cm cam fanus. Gövdenin ön, sol ve sağ yüzüne sağ tıkla renk, görsel ve Lightbox uygulanır; arka yüz ve cam düzenlenmez.</li>
-        <li><strong>Broşürlük</strong> (Extra): 30 × 30 cm taban, 150 cm yükseklik, 5 cep, beyaz delikli metal.</li>
-        <li>İkisi de standda serbest durur, duvarın veya başka öğenin içine girmez, 10 cm adımla taşınır. Üretim listesine tek kalem, 1 adet yazılır.</li>
-      </ul>
     `,
   },
   {

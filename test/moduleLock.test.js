@@ -5,8 +5,18 @@ import {
   findLockedModuleMoves,
   guardPlanAgainstLocks,
   isModuleLocked,
+  planSelectionRemoval,
   setModulesLocked,
 } from '../src/moduleLock.js';
+
+test('toplu silme kilitli öğe veya grup varken hiçbirini silmez; kimlikleri tekilleştirir', () => {
+  const modules = [{ id: 'a' }, { id: 'b', locked: true }, { id: 'c', group: { locked: true } }];
+  const original = structuredClone(modules);
+  assert.deepEqual(planSelectionRemoval(modules, ['a', 'b', 'c']), { ok: false, moduleIds: ['a', 'b', 'c'], blockedIds: ['b', 'c'] });
+  assert.deepEqual(modules, original);
+  assert.deepEqual(planSelectionRemoval(modules, ['a', 'a', 'missing']), { ok: true, moduleIds: ['a'], blockedIds: [] });
+  assert.equal(planSelectionRemoval(modules, ['missing']).ok, false);
+});
 import { planContinuousModuleInsert } from '../src/moduleMove.js';
 
 function back(id, xCm, widthCm = 100, extra = {}) {
