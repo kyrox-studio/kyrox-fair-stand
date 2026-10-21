@@ -77,3 +77,7 @@ connector_start ×2   → değişmez
 Bu ürün/BOM kuralının source-of-truth'u `src/moduleRecipes.js` içindeki `door:100` recipe variant metadata'sıdır. `src/itemBom.js` miktar uydurmaz; yalnız supplied recipe context ile kanonik expanded recipe'yi recursive çözer.
 
 Eski uppercase katalog kimliği için runtime compatibility bağı tutulmaz.
+
+## Renderer görünümü (2026-10-21)
+
+`createDoorModule()` çerçevesi duvar paneliyle aynıdır (`addPanelModuleFrame`): iki dikme ile alt/üst profil reçetedeki `profile_*` sahne kesitinde, kanallı (`src/profileGeometry.js`). Kapı kanadı ve üst paneller profil yüzünün 15 mm önünde, çerçevenin dış kenarından dört yanda 4 cm içeride. Yalnız görünüm; state ve BOM değişmez.

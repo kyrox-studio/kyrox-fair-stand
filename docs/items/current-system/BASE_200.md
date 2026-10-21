@@ -58,6 +58,8 @@ Base `free` placement, 50 cm move snap, 90° rotation, footprint collision, stan
 `createBaseModule()` procedural baza oluşturur:
 
 - 4 corner post,
+- köşe dikmeleri ve alt/üst raylar aynı kare kanallı profil kesitinde (`addBoxModuleFrame`; reçetedeki `profile_*` sahne ölçüsü),
+- yüz panelleri profil dış yüzünün 15 mm önünde ve çerçevenin dış kenarından dört yanda 4 cm içeride (`placeBoxPanelFace`); gövde reçetedeki `panel_*` kalınlığında,
 - bottom + top rail; middle rail yok,
 - top thickness `3.5 cm`,
 - top overhang `2 cm`,
