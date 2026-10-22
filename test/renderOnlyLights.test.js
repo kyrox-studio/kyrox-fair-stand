@@ -46,6 +46,27 @@ test('Sahne Işığı preview is a session-only toggle that inverts ambient ligh
   assert.match(html, /<button id="toggle-stage-light" type="button" class="viewport-render-button is-active" aria-pressed="true"/);
 });
 
+test('viewport toolbar markup is identical in index.html and the CRM-embedded configurator markup', async () => {
+  // CRM içindeki konfigüratör HTML'i src/configuratorMarkup.js'ten gelir; index.html'e eklenen
+  // düğme (ör. Sahne Işığı) oraya da eklenmezse CRM'de görünmez.
+  const { FAIR_STAND_MARKUP } = await import('../src/configuratorMarkup.js');
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const toolbar = (source) => {
+    const start = source.indexOf('<div id="viewport-toolbar"');
+    assert.ok(start >= 0);
+    const tags = /<\/?div\b/g;
+    tags.lastIndex = start;
+    let depth = 0;
+    for (let match = tags.exec(source); match; match = tags.exec(source)) {
+      depth += match[0] === '<div' ? 1 : -1;
+      if (depth === 0) return source.slice(start, source.indexOf('>', match.index) + 1);
+    }
+    assert.fail('viewport-toolbar kapanmıyor');
+  };
+  assert.equal(toolbar(FAIR_STAND_MARKUP), toolbar(html));
+  assert.match(toolbar(FAIR_STAND_MARKUP), /id="toggle-stage-light"/);
+});
+
 test('stand-top spot drops a soft pool over the stand without casting shadows', () => {
   assert.match(scene, /const standTopSpot = new THREE\.SpotLight\(/);
   assert.match(scene, /standTopSpot\.castShadow = false;/);
