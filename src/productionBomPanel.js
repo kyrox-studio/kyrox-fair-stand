@@ -1,6 +1,6 @@
 import { groupBomLines } from './bomLineGroups.js';
 import { resolveProjectBom } from './projectBom.js';
-import { getItem } from './items.js';
+import { formatItemLengthParts, getItem } from './items.js';
 import { getFairStandHostDocument } from './hostDocument.js';
 
 const PANEL_ID = 'production-bom-panel';
@@ -42,7 +42,10 @@ function escapeHtml(value) {
 }
 
 function lineLabel(line) {
-  return `${formatNumber(line.quantity)} × ${line.name} · ${line.unit} · ${line.itemKey}`;
+  // Uzun profil/dikmede parça bölünüşü adın yanında: "Dikme 495 cm (346,5 + 8 + 140,5)".
+  const parts = formatItemLengthParts(line.itemKey);
+  const name = parts ? `${line.name} (${parts})` : line.name;
+  return `${formatNumber(line.quantity)} × ${name} · ${line.unit} · ${line.itemKey}`;
 }
 
 function moduleCollapseKey(entry) {

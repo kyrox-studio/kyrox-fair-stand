@@ -123,6 +123,26 @@ export function initializeItemRegistry(items) {
   syncProfileColorCss();
 }
 
+// Parçanın boyu en uzun ölçüsüdür (profil width, dikme height; kesit 8 × 8).
+function itemLengthCm(item) {
+  const dims = item?.dimensions ?? {};
+  const length = Math.max(...['widthCm', 'depthCm', 'heightCm'].map((field) => Number(dims[field]) || 0));
+  return length > 0 ? length : null;
+}
+
+/**
+ * Uzun profil/dikmenin parça bölünüşü (DB 0079 `fair_stand_item_length_parts`), BOM etiketi için:
+ * upright_495 → "346,5 + 8 + 140,5". Bölünüşü olmayan Item'da null. BOM miktarını değiştirmez.
+ */
+export function formatItemLengthParts(itemOrKey) {
+  const item = typeof itemOrKey === 'string' ? getItem(itemOrKey) : itemOrKey;
+  const parts = item?.lengthParts;
+  if (!Array.isArray(parts) || !parts.length) return null;
+  const lengths = parts.map((partKey) => itemLengthCm(getItem(partKey)));
+  if (lengths.some((length) => length == null)) return null;
+  return lengths.map((length) => String(length).replace('.', ',')).join(' + ');
+}
+
 /** Item.defaultColor (DB) → css hex. Görünür başlangıç rengi bundan okunur. */
 export function itemDefaultColorCss(itemOrKey) {
   const item = typeof itemOrKey === 'string' ? getItem(itemOrKey) : itemOrKey;

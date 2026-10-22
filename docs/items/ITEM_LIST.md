@@ -26,6 +26,7 @@ Aşağıdaki Item'lar bugün `src/items.js` içinde `LEAF_ITEMS` olarak canonica
 | `upright_346_5` | `upright` | **Tamam — canonical `itemKey`; 18 aktif recipe içinde ×2** |
 | `upright_99` | `upright` | **Tamam — canonical `itemKey`; 3 düz bankoda ×4, 3 L bankoda ×5** |
 | `upright_49_5` | `upright` | **Tamam — canonical `itemKey`; 3 base içinde ×4** |
+| `profile_8` | `profile` | **Tamam — canonical `itemKey`; 8 cm; yalnız `upright_495` bölünüşünün parçası (346,5 + 8 + 140,5); katalogda gizli, sahnede çizilmez** |
 | `profile_41_5` | `profile` | **Tamam — canonical `itemKey`; 14 doğrulanmış parent recipe quantity parity korunur; `widthCm=41.5`, `depthCm=8`, `heightCm=8`; saha katalog self ×1** |
 | `profile_91` | `profile` | **Tamam — canonical `itemKey`; 12 doğrulanmış parent recipe quantity parity korunur; `widthCm=91`, `depthCm=8`, `heightCm=8`; saha katalog self ×1** |
 | `profile_140_5` | `profile` | **Tamam — canonical `itemKey`; 8 doğrulanmış parent recipe quantity parity korunur; `widthCm=140.5`, `depthCm=8`, `heightCm=8`; saha katalog self ×1** |

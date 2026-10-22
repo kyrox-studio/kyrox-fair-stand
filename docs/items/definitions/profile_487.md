@@ -35,3 +35,6 @@ Tekil production Item. Saha örneği `resolveItemBom` ile `profile_487 × 1 adet
 
 ## 7. Regresyon sözleşmesi
 `test/profileLength.test.js`, `backend/tests/modules/fair_stand/test_profile_lengths_migration.py`.
+
+## Parça bölünüşü (2026-10-22, migration `0080_item_length_parts`)
+Üretim listesinde satır tek kalır, adın yanına bölünüş yazılır: 346,5 + 140,5 (`upright_346_5` + `profile_140_5`). Kaynak `fair_stand_item_length_parts` (sıralı); BOM miktarı, reçete ve maliyet değişmez (`src/items.js > formatItemLengthParts`).
