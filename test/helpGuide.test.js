@@ -137,3 +137,9 @@ test('help guide supports close button, backdrop click and Escape', () => {
   assert.match(guideCss, /\.help-guide-button\s*\{/);
   assert.match(guideCss, /\.help-guide-backdrop\s*\{/);
 });
+
+test('help guide describes short panel profiles running support to support in the production list', () => {
+  assert.match(guideSource, /kısa panellerin üst ve alt profili dikmeden dikmeye \(ya da duvar ucuna\) tek parça sayılır/);
+  assert.match(guideSource, /en uzun uygun profil \+ kalan parça yazılır \(ör\. 450 cm → 388 \+ 41,5\)/);
+  assert.match(guideSource, /o raydaki panel profilinin yerine geçer/);
+});

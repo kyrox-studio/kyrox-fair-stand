@@ -13,7 +13,13 @@
  * A full-height payer against a short converts only the panel bands that overlap the short.
  */
 
-import { getItem, isWallShortFamilyDescriptor, resolveItemDefaultZCm, resolveModuleSceneBoxCm } from './items.js';
+import {
+  getItem,
+  isWallShortFamilyDescriptor,
+  listRegisteredItems,
+  resolveItemDefaultZCm,
+  resolveModuleSceneBoxCm,
+} from './items.js';
 import { resolveItemBom } from './itemBom.js';
 import { WALL_PANEL_BAND_PITCH_CM } from './wallPanelBand.js';
 
@@ -1248,6 +1254,9 @@ function applyShortColumnRails(book, column) {
       if (frame === top) profileKeep += 1;
     }
     profileKeep = Math.min(profileKeep, profileHave);
+    const keepsAll = profileKeep >= profileHave;
+    if (!keepsAll && !(frame === bottom && profileKeep > 0)) frame.slots.rail.bottom = true;
+    if (!keepsAll && !(frame === top && profileKeep > 0)) frame.slots.rail.top = true;
     const profileDelta = profileKeep - profileHave;
     const startDelta = startKeep - startHave;
     if (profileDelta && profileKey) {
@@ -1257,6 +1266,105 @@ function applyShortColumnRails(book, column) {
     if (startDelta) {
       book.add('connector_start', startDelta);
       book.charge(frame.moduleId, 0, 0, 0, { start: startDelta });
+    }
+  }
+}
+
+/** Sahne boyu (50…500) → profil Item'ı; büyükten küçüğe. */
+function runProfileSizes() {
+  const bySize = new Map();
+  for (const item of listRegisteredItems()) {
+    if (item.type !== 'profile' || item.isRender === false) continue;
+    const sizeCm = Number(item.sceneDimensions?.widthCm ?? item.dimensions?.widthCm);
+    if (!(sizeCm > 0) || bySize.has(sizeCm)) continue;
+    bySize.set(sizeCm, item.itemKey);
+  }
+  return [...bySize.entries()]
+    .map(([sizeCm, itemKey]) => ({ sizeCm, itemKey }))
+    .sort((a, b) => b.sizeCm - a.sizeCm);
+}
+
+/** En uzun uygun profil + kalan parça. Tam bölünmezse null. */
+function splitRunProfiles(spanCm, sizes) {
+  const pieces = [];
+  let rest = spanCm;
+  for (const size of sizes) {
+    while (rest >= size.sizeCm - EPSILON_CM) {
+      pieces.push(size.itemKey);
+      rest -= size.sizeCm;
+    }
+  }
+  return Math.abs(rest) <= EPSILON_CM && pieces.length ? pieces : null;
+}
+
+function supportsRunAt(point, members, partners, uprights) {
+  for (const upright of uprights) {
+    if (!uprightFootprintContains(upright, point)) continue;
+    if (members.some((short) => uprightCoversShortBand(upright, short))) return true;
+  }
+  for (const partner of partners) {
+    if (!members.some((short) => rangesOverlap(partner.z, short.z))) continue;
+    const ends = segmentEndpoints(partner);
+    if (pointsTouch(ends.start, point) || pointsTouch(ends.end, point)) return true;
+    if (pointOnSegmentInterior(partner, point)) return true;
+  }
+  return false;
+}
+
+/**
+ * Aynı hatta, aynı ray yüksekliğinde uç uca duran kısa paneller (Tek ve Çift Sıra aynı kural)
+ * taşıyıcıdan taşıyıcıya tek profil alır: dikme bandı taşıyorsa ya da tam boy partnerin ucu
+ * oradaysa hat bölünür. Açıklıktaki her panel o raydan bir profil düşer; açıklık en uzun uygun
+ * profil + kalan parça olarak eklenir. Rayı zaten düşülmüş panel (profil rayı, kolon) hatta girmez.
+ */
+function applyShortRunProfiles(book, shorts, partners, uprights) {
+  const sizes = runProfileSizes();
+  if (!sizes.length) return;
+  const lines = new Map();
+  for (const short of shorts) {
+    if (!short.profileKey) continue;
+    for (const rail of ['bottom', 'top']) {
+      if (short.slots.rail[rail]) continue;
+      const railZ = rail === 'bottom' ? short.z.minCm : short.z.maxCm;
+      const key = `${short.axis}\u0000${Math.round(short.fixedCm / EPSILON_CM)}\u0000${Math.round(railZ / EPSILON_CM)}`;
+      const bucket = lines.get(key);
+      if (bucket) bucket.push({ short, rail });
+      else lines.set(key, [{ short, rail }]);
+    }
+  }
+
+  for (const entries of lines.values()) {
+    entries.sort((a, b) => a.short.startCm - b.short.startCm);
+    const spans = [];
+    let current = [];
+    for (const entry of entries) {
+      const previous = current[current.length - 1];
+      if (previous && nearlyEqual(previous.short.endCm, entry.short.startCm)) {
+        const joint = segmentEndpoints(entry.short).start;
+        if (supportsRunAt(joint, [previous.short, entry.short], partners, uprights)) {
+          spans.push(current);
+          current = [];
+        }
+      } else if (previous) {
+        spans.push(current);
+        current = [];
+      }
+      current.push(entry);
+    }
+    if (current.length) spans.push(current);
+
+    for (const span of spans) {
+      if (span.length < 2) continue;
+      const spanCm = span[span.length - 1].short.endCm - span[0].short.startCm;
+      const pieces = splitRunProfiles(spanCm, sizes);
+      if (!pieces) continue;
+      for (const { short, rail } of span) {
+        short.slots.rail[rail] = true;
+        book.add(short.profileKey, -1);
+        book.charge(short.moduleId, 0, 0, 0, { profile: -1, profileKey: short.profileKey });
+      }
+      for (const itemKey of pieces) book.add(itemKey, 1);
+      book.noteProfileRun();
     }
   }
 }
@@ -1537,7 +1645,8 @@ function createDeltaBook() {
   const moduleCharges = new Map();
   let jointCount = 0;
   let railCount = 0;
-  const add = (itemKey, amount) => {
+  let profileRunCount = 0;
+  const add =(itemKey, amount) => {
     if (!itemKey || !amount) return;
     deltas.set(itemKey, (deltas.get(itemKey) ?? 0) + amount);
   };
@@ -1573,8 +1682,10 @@ function createDeltaBook() {
     charge,
     noteJoint() { jointCount += 1; },
     noteRail() { railCount += 1; },
+    noteProfileRun() { profileRunCount += 1; },
     get jointCount() { return jointCount; },
     get railCount() { return railCount; },
+    get profileRunCount() { return profileRunCount; },
   };
 }
 
@@ -1687,9 +1798,11 @@ function applyProfileRail(book, wall, profile) {
   if (!nearlyEqual(wall.fixedCm, profile.fixedCm)) return;
   if (!spanContains(profile, wall)) return;
   if (!wall.profileKey) return;
+  // Ray çizgisi: profil gövdenin altına/üstüne değer ya da sahnedeki bağlantı çizgisinde
+  // (snap) gövdenin alt/üst kenarıyla hizalı içeride durur.
   let rail = null;
-  if (nearlyEqual(profile.z.maxCm, wall.z.minCm)) rail = 'bottom';
-  else if (nearlyEqual(profile.z.minCm, wall.z.maxCm)) rail = 'top';
+  if (nearlyEqual(profile.z.maxCm, wall.z.minCm) || nearlyEqual(profile.z.minCm, wall.z.minCm)) rail = 'bottom';
+  else if (nearlyEqual(profile.z.minCm, wall.z.maxCm) || nearlyEqual(profile.z.maxCm, wall.z.maxCm)) rail = 'top';
   if (!rail || wall.slots.rail[rail]) return;
   wall.slots.rail[rail] = true;
   book.add(wall.profileKey, -1);
@@ -1787,6 +1900,7 @@ export function planWallShortRelationshipBom(modules = []) {
   }
 
   applySameWidthShortColumns(book, structural);
+  applyShortRunProfiles(book, shorts, partners, uprights);
 
   const notes = [];
   if (book.jointCount) {
@@ -1794,6 +1908,9 @@ export function planWallShortRelationshipBom(modules = []) {
   }
   if (book.railCount) {
     notes.push(`Kısa panel rayı: ${book.railCount} profil ikamesi.`);
+  }
+  if (book.profileRunCount) {
+    notes.push(`Kısa panel profil birleşimi: ${book.profileRunCount} açıklık.`);
   }
 
   return Object.freeze({

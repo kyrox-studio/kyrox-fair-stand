@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { getCatalogItem } from '../src/catalog.js';
 import { createModuleStateFromDescriptor } from '../src/designState.js';
 import { resolveItemBom } from '../src/itemBom.js';
+import { resolveProjectBom } from '../src/projectBom.js';
 import { applyItemPlacementZCm, getItem, isWallShortFamilyDescriptor, resolveItemDefaultZCm } from '../src/items.js';
 import { getModuleCollisionHeightRangeCm, requiresShortUpJointSnap } from '../src/moduleBehavior.js';
 import {
@@ -459,4 +460,28 @@ test('wall short profile snap does not change the wall short BOM', () => {
     ['connector_start', 2],
     ['connector_single', 3],
   ]);
+});
+
+test('a profile on the short connection line replaces that short rail in the BOM', () => {
+  for (const shortKey of ['wall_200_short_1', 'wall_200_short_2']) {
+    const wall = wallShortRailModule(shortKey);
+    const { bottomZCm, topZCm } = railHeights(wall);
+    const rail = (id, zCm) => moduleFrom('profile_388', id, {
+      xCm: 0, yCm: 200, zCm, rotationZDeg: 0, wallId: 'free',
+    });
+    const profiles = (modules) => Object.fromEntries(resolveProjectBom(modules).lines
+      .filter((line) => line.itemKey.startsWith('profile_'))
+      .map((line) => [line.itemKey, line.quantity]));
+    // 400'lük profil 200'lük panelin üst/alt bağlantı çizgisinde: panelin o raydaki 190'ı düşer.
+    assert.deepEqual(profiles([wall, rail('top', topZCm)]), { profile_190: 1, profile_388: 1 }, shortKey);
+    assert.deepEqual(profiles([wall, rail('bottom', bottomZCm)]), { profile_190: 1, profile_388: 1 }, shortKey);
+    assert.deepEqual(
+      profiles([wall, rail('top', topZCm), rail('bottom', bottomZCm)]),
+      { profile_388: 2 },
+      shortKey,
+    );
+    // Gövdenin ortasındaki profil ray değildir.
+    const { middleZCm } = railHeights(wall);
+    assert.deepEqual(profiles([wall, rail('middle', middleZCm)]), { profile_190: 2, profile_388: 1 }, shortKey);
+  }
 });
