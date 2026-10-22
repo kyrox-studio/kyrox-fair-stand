@@ -90,7 +90,10 @@ test('9. profile factory Recipe’den scene width okumaz', () => {
 test('10. Catalog profile width catalogWidthCm okumaz', () => {
   assert.doesNotMatch(CATALOG_SOURCE, /catalogWidthCm/);
   const scene = resolveSceneDimensions(getItem('profile_190'));
-  assert.equal(getCatalogItem('profile_190').itemKey, 'profile_190');
+  // Kart tek: profile_289 (sahnede 300); profile_190 boy penceresinden gelir, kart değildir.
+  assert.equal(getCatalogItem('profile_190'), null);
+  assert.equal(getCatalogItem('profile_289').itemKey, 'profile_289');
+  assert.equal(resolveSceneDimensions(getItem('profile_289')).widthCm, 300);
   assert.equal(scene.widthCm, 200);
 });
 
@@ -111,7 +114,7 @@ test('17. same-field merge; cross-remap yok', () => {
 });
 
 test('18. 106 Item registry korunuyor', () => {
-  assert.equal(listRegisteredItems().length, 127);
+  assert.equal(listRegisteredItems().length, 131);
 });
 
 test('upright_346_5 sceneDimensions placement 8×8×346.5', () => {

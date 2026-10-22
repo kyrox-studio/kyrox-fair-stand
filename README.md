@@ -11,6 +11,7 @@ Repository ilk MVP taslağının ötesindedir. Mevcut uygulama aşağıdaki ana 
 - Gerçek zamanlı Three.js 3D stand sahnesi.
 - Ortak placement, snap, connection ve collision altyapısı.
 - Module type'a göre merkezi behavior registry.
+- Dikme ve profil katalogda tek kartla gelir; bırakırken boy sorulur (ortak pencere `src/itemSizeDialog.js`; `src/uprightHeight.js`, `src/profileLength.js`). Profil gerçek boy → sahne boyu: 41,5 → 50 … 289 → 300, 388 → 400, 487 → 500 (migration `0078_profile_lengths`).
 - Otomatik duvar, depo ve alınlık yerleşim yardımcıları (alınlık: açık kenarlara tek/çift sıra wall-short + açık köşelere dikme; destekler arası en çok 500 cm, ara dikmeler eşit aralıklı, dolgu parçaları ortaya doğru — `src/autoFascia.js`).
 - Panel, separatör, vitrin, raf, depo kapısı, panel bazalı duvar, banko ve baza modülleri.
 - Mobilya, depo ekipmanı, bitki/saksı, TV/video-wall ve LED projektör katalog öğeleri.

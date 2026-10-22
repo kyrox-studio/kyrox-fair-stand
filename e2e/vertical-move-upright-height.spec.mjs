@@ -224,3 +224,49 @@ test('dikme boyu sorulur; "Bir daha sorma" hatırlanır; sağ tık çentiği kal
   await dialog.getByRole('button', { name: 'İptal' }).click();
   expect(errors).toEqual([]);
 });
+
+test('profil kartı tek; bırakırken boy sorulur, seçilen boyun Item’ıyla kaydedilir; sağ tık "Profil boyu…"', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await exposeScene(page);
+  await createIslandProject(page, 'E2E Profil Boyu', []);
+  await page.evaluate(() => localStorage.removeItem('fairStand.profileLengthItemKey'));
+
+  const open = page.locator('#open-module-catalog');
+  await page.locator('details', { has: open }).locator(':scope > summary').click();
+  const card = page.locator('.module-drag-card[data-module-key="profile_289"]').first();
+  const group = page.locator('.module-drag-group', { has: card });
+  if (!(await group.getAttribute('open'))) await group.locator(':scope > summary').click();
+  // Diğer boyların kartı yoktur.
+  await expect(page.locator('.module-drag-card[data-module-key="profile_190"]')).toHaveCount(0);
+
+  const dialog = page.getByRole('dialog', { name: 'Profil boyu' });
+  await dropCatalogCard(page, 'profile_289');
+  await expect(dialog).toBeVisible();
+  // Kartın boyu seçili; 8 boy, gerçek ve sahne boyu yazar.
+  await expect(dialog.locator('select')).toHaveValue('profile_289');
+  await expect(dialog.locator('option')).toHaveCount(8);
+  await expect(dialog.locator('option[value="profile_41_5"]')).toHaveText('41,5 cm (sahnede 50 cm)');
+  await expect(dialog.locator('option[value="profile_487"]')).toHaveText('487 cm (sahnede 500 cm)');
+  await dialog.locator('select').selectOption('profile_388');
+  await dialog.getByRole('button', { name: 'Uygula' }).click();
+  await expect(dialog).toBeHidden();
+  let project = await saveAndReadProject(page);
+  expect(project.modules.map((module) => module.itemKey)).toEqual(['profile_388']);
+  // Sahnede 400 cm çizilir (sceneDimensions); BOM gerçek boyun Item'ı.
+  expect(project.modules[0].widthCm).toBe(400);
+
+  // Sağ tık: boy değişir.
+  const first = await moduleScreenPoint(page, project.modules[0].id);
+  await page.mouse.click(first.x, first.y, { button: 'right' });
+  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  await expect(menu.locator('[data-module-action="upright-height"]')).toBeHidden();
+  await menu.locator('[data-module-action="profile-length"]').click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('select')).toHaveValue('profile_388');
+  await dialog.locator('select').selectOption('profile_91');
+  await dialog.getByRole('button', { name: 'Uygula' }).click();
+  project = await saveAndReadProject(page);
+  expect(project.modules.map((module) => [module.itemKey, module.widthCm])).toEqual([['profile_91', 100]]);
+  expect(errors).toEqual([]);
+});

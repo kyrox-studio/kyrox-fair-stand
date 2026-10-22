@@ -15,6 +15,14 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-22 — Profil kartı ve boy seçimi (migration 0078)
+
+**Ürün kararı:** Profil dikme gibi tek kartla gelir (`profile_289`); bırakırken boy sorulur. Gerçek boy (BOM) → sahne boyu: 41,5 → 50, 91 → 100, 140,5 → 150, 190 → 200, 239,5 → 250, 289 → 300, 388 → 400, 487 → 500.
+
+**DB:** `0078_profile_lengths` — `profile_289_scene` → `profile_289` (FK ON UPDATE CASCADE; proje ve grup şablonu JSON'unda metin değişimi), `profile_239_5` / `profile_388` / `profile_487` `profile_190`'dan kopyalanır, sahne ölçüleri yazılır, katalogda yalnız `profile_289` görünür. Seed (`catalog_seed_data.py`) ve test fikstürü (`test/fixtures/itemCatalogSeed.json`) aynı son durumu taşır.
+
+**Kod:** Ortak boy penceresi `src/itemSizeDialog.js` (dikme ve profil). `src/profileLength.js`: profil listesi, etiket "gerçek cm (sahnede N cm)", tercih `fairStand.profileLengthItemKey`. `main.js` bırakmada ve sağ tık **Profil boyu…**'nda seçilen boyun `itemKey`'iyle kaydeder. Eski `profile_289_scene` projeleri `designState.js > LEGACY_PROFILE_ITEM_KEYS` ile çevrilir.
+
 ## 2026-10-22 — Dikey hareket ve taban referansı DB'den; zemin/tavan ölçüsü; dikme boyu (migration 0076)
 
 **DB:** `fair_stand_items.vertical_move` ve `z_reference` (`0076_vertical_move`; seed `item_vertical_seed.py`, test aynası `test/itemVerticalSeed.mjs`; admin okur/yazar/kopyalar). Kural: TV, strafor, tül, raf, küp blok, LED projektör, profil ve kısa duvarlar dikey taşınır; profil ve kısa duvar `wall-top`.

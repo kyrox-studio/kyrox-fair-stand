@@ -22,7 +22,7 @@
 `widthCm`, `depthCm`, `heightCm`, `material` ve `defaultColor` kanonik product/default property'leridir; owner `src/items.js`dir. Project/runtime ezme açık bir karar mekanizmasıyla uygulanabilir ve kanonik değeri değiştirmez. `src/theme.js`/`scene3d.js` specialized renderer ezme kullanabilir.
 
 ## 3. Oluşturma / state / kalıcılık
-Sahaya katalogdan konan her örnek ayrı instance'dır (`createProfileModuleState`). Parent reçete satırları ayrı kalır; persist parent module ile birlikte `itemKey` taşır.
+Katalogda kartı yoktur (2026-10-22, migration `0078_profile_lengths`): profil kartı (`profile_289`) bırakılırken boy penceresinden seçilir. Sahaya konan her örnek ayrı instance'dır (`createProfileModuleState`). Parent reçete satırları ayrı kalır; persist parent module ile birlikte `itemKey` taşır.
 
 ## 4. Davranış / etkileşim
 Katalog grubu `Panel Ek Modül`. Saha davranışı `wall_200` ile aynıdır (`WALL_BEHAVIOR`: taşıma, döndürme, uç uca/köşe snap). Duvar gövdesinin içine girmez. Aynı duvar yuvasındaki `separator` (ahşap slat) üst rayı engellemez (`overlapWithTypes: separator`). Saha dikmesi (`upright`) profil uçlarına `short-up-joint` ile snap olur.

@@ -18,9 +18,9 @@ Bu dosya insan/AI için **okunabilir katalog indeksi**dir. Runtime source-of-tru
 
 Bu snapshot `Version2` üzerindeki `MODULE_CATALOG_KEYS` ve `MODULE_CONTRACT_ASSIGNMENTS` ile eşleşmek zorundadır; `test/systemModuleCatalogDoc.test.js` drift olduğunda CI'yi kırar.
 
-- Catalog entries: **63**
+- Catalog entries: **60**
 - BOM mode `recipe`: **28**
-- BOM mode `self`: **15**
+- BOM mode `self`: **12**
 - BOM mode `decision-required`: **20**
 - Katalog dışı explicit runtime module: **1** (`illuminated-foam`)
 - Katalog dışı module BOM mode `decision-required`: **1**
@@ -50,10 +50,7 @@ Aşağıdaki blok test tarafından `MODULE_CATALOG_KEYS` ile **sıra dahil bireb
 - `wall_100_short_1`
 - `wall_50_short_1`
 - `upright_346_5`
-- `profile_190`
-- `profile_140_5`
-- `profile_91`
-- `profile_41_5`
+- `profile_289`
 - `box_block`
 - `wall_showcase_100_3_350`
 - `wall_showcase_100_2_350`
@@ -107,7 +104,9 @@ Bu bölüm navigasyon içindir; ölçü/recipe source-of-truth değildir.
 
 ### Panel Ek Modül
 
-`wall_200_short_2`, `wall_150_short_2`, `wall_100_short_2`, `wall_50_short_2`, `wall_200_short_1`, `wall_150_short_1`, `wall_100_short_1`, `wall_50_short_1`, `upright_346_5`, `profile_190`, `profile_140_5`, `profile_91`, `profile_41_5`, `box_block`
+`wall_200_short_2`, `wall_150_short_2`, `wall_100_short_2`, `wall_50_short_2`, `wall_200_short_1`, `wall_150_short_1`, `wall_100_short_1`, `wall_50_short_1`, `upright_346_5`, `profile_289`, `box_block`
+
+Profil kartı tek (`profile_289`, dikmedeki gibi): bırakılırken boy sorulur. Gerçek boy → sahne boyu: `profile_41_5` 41,5 → 50, `profile_91` 91 → 100, `profile_140_5` 140,5 → 150, `profile_190` 190 → 200, `profile_239_5` 239,5 → 250, `profile_289` 289 → 300, `profile_388` 388 → 400, `profile_487` 487 → 500 (`src/profileLength.js`, migration `0078_profile_lengths`).
 
 ### Raf & Vitrin
 
@@ -133,7 +132,7 @@ Duvar/panel, separatör, vitrin, depo kapısı, düz/L banko ve baza ailelerinin
 
 ### `self` — 14 katalog kaydı
 
-`mini_fridge_avanti`, `kettle`, `coat_rack`, `floor_showcase_100`, `brochure_stand`, `plastic_trash_bin`, `box_block`, `upright_346_5`, `profile_190`, `profile_140_5`, `profile_91`, `profile_41_5` leaf/self BOM Item'dır. Canonical birim `adet`; `src/itemBom.js > resolveItemBom(itemKey)` aynı `itemKey` için `quantity=1` üretir. Child recipe yoktur. Parent duvar reçetelerindeki `upright_346_5 ×2` ve `profile_*` parent miktarları bu saha örneğinden ayrıdır.
+`mini_fridge_avanti`, `kettle`, `coat_rack`, `floor_showcase_100`, `brochure_stand`, `plastic_trash_bin`, `box_block`, `upright_346_5` ve bütün `profile_*` boyları (`profile_41_5` … `profile_487`) leaf/self BOM Item'dır. Canonical birim `adet`; `src/itemBom.js > resolveItemBom(itemKey)` aynı `itemKey` için `quantity=1` üretir. Child recipe yoktur. Parent duvar reçetelerindeki `upright_346_5 ×2` ve `profile_*` parent miktarları bu saha örneğinden ayrıdır.
 
 ### `decision-required` — 20 katalog kaydı
 

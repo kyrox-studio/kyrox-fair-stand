@@ -17,8 +17,8 @@ def test_seed_is_idempotent_and_matches_canonical_counts(db_session):
     visible = [item for item in items if item.catalog_visible]
 
     assert len(categories) == 6
-    assert len(items) == 130  # 0075: +1; 0072: +3 raf tahtası, +3 kart, +6 sıralı raf; 0074: +2
-    assert len(visible) == 63  # 0075: bar masası; 0072: 3 tekli raf gizlendi, 3 kart göründü; 0074: vitrin + broşürlük
+    assert len(items) == 134  # 0078: +4 profil; 0075: +1; 0072: +3 raf tahtası, +3 kart, +6 sıralı raf; 0074: +2
+    assert len(visible) == 60  # 0078: 4 profil gizlendi, profile_289 kartı; 0075: bar masası; 0072: 3 tekli raf gizlendi, 3 kart göründü; 0074: vitrin + broşürlük
     assert len(components) == 199  # 0072: tekli raf reçetesi 6 + tahta ayakları 3 + sıralı raf 6
     width_variants = db_session.scalars(select(FairStandItemWidthVariantModel)).all()
     assert sorted((row.family_item_key, row.item_key) for row in width_variants) == [

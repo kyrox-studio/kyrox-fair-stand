@@ -1006,6 +1006,12 @@ const LEGACY_WALL_SHORT_ITEM_KEYS = Object.freeze({
   wall_50_short_up_2: 'wall_50_short_2',
 });
 
+// Profil kartı admin ekranında `profile_289_scene` olarak açılmıştı; migration 0078 anahtarı
+// `profile_289` yaptı. Tarayıcıda kayıtlı eski projeler açılırken aynı anahtara çevrilir.
+const LEGACY_PROFILE_ITEM_KEYS = Object.freeze({
+  profile_289_scene: 'profile_289',
+});
+
 const LEGACY_WALL_SHORT_VARIANTS = Object.freeze({
   'short-up-1': 'wall-short-1',
   'short-up-2': 'wall-short-2',
@@ -1181,6 +1187,8 @@ export function normalizeModuleItemState(moduleState) {
   }
 
   if (moduleState.type === 'profile') {
+    const legacyProfileKey = LEGACY_PROFILE_ITEM_KEYS[moduleState.itemKey];
+    if (legacyProfileKey) moduleState.itemKey = legacyProfileKey;
     const resolvedKey = resolveItemKey(moduleState) ?? moduleState.itemKey;
     const item = resolvedKey ? getItem(resolvedKey) : null;
     if (item?.type === 'profile') {

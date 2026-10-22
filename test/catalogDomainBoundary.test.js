@@ -98,8 +98,8 @@ test('public Item registry tek bootstrapped catalog’dur; kova export yoktur', 
   }
   assert.doesNotMatch(itemsSource, /export function listLeafItems/);
   assert.doesNotMatch(itemsSource, /export function listCompositeItems/);
-  assert.equal(listRegisteredItems().length, 127);
-  assert.equal(new Set(listRegisteredItems().map((item) => item.itemKey)).size, 127);
+  assert.equal(listRegisteredItems().length, 131);
+  assert.equal(new Set(listRegisteredItems().map((item) => item.itemKey)).size, 131);
 });
 
 test('STAND_DIMENSIONS runtime kaydı ve MODULE_WIDTHS_CM sahibi src/standDimensions.js; Catalog re-export yok', () => {
@@ -202,10 +202,10 @@ test('catalogVisible=false Item runtime’da yok demek değildir', () => {
     assert.equal(resolveItemKey({ itemKey }), itemKey, itemKey);
   }
 
-  assert.equal(listRegisteredItems().length, 127);
-  assert.equal(listRegisteredItems().filter((item) => item.catalogVisible === true).length, 63);
-  assert.equal(listCatalogItems().length, 63);
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 63);
+  assert.equal(listRegisteredItems().length, 131);
+  assert.equal(listRegisteredItems().filter((item) => item.catalogVisible === true).length, 60);
+  assert.equal(listCatalogItems().length, 60);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 60);
 
   const hiddenItem = getItem('panel_197');
   assert.ok(hiddenItem);

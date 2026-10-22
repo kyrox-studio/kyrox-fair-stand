@@ -146,7 +146,7 @@ Yeni görünen Item için Catalog içine kart satırı yazılmaz.
 | id | catalogName | catalogIndex | Item sayısı |
 |---|---|---|---|
 | 1 | Panel & Duvar | 1 | 9 |
-| 2 | Panel Ek Modül | 2 | 14 |
+| 2 | Panel Ek Modül | 2 | 11 |
 | 3 | Raf & Vitrin | 3 | 6 |
 | 4 | Banko & Baza | 4 | 9 |
 | 5 | Extra | 5 | 19 |

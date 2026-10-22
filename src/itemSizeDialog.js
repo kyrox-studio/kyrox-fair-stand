@@ -1,0 +1,99 @@
+// Boy seçimi penceresi: katalogda tek kartı olan ölçü ailelerinde (dikme, profil) bırakılırken
+// ve sağ tık menüsünden boy sorulur. Sonuç: { itemKey, remember } ya da iptalde null.
+// remember true: tercih yazılır; false: tercih silinir (yeniden sorulur).
+import { getItem } from './items.js';
+
+/**
+ * @param {object} options
+ * @param {string} options.title Pencere başlığı.
+ * @param {string} options.itemType Seçilebilen Item türü; başka tür gönderilmez.
+ * @param {Array<object>} options.items Seçenekler (sıralı Item listesi).
+ * @param {(item: object) => string} options.formatLabel Seçenek metni.
+ * @param {string|null} [options.selectedItemKey]
+ * @param {boolean} [options.remember]
+ */
+export function requestItemSizeChoice({
+  title,
+  itemType,
+  items,
+  formatLabel,
+  selectedItemKey = null,
+  remember = false,
+}) {
+  return new Promise((resolve) => {
+    const titleId = `${itemType}-size-title`;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:12000;background:rgba(15,23,42,.48);display:grid;place-items:center;padding:20px';
+    overlay.setAttribute('role', 'presentation');
+    const form = document.createElement('form');
+    form.className = `${itemType}-size-dialog item-size-dialog`;
+    form.setAttribute('role', 'dialog');
+    form.setAttribute('aria-modal', 'true');
+    form.setAttribute('aria-labelledby', titleId);
+    form.style.cssText = 'width:min(380px,100%);background:#fff;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(15,23,42,.28);display:grid;gap:12px;font:500 13px/1.35 Inter,ui-sans-serif,system-ui,sans-serif;color:#16161a';
+    const options = items.map((item) => (
+      `<option value="${item.itemKey}"${item.itemKey === selectedItemKey ? ' selected' : ''}>${formatLabel(item)}</option>`
+    )).join('');
+    form.innerHTML = [
+      `<strong id="${titleId}" style="font-size:16px">${title}</strong>`,
+      `<label style="display:grid;gap:5px">Boy<select name="itemKey" style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px">${options}</select></label>`,
+      `<label style="display:flex;gap:8px;align-items:center"><input name="remember" type="checkbox"${remember ? ' checked' : ''}> Bir daha sorma, aynı ölçüde getir</label>`,
+      '<div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" data-cancel>İptal</button><button type="submit" class="primary">Uygula</button></div>',
+    ].join('');
+    overlay.appendChild(form);
+    document.body.appendChild(overlay);
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      finish(null);
+    };
+    const finish = (value) => {
+      document.removeEventListener('keydown', onKeyDown, true);
+      overlay.remove();
+      resolve(value);
+    };
+    form.querySelector('[data-cancel]').addEventListener('click', () => finish(null));
+    overlay.addEventListener('pointerdown', (event) => {
+      if (event.target === overlay) finish(null);
+    });
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+      const itemKey = String(data.get('itemKey') ?? '');
+      if (getItem(itemKey)?.type !== itemType) return;
+      finish({ itemKey, remember: data.get('remember') === 'on' });
+    });
+    document.addEventListener('keydown', onKeyDown, true);
+    form.querySelector('select')?.focus();
+  });
+}
+
+/** Tarayıcı tercihi okunur/yazılır; depolama kapalıysa sessizce atlanır. */
+export function readItemSizePreference(preferenceKey, itemType, storage) {
+  try {
+    const itemKey = resolvePreferenceStorage(storage)?.getItem(preferenceKey) ?? null;
+    return itemKey && getItem(itemKey)?.type === itemType ? itemKey : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeItemSizePreference(preferenceKey, itemKey, storage) {
+  try {
+    const target = resolvePreferenceStorage(storage);
+    if (!target) return;
+    if (itemKey) target.setItem(preferenceKey, itemKey);
+    else target.removeItem(preferenceKey);
+  } catch {
+    // Tarayıcı depolaması kapalıysa tercih tutulmaz; pencere her seferinde açılır.
+  }
+}
+
+function resolvePreferenceStorage(storage) {
+  if (storage !== undefined) return storage;
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}

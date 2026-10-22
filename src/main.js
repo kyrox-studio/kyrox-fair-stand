@@ -14,6 +14,7 @@ import {
   addFlatPanelBackStrips,
   createModuleStateFromCatalogKey,
   createModuleStateFromDescriptor,
+  createProfileModuleState,
   createUprightModuleState,
   duplicateModuleState,
   hasCanonicalModuleItemKey,
@@ -123,6 +124,11 @@ import {
   requestUprightHeight,
   writeUprightHeightPreference,
 } from './uprightHeight.js';
+import {
+  readProfileLengthPreference,
+  requestProfileLength,
+  writeProfileLengthPreference,
+} from './profileLength.js';
 import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
@@ -1328,6 +1334,40 @@ async function changeContextUprightHeight(context) {
   rebuildWall({ resetView: false });
 }
 
+function applyProfileItemKey(moduleState, itemKey) {
+  const profile = createProfileModuleState({ itemKey });
+  if (!profile) return false;
+  moduleState.itemKey = profile.itemKey;
+  moduleState.widthCm = profile.widthCm;
+  moduleState.depthCm = profile.depthCm;
+  moduleState.heightCm = profile.heightCm;
+  return true;
+}
+
+// Profil boyu: null = profil değil (menü gizli); profilde mevcut itemKey.
+function getContextProfileLengthState(context) {
+  const index = findContextModuleIndex(context);
+  const moduleState = index >= 0 ? currentModules[index] : null;
+  return moduleState?.type === 'profile' ? moduleState.itemKey : null;
+}
+
+async function changeContextProfileLength(context) {
+  const index = findContextModuleIndex(context);
+  const moduleState = index >= 0 ? currentModules[index] : null;
+  if (moduleState?.type !== 'profile') return;
+  const choice = await requestProfileLength({
+    selectedItemKey: moduleState.itemKey,
+    remember: Boolean(readProfileLengthPreference()),
+  });
+  if (!choice) return;
+  // Çentik kalkarsa sonraki profilde yine sorulur.
+  writeProfileLengthPreference(choice.remember ? choice.itemKey : null);
+  if (choice.itemKey === moduleState.itemKey) return;
+  if (!applyProfileItemKey(moduleState, choice.itemKey)) return;
+  selectionInfo.textContent = `Profil boyu: ${getItem(choice.itemKey)?.name ?? choice.itemKey}.`;
+  rebuildWall({ resetView: false });
+}
+
 // Arka yüz paneli: null = bu modülde yok (menü gizli), true/false = takılı mı.
 function getContextBackPanelState(context) {
   const index = findContextModuleIndex(context);
@@ -1500,6 +1540,8 @@ const moduleContextMenu = createModuleContextMenu({
   onBackPanelChange: changeContextBackPanels,
   getUprightHeightState: getContextUprightHeightState,
   onUprightHeight: (context) => { void changeContextUprightHeight(context); },
+  getProfileLengthState: getContextProfileLengthState,
+  onProfileLength: (context) => { void changeContextProfileLength(context); },
   onLockChange: changeModuleLock,
   onRotate: (context) => scene3d.rotateModuleById(context.moduleId),
   onGroupAction: (action, context) => handleGroupAction(action, {
@@ -1893,6 +1935,20 @@ moduleDragSidebar = createModuleDragSidebar({
         }
         applyUprightItemKey(moduleState, itemKey);
       }
+      if (moduleState?.type === 'profile') {
+        // Varsayılan kartın boyu; "Bir daha sorma" tercihi varsa sorulmaz.
+        let itemKey = readProfileLengthPreference();
+        if (!itemKey) {
+          const choice = await requestProfileLength({ selectedItemKey: moduleState.itemKey });
+          if (!choice) {
+            scene3d.clearCatalogModuleDrag();
+            return;
+          }
+          itemKey = choice.itemKey;
+          if (choice.remember) writeProfileLengthPreference(itemKey);
+        }
+        applyProfileItemKey(moduleState, itemKey);
+      }
       if (moduleState?.type === 'box-block') {
         const dimensions = await requestBoxBlockDimensions({
           widthCm: moduleState.widthCm,
@@ -1909,8 +1965,8 @@ moduleDragSidebar = createModuleDragSidebar({
         moduleState.heightCm = dimensions.heightCm;
         moduleState.opacity = dimensions.opacity;
       }
-      // Dikmede kart tek (upright_346_5); kayıt seçilen boyun anahtarıyla yapılır.
-      const commitKey = moduleState?.type === 'upright' ? moduleState.itemKey : catalogKey;
+      // Dikme ve profilde kart tek (upright_346_5, profile_289); kayıt seçilen boyun anahtarıyla yapılır.
+      const commitKey = moduleState?.type === 'upright' || moduleState?.type === 'profile' ? moduleState.itemKey : catalogKey;
       const committed = commitDroppedCatalogModule(moduleState, result, commitKey);
       if (!committed.ok) {
         renderWallResult(committed.message ?? 'Modül bu konuma bırakılamadı.', true);

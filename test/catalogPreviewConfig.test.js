@@ -93,11 +93,11 @@ function serializeNode(node) {
   };
 }
 
-test('63 görünür Item catalogPreview taşır; 47 gizli Item preview taşımaz', () => {
+test('60 görünür Item catalogPreview taşır; gizli Item preview taşımaz', () => {
   const visible = listRegisteredItems().filter((item) => item.catalogVisible === true);
   const hidden = listRegisteredItems().filter((item) => item.catalogVisible !== true);
-  assert.equal(visible.length, 63);
-  assert.equal(hidden.length, 64);
+  assert.equal(visible.length, 60);
+  assert.equal(hidden.length, 71);
 
   for (const item of visible) {
     assert.equal(typeof item.previewId, 'number', item.itemKey);
@@ -146,7 +146,7 @@ test('Catalog preview renderer yalnız catalogPreview key ile seçilir; type bra
   assert.match(catalogDoc, /Catalog preview renderer seçimi yalnız Item\.previewId üzerinden yapılır/);
 });
 
-test('63 Item catalogPreview dağılımı kilitlidir', () => {
+test('60 Item catalogPreview dağılımı kilitlidir', () => {
   const counts = {};
   for (const item of listCatalogItems()) {
     counts[item.previewId] = (counts[item.previewId] ?? 0) + 1;
@@ -167,7 +167,7 @@ test('63 Item catalogPreview dağılımı kilitlidir', () => {
     14: 3,
     15: 1,
     16: 1,
-    17: 4,
+    17: 1,
     18: 2,
     19: 2,
     21: 2,
@@ -184,10 +184,10 @@ test('63 Item catalogPreview dağılımı kilitlidir', () => {
   });
 });
 
-test('63 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
+test('60 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
   installDocument();
   const projected = listCatalogItems();
-  assert.equal(projected.length, 63);
+  assert.equal(projected.length, 60);
 
   for (const module of projected) {
     const tree = serializeNode(createModuleCatalogPreview(module));
@@ -251,5 +251,7 @@ test('63 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
   assert.equal(getItem('wall_200_350').previewId, 9);
   assert.equal(getItem('kettle').previewId, 13);
   assert.equal(getItem('video_wall_2x2').previewId, 28);
-  assert.equal(getItem('profile_190').previewId, 17);
+  // Profil kartı tek (profile_289); boy penceresinden gelen profiller gizlidir, önizleme taşımaz.
+  assert.equal(getItem('profile_289').previewId, 17);
+  assert.equal(getItem('profile_190').previewId, undefined);
 });
