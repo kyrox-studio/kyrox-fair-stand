@@ -1,5 +1,5 @@
 /**
- * GOVERNANCE katmanı. Otomatik depo/duvar planner’ları (`autoDepot.js`,
+ * GOVERNANCE katmanı. Otomatik depo/duvar/alınlık planner’ları (`autoDepot.js`, `autoFascia.js`,
  * `automaticWall.js`) bu registry’yi runtime’da okumaz; testler planner
  * çıktısını sözleşmeyle karşılaştırır.
  */
@@ -39,6 +39,38 @@ export const FEATURE_CONTRACTS = Object.freeze({
     tests: Object.freeze({
       contract: 'required',
       regressionFiles: Object.freeze(['test/autoDepot.test.js', 'test/plasticTrashBinModule.test.js']),
+      fullSuite: 'required',
+      build: 'required',
+    }),
+  }),
+  automaticFascia: Object.freeze({
+    id: 'automatic-fascia',
+    kind: 'scene-composition',
+    owner: 'src/autoFascia.js',
+    trigger: Object.freeze({
+      mode: 'explicit-stage-option',
+      rowsOption: 'rows',
+    }),
+    inputs: Object.freeze([
+      'standType',
+      'standXCm',
+      'standYCm',
+      'rows',
+    ]),
+    creates: Object.freeze({
+      structuralKinds: Object.freeze(['flat-panel', 'upright']),
+      panelVariants: Object.freeze(['wall-short-1', 'wall-short-2']),
+    }),
+    placement: Object.freeze({
+      owner: 'src/autoFascia.js',
+      rule: 'open-stand-edges-top-strip-with-uprights-at-fully-open-corners',
+    }),
+    persistence: Object.freeze({
+      mode: 'generated-modules-enter-project-state',
+    }),
+    tests: Object.freeze({
+      contract: 'required',
+      regressionFiles: Object.freeze(['test/autoFascia.test.js']),
       fullSuite: 'required',
       build: 'required',
     }),

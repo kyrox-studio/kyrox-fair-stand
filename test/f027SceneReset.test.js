@@ -8,13 +8,13 @@ const indexSource = await readFile(new URL('../index.html', import.meta.url), 'u
 test('F-027 reset uses the current stand setup controls and the same scene builder as create', () => {
   assert.match(indexSource, /id="clear-wall"[^>]*>Sahneyi Sıfırla<\/button>/);
   assert.match(mainSource, /function readSceneSetupFromControls\(\)/);
-  assert.match(mainSource, /function rebuildSceneFromSetup\(\{ setup, depotConfig, depotPlan \}\)/);
+  assert.match(mainSource, /function rebuildSceneFromSetup\(\{ setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan \}\)/);
 
   const createStart = mainSource.indexOf("createStageButton.addEventListener('click'");
   const createEnd = mainSource.indexOf("floorTypeSelect.addEventListener", createStart);
   const createHandler = mainSource.slice(createStart, createEnd);
   assert.match(createHandler, /readSceneSetupFromControls\(\)/);
-  assert.match(createHandler, /rebuildSceneFromSetup\(\{ setup, depotConfig, depotPlan \}\)/);
+  assert.match(createHandler, /rebuildSceneFromSetup\(\{ setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan \}\)/);
 
   const resetStart = mainSource.indexOf("clearWallButton.addEventListener('click'");
   const resetEnd = mainSource.indexOf("resetModuleFeaturesButton.addEventListener", resetStart);

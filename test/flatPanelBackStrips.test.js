@@ -12,6 +12,7 @@ import {
 } from '../src/designState.js';
 import { createModulePlacement } from '../src/modulePlacement.js';
 import { resolveProjectBom } from '../src/projectBom.js';
+import { resolveItemDefaultZCm } from '../src/items.js';
 
 function qty(bom, itemKey) {
   return bom.lines.find((entry) => entry.itemKey === itemKey)?.quantity ?? 0;
@@ -26,7 +27,7 @@ function moduleQty(bom, moduleId, itemKey) {
 function wall(id, itemKey, { xCm = 0, yCm = 0, rotationZDeg = 0, back = false } = {}) {
   const state = createModuleStateFromCatalogKey(itemKey);
   state.id = id;
-  state.placement = createModulePlacement({ xCm, yCm, rotationZDeg });
+  state.placement = createModulePlacement({ xCm, yCm, rotationZDeg, zCm: resolveItemDefaultZCm(itemKey) });
   if (back) assert.equal(addFlatPanelBackStrips(state), true);
   return state;
 }
@@ -133,3 +134,90 @@ test('arka yüzdeki cam bant cam panele, köşedeyse köşe cam panele ayrılır
   assert.equal(moduleQty(corner, 'b', 'panel_corner_cam_92'), 1);
   assert.equal(moduleQty(corner, 'b', 'panel_corner_92'), 6);
 });
+
+// Short (wall-short-1/2): arka yüz köşe paneli tam boy duvarla aynı kural; aparat yalnız ön yüz kuralıyla.
+for (const [rows, bands] of [['1', 1], ['2', 2]]) {
+  test(`short_${rows} L köşe: içe bakan ön yüz köşe, dışa bakan arka yüz düz`, () => {
+    const bom = resolveProjectBom([
+      wall('a', `wall_200_short_${rows}`, { back: true }),
+      wall('b', `wall_150_short_${rows}`, { xCm: 200, rotationZDeg: 270, back: true }),
+    ]);
+    assert.equal(moduleQty(bom, 'a', 'panel_corner_192'), bands);
+    assert.equal(moduleQty(bom, 'a', 'panel_197'), bands);
+    assert.equal(moduleQty(bom, 'b', 'panel_corner_142_5'), bands);
+    assert.equal(moduleQty(bom, 'b', 'panel_147_5'), bands);
+    const plain = resolveProjectBom([
+      wall('a', `wall_200_short_${rows}`),
+      wall('b', `wall_150_short_${rows}`, { xCm: 200, rotationZDeg: 270 }),
+    ]);
+    assert.equal(qty(bom, 'connector_corner'), qty(plain, 'connector_corner'), 'aparat arka panelden etkilenmez');
+  });
+
+  test(`short_${rows} dışa bakan L (alınlık köşesi): arka yüzler köşe paneli, ön yüzler düz`, () => {
+    const modules = (back) => [
+      wall('a', `wall_200_short_${rows}`, { xCm: 0, yCm: 200, rotationZDeg: 0, back }),
+      wall('b', `wall_200_short_${rows}`, { xCm: 200, yCm: 0, rotationZDeg: 90, back }),
+    ];
+    const bom = resolveProjectBom(modules(true));
+    for (const id of ['a', 'b']) {
+      assert.equal(moduleQty(bom, id, 'panel_197'), bands, `${id} ön yüz düz`);
+      assert.equal(moduleQty(bom, id, 'panel_corner_192'), bands, `${id} arka yüz köşe`);
+    }
+    assert.equal(qty(bom, 'connector_corner'), qty(resolveProjectBom(modules(false)), 'connector_corner'));
+  });
+
+  test(`short_${rows} dayanan modül: dayanan arka yüz köşe paneli`, () => {
+    const bom = resolveProjectBom([
+      wall('a', `wall_100_short_${rows}`, { back: true }),
+      wall('b', `wall_100_short_${rows}`, { xCm: 100, rotationZDeg: 90, back: true }),
+    ]);
+    assert.equal(moduleQty(bom, 'a', 'panel_corner_92'), bands);
+    assert.equal(moduleQty(bom, 'a', 'panel_98'), bands);
+    assert.equal(moduleQty(bom, 'b', 'panel_98'), bands);
+    assert.equal(moduleQty(bom, 'b', 'panel_corner_92'), bands);
+  });
+
+  test(`short_${rows} T: gövdeye dikilen kolun iki yüzü de köşe, gövde düz`, () => {
+    const bom = resolveProjectBom([
+      wall('a', `wall_200_short_${rows}`, { back: true }),
+      wall('b', `wall_100_short_${rows}`, { xCm: 100, rotationZDeg: 270, back: true }),
+    ]);
+    assert.equal(moduleQty(bom, 'b', 'panel_corner_92'), bands * 2);
+    assert.equal(moduleQty(bom, 'b', 'panel_98'), 0);
+    assert.equal(moduleQty(bom, 'a', 'panel_197'), bands * 2);
+    assert.equal(moduleQty(bom, 'a', 'panel_corner_192'), 0);
+  });
+
+  test(`short_${rows} yan yana: köşe paneli yok, iki yüz düz`, () => {
+    const bom = resolveProjectBom([
+      wall('a', `wall_200_short_${rows}`, { back: true }),
+      wall('b', `wall_200_short_${rows}`, { xCm: 200, back: true }),
+    ]);
+    for (const id of ['a', 'b']) {
+      assert.equal(moduleQty(bom, id, 'panel_197'), bands * 2);
+      assert.equal(moduleQty(bom, id, 'panel_corner_192'), 0);
+    }
+  });
+}
+
+test('alınlık short tam boy duvarın ucuna değer: duvar ön bandı köşe, short arka yüzü köşe paneli', () => {
+  const bom = resolveProjectBom([
+    wall('w', 'wall_200_350', { xCm: 0, yCm: 0, rotationZDeg: 90, back: true }),
+    wall('s', 'wall_200_short_1', { xCm: 0, yCm: 200, rotationZDeg: 0, back: true }),
+  ]);
+  assert.equal(moduleQty(bom, 'w', 'panel_corner_192'), 1, 'duvarın yalnız örtüşen bandı');
+  assert.equal(moduleQty(bom, 'w', 'panel_197'), 13);
+  assert.equal(moduleQty(bom, 's', 'panel_197'), 1, 'short ön yüz dışa bakar, düz');
+  assert.equal(moduleQty(bom, 's', 'panel_corner_192'), 1, 'short arka yüzü duvara bakar, köşe');
+});
+
+test('short_2 tam boy duvara değer: duvarın yalnız örtüşen iki bandı köşe, short arka yüzü köşe', () => {
+  const bom = resolveProjectBom([
+    wall('w', 'wall_200_350', { xCm: 0, yCm: 0, rotationZDeg: 90, back: true }),
+    wall('s', 'wall_200_short_2', { xCm: 0, yCm: 200, rotationZDeg: 0, back: true }),
+  ]);
+  assert.equal(moduleQty(bom, 'w', 'panel_corner_192'), 2);
+  assert.equal(moduleQty(bom, 's', 'panel_corner_192'), 2);
+  assert.equal(moduleQty(bom, 's', 'panel_197'), 2);
+});
+

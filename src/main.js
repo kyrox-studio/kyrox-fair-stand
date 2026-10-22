@@ -1,6 +1,7 @@
 import { createStandScene, prefetchModuleModels } from './scene3d.js';
 import { initHelpGuide } from './helpGuide.js';
 import { planAutomaticDepot } from './autoDepot.js';
+import { planAutomaticFascia, resolveFasciaPanelItemKey, resolveFasciaUprightItemKey } from './autoFascia.js';
 import {
   composeAutomaticStandWall,
   composeAutomaticBackWallWithDepot,
@@ -260,6 +261,8 @@ syncFloorTypeSelect();
 const autoDepotSizeSelect = document.querySelector('#auto-depot-size');
 const autoDepotContentsInput = document.querySelector('#auto-depot-contents');
 const autoDepotContentsHint = document.querySelector('#auto-depot-contents-hint');
+// Alınlık: "Alınlık yok" / tek sıra / çift sıra; açık kenarlara wall-short + köşe dikmesi.
+const autoFasciaRowsSelect = document.querySelector('#auto-fascia-rows');
 const stageResult = document.querySelector('#stage-result');
 const openModuleCatalogButton = document.querySelector('#open-module-catalog');
 const clearWallButton = document.querySelector('#clear-wall');
@@ -2052,7 +2055,45 @@ function readSceneSetupFromControls() {
     return { ok: false, message: depotPlan.message };
   }
 
-  return { ok: true, setup, depotConfig, depotPlan };
+  const fasciaRows = Number(autoFasciaRowsSelect?.value) || 0;
+  const fasciaConfig = fasciaRows ? { enabled: true, rows: fasciaRows } : { enabled: false, rows: null };
+  const fasciaPlan = fasciaConfig.enabled ? planAutomaticFascia({
+    standType: setup.standType,
+    standXCm: setup.xCm,
+    standYCm: setup.yCm,
+    rows: fasciaRows,
+  }) : null;
+
+  if (fasciaPlan && !fasciaPlan.ok) {
+    return { ok: false, message: fasciaPlan.message };
+  }
+
+  return { ok: true, setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan };
+}
+
+/** Otomatik alınlık modülleri: Z, wall-short / dikme öğesinin kendi varsayılanından gelir. */
+function createAutomaticFasciaStates(plan) {
+  if (!plan?.ok) return [];
+  const states = [];
+  for (const panel of plan.panels) {
+    const itemKey = resolveFasciaPanelItemKey(panel.widthCm, plan.rows);
+    const state = itemKey ? createModuleStateFromCatalogKey(itemKey) : null;
+    if (!state) continue;
+    state.placement = { ...panel.placement, zCm: resolveItemDefaultZCm(itemKey) };
+    state.locked = true;
+    state.autoFascia = true;
+    states.push(state);
+  }
+  const uprightKey = resolveFasciaUprightItemKey(activeWallHeightCm());
+  for (const upright of plan.uprights) {
+    const state = uprightKey ? createModuleStateFromCatalogKey(uprightKey) : null;
+    if (!state) continue;
+    state.placement = { ...upright.placement };
+    state.locked = true;
+    state.autoFascia = true;
+    states.push(state);
+  }
+  return states;
 }
 
 function appendAutomaticWallLamps(standXCm, standYCm) {
@@ -2090,7 +2131,7 @@ function appendAutomaticDepotLamps() {
   }
 }
 
-function rebuildSceneFromSetup({ setup, depotConfig, depotPlan }) {
+function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan }) {
   currentModules = [];
   moduleContextMenu.close();
   moduleContextMenu.closePicker();
@@ -2107,7 +2148,7 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan }) {
     return false;
   }
 
-  currentStand = assignStandFloorItem({ ...setup, depot: depotConfig }, floorTypeSelect.value);
+  currentStand = assignStandFloorItem({ ...setup, depot: depotConfig, fascia: fasciaConfig }, floorTypeSelect.value);
   setActiveWallLineHeightCm(activeWallHeightCm());
   syncSaveProjectButton();
   scene3d.setFloorType(floorTypeSelect.value);
@@ -2198,6 +2239,8 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan }) {
     currentModules.push(...createAutomaticDepotStates(depotPlan));
     appendAutomaticDepotLamps();
   }
+  // Lambalardan sonra: alınlık flat-panel'leri otomatik duvar lambası planına girmez.
+  currentModules.push(...createAutomaticFasciaStates(fasciaPlan));
   rebuildWall({ resetView: true });
 
   const label = STAND_TYPE_LABELS[setup.standType];
@@ -2215,7 +2258,7 @@ createStageButton.addEventListener('click', async () => {
     renderStageResult(sceneSetup.message, true);
     return;
   }
-  const { setup, depotConfig, depotPlan } = sceneSetup;
+  const { setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan } = sceneSetup;
 
   if (currentStand || currentModules.length || autosaveController.isEnabled()) {
     const currentProjectName = projectNameInput.value.trim() || 'Adsız Proje';
@@ -2244,7 +2287,7 @@ createStageButton.addEventListener('click', async () => {
   renderRevisionList();
   projectStatus.textContent = 'Yeni proje hazırlanıyor: ' + projectName + '…';
 
-  if (!rebuildSceneFromSetup({ setup, depotConfig, depotPlan })) return;
+  if (!rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan })) return;
 
   try {
     await persistActiveProject({ quiet: true, reason: 'init' });
@@ -2884,6 +2927,9 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     syncAutoDepotControls();
     if (autoDepotContentsInput) autoDepotContentsInput.checked = Boolean(currentStand.depot?.includeContents);
     syncAutoDepotControls();
+    if (autoFasciaRowsSelect) {
+      autoFasciaRowsSelect.value = currentStand.fascia?.enabled ? String(currentStand.fascia.rows || 1) : '';
+    }
     const endSceneBuild = beginProjectOpenStep('scene-build');
     const stage = scene3d.createStage({
       widthCm: currentStand.xCm,
@@ -3051,6 +3097,7 @@ function resetToFirstOpenState() {
   standSizeYInput.value = '';
   if (autoDepotSizeSelect) autoDepotSizeSelect.value = '';
   syncAutoDepotControls();
+  if (autoFasciaRowsSelect) autoFasciaRowsSelect.value = '';
   syncFloorTypeSelect();
   if (foamLightControls) foamLightControls.hidden = true;
 
