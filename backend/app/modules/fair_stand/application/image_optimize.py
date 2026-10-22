@@ -29,18 +29,6 @@ def build_storage_key(*, organization_id, project_id, asset_id, extension: str) 
     return f"{organization_id}/{project_id}/{asset_id}{ext}"
 
 
-def extension_for_mime(mime_type: str) -> str:
-    if mime_type == "image/webp":
-        return ".webp"
-    if mime_type == "image/jpeg":
-        return ".jpg"
-    if mime_type == "image/png":
-        return ".png"
-    if mime_type == SVG_MIME:
-        return ".svg"
-    return ".bin"
-
-
 def _open_raster_for_optimize(raw: bytes) -> Image.Image:
     """Decode raster bytes; pixel count is capped by downscale, not by upload policy."""
     buffer = io.BytesIO(raw)

@@ -307,7 +307,7 @@ Yeni kategori gerekirse Admin Catalog CRUD ile `catalogName` / `catalogIndex` ek
 
 Catalog işi: kategori tablosu + görünür Item projection + UI helper.
 
-**Kalan Catalog yüzeyi:** `initializeCatalogCategories` / `listCatalogCategories` / `getCatalogCategory`, `initializeCatalogPreviews` / `listCatalogPreviews` / `getCatalogPreview`, `getCatalogItem`, `listCatalogItems`, `listCatalogGroups`, `getModuleCatalogItem`, `getModuleCatalogLabel`.
+**Kalan Catalog yüzeyi:** `initializeCatalogCategories` / `listCatalogCategories` / `getCatalogCategory`, `initializeCatalogPreviews` / `getCatalogPreview` / `listCatalogPreviewIds`, `getCatalogItem`, `listCatalogItems`, `listCatalogGroups`, `getModuleCatalogItem`, `getModuleCatalogLabel`.
 
 **Stand zarfı / düz duvar genişlikleri:** Catalog’un işi değildir. `docs/refactor/STAND_DIMENSIONS.md`.
 

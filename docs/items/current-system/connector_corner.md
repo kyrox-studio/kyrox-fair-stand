@@ -30,7 +30,7 @@ Bugünkü gerçek kimlik `itemKey = connector_corner`'dır.
 
 `src/` altında `connector_corner` **yalnızca `src/items.js` tanımında** geçer.
 
-`moduleRecipes.js`, `rawBomDebug.js`, `designState.js`, `scene3d.js`, `modulePlacement.js`, `cornerPlacement.js`, `main.js` ve `projectStore.js` bu `partId`yi doğrudan kullanmaz.
+`moduleRecipes.js`, `rawBomDebug.js`, `designState.js`, `scene3d.js`, `modulePlacement.js`, `main.js` ve `projectStore.js` bu `partId`yi doğrudan kullanmaz.
 
 # 3. Resolver durumu
 

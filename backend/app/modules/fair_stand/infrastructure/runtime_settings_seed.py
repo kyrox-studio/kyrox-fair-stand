@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.modules.fair_stand.infrastructure.models import FairStandSettingsModel
@@ -31,6 +30,3 @@ def ensure_runtime_settings(session: Session) -> FairStandSettingsModel:
         session.flush()
     return row
 
-
-def has_runtime_settings(session: Session) -> bool:
-    return session.scalar(select(FairStandSettingsModel.id).limit(1)) is not None

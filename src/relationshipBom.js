@@ -91,13 +91,6 @@ function frontNormal(rotationZDeg) {
 }
 
 /**
- * Full-height düz panel walls only (not short-up / door / separator / showcase).
- */
-export function isEndToEndBomWallModule(module) {
-  return relationshipBomRole(module) === 'wall';
-}
-
-/**
  * @returns {'wall'|'door'|'separator'|'showcase-2'|'showcase-3'|null}
  */
 export function relationshipBomRole(module) {
@@ -174,19 +167,6 @@ function segmentsOverlapLongitudinally(a, b) {
   return a.startCm < b.endCm - EPSILON_CM && b.startCm < a.endCm - EPSILON_CM;
 }
 
-function endpointPoints(segment) {
-  if (segment.axis === 'x') {
-    return [
-      { xCm: segment.startCm, yCm: segment.fixedCm },
-      { xCm: segment.endCm, yCm: segment.fixedCm },
-    ];
-  }
-  return [
-    { xCm: segment.fixedCm, yCm: segment.startCm },
-    { xCm: segment.fixedCm, yCm: segment.endCm },
-  ];
-}
-
 function pointsTouch(a, b) {
   return nearlyEqual(a.xCm, b.xCm) && nearlyEqual(a.yCm, b.yCm);
 }
@@ -207,10 +187,6 @@ function segmentEndpoints(segment) {
 function pointKey(point) {
   const quantize = (value) => Math.round(Number(value) / EPSILON_CM);
   return `${quantize(point.xCm)}\u0000${quantize(point.yCm)}`;
-}
-
-function cornerEndpointsTouch(a, b) {
-  return sharedEndpoint(a, b) != null;
 }
 
 function sharedEndpoint(a, b) {
@@ -899,13 +875,6 @@ export function applyModuleConnectorCharge(lines = [], charge = null) {
   adjust('connector_start', charge.start);
   if (charge.profileKey) adjust(charge.profileKey, charge.profile);
   return next.filter((line) => Number(line.quantity) > 0);
-}
-
-/**
- * Apply end-to-end joint deltas. Corner joints in the same list are applied too.
- */
-export function applyEndToEndBomAdjustments(lines = [], joints = []) {
-  return applyRelationshipBomAdjustments(lines, joints);
 }
 
 /** Straight or cam panel key → inner-corner panel key. Separator panels are not mapped. */

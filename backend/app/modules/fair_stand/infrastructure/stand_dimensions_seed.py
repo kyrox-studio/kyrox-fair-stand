@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.modules.fair_stand.infrastructure.models import FairStandDimensionsModel
@@ -34,6 +33,3 @@ def ensure_stand_dimensions(session: Session) -> FairStandDimensionsModel:
         session.flush()
     return row
 
-
-def has_stand_dimensions(session: Session) -> bool:
-    return session.scalar(select(FairStandDimensionsModel.id).limit(1)) is not None

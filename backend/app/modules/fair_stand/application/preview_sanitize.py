@@ -52,33 +52,6 @@ def sanitize_css(css_code: str) -> str:
     return css
 
 
-def scope_css(css_code: str, scope_selector: str) -> str:
-    sanitized = sanitize_css(css_code)
-    chunks: list[str] = []
-    for rule in _split_rules(sanitized):
-        selector, body = rule
-        if not selector or not body:
-            continue
-        parts = []
-        for raw_selector in selector.split(","):
-            candidate = raw_selector.strip()
-            if not candidate:
-                continue
-            lowered = candidate.lower()
-            if lowered.startswith(FORBIDDEN_SELECTOR_ROOTS) or lowered in {"html", "body", ":root"}:
-                raise PreviewDefinitionError("css_code cannot target global document selectors")
-            if candidate.startswith(scope_selector):
-                parts.append(candidate)
-            elif candidate == ".module-drag-preview":
-                parts.append(scope_selector)
-            elif candidate.startswith(".module-drag-preview "):
-                parts.append(f"{scope_selector}{candidate[len('.module-drag-preview'):]}")
-            else:
-                parts.append(f"{scope_selector} {candidate}")
-        chunks.append(", ".join(parts) + " {" + body + "}")
-    return "\n".join(chunks)
-
-
 def _split_rules(css_code: str) -> list[tuple[str, str]]:
     rules: list[tuple[str, str]] = []
     depth = 0

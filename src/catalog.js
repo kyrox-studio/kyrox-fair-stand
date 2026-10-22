@@ -32,10 +32,6 @@ export function initializeCatalogCategories(categories) {
   );
 }
 
-export function resetCatalogCategories() {
-  catalogCategories = Object.freeze([]);
-}
-
 export function initializeCatalogPreviews(previews) {
   if (!Array.isArray(previews)) {
     throw new TypeError('Fair Stand Catalog preview bootstrap preview kinds must be an array.');
@@ -56,14 +52,6 @@ export function initializeCatalogPreviews(previews) {
       });
     }),
   );
-}
-
-export function resetCatalogPreviews() {
-  catalogPreviews = Object.freeze([]);
-}
-
-export function listCatalogPreviews() {
-  return catalogPreviews;
 }
 
 export function getCatalogPreview(previewId) {
