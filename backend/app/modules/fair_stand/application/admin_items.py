@@ -86,6 +86,16 @@ def _optional_bool(value: object | None) -> bool | None:
     return bool(value)
 
 
+_Z_REFERENCES = ("floor", "wall-top")
+
+
+def _z_reference(value: object | None) -> str:
+    text = _optional_str(value) or "floor"
+    if text not in _Z_REFERENCES:
+        raise ItemAdminError(f"z_reference yalnız {', '.join(_Z_REFERENCES)} olabilir.", status_code=422)
+    return text
+
+
 def _optional_str(value: object | None) -> str | None:
     if value is None:
         return None
@@ -352,6 +362,8 @@ def _item_admin_payload(row: FairStandItemModel) -> dict:
         "variant": row.variant,
         "eyeCount": int(row.eye_count) if row.eye_count is not None else None,
         "defaultZCm": _num(row.default_z_cm) if row.default_z_cm is not None else 0,
+        "zReference": row.z_reference or "floor",
+        "verticalMove": bool(row.vertical_move),
         "snapTargetItemType": row.snap_target_item_type,
         "snapAnchor": row.snap_anchor,
         "snapRequiresRuleId": int(row.snap_requires_rule_id) if row.snap_requires_rule_id is not None else None,
@@ -673,6 +685,8 @@ class AdminItemsService:
             variant=_optional_str(payload.get("variant")),
             eye_count=payload.get("eye_count"),
             default_z_cm=_optional_decimal(payload.get("default_z_cm")) or Decimal("0"),
+            z_reference=_z_reference(payload.get("z_reference")),
+            vertical_move=bool(payload.get("vertical_move", False)),
             **_parse_snap_selection(
                 self._session,
                 {
@@ -800,9 +814,13 @@ class AdminItemsService:
             "accepts_mesh",
             "is_cost_enabled",
             "is_active",
+            "vertical_move",
         ):
             if field in payload:
                 setattr(row, field, payload.get(field))
+
+        if "z_reference" in payload:
+            row.z_reference = _z_reference(payload.get("z_reference"))
 
         if "default_opacity" in payload:
             row.default_opacity = _optional_decimal(payload.get("default_opacity")) or Decimal("1")
@@ -892,6 +910,8 @@ class AdminItemsService:
             variant=source.variant,
             eye_count=source.eye_count,
             default_z_cm=source.default_z_cm if source.default_z_cm is not None else Decimal("0"),
+            z_reference=source.z_reference or "floor",
+            vertical_move=bool(source.vertical_move),
             snap_target_item_type=source.snap_target_item_type,
             snap_anchor=source.snap_anchor,
             snap_requires_rule_id=source.snap_requires_rule_id,

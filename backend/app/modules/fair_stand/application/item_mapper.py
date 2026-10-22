@@ -93,6 +93,8 @@ def map_item(row) -> ItemAggregate:
     payload["acceptsMesh"] = bool(row.accepts_mesh)
     payload["isCostEnabled"] = bool(row.is_cost_enabled)
     payload["defaultZCm"] = _num(row.default_z_cm) if row.default_z_cm is not None else 0
+    payload["zReference"] = row.z_reference or "floor"
+    payload["verticalMove"] = bool(row.vertical_move)
     if row.snap_requires_rule_id is not None:
         payload["snapRequiresRuleId"] = int(row.snap_requires_rule_id)
         rule = row.snap_requires_rule

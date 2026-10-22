@@ -29,6 +29,8 @@ import {
   listRegisteredItems,
   applyItemPlacementZCm,
   isWallShortFamilyDescriptor,
+  itemMovesVertically,
+  getActiveWallLineHeightCm,
   resolveItemDefaultZCm,
   resolveModuleSceneBoxCm,
   requireModuleSceneBoxCm,
@@ -106,7 +108,7 @@ import {
   planGroupRotate,
   planGroupTranslate,
 } from './moduleGroups.js';
-import { getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
+import { getModuleBehavior, getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
 import { noteSceneRender, trackSceneModel, trackSceneTextureLoader } from './sceneAssetLoading.js';
 
@@ -1320,7 +1322,7 @@ export function createStandScene(
       'position:fixed', 'z-index:30', 'pointer-events:none', 'transform:translate(-50%,-50%)',
       'padding:2px 6px', 'border-radius:4px', 'font:600 11px/1.3 system-ui,sans-serif', 'color:#fff',
       'white-space:nowrap', 'box-shadow:0 1px 3px rgba(15,23,42,.25)',
-      `background:${kind === 'distance' ? 'rgba(37,99,235,.92)' : 'rgba(30,41,59,.88)'}`,
+      `background:${kind === 'size' ? 'rgba(30,41,59,.88)' : 'rgba(37,99,235,.92)'}`,
     ].join(';');
     document.body.appendChild(element);
     measureLabels.push({ element, world: worldPoint.clone() });
@@ -1348,17 +1350,56 @@ export function createStandScene(
     return `${meters.toFixed(2)} m`;
   }
 
-  function measureFootprint(box) {
+  // Etiketlerdeki ölçü öğenin sahne ölçüsüdür (state widthCm/depthCm/heightCm =
+  // resolveSceneDimensions); kutu yalnız konum içindir. 90/270° dönüşte en ve derinlik eksen değiştirir.
+  function sceneSizeCm(moduleState, box) {
+    const widthCm = Number(moduleState?.widthCm);
+    const depthCm = Number(moduleState?.depthCm);
+    const heightCm = Number(moduleState?.heightCm);
+    const vertical = isVerticalModuleRotation(moduleState?.placement?.rotationZDeg ?? 0);
+    const fallback = (meters) => Math.round(meters * 100);
+    const alongX = vertical ? depthCm : widthCm;
+    const alongZ = vertical ? widthCm : depthCm;
+    return {
+      xCm: alongX > 0 ? alongX : fallback(box.max.x - box.min.x),
+      zCm: alongZ > 0 ? alongZ : fallback(box.max.z - box.min.z),
+      yCm: heightCm > 0 ? heightCm : fallback(box.max.y - box.min.y),
+    };
+  }
+
+  function formatSceneCm(valueCm) {
+    return `${Math.round(Number(valueCm) * 10) / 10} cm`.replace('.', ',');
+  }
+
+  function measureFootprint(box, moduleState) {
     const y = ACTIVE_PLATFORM_HEIGHT_M + 0.02;
     const { min, max } = box;
+    const size = sceneSizeCm(moduleState, box);
     const corners = [
       new THREE.Vector3(min.x, y, min.z), new THREE.Vector3(max.x, y, min.z),
       new THREE.Vector3(max.x, y, max.z), new THREE.Vector3(min.x, y, max.z),
     ];
     addMeasureLine([...corners, corners[0]], MEASURE_FOOTPRINT_COLOR, true);
-    addMeasureLabel(formatMeasureCm(max.x - min.x), new THREE.Vector3((min.x + max.x) / 2, y, max.z + 0.12), 'size');
-    addMeasureLabel(formatMeasureCm(max.z - min.z), new THREE.Vector3(max.x + 0.16, y, (min.z + max.z) / 2), 'size');
-    addMeasureLabel(formatMeasureCm(max.y - min.y), new THREE.Vector3((min.x + max.x) / 2, max.y + 0.08, (min.z + max.z) / 2), 'size');
+    addMeasureLabel(formatSceneCm(size.xCm), new THREE.Vector3((min.x + max.x) / 2, y, max.z + 0.12), 'size');
+    addMeasureLabel(formatSceneCm(size.zCm), new THREE.Vector3(max.x + 0.16, y, (min.z + max.z) / 2), 'size');
+    addMeasureLabel(formatSceneCm(size.yCm), new THREE.Vector3((min.x + max.x) / 2, max.y + 0.08, (min.z + max.z) / 2), 'size');
+  }
+
+  // Dikey hareket eden öğe (DB vertical_move): altından zemine, üstünden duvar tepesine.
+  function measureFloorCeiling(box) {
+    const floorY = ACTIVE_PLATFORM_HEIGHT_M;
+    const ceilingY = floorY + getActiveWallLineHeightCm() / 100;
+    const x = box.max.x + 0.06;
+    const z = box.max.z;
+    [
+      [new THREE.Vector3(x, box.min.y, z), new THREE.Vector3(x, floorY, z)],
+      [new THREE.Vector3(x, box.max.y, z), new THREE.Vector3(x, ceilingY, z)],
+    ].forEach(([from, to]) => {
+      const distanceM = Math.abs(from.y - to.y);
+      if (distanceM < MEASURE_MIN_DISTANCE_M) return;
+      addMeasureLine([from, to], MEASURE_DISTANCE_COLOR);
+      addMeasureLabel(formatMeasureM(distanceM), from.clone().lerp(to, 0.5), 'height');
+    });
   }
 
   function measureStandDistances(box) {
@@ -1385,7 +1426,8 @@ export function createStandScene(
   function measureModuleBox(moduleGroup) {
     const frame = moduleGroup ? ensureModuleSelectionFrame(moduleGroup) : null;
     if (!frame) return null;
-    frame.updateMatrixWorld(true);
+    // Üst grubun matrisi de güncellenir: ok tuşuyla taşıma çizimden önce okunur.
+    frame.updateWorldMatrix(true, true);
     return new THREE.Box3().setFromObject(frame).expandByScalar(-(frame.userData.paddingM ?? 0) / 2);
   }
 
@@ -1393,23 +1435,28 @@ export function createStandScene(
     const ghostVisible = Boolean(placementGhost?.root?.visible);
     let box = null;
     let mode = '';
+    let moduleState = null;
     if (ghostVisible && stageLayout) {
       placementGhost.root.updateMatrixWorld(true);
       box = measureModuleBox(placementGhost.root) ?? new THREE.Box3().setFromObject(placementGhost.root);
       mode = 'distance';
+      moduleState = placementGhost.moduleState ?? null;
     } else if (!multiSelectedModuleIds.size && selectedModuleId) {
       const moduleGroup = findModuleGroupById(selectedModuleId);
       box = moduleGroup?.visible ? measureModuleBox(moduleGroup) : null;
       if (box) mode = 'footprint';
+      moduleState = moduleGroup?.userData?.moduleState ?? null;
     }
+    const vertical = Boolean(box && moduleState && itemMovesVertically(moduleState));
     const signature = box && !box.isEmpty()
-      ? `${mode}|${[box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z].map((value) => value.toFixed(3)).join(',')}`
+      ? `${mode}|${vertical}|${getActiveWallLineHeightCm()}|${[box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z].map((value) => value.toFixed(3)).join(',')}|${moduleState?.widthCm}|${moduleState?.depthCm}|${moduleState?.heightCm}`
       : '';
     if (signature !== measureSignature) {
       measureSignature = signature;
       clearMeasureOverlay();
-      if (signature && mode === 'footprint') measureFootprint(box);
+      if (signature && mode === 'footprint') measureFootprint(box, moduleState);
       if (signature && mode === 'distance') measureStandDistances(box);
+      if (signature && vertical) measureFloorCeiling(box);
     }
     positionMeasureLabels();
   }
@@ -3086,6 +3133,7 @@ export function createStandScene(
 
     destroyPlacementGhost();
     placementGhost = createPlacementGhost(moduleOrWidthCm, dimensions, key, ghostBehavior);
+    placementGhost.moduleState = moduleOrWidthCm && typeof moduleOrWidthCm === 'object' ? moduleOrWidthCm : null;
     return placementGhost;
   }
 
@@ -6403,7 +6451,10 @@ export function createStandScene(
         moveGroupByArrow(moduleGroup, moduleState, arrowScreenDirection);
         return;
       }
-      if (moduleState.type === 'tulle-fabric') {
+      // Dikey adayları yalnız DB vertical_move açık öğede (fair_stand_items.vertical_move).
+      const canMoveVertically = itemMovesVertically(moduleState);
+      const verticalAllowed = (candidate) => canMoveVertically || (candidate.kind !== 'vertical' && candidate.kind !== 'z');
+      if (moduleState.type === 'tulle-fabric' && canMoveVertically) {
         if (pressedKey !== 'arrowup' && pressedKey !== 'arrowdown') return;
         const stepCm = getModulePlacementSnapCm(moduleState.type);
         const currentZCm = Number(moduleState.placement.zCm || 0);
@@ -6444,6 +6495,7 @@ export function createStandScene(
             { kind: 'vertical', delta: -1, world: new THREE.Vector3(0, -probeStepM, 0) },
           ];
           const bestArrowMove = probeCandidates
+            .filter(verticalAllowed)
             .map((candidate) => {
               const projectedTarget = moduleWorldPosition.clone().add(candidate.world).project(camera);
               const screenDelta = new THREE.Vector2(
@@ -6521,6 +6573,7 @@ export function createStandScene(
           { kind: 'vertical', deltaCm: -stepCm, world: new THREE.Vector3(0, -worldStepM, 0) },
         ];
         const bestArrowMove = candidates
+          .filter(verticalAllowed)
           .map((candidate) => {
             const projectedTarget = moduleWorldPosition.clone().add(candidate.world).project(camera);
             const screenDelta = new THREE.Vector2(
@@ -6568,7 +6621,7 @@ export function createStandScene(
         return;
       }
 
-      if (isWallShortFamilyDescriptor(moduleState)) {
+      if (canMoveVertically && getModuleBehavior(moduleState).placement === 'wall') {
         const stepCm = getModulePlacementSnapCm(moduleState.type);
         const moduleWorldPosition = new THREE.Vector3();
         moduleGroup.getWorldPosition(moduleWorldPosition);
@@ -6583,6 +6636,7 @@ export function createStandScene(
           { kind: 'vertical', deltaCm: -stepCm, world: new THREE.Vector3(0, -worldStepM, 0) },
         ];
         const bestArrowMove = candidates
+          .filter(verticalAllowed)
           .map((candidate) => {
             const projectedTarget = moduleWorldPosition.clone().add(candidate.world).project(camera);
             const screenDelta = new THREE.Vector2(
@@ -6630,6 +6684,7 @@ export function createStandScene(
           { kind: 'z', deltaCm: -stepCm, world: new THREE.Vector3(0, -worldStepM, 0) },
         ];
         const bestArrowMove = candidates
+          .filter(verticalAllowed)
           .map((candidate) => {
             const projectedTarget = moduleWorldPosition.clone().add(candidate.world).project(camera);
             const screenDelta = new THREE.Vector2(
@@ -6708,6 +6763,7 @@ export function createStandScene(
           { kind: 'z', deltaCm: -stepCm, world: new THREE.Vector3(0, -worldStepM, 0) },
         ];
         const bestArrowMove = candidates
+          .filter(verticalAllowed)
           .map((candidate) => {
             const projectedTarget = moduleWorldPosition.clone().add(candidate.world).project(camera);
             const screenDelta = new THREE.Vector2(

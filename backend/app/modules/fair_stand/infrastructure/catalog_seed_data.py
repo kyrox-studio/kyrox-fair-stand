@@ -6656,6 +6656,7 @@ from app.modules.fair_stand.infrastructure.item_surface_flags_seed import apply_
 from app.modules.fair_stand.infrastructure.item_default_z_seed import apply_item_default_z
 from app.modules.fair_stand.infrastructure.item_snap_seed import apply_item_snap_fields
 from app.modules.fair_stand.infrastructure.item_scene_pose_seed import apply_item_scene_pose
+from app.modules.fair_stand.infrastructure.item_vertical_seed import apply_item_vertical_fields
 
 for _item in CATALOG_SEED["items"]:
     apply_item_rotation_fields(_item)
@@ -6663,3 +6664,4 @@ for _item in CATALOG_SEED["items"]:
     apply_item_default_z(_item)
     apply_item_snap_fields(_item)
     apply_item_scene_pose(_item)
+    apply_item_vertical_fields(_item)

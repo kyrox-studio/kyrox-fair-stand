@@ -164,6 +164,8 @@ def seed_fair_stand_catalog(session: Session) -> None:
                 accepts_mesh=bool(row.get("accepts_mesh", False)),
                 is_cost_enabled=bool(row.get("is_cost_enabled", False)),
                 default_z_cm=_dec(row.get("default_z_cm")) or 0,
+                z_reference=row.get("z_reference") or "floor",
+                vertical_move=bool(row.get("vertical_move", False)),
                 snap_target_item_type=row.get("snap_target_item_type"),
                 snap_anchor=row.get("snap_anchor"),
                 snap_requires_rule_id=rule_ids.get(requires_code) if requires_code else None,

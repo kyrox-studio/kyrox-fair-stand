@@ -24,6 +24,8 @@ test('shelf_leg is canonical without invented product metadata', () => {
     acceptsMesh: false,
     isCostEnabled: false,
     defaultZCm: 0,
+    verticalMove: false,
+    zReference: 'floor',
   });
   assert.equal(item.partId, undefined);
 });

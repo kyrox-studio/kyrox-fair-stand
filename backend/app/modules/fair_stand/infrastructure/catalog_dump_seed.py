@@ -13,6 +13,7 @@ from sqlalchemy import DateTime, Numeric, Uuid, insert
 
 from app.db.base import Base
 from app.modules.fair_stand.infrastructure import models as _models  # noqa: F401
+from app.modules.fair_stand.infrastructure.item_vertical_seed import vertical_fields_for
 
 DUMP_PATH = Path(__file__).resolve().parents[4] / "alembic" / "data" / "0002_fair_stand_catalog_dump.json"
 
@@ -151,6 +152,12 @@ def seed_catalog_if_empty(bind) -> None:
                     item["default_z_cm"] = 0
                 if item.get("default_opacity") is None:
                     item["default_opacity"] = 1
+                if item.get("z_reference") is None or item.get("vertical_move") is None:
+                    vertical = vertical_fields_for(item.get("item_type"), item.get("variant"))
+                    item.setdefault("z_reference", None)
+                    item["z_reference"] = item["z_reference"] or vertical["z_reference"]
+                    if item.get("vertical_move") is None:
+                        item["vertical_move"] = vertical["vertical_move"]
         if name == "fair_stand_item_components":
             for component in coerced:
                 if component.get("per_band") is None:
