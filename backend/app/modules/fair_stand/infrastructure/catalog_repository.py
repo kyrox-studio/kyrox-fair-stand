@@ -40,6 +40,7 @@ class SqlAlchemyFairStandCatalogRepository:
             selectinload(FairStandItemModel.assets),
             selectinload(FairStandItemModel.components),
             selectinload(FairStandItemModel.width_variants),
+            selectinload(FairStandItemModel.length_parts),
             selectinload(FairStandItemModel.assembly_parts),
             selectinload(FairStandItemModel.video_wall),
             selectinload(FairStandItemModel.body_parts),

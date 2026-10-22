@@ -119,6 +119,8 @@ function mapItem(row) {
     item.composition = composition;
   }
   if ((row.width_variants || []).length) item.widthVariants = [...row.width_variants].sort();
+  // 0079: sıralı parça bölünüşü (sıra korunur).
+  if ((row.length_parts || []).length) item.lengthParts = [...row.length_parts];
   if (row.video_wall) {
     item.videoWall = {
       rows: row.video_wall.rows,

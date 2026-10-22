@@ -20,6 +20,7 @@ from app.modules.fair_stand.infrastructure.models import (
     FairStandItemAssetModel,
     FairStandItemBodyPartModel,
     FairStandItemComponentModel,
+    FairStandItemLengthPartModel,
     FairStandItemWidthVariantModel,
     FairStandItemDimensionsModel,
     FairStandItemModel,
@@ -48,6 +49,7 @@ def _stable_uuid(*parts: str) -> UUID:
 def _clear_catalog(session: Session) -> None:
     session.execute(delete(FairStandItemBodyPartModel))
     session.execute(delete(FairStandItemVideoWallModel))
+    session.execute(delete(FairStandItemLengthPartModel))
     session.execute(delete(FairStandItemWidthVariantModel))
     session.execute(delete(FairStandItemComponentModel))
     session.execute(delete(FairStandItemAssetModel))
@@ -261,6 +263,15 @@ def seed_fair_stand_catalog(session: Session) -> None:
                 FairStandItemWidthVariantModel(
                     family_item_key=row["item_key"],
                     item_key=variant_key,
+                )
+            )
+        # 0079: uzun profil/dikmenin sıralı parça bölünüşü (yalnız BOM etiketi).
+        for position, part_key in enumerate(row.get("length_parts") or [], start=1):
+            session.add(
+                FairStandItemLengthPartModel(
+                    item_key=row["item_key"],
+                    position=position,
+                    part_item_key=part_key,
                 )
             )
 

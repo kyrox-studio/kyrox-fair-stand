@@ -475,6 +475,12 @@ class FairStandItemModel(Base):
         cascade="all, delete-orphan",
         foreign_keys="FairStandItemWidthVariantModel.family_item_key",
     )
+    length_parts: Mapped[list["FairStandItemLengthPartModel"]] = relationship(
+        back_populates="item",
+        cascade="all, delete-orphan",
+        foreign_keys="FairStandItemLengthPartModel.item_key",
+        order_by="FairStandItemLengthPartModel.position",
+    )
 
 
 class FairStandItemDimensionsModel(Base):
@@ -621,6 +627,37 @@ class FairStandItemWidthVariantModel(Base):
     family: Mapped[FairStandItemModel] = relationship(
         back_populates="width_variants",
         foreign_keys=[family_item_key],
+    )
+
+
+class FairStandItemLengthPartModel(Base):
+    """Uzun profil/dikmenin parça bölünüşü (0079); yalnız BOM etiketi içindir.
+
+    Ör. upright_495 → upright_346_5, profile_8, profile_140_5 ("346,5 + 8 + 140,5").
+    BOM miktarı ve reçete değişmez; alt Item (components) değildir.
+    """
+
+    __tablename__ = "fair_stand_item_length_parts"
+    __table_args__ = (
+        CheckConstraint("position >= 1", name="ck_fair_stand_item_length_parts_position"),
+        CheckConstraint("item_key <> part_item_key", name="ck_fair_stand_item_length_parts_self"),
+        Index("ix_fair_stand_item_length_parts_part", "part_item_key"),
+    )
+
+    item_key: Mapped[str] = mapped_column(
+        String(128),
+        ForeignKey("fair_stand_items.item_key", **CASCADE),
+        primary_key=True,
+    )
+    position: Mapped[int] = mapped_column(Integer, primary_key=True)
+    part_item_key: Mapped[str] = mapped_column(
+        String(128),
+        ForeignKey("fair_stand_items.item_key", **CASCADE),
+        nullable=False,
+    )
+    item: Mapped[FairStandItemModel] = relationship(
+        back_populates="length_parts",
+        foreign_keys=[item_key],
     )
 
 

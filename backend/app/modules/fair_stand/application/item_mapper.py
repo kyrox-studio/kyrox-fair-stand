@@ -176,6 +176,11 @@ def map_item(row) -> ItemAggregate:
     if width_variants:
         payload["widthVariants"] = width_variants
 
+    # 0079: uzun profil/dikmenin parça bölünüşü (sıralı); yalnız BOM etiketi içindir.
+    length_parts = [part.part_item_key for part in (row.length_parts or [])]
+    if length_parts:
+        payload["lengthParts"] = length_parts
+
     assembly_rows = sorted(
         row.assembly_parts or [],
         key=lambda part: (part.child_item_key, int(part.instance_index)),
