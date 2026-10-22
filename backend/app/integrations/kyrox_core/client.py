@@ -7,7 +7,7 @@ from uuid import UUID
 import httpx
 
 from app.core.config import get_settings
-from app.core.exceptions import ForbiddenError
+from app.core.exceptions import ForbiddenError, UnauthorizedError
 from app.core.logging import get_logger
 from app.integrations.kyrox_core.ports import AuthorizationPort
 
@@ -123,6 +123,9 @@ class HttpAuthorizationAdapter(AuthorizationPort):
             raise ForbiddenError("Authorization service unavailable") from exc
         if response.status_code == 403:
             return False
+        # Oturum Core'da yok/iptal (ör. başka bir Core DB'si): istemci yeniden giriş yapmalı.
+        if response.status_code == 401:
+            raise UnauthorizedError("Session is not valid in Kyrox Core")
         if response.status_code >= 400:
             raise ForbiddenError("Authorization check failed")
         allowed = bool(response.json().get("allowed"))

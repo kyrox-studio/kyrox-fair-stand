@@ -7,7 +7,7 @@ from uuid import uuid4
 import httpx
 import pytest
 
-from app.core.exceptions import ForbiddenError
+from app.core.exceptions import ForbiddenError, UnauthorizedError
 from app.integrations.kyrox_core.client import (
     PERMISSION_CACHE_TTL_SECONDS,
     HttpAuthorizationAdapter,
@@ -116,3 +116,11 @@ def test_cache_size_is_bounded() -> None:
     # En eski (t1) atıldı; tekrar sorulur.
     _check(adapter, token="t1")
     assert len(http.calls) == 4
+
+
+def test_core_401_raises_unauthorized_and_is_not_cached() -> None:
+    adapter, http = _adapter([httpx.Response(401), _allowed(True)])
+    with pytest.raises(UnauthorizedError):
+        _check(adapter)
+    assert _check(adapter) is True
+    assert len(http.calls) == 2
