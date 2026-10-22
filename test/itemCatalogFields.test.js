@@ -44,10 +44,7 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
       'wall_100_short_1',
       'wall_50_short_1',
       'upright_346_5',
-      'profile_190',
-      'profile_140_5',
-      'profile_91',
-      'profile_41_5',
+      'profile_289',
       'box_block',
     ]),
   }),
@@ -155,7 +152,7 @@ test('mevcut katalog Item listesi ve grup sırası değişmemiştir', () => {
 
 test('106 Item katalog metadata alanlarını taşır ve canlı katalog üyeliğiyle birebir örtüşür', () => {
   const items = listRegisteredItems();
-  assert.equal(items.length, 127);
+  assert.equal(items.length, 131);
 
   let visibleCount = 0;
   let missingVisible = 0;
@@ -233,6 +230,10 @@ test('profil sceneDimensions Catalog kart genişliğini taşır; catalogWidthCm 
     profile_91: 100,
     profile_140_5: 150,
     profile_190: 200,
+    profile_239_5: 250,
+    profile_289: 300,
+    profile_388: 400,
+    profile_487: 500,
   });
 
   for (const item of listRegisteredItems()) {

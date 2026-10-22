@@ -31,7 +31,7 @@ test('placeable Items expose rotation from Item; leaf rows omit the trio', () =>
       assert.throws(() => getModuleRotationStepDeg(item), TypeError);
     }
   }
-  assert.equal(filled, 83);
+  assert.equal(filled, 87);
   assert.equal(empty, 44);
 });
 

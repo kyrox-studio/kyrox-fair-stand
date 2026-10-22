@@ -35,6 +35,8 @@ export function createModuleContextMenu({
   onBackPanelChange,
   getUprightHeightState,
   onUprightHeight,
+  getProfileLengthState,
+  onProfileLength,
   onLockChange,
   onGroupAction,
   onRotate,
@@ -75,6 +77,7 @@ export function createModuleContextMenu({
     <button type="button" role="menuitem" data-module-action="toggle-shelf-light" hidden>Raf altı aydınlatmayı aç</button>
     <button type="button" role="menuitem" data-module-action="toggle-back-panels" hidden>Arka yüze panel ekle</button>
     <button type="button" role="menuitem" data-module-action="upright-height" hidden>Dikme yüksekliği…</button>
+    <button type="button" role="menuitem" data-module-action="profile-length" hidden>Profil boyu…</button>
     <button type="button" role="menuitem" data-module-action="add-right">Ekle Sağ Tarafa…</button>
     <button type="button" role="menuitem" data-module-action="add-left">Ekle Sol Tarafa…</button>
     <button type="button" role="menuitem" class="module-context-advanced-toggle" aria-expanded="false" hidden>Gelişmiş ▸</button>
@@ -127,6 +130,7 @@ export function createModuleContextMenu({
   const shelfLightingButton = menu.querySelector('[data-module-action="toggle-shelf-light"]');
   const backPanelButton = menu.querySelector('[data-module-action="toggle-back-panels"]');
   const uprightHeightButton = menu.querySelector('[data-module-action="upright-height"]');
+  const profileLengthButton = menu.querySelector('[data-module-action="profile-length"]');
   const foamResizeButton = menu.querySelector('[data-module-action="resize-foam"]');
   const imageResizeButton = menu.querySelector('[data-module-action="resize-image"]');
   const addRightButton = menu.querySelector('[data-module-action="add-right"]');
@@ -582,6 +586,9 @@ export function createModuleContextMenu({
     // Dikme boyu yalnız dikmede (getUprightHeightState null değilse).
     uprightHeightButton.hidden = (getUprightHeightState?.(context) ?? null) == null;
     setDisabled(uprightHeightButton, locked);
+    // Profil boyu yalnız profilde (getProfileLengthState null değilse).
+    profileLengthButton.hidden = (getProfileLengthState?.(context) ?? null) == null;
+    setDisabled(profileLengthButton, locked);
     const showSideInsert = allowsModuleSideInsert(context);
     addRightButton.hidden = !showSideInsert;
     addLeftButton.hidden = !showSideInsert;
@@ -701,6 +708,13 @@ export function createModuleContextMenu({
       if ((getUprightHeightState?.(context) ?? null) == null) return;
       close();
       onUprightHeight?.(context);
+      return;
+    }
+
+    if (action === 'profile-length') {
+      if ((getProfileLengthState?.(context) ?? null) == null) return;
+      close();
+      onProfileLength?.(context);
       return;
     }
 

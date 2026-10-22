@@ -30,6 +30,10 @@ Aşağıdaki Item'lar bugün `src/items.js` içinde `LEAF_ITEMS` olarak canonica
 | `profile_91` | `profile` | **Tamam — canonical `itemKey`; 12 doğrulanmış parent recipe quantity parity korunur; `widthCm=91`, `depthCm=8`, `heightCm=8`; saha katalog self ×1** |
 | `profile_140_5` | `profile` | **Tamam — canonical `itemKey`; 8 doğrulanmış parent recipe quantity parity korunur; `widthCm=140.5`, `depthCm=8`, `heightCm=8`; saha katalog self ×1** |
 | `profile_190` | `profile` | **Tamam — canonical `itemKey`; 7 aktif 200 cm recipe içinde doğrulanmış miktarlar korunur; `190 × 8 cm` üretim ölçüsü; saha katalog self ×1** |
+| `profile_239_5` | `profile` | **Tamam — canonical `itemKey`; gerçek 239,5 cm → sahne 250 cm; katalogda gizli, boy penceresinden; saha self ×1** |
+| `profile_289` | `profile` | **Tamam — canonical `itemKey`; gerçek 289 cm → sahne 300 cm; katalogdaki tek profil kartı; saha self ×1** |
+| `profile_388` | `profile` | **Tamam — canonical `itemKey`; gerçek 388 cm → sahne 400 cm; katalogda gizli, boy penceresinden; saha self ×1** |
+| `profile_487` | `profile` | **Tamam — canonical `itemKey`; gerçek 487 cm → sahne 500 cm; katalogda gizli, boy penceresinden; saha self ×1** |
 | `panel_48_5` | `panel` | **Tamam — canonical `itemKey`; 13 doğrulanmış parent recipe quantity parity korunur** |
 | `panel_98` | `panel` | **Tamam — canonical `itemKey`; 10 doğrulanmış parent recipe quantity parity korunur** |
 | `panel_147_5` | `panel` | **Tamam — canonical `itemKey`; 7 doğrulanmış parent recipe quantity parity korunur** |

@@ -18,10 +18,7 @@
     "wall_100_short_1",
     "wall_50_short_1",
     "upright_346_5",
-    "profile_190",
-    "profile_140_5",
-    "profile_91",
-    "profile_41_5",
+    "profile_289",
     "box_block",
     "wall_showcase_100_3_350",
     "wall_showcase_100_2_350",
@@ -156,23 +153,8 @@
       "previewId": 27
     },
     {
-      "itemKey": "profile_190",
-      "label": "Profil 190 cm",
-      "previewId": 17
-    },
-    {
-      "itemKey": "profile_140_5",
-      "label": "Profil 140,5 cm",
-      "previewId": 17
-    },
-    {
-      "itemKey": "profile_91",
-      "label": "Profil 91 cm",
-      "previewId": 17
-    },
-    {
-      "itemKey": "profile_41_5",
-      "label": "Profil 41,5 cm",
+      "itemKey": "profile_289",
+      "label": "Profil 289",
       "previewId": 17
     },
     {
@@ -412,10 +394,7 @@
         "wall_100_short_1",
         "wall_50_short_1",
         "upright_346_5",
-        "profile_190",
-        "profile_140_5",
-        "profile_91",
-        "profile_41_5",
+        "profile_289",
         "box_block"
       ]
     },

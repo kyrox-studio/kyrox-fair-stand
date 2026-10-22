@@ -23,7 +23,9 @@ const STAND = Object.freeze({
 });
 
 function moduleFrom(itemKey, id, placement) {
-  const module = createModuleStateFromDescriptor(getCatalogItem(itemKey));
+  // Profil kartı tek (profile_289); diğer boylar Item'dan kurulur (boy penceresinin yolu).
+  const descriptor = itemKey.startsWith('profile_') ? { itemKey, type: 'profile' } : getCatalogItem(itemKey);
+  const module = createModuleStateFromDescriptor(descriptor);
   module.id = id;
   module.placement = placement;
   return module;

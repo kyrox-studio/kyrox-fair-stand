@@ -18,12 +18,19 @@ import { getItem, resolveSceneDimensions } from '../src/items.js';
 
 const PROFILE_KEYS = ['profile_190', 'profile_140_5', 'profile_91', 'profile_41_5'];
 
-test('Panel Ek Modül holds field profiles after upright_346_5', () => {
+// Profil kartı tek (profile_289, dikmedeki gibi); diğer boylar bırakırken boy penceresinden gelir.
+function profileDescriptor(itemKey) {
+  return { itemKey, type: 'profile' };
+}
+
+test('Panel Ek Modül holds one profile card; other lengths are registry profiles for the length dialog', () => {
   const extraPanel = listCatalogGroups().find((group) => group.label === 'Panel Ek Modül');
   assert.ok(extraPanel);
-  for (const key of PROFILE_KEYS) {
-    assert.equal(extraPanel.keys.includes(key), true);
-    assert.equal(getCatalogItem(key) != null, true);
+  assert.equal(extraPanel.keys.includes('profile_289'), true);
+  assert.equal(getCatalogItem('profile_289') != null, true);
+  for (const key of [...PROFILE_KEYS, 'profile_239_5', 'profile_388', 'profile_487']) {
+    assert.equal(extraPanel.keys.includes(key), false, key);
+    assert.equal(getCatalogItem(key), null, key);
     assert.equal(getItem(key).type, 'profile');
   }
 });
@@ -50,7 +57,7 @@ test('field profiles are self BOM ×1 and do not change parent wall recipe ×2',
 });
 
 test('profile uses wall_200 move/rotate/snap contract and does not nest into a neighbor wall', () => {
-  const profile = createModuleStateFromDescriptor(getCatalogItem('profile_190'));
+  const profile = createModuleStateFromDescriptor(profileDescriptor('profile_190'));
   const behavior = getModuleBehavior(profile);
   assert.equal(profile.type, 'profile');
   assert.equal(profile.widthCm, 200);
@@ -102,7 +109,7 @@ test('profile uses wall_200 move/rotate/snap contract and does not nest into a n
 });
 
 test('field profile spans the same wall slot as a separator without collision', () => {
-  const profile = createModuleStateFromDescriptor(getCatalogItem('profile_190'));
+  const profile = createModuleStateFromDescriptor(profileDescriptor('profile_190'));
   profile.id = 'profile-span';
   profile.placement = { xCm: 0, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' };
   const slat = createModuleStateFromDescriptor(getCatalogItem('wall_separator_100_350'));
@@ -113,10 +120,10 @@ test('field profile spans the same wall slot as a separator without collision', 
 });
 
 test('two field profiles snap end-to-end on the wall slot with no gap', () => {
-  const first = createModuleStateFromDescriptor(getCatalogItem('profile_190'));
+  const first = createModuleStateFromDescriptor(profileDescriptor('profile_190'));
   first.id = 'profile-a';
   first.placement = { xCm: 0, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' };
-  const second = createModuleStateFromDescriptor(getCatalogItem('profile_190'));
+  const second = createModuleStateFromDescriptor(profileDescriptor('profile_190'));
   const hit = snapPlacementToModules({
     moduleId: second.id,
     moduleType: second.type,
