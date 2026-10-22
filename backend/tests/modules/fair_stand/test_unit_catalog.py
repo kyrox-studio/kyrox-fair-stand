@@ -35,7 +35,9 @@ def test_unit_catalog_revision_is_single_head():
     from alembic.script import ScriptDirectory
 
     script = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert script.get_heads() == ["0078_profile_lengths"]
+    assert script.get_heads() == ["0079_wall_short_cards"]
+    revision = script.get_revision("0079_wall_short_cards")
+    assert revision.down_revision == "0078_profile_lengths"
     revision = script.get_revision("0078_profile_lengths")
     assert revision.down_revision == "0077_upright_render"
     revision = script.get_revision("0077_upright_render")

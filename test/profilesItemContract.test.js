@@ -12,7 +12,7 @@ import {
 
 const PROFILE_CASES = {
   profile_41_5: {
-    name: 'Profil 41,5 cm',
+    name: 'Profil 41,5',
     dimensions: { widthCm: 41.5, heightCm: 8, depthCm: 8 },
     recipes: [
       ['wall', 50, {}, 2],
@@ -29,7 +29,7 @@ const PROFILE_CASES = {
     ],
   },
   profile_91: {
-    name: 'Profil 91 cm',
+    name: 'Profil 91',
     dimensions: { widthCm: 91, heightCm: 8, depthCm: 8 },
     recipes: [
       ['wall', 100, {}, 2],
@@ -44,7 +44,7 @@ const PROFILE_CASES = {
     ],
   },
   profile_140_5: {
-    name: 'Profil 140,5 cm',
+    name: 'Profil 140,5',
     dimensions: { widthCm: 140.5, heightCm: 8, depthCm: 8 },
     recipes: [
       ['wall', 150, {}, 2],

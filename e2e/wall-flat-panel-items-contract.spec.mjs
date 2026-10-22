@@ -51,7 +51,9 @@ async function removeModules(page, modules) {
   }
 }
 
-const keys = ['wall_50_350', 'wall_100_350', 'wall_150_350', 'wall_200_350', 'wall_50_short_1', 'wall_100_short_1', 'wall_150_short_1', 'wall_200_short_1'];
+// Kısa panelde katalog kartı varyant başına tek (migration 0079): Tek Sıra kartı wall_100_short_1;
+// diğer genişlikler bırakırken genişlik penceresinden gelir (e2e/wall-short-width.spec.mjs).
+const keys = ['wall_50_350', 'wall_100_350', 'wall_150_350', 'wall_200_350', 'wall_100_short_1'];
 
 for (const itemKey of keys) {
   test(`${itemKey} catalog add creates a canonical flat-panel Item with strips`, async ({ page }) => {

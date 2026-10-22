@@ -12,6 +12,7 @@ Repository ilk MVP taslağının ötesindedir. Mevcut uygulama aşağıdaki ana 
 - Ortak placement, snap, connection ve collision altyapısı.
 - Module type'a göre merkezi behavior registry.
 - Dikme ve profil katalogda tek kartla gelir; bırakırken boy sorulur (ortak pencere `src/itemSizeDialog.js`; `src/uprightHeight.js`, `src/profileLength.js`). Profil gerçek boy → sahne boyu: 41,5 → 50 … 289 → 300, 388 → 400, 487 → 500 (migration `0078_profile_lengths`).
+- Kısa panel katalogda Tek Sıra / Çift Sıra için birer kartla gelir ("Panel Tek Sıra 100", "Panel Çift Sıra 100"); ad sahnedeki öğenin ölçüsünü yazar: "Panel Tek Sıra 200", "Profil 388", "Dikme 346,5"; bırakırken genişlik (50 / 100 / 150 / 200) konum hesabından önce sorulur (`src/wallShortWidth.js`, migration `0079_wall_short_cards`).
 - Otomatik duvar, depo ve alınlık yerleşim yardımcıları (alınlık: açık kenarlara tek/çift sıra wall-short + açık köşelere dikme; destekler arası en çok 500 cm, ara dikmeler eşit aralıklı, dolgu parçaları ortaya doğru — `src/autoFascia.js`).
 - Panel, separatör, vitrin, raf, depo kapısı, panel bazalı duvar, banko ve baza modülleri.
 - Mobilya, depo ekipmanı, bitki/saksı, TV/video-wall ve LED projektör katalog öğeleri.

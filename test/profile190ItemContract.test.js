@@ -26,7 +26,7 @@ test('profile_190 is a canonical single production Item with verified 190 x 8 cm
 
   assert.equal(item.itemKey, 'profile_190');
   assert.equal(item.partId, undefined);
-  assert.equal(item.name, 'Profil 190 cm');
+  assert.equal(item.name, 'Profil 190');
   assert.equal(item.type, 'profile');
   assert.equal(item.unit, 'adet');
   assert.deepEqual(item.dimensions, PROFILE_190_DIMS);
@@ -57,7 +57,7 @@ test('expanded recipes resolve profile_190 metadata through canonical itemKey', 
   const counterProfile = expandedCounter.items.find((item) => item.itemKey === 'profile_190');
   assert.ok(counterProfile);
   assert.equal(counterProfile.quantity, 5);
-  assert.equal(counterProfile.part.name, 'Profil 190 cm');
+  assert.equal(counterProfile.part.name, 'Profil 190');
 });
 
 test('the full production profile family now uses canonical Item identity', () => {

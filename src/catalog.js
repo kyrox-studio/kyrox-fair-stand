@@ -157,7 +157,10 @@ export function getModuleCatalogItem(descriptor) {
 }
 
 export function getModuleCatalogLabel(descriptor) {
+  // Katalogda gizli Item (ölçü penceresinden gelen profil boyu, kısa panel genişliği) kendi adını taşır.
+  const moduleKey = resolveItemKey(descriptor);
   return getModuleCatalogItem(descriptor)?.label
+    ?? (moduleKey ? getItem(moduleKey)?.name : null)
     ?? (typeof descriptor?.label === 'string' ? descriptor.label : null)
     ?? 'Modül';
 }

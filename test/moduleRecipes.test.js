@@ -233,7 +233,7 @@ test('recipe lookup rejects unsupported nominal wall widths', () => {
 test('expanded recipe resolves production part metadata without mutating source recipe', () => {
   const expanded = getExpandedStraightWallRecipe(200);
 
-  assert.equal(expanded.items[0].part.name, 'Profil 190 cm');
+  assert.equal(expanded.items[0].part.name, 'Profil 190');
   assert.equal(expanded.items[1].part.dimensions.heightCm, 346.5);
   assert.equal(expanded.items[2].part.dimensions.widthCm, 197);
   assert.equal(getStraightWallRecipe(200).items[0].part, undefined);

@@ -15,6 +15,14 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ---
 
+## 2026-10-22 — Kısa panel kartı ve genişlik seçimi (migration 0079)
+
+**Ürün kararı:** Kısa panel profil gibi katalogda tek kartla gelir: Tek Sıra (`wall_100_short_1`, "Panel Tek Sıra 100") ve Çift Sıra (`wall_100_short_2`, "Panel Çift Sıra 100"). Ad sahnedeki öğenin ölçüsünü yazar: kısa panel "Panel Tek Sıra 50 … 200" / "Panel Çift Sıra 50 … 200", profil ve dikme gerçek boyla ("Profil 41,5" … "Profil 487", "Dikme 49,5" … "Dikme 495"); kart da kendi Item adını gösterir. Sağ tık başlığı katalogda gizli Item için Item adını yazar (`getModuleCatalogLabel`). Bırakırken genişlik sorulur: 50 / 100 / 150 / 200. Sağ tık menüsü eklenmez; "Bir daha sorma" tercihi yoktur.
+
+**DB:** `0079_wall_short_cards` — diğer altı genişlik katalogda gizlenir (katalog alanları boşaltılır), iki kartın adı değişir, kategori içi görünür sıra 1…n olur. Item'lar, `itemKey`, `variant` ve reçeteler değişmez; otomatik alınlık (`resolveFasciaPanelItemKey`) ve kayıtlı projeler gizli genişlikleri kullanmaya devam eder.
+
+**Kod:** `src/wallShortWidth.js` seçenekleri kartın wall-short varyantından üretir (tam boy `flat-panel` karışmaz). Ortak pencere `src/itemSizeDialog.js` `fieldLabel` / `allowRemember` alır ve yalnız listedeki Item'ı döndürür. `main.js` kısa panelde genişliği `dropCatalogModuleDrag` çağrısından **önce** sorar: profile ve yan panele bağlanma genişliğe göre çözüldüğünden konum seçilen genişlikle hesaplanır; kayıt seçilen genişliğin `itemKey`'iyle yapılır.
+
 ## 2026-10-22 — Profil kartı ve boy seçimi (migration 0078)
 
 **Ürün kararı:** Profil dikme gibi tek kartla gelir (`profile_289`); bırakırken boy sorulur. Gerçek boy (BOM) → sahne boyu: 41,5 → 50, 91 → 100, 140,5 → 150, 190 → 200, 239,5 → 250, 289 → 300, 388 → 400, 487 → 500.

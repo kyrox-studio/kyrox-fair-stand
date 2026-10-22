@@ -1,5 +1,5 @@
-// Boy seçimi penceresi: katalogda tek kartı olan ölçü ailelerinde (dikme, profil) bırakılırken
-// ve sağ tık menüsünden boy sorulur. Sonuç: { itemKey, remember } ya da iptalde null.
+// Boy seçimi penceresi: katalogda tek kartı olan ölçü ailelerinde (dikme, profil, kısa panel)
+// bırakılırken ve sağ tık menüsünden ölçü sorulur. Sonuç: { itemKey, remember } ya da iptalde null.
 // remember true: tercih yazılır; false: tercih silinir (yeniden sorulur).
 import { getItem } from './items.js';
 
@@ -7,10 +7,12 @@ import { getItem } from './items.js';
  * @param {object} options
  * @param {string} options.title Pencere başlığı.
  * @param {string} options.itemType Seçilebilen Item türü; başka tür gönderilmez.
- * @param {Array<object>} options.items Seçenekler (sıralı Item listesi).
+ * @param {Array<object>} options.items Seçenekler (sıralı Item listesi); yalnız bunlardan biri döner.
  * @param {(item: object) => string} options.formatLabel Seçenek metni.
  * @param {string|null} [options.selectedItemKey]
  * @param {boolean} [options.remember]
+ * @param {string} [options.fieldLabel] Seçim kutusunun etiketi.
+ * @param {boolean} [options.allowRemember] false: "Bir daha sorma" çentiği gösterilmez.
  */
 export function requestItemSizeChoice({
   title,
@@ -19,6 +21,8 @@ export function requestItemSizeChoice({
   formatLabel,
   selectedItemKey = null,
   remember = false,
+  fieldLabel = 'Boy',
+  allowRemember = true,
 }) {
   return new Promise((resolve) => {
     const titleId = `${itemType}-size-title`;
@@ -36,8 +40,10 @@ export function requestItemSizeChoice({
     )).join('');
     form.innerHTML = [
       `<strong id="${titleId}" style="font-size:16px">${title}</strong>`,
-      `<label style="display:grid;gap:5px">Boy<select name="itemKey" style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px">${options}</select></label>`,
-      `<label style="display:flex;gap:8px;align-items:center"><input name="remember" type="checkbox"${remember ? ' checked' : ''}> Bir daha sorma, aynı ölçüde getir</label>`,
+      `<label style="display:grid;gap:5px">${fieldLabel}<select name="itemKey" style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px">${options}</select></label>`,
+      allowRemember
+        ? `<label style="display:flex;gap:8px;align-items:center"><input name="remember" type="checkbox"${remember ? ' checked' : ''}> Bir daha sorma, aynı ölçüde getir</label>`
+        : '',
       '<div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" data-cancel>İptal</button><button type="submit" class="primary">Uygula</button></div>',
     ].join('');
     overlay.appendChild(form);
@@ -61,6 +67,7 @@ export function requestItemSizeChoice({
       const data = new FormData(form);
       const itemKey = String(data.get('itemKey') ?? '');
       if (getItem(itemKey)?.type !== itemType) return;
+      if (!items.some((item) => item.itemKey === itemKey)) return;
       finish({ itemKey, remember: data.get('remember') === 'on' });
     });
     document.addEventListener('keydown', onKeyDown, true);

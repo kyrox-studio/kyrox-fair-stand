@@ -2,7 +2,7 @@
 
 ## Kanonik kimlik
 - `itemKey`: `upright_99`
-- `name`: `Dikme 99 cm`
+- `name`: `Dikme 99`
 - `type`: `upright`
 - `unit`: `adet`
 - structure: Tekil Item

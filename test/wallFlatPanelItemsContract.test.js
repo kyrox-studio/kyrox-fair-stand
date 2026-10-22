@@ -140,14 +140,32 @@ const WALL_SHORT_2 = {
   },
 };
 
+// Kısa panelde katalog kartı varyant başına tek (migration 0079); diğer genişlikler katalogda
+// gizlidir ve Item'dan kurulur (genişlik penceresinin yolu). Kart da kendi ölçülü adını taşır.
+const WALL_SHORT_CARDS = Object.freeze({
+  wall_100_short_1: 'Panel Tek Sıra 100',
+  wall_100_short_2: 'Panel Çift Sıra 100',
+});
+
+function wallShortDescriptor(itemKey) {
+  const catalog = getCatalogItem(itemKey);
+  if (Object.hasOwn(WALL_SHORT_CARDS, itemKey)) {
+    assert.equal(catalog?.itemKey, itemKey);
+    assert.equal(catalog.label, WALL_SHORT_CARDS[itemKey]);
+    return catalog;
+  }
+  assert.equal(catalog, null, `${itemKey} katalogda gizli olmalı`);
+  return { itemKey, type: 'flat-panel' };
+}
+
 for (const [itemKey, expected] of Object.entries(WALL_SHORT_2)) {
   test(`${itemKey} is a hanging two-panel Item that does not replace ${expected.parentKey}`, () => {
     const item = getItem(itemKey);
     const parent = getItem(expected.parentKey);
-    const catalog = getCatalogItem(itemKey);
+    const catalog = wallShortDescriptor(itemKey);
 
     assert.equal(item.itemKey, itemKey);
-    assert.equal(item.name, `Panel ${expected.widthCm} Kısa Çift Sıra`);
+    assert.equal(item.name, `Panel Çift Sıra ${expected.widthCm}`);
     assert.equal(item.type, 'flat-panel');
     assert.equal(item.variant, 'wall-short-2');
     assert.deepEqual(item.stripOccupancy, { align: 'top', stripCount: 2 });
@@ -208,10 +226,10 @@ for (const [itemKey, expected] of Object.entries(WALL_SHORT_1)) {
   test(`${itemKey} is a hanging one-panel Item that does not replace ${expected.parentKey}`, () => {
     const item = getItem(itemKey);
     const parent = getItem(expected.parentKey);
-    const catalog = getCatalogItem(itemKey);
+    const catalog = wallShortDescriptor(itemKey);
 
     assert.equal(item.itemKey, itemKey);
-    assert.equal(item.name, `Panel ${expected.widthCm} Kısa Tek Sıra`);
+    assert.equal(item.name, `Panel Tek Sıra ${expected.widthCm}`);
     assert.equal(item.type, 'flat-panel');
     assert.equal(item.variant, 'wall-short-1');
     assert.deepEqual(item.stripOccupancy, { align: 'top', stripCount: 1 });
