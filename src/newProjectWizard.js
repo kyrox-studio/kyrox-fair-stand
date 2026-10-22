@@ -71,6 +71,7 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     wallHeight: document.querySelector('#wall-height'),
     depotSize: document.querySelector('#auto-depot-size'),
     depotContents: document.querySelector('#auto-depot-contents'),
+    fasciaRows: document.querySelector('#auto-fascia-rows'),
   };
   const emptyCard = container.querySelector('.viewport-empty-card');
 
@@ -194,9 +195,30 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     });
     contents.addEventListener('change', () => setControlValue(sidebar.depotContents, contents.checked));
 
+    // Alınlık: önce "olsun mu?", olsun denirse tek / çift sıra; sol menüdeki tek listeye yazılır.
+    const fascia = document.createElement('input');
+    fascia.type = 'checkbox';
+    fascia.id = 'wizard-fascia';
+    fascia.checked = Boolean(sidebar.fasciaRows?.value);
+    const fasciaRows = document.createElement('select');
+    fasciaRows.id = 'wizard-fascia-rows';
+    [...(sidebar.fasciaRows?.options ?? [])]
+      .filter((option) => option.value)
+      .forEach((option) => fasciaRows.appendChild(option.cloneNode(true)));
+    fasciaRows.value = sidebar.fasciaRows?.value || '1';
+    const syncFascia = () => {
+      fasciaRows.disabled = !fascia.checked;
+      setControlValue(sidebar.fasciaRows, fascia.checked ? fasciaRows.value : '');
+    };
+    fascia.addEventListener('change', syncFascia);
+    fasciaRows.addEventListener('change', syncFascia);
+    fasciaRows.disabled = !fascia.checked;
+
     const contentsLabel = field('Depo içeriği eklensin', contents);
     contentsLabel.classList.add('wizard-check');
     contentsHint.style.gridColumn = '1 / -1';
+    const fasciaLabel = field('Alınlık olsun', fascia);
+    fasciaLabel.classList.add('wizard-check');
     fields.append(
       field('Genişlik X (cm)', x),
       field('Derinlik Y (cm)', y),
@@ -204,10 +226,12 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
       field('Depo', depotSize),
       contentsLabel,
       contentsHint,
+      fasciaLabel,
+      field('Alınlık sırası', fasciaRows),
     );
     const hint = document.createElement('p');
     hint.className = 'wizard-hint';
-    hint.textContent = '50 cm ve katları. Ölçüler ve depo sonradan sol menüden de değiştirilebilir.';
+    hint.textContent = '50 cm ve katları. Ölçüler, depo ve alınlık sonradan sol menüden de değiştirilebilir.';
     body.replaceChildren(fields, hint);
     nextButton.disabled = false;
   }
@@ -218,9 +242,10 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     const depot = sidebar.depotSize?.value
       ? `${sidebar.depotSize.selectedOptions?.[0]?.textContent ?? ''}${sidebar.depotContents?.checked ? ' · içerikli' : ''}`
       : 'Yok';
+    const fascia = sidebar.fasciaRows?.value ? sidebar.fasciaRows.selectedOptions?.[0]?.textContent ?? '' : 'Yok';
     const summary = document.createElement('p');
     summary.className = 'wizard-summary';
-    summary.innerHTML = `<strong>${type}</strong><br>${sidebar.sizeX?.value} × ${sidebar.sizeY?.value} cm · duvar ${sidebar.wallHeight?.value} cm<br>Depo: ${depot}`;
+    summary.innerHTML = `<strong>${type}</strong><br>${sidebar.sizeX?.value} × ${sidebar.sizeY?.value} cm · duvar ${sidebar.wallHeight?.value} cm<br>Depo: ${depot}<br>Alınlık: ${fascia}`;
     const hint = document.createElement('p');
     hint.className = 'wizard-hint';
     hint.textContent = 'Oluştur dediğinde proje adı sorulur, sahne kurulur ve proje kaydedilir.';

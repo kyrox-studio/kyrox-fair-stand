@@ -74,6 +74,7 @@ function frozenDomains(...domains) {
 export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/assetStore.js': frozenDomains('persistence', 'storage'),
   'src/autoDepot.js': frozenDomains('composition', 'placement'),
+  'src/autoFascia.js': frozenDomains('composition', 'placement'),
   'src/automaticWall.js': frozenDomains('composition', 'placement'),
   'src/autosaveController.js': frozenDomains('persistence'),
   'src/autosaveSettings.js': frozenDomains('persistence', 'ui'),

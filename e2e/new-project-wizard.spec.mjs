@@ -177,3 +177,80 @@ test('wizard depot: the same list and contents box, mirrored to the sidebar and 
   await finishNameDialog(page, 'E2E Sihirbaz Depo');
   expect(await savedStandDepot(page)).toEqual(expect.objectContaining({ enabled: true, sizeKey: '150x100', includeContents: true }));
 });
+
+async function savedProject(page) {
+  return page.evaluate(async () => {
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('fair-stand-configurator', 2);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const projects = await new Promise((resolve) => {
+      const request = db.transaction('projects', 'readonly').objectStore('projects').getAll();
+      request.onsuccess = () => resolve(request.result ?? []);
+    });
+    db.close();
+    return projects.sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0))[0] ?? null;
+  });
+}
+
+for (const [rows, label, variant] of [['1', 'Tek sıra', 'short_1'], ['2', 'Çift sıra', 'short_2']]) {
+  test(`wizard fascia (${label}): open edges get wall-short panels and the open corner an upright`, async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto('/');
+    const dialog = wizard(page);
+    await dialog.getByRole('button', { name: 'L Stand Sol' }).click();
+    await dialog.getByRole('button', { name: 'İleri →' }).click();
+    await dialog.locator('#wizard-size-x').fill('300');
+    await dialog.locator('#wizard-size-y').fill('300');
+    const fascia = dialog.locator('#wizard-fascia');
+    const fasciaRows = dialog.locator('#wizard-fascia-rows');
+    await expect(fascia).not.toBeChecked();
+    await expect(fasciaRows).toBeDisabled();
+    await expect(page.locator('#auto-fascia-rows')).toHaveValue('');
+    await fascia.check();
+    await expect(fasciaRows).toBeEnabled();
+    await fasciaRows.selectOption(rows);
+    await expect(page.locator('#auto-fascia-rows')).toHaveValue(rows);
+
+    await dialog.getByRole('button', { name: 'İleri →' }).click();
+    await expect(dialog).toContainText(`Alınlık: ${label}`);
+    await dialog.getByRole('button', { name: 'Oluştur' }).click();
+    await finishNameDialog(page, `E2E Alınlık ${rows}`);
+
+    const project = await savedProject(page);
+    expect(project.stand.fascia).toEqual({ enabled: true, rows: Number(rows) });
+    const fasciaModules = project.modules.filter((module) => module.autoFascia === true);
+    const panels = fasciaModules.filter((module) => module.itemKey.includes(variant));
+    const uprights = fasciaModules.filter((module) => module.type === 'upright');
+    expect(panels.map((module) => module.itemKey).sort()).toEqual(
+      [`wall_100_${variant}`, `wall_100_${variant}`, `wall_200_${variant}`, `wall_200_${variant}`],
+    );
+    expect(uprights.map((module) => [module.placement.xCm, module.placement.yCm])).toEqual([[300, 300]]);
+    expect(fasciaModules).toHaveLength(5);
+    expect(errors).toEqual([]);
+  });
+}
+
+test('wizard fascia 800 × 800: each open 8 m edge gets a middle upright (max 5 m span)', async ({ page }) => {
+  await page.goto('/');
+  const dialog = wizard(page);
+  await dialog.getByRole('button', { name: 'L Stand Sol' }).click();
+  await dialog.getByRole('button', { name: 'İleri →' }).click();
+  await dialog.locator('#wizard-size-x').fill('800');
+  await dialog.locator('#wizard-size-y').fill('800');
+  await dialog.locator('#wizard-fascia').check();
+  await dialog.getByRole('button', { name: 'İleri →' }).click();
+  await dialog.getByRole('button', { name: 'Oluştur' }).click();
+  await finishNameDialog(page, 'E2E Alınlık 800');
+
+  const project = await savedProject(page);
+  const fasciaModules = project.modules.filter((module) => module.autoFascia === true);
+  const uprights = fasciaModules
+    .filter((module) => module.type === 'upright')
+    .map((module) => [module.placement.xCm, module.placement.yCm]);
+  expect(uprights).toEqual([[800, 400], [400, 800], [800, 800]]);
+  const panels = fasciaModules.filter((module) => module.type !== 'upright');
+  expect(panels.map((module) => module.itemKey)).toEqual(Array(8).fill('wall_200_short_1'));
+});

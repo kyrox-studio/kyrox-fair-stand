@@ -13,6 +13,7 @@ import {
 import { getCommercialItemForType, getItem } from '../src/items.js';
 import { composeAutomaticStandWall } from '../src/automaticWall.js';
 import { FEATURE_CONTRACTS, getFeatureContract } from '../src/featureContracts.js';
+import { planAutomaticFascia } from '../src/autoFascia.js';
 import { readFileSync } from 'node:fs';
 
 const REQUIRED_CONTRACT_SECTIONS = Object.freeze([
@@ -131,12 +132,27 @@ test('automatic wall feature contract matches composeAutomaticStandWall', () => 
   assert.deepEqual(result.widths, [200, 200, 200, 200, 100]);
 });
 
+test('automatic fascia feature contract matches planAutomaticFascia', () => {
+  const contract = FEATURE_CONTRACTS.automaticFascia;
+  assert.equal(getFeatureContract('automatic-fascia'), contract);
+  assert.equal(contract.owner, 'src/autoFascia.js');
+  assert.deepEqual([...contract.inputs], ['standType', 'standXCm', 'standYCm', 'rows']);
+  assert.match(contract.tests.regressionFiles.join(' '), /autoFascia\.test\.js/);
+
+  for (const rows of [1, 2]) {
+    const plan = planAutomaticFascia({ standType: 'island', standXCm: 400, standYCm: 300, rows });
+    assert.equal(plan.ok, true);
+    assert.ok(contract.creates.panelVariants.includes(plan.variant));
+  }
+});
+
 test('moduleContracts and featureContracts stay governance-only: production runtime does not import them', () => {
   const runtimeFiles = [
     'src/main.js',
     'src/itemBom.js',
     'src/moduleBehavior.js',
     'src/autoDepot.js',
+    'src/autoFascia.js',
     'src/automaticWall.js',
     'src/scene3d.js',
     'src/designState.js',
