@@ -2,10 +2,11 @@
   "schemaVersion": 2,
   "id": "fair-stand-short-run-profiles",
   "kind": "feature",
-  "summary": "Kısa panel profil birleşimi: aynı hatta ve aynı ray yüksekliğinde uç uca duran kısa panellerin (Tek ve Çift Sıra aynı kural) üst/alt profili BOM'da taşıyıcıdan taşıyıcıya tek parça olur. Hattı bandı taşıyan serbest dikme ya da ucu oraya gelen tam boy duvar/ayırıcı/vitrin böler. Açıklıktaki her panel o raydan kendi profilini düşer; açıklık sahne boyuna göre en uzun uygun profil + kalan parça olarak girer (400 → profile_388, 450 → profile_388 + profile_41_5, 800 → profile_487 + profile_289). Tek ve Çift Sıra yan yana yalnız hizalı üst rayı paylaşır; profil rayına ya da aynı ayak izi kolonuna geçmiş ray hatta girmez (kolon adımı düşen rayı işaretler). BOM notu: \"Kısa panel profil birleşimi: N açıklık.\" Dikme, aparat, panel ve reçeteler değişmez. Sahnedeki profil rayı: kısa panelin bağlantı çizgisinde (snap; gövdenin alt/üst kenarıyla içeriden hizalı) duran ve paneli kapsayan profil de o raydaki panel profilini düşürür (applyProfileRail); önceden yalnız dışarıdan değen profil sayılıyordu. Örn. 400'lük profil + altında 200'lük Tek/Çift Sıra → profile_190 bir eksik.",
+  "summary": "Kısa panel profil birleşimi: aynı hatta ve aynı ray yüksekliğinde uç uca duran kısa panellerin (Tek ve Çift Sıra aynı kural) üst/alt profili BOM'da taşıyıcıdan taşıyıcıya tek parça olur. Hattı bandı taşıyan serbest dikme ya da ucu oraya gelen tam boy duvar/ayırıcı/vitrin böler. Açıklıktaki her panel o raydan kendi profilini düşer; açıklık sahne boyuna göre en uzun uygun profil + kalan parça olarak girer (400 → profile_388, 450 → profile_388 + profile_41_5, 800 → profile_487 + profile_289). Tek ve Çift Sıra yan yana yalnız hizalı üst rayı paylaşır; profil rayına ya da aynı ayak izi kolonuna geçmiş ray hatta girmez (kolon adımı düşen rayı işaretler). BOM notu: \"Kısa panel profil birleşimi: N açıklık.\" Dikme, aparat, panel ve reçeteler değişmez. Sahnedeki profil rayı: kısa panelin bağlantı çizgisinde (snap; gövdenin alt/üst kenarıyla içeriden hizalı) duran ve paneli kapsayan profil de o raydaki panel profilini düşürür (applyProfileRail); önceden yalnız dışarıdan değen profil sayılıyordu. Örn. 400'lük profil + altında 200'lük Tek/Çift Sıra → profile_190 bir eksik. Uygulama içi yardım rehberinin Kısa panel maddesi bu üretim listesi kuralını anlatır (src/helpGuide.js).",
   "owners": [
     "src/relationshipBom.js",
-    "e2e/new-project-wizard.spec.mjs"
+    "e2e/new-project-wizard.spec.mjs",
+    "src/helpGuide.js"
   ],
   "sourceOfTruth": [
     "src/relationshipBom.js"
@@ -18,13 +19,13 @@
     "renderer": "not-applicable",
     "persistence": "not-applicable",
     "bom": "affected",
-    "ui": "not-applicable",
+    "ui": "affected",
     "composition": "affected",
     "assets": "not-applicable",
     "storage": "not-applicable",
     "importExport": "not-applicable",
     "performance": "not-applicable",
-    "accessibility": "not-applicable",
+    "accessibility": "affected",
     "architecture": "affected",
     "security": "not-applicable",
     "tests": "affected"
@@ -341,6 +342,10 @@
       "SYSTEM_MODULE_CATALOG.md",
       "audit/FINDINGS.md",
       "audit/SISTEM_MUTABAKAT_RAPORU.md",
+      "audit/evidence/A03_ARCHITECTURE.md",
+      "docs/items/audit/properties/properties/catalog.label.md",
+      "docs/items/audit/properties/properties/catalog.type.md",
+      "docs/items/audit/properties/properties/state.type.md",
       "docs/items/current-system/wall_100.md",
       "docs/items/current-system/wall_150.md",
       "docs/items/current-system/wall_200.md",
@@ -359,7 +364,8 @@
       "test/wallShortRelationshipBom.test.js",
       "test/sceneBomAcceptance.test.js",
       "e2e/new-project-wizard.spec.mjs",
-      "test/wallShortProfileSnapCollision.test.js"
+      "test/wallShortProfileSnapCollision.test.js",
+      "test/helpGuide.test.js"
     ],
     "fullSuite": true,
     "build": true,
