@@ -888,6 +888,7 @@
     "targeted": [
       "backend/tests/modules/fair_stand/test_unit_catalog.py",
       "backend/tests/modules/fair_stand/test_vertical_move_migration.py",
+      "e2e/invalid-placement-ghost.spec.mjs",
       "e2e/vertical-move-upright-height.spec.mjs",
       "test/itemVerticalSeed.mjs",
       "test/mapCatalogSeed.mjs",
@@ -900,6 +901,7 @@
     "e2e": {
       "required": true,
       "targeted": [
+        "e2e/invalid-placement-ghost.spec.mjs",
         "e2e/vertical-move-upright-height.spec.mjs"
       ],
       "reason": "Ok tuşu dikey taşıma, ölçü etiketleri ve dikme penceresi tarayıcı davranışıdır."

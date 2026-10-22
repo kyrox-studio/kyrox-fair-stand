@@ -120,6 +120,12 @@ test('upright_346_5 drops freely when no short-up joint is near', async ({ page 
   await page.locator('.module-drag-card[data-module-key="upright_346_5"]').dragTo(viewport, {
     targetPosition: { x: Math.round(box.width * 0.6), y: Math.round(box.height * 0.85) },
   });
+  // Bırakınca dikme boyu sorulur; varsayılan seçili duvarın (350) dikmesidir.
+  const heightDialog = page.getByRole('dialog', { name: 'Dikme yüksekliği' });
+  await expect(heightDialog).toBeVisible();
+  await expect(heightDialog.locator('select')).toHaveValue('upright_346_5');
+  await heightDialog.getByRole('button', { name: 'Uygula' }).click();
+  await expect(heightDialog).toBeHidden();
 
   const project = await saveAndReadProject(page);
   expect(project).not.toBeNull();
