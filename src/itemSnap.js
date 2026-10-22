@@ -206,7 +206,3 @@ export function snapPlacementToItemAnchor(moduleState, placement, modules = []) 
   }
   return next;
 }
-
-export function resolveSnapAnchorZCm(moduleState, placement, modules = []) {
-  return snapPlacementToItemAnchor(moduleState, placement, modules)?.zCm ?? null;
-}

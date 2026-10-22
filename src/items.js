@@ -11,7 +11,6 @@ import { WALL_PANEL_BAND_PITCH_CM, resolveWallPanelBandPitchCm } from './wallPan
 let itemByKey = null;
 /** Kuraldan türetilen duvar yükseklikleri: getItem bulur, Item listesine girmez. */
 let derivedItemByKey = Object.create(null);
-let catalogReady = false;
 let snapRuleById = null;
 let snapRuleByKey = null;
 let itemTypeByKey = null;
@@ -101,10 +100,6 @@ export function resolveWallItemKeyForHeight(itemKey, heightCm) {
   return getItem(candidate)?.wallHeightBaseItemKey === baseKey ? candidate : itemKey;
 }
 
-export function isItemCatalogReady() {
-  return catalogReady === true;
-}
-
 export function initializeItemRegistry(items) {
   if (!Array.isArray(items)) {
     throw new TypeError('Fair Stand Item catalog bootstrap items must be an array.');
@@ -119,7 +114,6 @@ export function initializeItemRegistry(items) {
   }
   derivedItemByKey = Object.freeze(buildWallHeightVariants(next));
   itemByKey = Object.freeze(next);
-  catalogReady = true;
   syncProfileColorCss();
 }
 
@@ -197,7 +191,6 @@ export function initializeItemTypeRegistry(itemTypes) {
 export function resetItemRegistry() {
   itemByKey = null;
   derivedItemByKey = Object.create(null);
-  catalogReady = false;
   snapRuleById = null;
   snapRuleByKey = null;
   itemTypeByKey = null;
@@ -696,11 +689,6 @@ export function itemProvidesSnapRule(itemOrKey, specOrRuleId) {
   }
   if (specOrRuleId == null) return false;
   return matches(getSnapRule(specOrRuleId));
-}
-
-export function itemProvidesSnapCapability(itemOrKey, capability) {
-  const item = typeof itemOrKey === 'string' ? getItem(itemOrKey) : itemOrKey;
-  return Boolean(capability && item?.snapProvides === capability);
 }
 
 /** Overlay mouse Z ezer. Snap spec varsa placement.zCm (motor) kalır. Yoksa instance / defaultZCm. */

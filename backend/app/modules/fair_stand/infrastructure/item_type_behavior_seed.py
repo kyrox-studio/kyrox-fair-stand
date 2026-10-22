@@ -316,6 +316,3 @@ def ensure_type_behavior_slices(session) -> dict[str, int]:
             row.updated_at = now
     return ids
 
-
-def ensure_type_behavior_slice1(session) -> dict[str, int]:
-    return ensure_type_behavior_slices(session)

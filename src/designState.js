@@ -124,16 +124,6 @@ function createEmbeddedPartSurface(item, stripIndex = null) {
   };
 }
 
-function takeParts(parts, type) {
-  const matched = [];
-  for (let index = parts.length - 1; index >= 0; index -= 1) {
-    if (parts[index].type !== type) continue;
-    matched.push(parts[index]);
-    parts.splice(index, 1);
-  }
-  return matched.reverse();
-}
-
 function createEditablePanelState(stripIndex, color) {
   return {
     id: createId('surface'),
@@ -142,12 +132,6 @@ function createEditablePanelState(stripIndex, color) {
     imageAssetId: null,
     imageTransform: createDefaultImageTransform(),
   };
-}
-
-function renderPartSurfaces(parentItem, partTypes) {
-  return listEmbeddedRenderParts(parentItem)
-    .filter((part) => partTypes.includes(part.type))
-    .map((part, index) => createEmbeddedPartSurface(part, index));
 }
 
 function embeddedRenderParts(parentItem, partTypes) {

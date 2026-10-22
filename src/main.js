@@ -37,7 +37,6 @@ import {
   noteRevisionCreated,
   resolveRevisionWrite,
 } from './projectRevisionSession.js';
-import { describeRectSelection } from './rectSelection.js';
 import { createModuleContextMenu, allowsModuleSideInsert } from './moduleContextMenu.js';
 import { createSelectionToolbar } from './selectionToolbar.js';
 import { createNewProjectWizard } from './newProjectWizard.js';
@@ -45,10 +44,8 @@ import { createOnboardingTips } from './onboardingTips.js';
 import { createModuleDragSidebar } from './moduleDragSidebar.js';
 import { createColorEditorController } from './colorEditorController.js';
 import { STAND_TYPE_LABELS, validateStandSetup } from './standSetup.js';
-import { validateStandAxisCapacity } from './standCapacity.js';
 import {
   createModulePlacement,
-  getWallAxis,
   getWallExtentCm,
   getWallUsedCm,
   inferStandEdgeWallId,
@@ -518,18 +515,6 @@ function readStandSetup() {
   });
 }
 
-function syncWallLengthFromSetup(setup) {
-  if (!setup?.ok) return;
-
-  const capacityCm = getAutomaticWallCapacityCm({
-    standType: setup.standType,
-    standXCm: setup.xCm,
-    standYCm: setup.yCm,
-  });
-  if (!Number.isFinite(capacityCm)) return;
-
-}
-
 function updateStageCreateState() {
   const result = readStandSetup();
   createStageButton.disabled = !result.ok;
@@ -569,37 +554,6 @@ function renderCurrentWallResult() {
     .map(({ wallId, usedCm }) => `${WALL_LABELS[wallId] ?? wallId}: ${usedCm} cm`)
     .join(' · ');
   renderWallResult(`${currentModules.length} modül · ${wallSummary}`);
-}
-
-function defaultCurrentCapacityCm(axis) {
-  if (axis === 'x') return getWallUsedCm(currentModules, 'back');
-  return Math.max(
-    getWallUsedCm(currentModules, 'left'),
-    getWallUsedCm(currentModules, 'right'),
-  );
-}
-
-function validateCurrentAxisCapacity(
-  axis,
-  addedCm,
-  currentCm = defaultCurrentCapacityCm(axis),
-  { popupTitle = null } = {},
-) {
-  const result = validateStandAxisCapacity({
-    axis,
-    currentCm,
-    addedCm,
-    xCm: currentStand?.xCm,
-    yCm: currentStand?.yCm,
-  });
-
-  if (!result.ok) {
-    renderWallResult(result.message, true);
-    if (popupTitle && Number.isFinite(result.projectedCm)) {
-      window.alert(formatCapacityPopup(result, popupTitle));
-    }
-  }
-  return result;
 }
 
 // Grup işlemlerinin stand sınırı ve kenar bilgisi.
@@ -1030,10 +984,6 @@ function commitDroppedCatalogModule(moduleState, dropResult, catalogKey = null) 
   }
 
   return { ok: true, moduleState: canonical };
-}
-
-function getRequestWallId({ context = null } = {}) {
-  return context?.placement?.wallId ?? 'back';
 }
 
 function getContinuousModulePathStartCm(module, segments) {

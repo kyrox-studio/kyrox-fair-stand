@@ -86,12 +86,6 @@ function renderModuleHtml(entry, { open = false } = {}) {
   `;
 }
 
-function renderLineList(lines) {
-  return `<ul class="production-bom-module__list">${lines.map((line) => (
-    `<li>${escapeHtml(lineLabel(line))}</li>`
-  )).join('')}</ul>`;
-}
-
 function metalSection(printAreas) {
   return (printAreas || []).find((section) => section.id === 'metal') ?? null;
 }

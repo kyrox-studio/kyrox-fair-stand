@@ -125,7 +125,7 @@ Not:
 
 ## 9. Test klasörü standardını tekleştir
 
-Durum: **A uygulandı (kısmi)** — `tests/autoDepot.test.js` ve `tests/moduleBehavior.test.js` `test/` altına taşındı. `FEATURE_CONTRACTS.automaticDepot.tests.regressionFiles` güncellendi. `src/groundLayout.js` / `src/cornerPlacement.js` TEST_SUPPORT olarak duruyor (DECISION-04/05).
+Durum: **A uygulandı (kısmi)** — `tests/autoDepot.test.js` ve `tests/moduleBehavior.test.js` `test/` altına taşındı. `FEATURE_CONTRACTS.automaticDepot.tests.regressionFiles` güncellendi. `src/groundLayout.js` TEST_SUPPORT olarak duruyor (DECISION-04/05). `src/cornerPlacement.js` hiçbir kaynak ya da testten import edilmediği için 2026-10-23 ölü kod taramasında silindi; `test/cornerPlacement.test.js` üretim yolunun onu import etmediğini korumaya devam eder.
 
 ## 10. Stale audit/cleanup dokümanlarını historical hale getir
 
