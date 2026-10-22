@@ -2,7 +2,7 @@
 
 ## Kanonik kimlik
 - `itemKey`: `upright_247_5`
-- `name`: `Dikme 247,5 cm`
+- `name`: `Dikme 247,5`
 - `type`: `upright`
 - `unit`: `adet`
 - structure: Tekil Item, katalogda gizli

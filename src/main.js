@@ -129,7 +129,8 @@ import {
   requestProfileLength,
   writeProfileLengthPreference,
 } from './profileLength.js';
-import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
+import { requestWallShortWidth } from './wallShortWidth.js';
+import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, isWallShortFamilyDescriptor, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
 import {
@@ -1896,8 +1897,25 @@ moduleDragSidebar = createModuleDragSidebar({
       rotationLocked,
     )
   ),
-  onDrop: (moduleState, clientX, clientY, rotationZDeg, rotationLocked, catalogKey) => {
+  onDrop: (droppedState, clientX, clientY, rotationZDeg, rotationLocked, catalogKey) => {
     void (async () => {
+      let moduleState = droppedState;
+      if (isWallShortFamilyDescriptor(moduleState)) {
+        // Kısa panelde kart tek (Tek / Çift Sıra); genişlik konum hesabından önce seçilir,
+        // çünkü profile ve yan panele bağlanma panelin genişliğiyle çözülür.
+        const choice = await requestWallShortWidth({ selectedItemKey: moduleState.itemKey });
+        if (!choice) {
+          scene3d.clearCatalogModuleDrag();
+          return;
+        }
+        if (choice.itemKey !== moduleState.itemKey) {
+          moduleState = createCatalogModuleState({ itemKey: choice.itemKey }, { itemKey: choice.itemKey });
+          if (!moduleState) {
+            scene3d.clearCatalogModuleDrag();
+            return;
+          }
+        }
+      }
       const result = scene3d.dropCatalogModuleDrag(
         moduleState,
         clientX,
@@ -1965,8 +1983,10 @@ moduleDragSidebar = createModuleDragSidebar({
         moduleState.heightCm = dimensions.heightCm;
         moduleState.opacity = dimensions.opacity;
       }
-      // Dikme ve profilde kart tek (upright_346_5, profile_289); kayıt seçilen boyun anahtarıyla yapılır.
-      const commitKey = moduleState?.type === 'upright' || moduleState?.type === 'profile' ? moduleState.itemKey : catalogKey;
+      // Dikme, profil ve kısa panelde kart tek (upright_346_5, profile_289, wall_100_short_1/2);
+      // kayıt seçilen ölçünün anahtarıyla yapılır.
+      const commitKey = moduleState?.type === 'upright' || moduleState?.type === 'profile'
+        || isWallShortFamilyDescriptor(moduleState) ? moduleState.itemKey : catalogKey;
       const committed = commitDroppedCatalogModule(moduleState, result, commitKey);
       if (!committed.ok) {
         renderWallResult(committed.message ?? 'Modül bu konuma bırakılamadı.', true);

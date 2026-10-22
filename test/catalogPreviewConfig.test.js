@@ -93,11 +93,11 @@ function serializeNode(node) {
   };
 }
 
-test('60 görünür Item catalogPreview taşır; gizli Item preview taşımaz', () => {
+test('54 görünür Item catalogPreview taşır; gizli Item preview taşımaz', () => {
   const visible = listRegisteredItems().filter((item) => item.catalogVisible === true);
   const hidden = listRegisteredItems().filter((item) => item.catalogVisible !== true);
-  assert.equal(visible.length, 60);
-  assert.equal(hidden.length, 71);
+  assert.equal(visible.length, 54);
+  assert.equal(hidden.length, 77);
 
   for (const item of visible) {
     assert.equal(typeof item.previewId, 'number', item.itemKey);
@@ -146,7 +146,7 @@ test('Catalog preview renderer yalnız catalogPreview key ile seçilir; type bra
   assert.match(catalogDoc, /Catalog preview renderer seçimi yalnız Item\.previewId üzerinden yapılır/);
 });
 
-test('60 Item catalogPreview dağılımı kilitlidir', () => {
+test('54 Item catalogPreview dağılımı kilitlidir', () => {
   const counts = {};
   for (const item of listCatalogItems()) {
     counts[item.previewId] = (counts[item.previewId] ?? 0) + 1;
@@ -159,7 +159,7 @@ test('60 Item catalogPreview dağılımı kilitlidir', () => {
     6: 1,
     7: 6,
     8: 1,
-    9: 14,
+    9: 8,
     10: 1,
     11: 2,
     12: 1,
@@ -184,10 +184,10 @@ test('60 Item catalogPreview dağılımı kilitlidir', () => {
   });
 });
 
-test('60 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
+test('54 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
   installDocument();
   const projected = listCatalogItems();
-  assert.equal(projected.length, 60);
+  assert.equal(projected.length, 54);
 
   for (const module of projected) {
     const tree = serializeNode(createModuleCatalogPreview(module));
@@ -231,7 +231,7 @@ test('60 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
   const plain = serializeNode(createModuleCatalogPreview(getCatalogItem('wall_separator_100_350')));
   assert.doesNotMatch(plain.children[0].className, /is-vine/);
 
-  const hanging = serializeNode(createModuleCatalogPreview(getCatalogItem('wall_200_short_2')));
+  const hanging = serializeNode(createModuleCatalogPreview(getCatalogItem('wall_100_short_2')));
   assert.match(hanging.children[0].className, /is-hanging-top/);
   assert.equal(hanging.children[0].children[0].className, 'module-drag-hanging-frame');
 

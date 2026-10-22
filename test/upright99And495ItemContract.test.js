@@ -13,7 +13,7 @@ import {
 const CASES = [
   {
     itemKey: 'upright_99',
-    name: 'Dikme 99 cm',
+    name: 'Dikme 99',
     dimensions: { widthCm: 8, heightCm: 99, depthCm: 8 },
     recipes: [
       ['counter', 100, {}, 4],
@@ -26,7 +26,7 @@ const CASES = [
   },
   {
     itemKey: 'upright_49_5',
-    name: 'Dikme 49,5 cm',
+    name: 'Dikme 49,5',
     dimensions: { widthCm: 8, heightCm: 49.5, depthCm: 8 },
     recipes: [
       ['base', 100, {}, 4],

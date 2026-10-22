@@ -2,7 +2,7 @@
 
 ## Kanonik kimlik
 - `itemKey`: `upright_49_5`
-- `name`: `Dikme 49,5 cm`
+- `name`: `Dikme 49,5`
 - `type`: `upright`
 - `unit`: `adet`
 - yapı: Tekil Item

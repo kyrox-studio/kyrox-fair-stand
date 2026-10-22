@@ -2,7 +2,7 @@
 
 ## 1. Kanonik kimlik
 - `itemKey`: `profile_91`
-- `name`: `Profil 91 cm`
+- `name`: `Profil 91`
 - `type`: `profile`
 - `unit`: `adet`
 - structure: Tekil Item

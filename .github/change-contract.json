@@ -1,24 +1,22 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-profile-lengths",
+  "id": "fair-stand-wall-short-cards",
   "kind": "feature",
-  "summary": "Profil kartı ve boy seçimi: profil dikme gibi katalogda tek kartla gelir (profile_289); bırakırken boy sorulur (ortak pencere src/itemSizeDialog.js, src/profileLength.js; \"Bir daha sorma\" tercihi; sağ tık Profil boyu…). Gerçek boy (BOM) → sahne boyu: 41,5→50, 91→100, 140,5→150, 190→200, 239,5→250, 289→300, 388→400, 487→500. Migration 0078_profile_lengths: profile_289_scene → profile_289 (proje/şablon JSON dahil), profile_239_5/profile_388/profile_487 eklenir, sahne ölçüleri ve kesit 10×10 yazılır, katalogda yalnız profile_289 görünür. Eski tarayıcı projeleri LEGACY_PROFILE_ITEM_KEYS ile çevrilir. Seed ve test fikstürü aynı son durumu taşır. BOM: her profil kendi itemKey ×1 adet; parent reçeteler değişmez.",
+  "summary": "Kısa panel kartı ve genişlik seçimi: katalogda Tek Sıra / Çift Sıra için birer kart kalır (wall_100_short_1 \"Panel Tek Sıra 100\", wall_100_short_2 \"Panel Çift Sıra 100\"); ölçü ailelerinde ad sahnedeki öğenin ölçüsünü yazar: \"Panel Tek/Çift Sıra W\", \"Profil 41,5\", \"Dikme 346,5\"; bırakırken genişlik (50 / 100 / 150 / 200) konum hesabından önce sorulur, çünkü profile ve yan panele bağlanma genişliğe göre çözülür (src/wallShortWidth.js, ortak pencere src/itemSizeDialog.js; sağ tık menüsü ve \"Bir daha sorma\" yok). Migration 0079_wall_short_cards: diğer altı genişlik katalogda gizlenir, katalog alanları boşaltılır, kategori içi sıra 1…n olur. Item, itemKey, variant ve reçeteler değişmez; otomatik alınlık ve kayıtlı projeler gizli genişlikleri kullanır. Seed ve test fikstürü aynı son durumu taşır. Sağ tık başlığı (getModuleCatalogLabel) katalogda gizli Item için Item adını yazar; ölçü penceresinden gelen kısa panel, profil ve dikme \"Modül\" yerine kendi adıyla görünür.",
   "owners": [
-    "backend/alembic/versions/0078_profile_lengths.py",
+    "backend/alembic/versions/0079_wall_short_cards.py",
     "backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py",
-    "src/designState.js",
     "src/itemSizeDialog.js",
     "src/main.js",
-    "src/moduleContextMenu.js",
-    "src/profileLength.js",
-    "src/uprightHeight.js",
+    "src/wallShortWidth.js",
     "src/helpGuide.js",
     "src/systemChangeContract.js",
-    "test/fixtures/itemCatalogSeed.json"
+    "test/fixtures/itemCatalogSeed.json",
+    "src/catalog.js"
   ],
   "sourceOfTruth": [
-    "backend/alembic/versions/0078_profile_lengths.py",
-    "src/profileLength.js"
+    "backend/alembic/versions/0079_wall_short_cards.py",
+    "src/wallShortWidth.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -45,6 +43,7 @@
       "backend/alembic/versions/0013_drop_component_sort_order.py",
       "backend/app/modules/fair_stand/api/live_share_routes.py",
       "backend/scripts/verify_live_item_type_placement_motor.mjs",
+      "backend/tests/modules/fair_stand/test_item_cost_enabled.py",
       "backend/tests/modules/fair_stand/test_live_share.py",
       "docs/items/audit/hedef/ATOMIK_MEKANIZMA.html",
       "docs/items/audit/report/MEKANIZMA_PARAMETRE.html",
@@ -113,10 +112,12 @@
       "src/viewCube.js",
       "src/wallPanelBand.js",
       "src/wallReflow.js",
+      "src/wallShortWidth.js",
       "vite.config.js"
     ],
     "affectedTests": [
       "backend/tests/modules/fair_stand/test_profile_lengths_migration.py",
+      "backend/tests/modules/fair_stand/test_wall_short_cards_migration.py",
       "e2e/base-items-contract.spec.mjs",
       "e2e/box-block-corners.spec.mjs",
       "e2e/box-block-face-image-restore.spec.mjs",
@@ -178,6 +179,7 @@
       "e2e/wall-media-items-contract.spec.mjs",
       "e2e/wall-reflow-u-stand.spec.mjs",
       "e2e/wall-separator-items-contract.spec.mjs",
+      "e2e/wall-short-width.spec.mjs",
       "e2e/wall-showcase-item-contract.spec.mjs",
       "test/assetLibraryLayout.test.js",
       "test/autoDepot.test.js",
@@ -348,6 +350,7 @@
       "test/projectRevisionSession.test.js",
       "test/projectSaveAs.test.js",
       "test/projectUiMainIntegration.test.js",
+      "test/pythonPatchArchive.test.js",
       "test/raisedPlatform.test.js",
       "test/rawBomSelectionParser.test.js",
       "test/recipeCompositionItemsContract.test.js",
@@ -425,9 +428,11 @@
       "test/wallShortProfileSnapCollision.test.js",
       "test/wallShortRelationshipBom.test.js",
       "test/wallShortVerticalMove.test.js",
+      "test/wallShortWidth.test.js",
       "test/wallShowcaseItemContract.test.js"
     ],
     "affectedDocs": [
+      "ARCHITECTURE_RULES.md",
       "FRESH_REPOSITORY_REVIEW.md",
       "MODULE_BEHAVIOR_STANDARD.md",
       "PROJECT_RULES.md",
@@ -436,6 +441,7 @@
       "SYSTEM_AUDIT_CHECKLIST.md",
       "SYSTEM_CHANGE_GATE.md",
       "SYSTEM_DEVELOPMENT_CONTRACT.md",
+      "SYSTEM_IMPACT_SWEEP.md",
       "SYSTEM_MODULE_CATALOG.md",
       "audit/FINDINGS.md",
       "audit/FULL_SWEEP_STATE.md",
@@ -464,6 +470,7 @@
       "audit/remediation/A11_F029_CLOSURE.md",
       "docs/AUTOSAVE_INTEGRATION_NOTES.md",
       "docs/assets/PUBLIC_MODEL_ATTRIBUTION.md",
+      "docs/items/ITEM_CONSOLIDATION_PLAN.md",
       "docs/items/audit/DEFAULT_OVERRIDE_HARITASI.md",
       "docs/items/audit/ITEM_OZELLIK_MATRISI.md",
       "docs/items/audit/OZELLIK_KATALOGU.md",
@@ -594,6 +601,7 @@
       "docs/items/audit/properties/properties/catalog.eyeCount.md",
       "docs/items/audit/properties/properties/catalog.groups.md",
       "docs/items/audit/properties/properties/catalog.heightCm.md",
+      "docs/items/audit/properties/properties/catalog.inKeysList.md",
       "docs/items/audit/properties/properties/catalog.itemKey.md",
       "docs/items/audit/properties/properties/catalog.label.md",
       "docs/items/audit/properties/properties/catalog.modelFile.md",
@@ -689,6 +697,7 @@
       "docs/items/audit/properties/properties/static.sizeInch.md",
       "docs/items/audit/properties/properties/static.stripOccupancy.align.md",
       "docs/items/audit/properties/properties/static.stripOccupancy.stripCount.md",
+      "docs/items/audit/properties/properties/static.variant.md",
       "docs/items/audit/properties/properties/static.videoWall.cols.md",
       "docs/items/audit/properties/properties/static.videoWall.panelScreenHeightCm.md",
       "docs/items/audit/properties/properties/static.videoWall.panelScreenWidthCm.md",
@@ -821,7 +830,8 @@
       "docs/refactor/ITEM_3D_PREVIEW.md",
       "docs/refactor/PENDING_ITEM_DECISIONS.md",
       "docs/refactor/REFACTOR.md",
-      "docs/refactor/SCENE_POSE.md"
+      "docs/refactor/SCENE_POSE.md",
+      "scripts/archive/README.md"
     ],
     "relatedFindings": {
       "affected": [],
@@ -839,40 +849,42 @@
         "F-018",
         "F-019",
         "F-025",
+        "F-028",
         "F-029",
         "F-033"
       ]
     },
-    "notes": "Profil katalog kimliği ve sahne ölçüleri DB/seed/fikstürde değişir; bırakma/sağ tık akışı main.js ve moduleContextMenu.js içinde dikme ile aynı ortak pencereyi kullanır. Parent reçeteler ve BOM politikası (self ×1) değişmez."
+    "notes": "Kısa panel katalog kimliği DB/seed/fikstürde değişir (görünürlük, ad, sıra); bırakma akışı main.js içinde dikme/profil ile aynı ortak pencereyi kullanır, ancak genişlik dropCatalogModuleDrag öncesinde seçilir. Reçeteler, BOM ve autoFascia değişmez."
   },
   "tests": {
     "targeted": [
-      "test/profileLength.test.js",
-      "test/profileFieldPlacement.test.js",
+      "test/wallShortWidth.test.js",
+      "test/wallFlatPanelItemsContract.test.js",
+      "test/wallShortCanonicalRename.test.js",
       "test/wallShortProfileSnapCollision.test.js",
-      "test/verticalMoveUprightHeight.test.js",
+      "test/profileLength.test.js",
       "test/catalogCategories.test.js",
       "test/catalogItemProjection.test.js",
-      "backend/tests/modules/fair_stand/test_profile_lengths_migration.py",
-      "e2e/vertical-move-upright-height.spec.mjs"
+      "backend/tests/modules/fair_stand/test_wall_short_cards_migration.py",
+      "e2e/wall-short-width.spec.mjs"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/vertical-move-upright-height.spec.mjs"
+        "e2e/wall-short-width.spec.mjs"
       ],
-      "reason": "Profil kartı bırakılırken boy penceresi, seçilen boyun itemKey ve sahne ölçüsüyle kaydı ve sağ tık Profil boyu… gerçek tarayıcıda doğrulanır."
+      "reason": "Kısa panel kartı bırakılırken genişlik penceresi, seçilen genişliğin itemKey ve ölçüsüyle kayıt ve iptalde modül eklenmemesi gerçek tarayıcıda doğrulanır."
     }
   },
   "risk": {
     "level": "medium",
-    "notes": "Migration item_key yeniden adlandırır (FK ON UPDATE CASCADE) ve proje/şablon JSON metninde profile_289_scene → profile_289 değişimi yapar; hedef anahtar varsa durur. Gizlenen profillerin katalog alanları boşaltılır."
+    "notes": "Migration yalnız katalog görünürlüğü, ad ve kategori içi sırayı değiştirir; Item silinmez, itemKey değişmez. Görünür sıra tekil olduğundan sıkıştırma geçici aralık üzerinden yapılır."
   },
   "migration": {
     "required": true,
-    "notes": "0078_profile_lengths (down: 0077_upright_render). Downgrade yalnız eklenen profile_239_5/388/487 satırlarını siler; anahtar değişikliği geri alınmaz."
+    "notes": "0079_wall_short_cards (down: 0078_profile_lengths). Downgrade eski adları geri yazar ve sekiz genişliği kategorinin başına 0078 sırasıyla döndürür."
   },
-  "rollback": "0078 downgrade + profileLength.js/itemSizeDialog.js ve main.js/moduleContextMenu.js profil boyu değişikliklerini geri al; seed ve fikstürdeki profil satırlarını eski haline döndür."
+  "rollback": "0079 downgrade + wallShortWidth.js ve main.js kısa panel genişlik adımını, itemSizeDialog.js fieldLabel/allowRemember değişikliğini geri al; seed ve fikstürdeki kısa panel satırlarını eski haline döndür."
 }

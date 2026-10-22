@@ -18,8 +18,8 @@ Bu dosya insan/AI için **okunabilir katalog indeksi**dir. Runtime source-of-tru
 
 Bu snapshot `Version2` üzerindeki `MODULE_CATALOG_KEYS` ve `MODULE_CONTRACT_ASSIGNMENTS` ile eşleşmek zorundadır; `test/systemModuleCatalogDoc.test.js` drift olduğunda CI'yi kırar.
 
-- Catalog entries: **60**
-- BOM mode `recipe`: **28**
+- Catalog entries: **54**
+- BOM mode `recipe`: **22**
 - BOM mode `self`: **12**
 - BOM mode `decision-required`: **20**
 - Katalog dışı explicit runtime module: **1** (`illuminated-foam`)
@@ -41,14 +41,8 @@ Aşağıdaki blok test tarafından `MODULE_CATALOG_KEYS` ile **sıra dahil bireb
 - `wall_separator_100_350_sarmasik`
 - `wall_separator_50_350_sarmasik`
 - `wall_door_100_350`
-- `wall_200_short_2`
-- `wall_150_short_2`
 - `wall_100_short_2`
-- `wall_50_short_2`
-- `wall_200_short_1`
-- `wall_150_short_1`
 - `wall_100_short_1`
-- `wall_50_short_1`
 - `upright_346_5`
 - `profile_289`
 - `box_block`
@@ -104,9 +98,11 @@ Bu bölüm navigasyon içindir; ölçü/recipe source-of-truth değildir.
 
 ### Panel Ek Modül
 
-`wall_200_short_2`, `wall_150_short_2`, `wall_100_short_2`, `wall_50_short_2`, `wall_200_short_1`, `wall_150_short_1`, `wall_100_short_1`, `wall_50_short_1`, `upright_346_5`, `profile_289`, `box_block`
+`wall_100_short_2`, `wall_100_short_1`, `upright_346_5`, `profile_289`, `box_block`
 
 Profil kartı tek (`profile_289`, dikmedeki gibi): bırakılırken boy sorulur. Gerçek boy → sahne boyu: `profile_41_5` 41,5 → 50, `profile_91` 91 → 100, `profile_140_5` 140,5 → 150, `profile_190` 190 → 200, `profile_239_5` 239,5 → 250, `profile_289` 289 → 300, `profile_388` 388 → 400, `profile_487` 487 → 500 (`src/profileLength.js`, migration `0078_profile_lengths`).
+
+Kısa panel kartı varyant başına tek: `wall_100_short_1` "Panel Tek Sıra 100" (Tek Sıra), `wall_100_short_2` "Panel Çift Sıra 100" (Çift Sıra). Ad sahnedeki öğenin ölçüsünü yazar: kısa panel "Panel Tek/Çift Sıra W", profil ve dikme gerçek boyla ("Profil 41,5", "Dikme 346,5"). Bırakılırken genişlik (50 / 100 / 150 / 200) konum hesabından önce sorulur; diğer genişlikler (`wall_50/150/200_short_1/2`) katalogda gizli Item'dır, otomatik alınlık ve kayıtlı projeler onları kullanmaya devam eder (`src/wallShortWidth.js`, migration `0079_wall_short_cards`).
 
 ### Raf & Vitrin
 
