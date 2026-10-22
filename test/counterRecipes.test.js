@@ -61,6 +61,6 @@ test('banko 200 recipe matches verified production data', () => {
 
 test('expanded banko recipe resolves top and upright production parts', () => {
   const expanded = getExpandedModuleRecipe('counter', 100);
-  assert.equal(expanded.items[2].part.name, 'Dikme 99 cm');
+  assert.equal(expanded.items[2].part.name, 'Dikme 99');
   assert.equal(expanded.items.at(-1).part.name, 'Banko Üstü 110 × 60 cm');
 });

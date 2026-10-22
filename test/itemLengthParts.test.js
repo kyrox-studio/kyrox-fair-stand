@@ -51,7 +51,7 @@ test('bölünüş yalnız etikettir: BOM uzun parçanın kendi Item’ı ×N kal
 test('üretim listesi satırı adın yanında bölünüşü yazar (ekran ve metin indir)', () => {
   const line = { itemKey: 'upright_495', name: getItem('upright_495').name, quantity: 2, unit: 'adet' };
   const text = formatProductionBomText({ modules: [], lines: [line], printAreas: [] });
-  assert.match(text, /2 × Dikme 495 cm \(346,5 \+ 8 \+ 140,5\) · adet · upright_495/);
+  assert.match(text, /2 × Dikme 495 \(346,5 \+ 8 \+ 140,5\) · adet · upright_495/);
   const plain = { itemKey: 'upright_346_5', name: getItem('upright_346_5').name, quantity: 1, unit: 'adet' };
   assert.doesNotMatch(formatProductionBomText({ modules: [], lines: [plain], printAreas: [] }), /upright_346_5[^\n]*\(/);
   const panel = readFileSync(new URL('../src/productionBomPanel.js', import.meta.url), 'utf8');

@@ -18,7 +18,7 @@
   material: 'alüminyum',
 }
 ```
-Migration `0079_item_length_parts` ile `profile_190` satırından kopyalanır; boy 8 cm.
+Migration `0080_item_length_parts` ile `profile_190` satırından kopyalanır; boy 8 cm.
 
 ## 3. Kullanım
 Yalnız uzun parça bölünüşünün parçasıdır: `upright_495` = 346,5 + 8 + 140,5. Katalogda kartı yoktur, sahnede çizilmez (`is_render = false`), profil boy penceresinde listelenmez.

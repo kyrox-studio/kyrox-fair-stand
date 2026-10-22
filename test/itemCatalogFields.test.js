@@ -35,14 +35,8 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
   Object.freeze({
     label: 'Panel Ek Modül',
     keys: Object.freeze([
-      'wall_200_short_2',
-      'wall_150_short_2',
       'wall_100_short_2',
-      'wall_50_short_2',
-      'wall_200_short_1',
-      'wall_150_short_1',
       'wall_100_short_1',
-      'wall_50_short_1',
       'upright_346_5',
       'profile_289',
       'box_block',

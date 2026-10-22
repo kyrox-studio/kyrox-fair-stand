@@ -26,16 +26,18 @@ const WALL_SHORT_KEYS = [
   'wall_100_short_1',
   'wall_50_short_1',
 ];
+// Katalogda varyant başına tek kart (migration 0079); diğer genişlikler genişlik penceresinden gelir.
+const WALL_SHORT_CARD_KEYS = ['wall_100_short_2', 'wall_100_short_1'];
 
 test('Panel Ek Modül holds wall-short family and field upright_346_5', () => {
   const panelWall = listCatalogGroups().find((group) => group.label === 'Panel & Duvar');
   const extraPanel = listCatalogGroups().find((group) => group.label === 'Panel Ek Modül');
   assert.ok(panelWall);
   assert.ok(extraPanel);
-  assert.deepEqual(extraPanel.keys, [...WALL_SHORT_KEYS, 'upright_346_5', 'profile_289', 'box_block']);
+  assert.deepEqual(extraPanel.keys, [...WALL_SHORT_CARD_KEYS, 'upright_346_5', 'profile_289', 'box_block']);
   for (const key of WALL_SHORT_KEYS) {
     assert.equal(panelWall.keys.includes(key), false);
-    assert.equal(getCatalogItem(key) != null, true);
+    assert.equal(getCatalogItem(key) != null, WALL_SHORT_CARD_KEYS.includes(key), key);
   }
   assert.equal(panelWall.keys.includes('wall_200_350'), true);
   assert.equal(panelWall.keys.includes('upright_346_5'), false);

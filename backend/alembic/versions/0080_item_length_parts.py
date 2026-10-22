@@ -1,7 +1,7 @@
 """Uzun profil/dikme parçalarının bölünüşü (yalnız BOM etiketi).
 
-Revision ID: 0079_item_length_parts
-Revises: 0078_profile_lengths
+Revision ID: 0080_item_length_parts
+Revises: 0079_wall_short_cards
 
 Ürün kararı (2026-10-22): 346,5 cm'yi aşan profil ve dikmeler üretim listesinde tek satır
 kalır, adının yanına parça bölünüşü yazılır: "N × Dikme 495 cm (346,5 + 8 + 140,5)".
@@ -23,8 +23,8 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision = "0079_item_length_parts"
-down_revision = "0078_profile_lengths"
+revision = "0080_item_length_parts"
+down_revision = "0079_wall_short_cards"
 branch_labels = None
 depends_on = None
 

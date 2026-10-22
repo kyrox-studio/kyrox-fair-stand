@@ -14,15 +14,18 @@ import {
 import { getModuleMagneticSnapStrategy, requiresShortUpJointSnap } from '../src/moduleBehavior.js';
 
 const CANONICAL = Object.freeze([
-  ['wall_200_short_1', 'wall-short-1', 300, 50, 'Panel 200 Kısa Tek Sıra'],
-  ['wall_150_short_1', 'wall-short-1', 300, 50, 'Panel 150 Kısa Tek Sıra'],
-  ['wall_100_short_1', 'wall-short-1', 300, 50, 'Panel 100 Kısa Tek Sıra'],
-  ['wall_50_short_1', 'wall-short-1', 300, 50, 'Panel 50 Kısa Tek Sıra'],
-  ['wall_200_short_2', 'wall-short-2', 250, 100, 'Panel 200 Kısa Çift Sıra'],
-  ['wall_150_short_2', 'wall-short-2', 250, 100, 'Panel 150 Kısa Çift Sıra'],
-  ['wall_100_short_2', 'wall-short-2', 250, 100, 'Panel 100 Kısa Çift Sıra'],
-  ['wall_50_short_2', 'wall-short-2', 250, 100, 'Panel 50 Kısa Çift Sıra'],
+  ['wall_200_short_1', 'wall-short-1', 300, 50, 'Panel Tek Sıra 200'],
+  ['wall_150_short_1', 'wall-short-1', 300, 50, 'Panel Tek Sıra 150'],
+  ['wall_100_short_1', 'wall-short-1', 300, 50, 'Panel Tek Sıra 100'],
+  ['wall_50_short_1', 'wall-short-1', 300, 50, 'Panel Tek Sıra 50'],
+  ['wall_200_short_2', 'wall-short-2', 250, 100, 'Panel Çift Sıra 200'],
+  ['wall_150_short_2', 'wall-short-2', 250, 100, 'Panel Çift Sıra 150'],
+  ['wall_100_short_2', 'wall-short-2', 250, 100, 'Panel Çift Sıra 100'],
+  ['wall_50_short_2', 'wall-short-2', 250, 100, 'Panel Çift Sıra 50'],
 ]);
+
+// Katalogda varyant başına tek kart (migration 0079); diğer genişlikler genişlik penceresinden gelir.
+const CATALOG_CARDS = new Set(['wall_100_short_1', 'wall_100_short_2']);
 
 const LEGACY_KEYS = Object.freeze({
   wall_200_short_up_1: 'wall_200_short_1',
@@ -68,7 +71,7 @@ test('catalog resolves 8 wall-short item keys and does not register legacy keys'
     const scene = resolveSceneDimensions(item);
     assert.equal(scene.heightCm, heightCm);
     assert.equal(scene.depthCm, 10);
-    assert.equal(getCatalogItem(itemKey)?.itemKey, itemKey);
+    assert.equal(getCatalogItem(itemKey)?.itemKey ?? null, CATALOG_CARDS.has(itemKey) ? itemKey : null);
     assert.equal(isWallShortFamilyDescriptor(item), true);
   }
   for (const legacyKey of Object.keys(LEGACY_KEYS)) {

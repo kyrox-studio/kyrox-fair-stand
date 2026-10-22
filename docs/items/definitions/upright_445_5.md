@@ -2,7 +2,7 @@
 
 ## Kanonik kimlik
 - `itemKey`: `upright_445_5`
-- `name`: `Dikme 445,5 cm`
+- `name`: `Dikme 445,5`
 - `type`: `upright`
 - `unit`: `adet`
 - structure: Tekil Item, katalogda gizli
@@ -20,5 +20,5 @@ Leaf BOM Item. 450 cm düz duvarda (`wall_*_450`, `0068` kuralıyla türetilir) 
 ## Regresyon sözleşmesi
 `test/wallHeightRecipe.test.js`, `test/wallHeightRelationshipBom.test.js`, `e2e/wall-height.spec.mjs`.
 
-## Parça bölünüşü (2026-10-22, migration `0079_item_length_parts`)
+## Parça bölünüşü (2026-10-22, migration `0080_item_length_parts`)
 Üretim listesinde satır tek kalır, adın yanına bölünüş yazılır: 346,5 + 99 (`upright_346_5` + `upright_99`). Kaynak `fair_stand_item_length_parts` (sıralı); BOM miktarı, reçete ve maliyet değişmez (`src/items.js > formatItemLengthParts`).

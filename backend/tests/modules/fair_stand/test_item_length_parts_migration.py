@@ -1,4 +1,4 @@
-"""0079: uzun profil/dikmenin sıralı parça bölünüşü (yalnız BOM etiketi) ve profile_8."""
+"""0080: uzun profil/dikmenin sıralı parça bölünüşü (yalnız BOM etiketi) ve profile_8."""
 
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
@@ -19,7 +19,7 @@ _EXPECTED = {
 
 
 def _migration():
-    path = Path(__file__).resolve().parents[3] / "alembic/versions/0079_item_length_parts.py"
+    path = Path(__file__).resolve().parents[3] / "alembic/versions/0080_item_length_parts.py"
     spec = spec_from_file_location("item_length_parts_migration", path)
     module = module_from_spec(spec)
     spec.loader.exec_module(module)

@@ -77,7 +77,7 @@ test('expanded recipe resolves upright_346_5 metadata through canonical itemKey'
 
   assert.ok(upright);
   assert.equal(upright.part.itemKey, 'upright_346_5');
-  assert.equal(upright.part.name, 'Dikme 346,5 cm');
+  assert.equal(upright.part.name, 'Dikme 346,5');
   assert.equal(upright.part.unit, 'adet');
   assert.deepEqual(upright.part.dimensions, UPRIGHT_346_5_DIMS);
 });
