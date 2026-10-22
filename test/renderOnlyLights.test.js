@@ -17,12 +17,23 @@ test('projector and shelf spots are render-only; stand-top spot has its own stag
   assert.doesNotMatch(apply, /RENDER_ONLY_LIGHT_LAYER/);
 });
 
-test('Sahne Işığı preview is a session-only toggle that dims ambient light and restores editor values', () => {
+test('Sahne Işığı preview is a session-only toggle that inverts ambient light and restores editor values', () => {
   const apply = scene.slice(scene.indexOf('function applyStageLighting('), scene.indexOf('function setStageLightPreview('));
   assert.match(apply, /\[perspectiveCamera, orthographicCamera\]\.forEach/);
-  assert.match(apply, /hemisphereLight\.intensity = editorLightIntensity\.hemisphere \* \(enabled \? RENDER_AMBIENT_DIM\.hemisphere : 1\);/);
-  assert.match(apply, /keyLight\.intensity = editorLightIntensity\.key \* \(enabled \? RENDER_AMBIENT_DIM\.key : 1\);/);
-  assert.match(scene, /const editorLightIntensity = Object\.freeze\(\{ hemisphere: hemisphereLight\.intensity, key: keyLight\.intensity \}\);/);
+  // Açıkken ortam ışığı ters: gök (zemin) koyu, yer (alt yüzler) açık; dikey yüzler (alınlık) aydınlık kalır.
+  assert.match(apply, /hemisphereLight\.color\.setScalar\(STAGE_HEMISPHERE\.sky\);/);
+  assert.match(apply, /hemisphereLight\.groundColor\.setScalar\(STAGE_HEMISPHERE\.ground\);/);
+  assert.match(apply, /hemisphereLight\.intensity = STAGE_HEMISPHERE\.intensity;/);
+  const hemisphere = scene.match(/const STAGE_HEMISPHERE = Object\.freeze\(\{ sky: ([\d.]+), ground: ([\d.]+), intensity: ([\d.]+) \}\);/);
+  assert.ok(hemisphere);
+  assert.ok(Number(hemisphere[1]) < Number(hemisphere[2]), 'gök rengi yer renginden koyu olmalı');
+  // Kapalıyken editörün kendi değerleri geri gelir.
+  assert.match(apply, /hemisphereLight\.color\.copy\(editorHemisphere\.sky\);/);
+  assert.match(apply, /hemisphereLight\.groundColor\.copy\(editorHemisphere\.ground\);/);
+  assert.match(apply, /hemisphereLight\.intensity = editorHemisphere\.intensity;/);
+  // Editörde sahne ışığı açıkken ana ışık kapalı; Render Al'da gölge için kısılarak yanar.
+  assert.match(apply, /keyLight\.visible = !enabled \|\| forRender;/);
+  assert.match(apply, /keyLight\.intensity = editorKeyIntensity \* \(enabled && forRender \? RENDER_KEY_LIGHT_DIM : 1\);/);
   // Varsayılan açık ve sahne kurulurken uygulanır.
   assert.match(scene, /let stageLightPreview = true;/);
   assert.match(scene, /^  applyStageLighting\(stageLightPreview\);\r?$/m);
@@ -47,15 +58,15 @@ test('stand-top spot drops a soft pool over the stand without casting shadows', 
 
 test('Render Al turns stage lighting on while drawing and returns to the preview state', () => {
   const capture = scene.slice(scene.indexOf('async function captureCurrentViewPng'), scene.indexOf('async function captureCurrentViewPng') + 5000);
-  const on = capture.indexOf('applyStageLighting(true);');
+  const on = capture.indexOf('applyStageLighting(true, { forRender: true });');
   const draw = capture.indexOf('renderer.render(scene, camera);');
   assert.ok(on > 0 && on < draw);
   const restore = capture.slice(capture.indexOf('} finally {'));
   assert.match(restore, /applyStageLighting\(stageLightPreview\);/);
-  // Kısma oranları ışığı söndürmez, yalnız azaltır.
-  const dim = scene.match(/const RENDER_AMBIENT_DIM = Object\.freeze\(\{ hemisphere: ([\d.]+), key: ([\d.]+) \}\);/);
+  // Kısma oranı ışığı söndürmez, yalnız azaltır.
+  const dim = scene.match(/const RENDER_KEY_LIGHT_DIM = ([\d.]+);/);
   assert.ok(dim);
-  [dim[1], dim[2]].map(Number).forEach((ratio) => assert.ok(ratio > 0 && ratio < 1));
+  assert.ok(Number(dim[1]) > 0 && Number(dim[1]) < 1);
 });
 
 test('editor draws without shadows and render-only lights; Render Al turns both on and back off', () => {
@@ -88,16 +99,12 @@ test('Render Al shows the loading screen before the heavy draw and hides it afte
   assert.match(handler.slice(handler.indexOf('} finally {')), /projectLoading\.hide\(\);/);
 });
 
-test('stage fill lights are horizontal, shadowless and live on the stage layer', () => {
-  assert.match(scene, /const STAGE_FILL_LIGHT = Object\.freeze\(\{/);
-  assert.match(scene, /fillLight\.castShadow = false;/);
-  assert.match(scene, /fillLight\.layers\.set\(STAGE_LIGHT_LAYER\);/);
-  // Projektör/raf altı katmanında başka DirectionalLight yok.
-  assert.doesNotMatch(scene, /fillLight\.layers\.set\(RENDER_ONLY_LIGHT_LAYER\)/);
-  const aim = scene.slice(scene.indexOf('function aimKeyLightAtStand('), scene.indexOf('shadowCamera.updateProjectionMatrix();'));
-  // Kaynak ve hedef aynı yükseklikte: ışık tam yatay, zemine düşmez.
-  assert.match(aim, /fillLight\.position\.set\(centerX \+ direction\.x \* 10, STAGE_FILL_LIGHT\.heightM, centerZ \+ direction\.z \* 10\);/);
-  assert.match(aim, /fillLight\.target\.position\.set\(centerX, STAGE_FILL_LIGHT\.heightM, centerZ\);/);
+test('editor light budget: only one DirectionalLight (key); stage light adds no light in the editor', () => {
+  // Her ışık her pikselde maliyettir; yavaş cihazda (tablet) dokunma gecikir. Sahne ışığı açık editörde
+  // ışık sayısı kapalı editörle aynıdır: ortam + tepe spotu (ana ışık kapalı).
+  assert.equal((scene.match(/new THREE\.DirectionalLight\(/g) ?? []).length, 1);
+  assert.equal((scene.match(/new THREE\.HemisphereLight\(/g) ?? []).length, 1);
+  assert.doesNotMatch(scene, /STAGE_FILL_LIGHT|fillLight/);
 });
 
 test('auto fascia panels get a light backing body; other panels keep the dark body', () => {

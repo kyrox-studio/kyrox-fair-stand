@@ -265,16 +265,14 @@ const STAND_TOP_SPOT = Object.freeze({
 // arasında). Sabit 0.05 m'de derinlik hassasiyeti ~50 m'de 3 mm'ye düşer; panel yüzü ile gövde
 // arasındaki 3 mm boşluk uzaktan titrer (z-fighting). Uzaklaşınca near büyür, yakında 0.05 kalır.
 const PERSPECTIVE_NEAR = Object.freeze({ ratio: 0.01, minM: 0.05, maxM: 1 });
-// Sahne ışığında koridor dolgusu: tam yatay iki çapraz yönlü ışık (ön-sağ, arka-sol). Tepe spotu
-// dışa bakan alınlık yüzüne arkadan vurur; dolgu bu dikey yüzleri aydınlatır, yatay olduğu için
-// zemine düşmez (havuz ve karanlık hol bozulmaz). Gölge atmaz.
-const STAGE_FILL_LIGHT = Object.freeze({
-  intensity: 3,
-  heightM: 2,
-  directions: Object.freeze([Object.freeze({ x: 1, z: 1 }), Object.freeze({ x: -1, z: -1 })]),
-});
-// Render Al çizerken ortam ve ana ışık bu oranlara kısılır; zıtlık ve havuz belirginleşir.
-const RENDER_AMBIENT_DIM = Object.freeze({ hemisphere: 0.35, key: 0.45 });
+// Sahne ışığında ortam ışığı (hemisphere) ters çevrilir: gök rengi (zemine düşer) koyu, yer rengi
+// (yere bakan yüzlere düşer) açık. Dikey yüzler ikisinin ortalamasını alır; alınlık gibi dışa bakan
+// yüzler aydınlık kalır, zemin ve hol karanlıktır. Ek ışık yoktur (her ışık her pikselde maliyettir;
+// yavaş cihazda dokunma gecikir). Renkler doğrusal (linear) çarpandır.
+const STAGE_HEMISPHERE = Object.freeze({ sky: 0.23, ground: 1, intensity: 5.3 });
+// Render Al'da ana ışık gölge için yanar ve bu orana kısılır; editör sahne ışığında ana ışık kapalıdır
+// (tepeden ışığı spot verir, ışık sayısı sahne ışığı kapalı editörle aynı kalır).
+const RENDER_KEY_LIGHT_DIM = 0.45;
 // Ölçü katmanı renkleri: taban alanı turuncu kesikli, kenar uzaklığı mavi.
 const MEASURE_FOOTPRINT_COLOR = 0xf97316;
 const MEASURE_DISTANCE_COLOR = 0x2563eb;
@@ -765,26 +763,33 @@ export function createStandScene(
   standTopSpot.layers.set(STAGE_LIGHT_LAYER);
   scene.add(standTopSpot, standTopSpot.target);
 
-  const stageFillLights = STAGE_FILL_LIGHT.directions.map(() => {
-    const fillLight = new THREE.DirectionalLight(0xffffff, STAGE_FILL_LIGHT.intensity);
-    fillLight.castShadow = false;
-    fillLight.layers.set(STAGE_LIGHT_LAYER);
-    scene.add(fillLight, fillLight.target);
-    return fillLight;
+  // Sahne ışığı: tepe spotu yanar, ortam ışığı ters çevrilir (STAGE_HEMISPHERE). Editörde ana ışık
+  // kapanır; Render Al'da (forRender) gölge için RENDER_KEY_LIGHT_DIM oranında yanar. Kapalıyken
+  // editörün kendi ışık değerleri geri gelir. İki kamera da aynı katmanı görür.
+  const editorHemisphere = Object.freeze({
+    sky: hemisphereLight.color.clone(),
+    ground: hemisphereLight.groundColor.clone(),
+    intensity: hemisphereLight.intensity,
   });
-
-  // Sahne ışığı: tepe spotu yanar, ortam ve ana ışık RENDER_AMBIENT_DIM oranlarına kısılır.
-  // Kapalıyken editörün kendi ışık değerleri geri gelir. İki kamera da aynı katmanı görür.
-  const editorLightIntensity = Object.freeze({ hemisphere: hemisphereLight.intensity, key: keyLight.intensity });
+  const editorKeyIntensity = keyLight.intensity;
   // Varsayılan açık: editör sahne ışığıyla açılır; Sahne Işığı düğmesi oturum boyunca kapatabilir.
   let stageLightPreview = true;
-  function applyStageLighting(enabled) {
+  function applyStageLighting(enabled, { forRender = false } = {}) {
     [perspectiveCamera, orthographicCamera].forEach((viewCamera) => {
       if (enabled) viewCamera.layers.enable(STAGE_LIGHT_LAYER);
       else viewCamera.layers.disable(STAGE_LIGHT_LAYER);
     });
-    hemisphereLight.intensity = editorLightIntensity.hemisphere * (enabled ? RENDER_AMBIENT_DIM.hemisphere : 1);
-    keyLight.intensity = editorLightIntensity.key * (enabled ? RENDER_AMBIENT_DIM.key : 1);
+    if (enabled) {
+      hemisphereLight.color.setScalar(STAGE_HEMISPHERE.sky);
+      hemisphereLight.groundColor.setScalar(STAGE_HEMISPHERE.ground);
+      hemisphereLight.intensity = STAGE_HEMISPHERE.intensity;
+    } else {
+      hemisphereLight.color.copy(editorHemisphere.sky);
+      hemisphereLight.groundColor.copy(editorHemisphere.ground);
+      hemisphereLight.intensity = editorHemisphere.intensity;
+    }
+    keyLight.visible = !enabled || forRender;
+    keyLight.intensity = editorKeyIntensity * (enabled && forRender ? RENDER_KEY_LIGHT_DIM : 1);
   }
   applyStageLighting(stageLightPreview);
 
@@ -805,13 +810,6 @@ export function createStandScene(
     standTopSpot.target.position.set(centerX, 0, centerZ);
     standTopSpot.target.updateMatrixWorld();
     standTopSpot.angle = Math.atan(poolRadiusM / STAND_TOP_SPOT.heightM);
-    // Dolgu ışığı kaynağı ve hedefi aynı yükseklikte: ışık tam yatay gelir.
-    stageFillLights.forEach((fillLight, index) => {
-      const direction = STAGE_FILL_LIGHT.directions[index];
-      fillLight.position.set(centerX + direction.x * 10, STAGE_FILL_LIGHT.heightM, centerZ + direction.z * 10);
-      fillLight.target.position.set(centerX, STAGE_FILL_LIGHT.heightM, centerZ);
-      fillLight.target.updateMatrixWorld();
-    });
     keyLight.position.set(centerX + KEY_LIGHT_OFFSET.x, KEY_LIGHT_OFFSET.y, centerZ + KEY_LIGHT_OFFSET.z);
     keyLight.target.position.set(centerX, 0, centerZ);
     keyLight.target.updateMatrixWorld();
@@ -7267,7 +7265,7 @@ export function createStandScene(
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.needsUpdate = true;
       camera.layers.enable(RENDER_ONLY_LIGHT_LAYER);
-      applyStageLighting(true);
+      applyStageLighting(true, { forRender: true });
       renderTransmissionMaterials.forEach((material) => { material.transmission = material.userData.renderTransmission; });
       renderer.render(scene, camera);
 
