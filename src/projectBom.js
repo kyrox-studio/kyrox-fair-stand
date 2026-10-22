@@ -74,6 +74,7 @@ function resolveModuleEntry(moduleState, index, {
   swapCornerPanels = false,
   swapBands = null,
   swapBackPanels = false,
+  swapBackBands = null,
 } = {}) {
   const moduleId = moduleState?.id ?? null;
   const itemKey = moduleState?.itemKey ?? null;
@@ -129,7 +130,9 @@ function resolveModuleEntry(moduleState, index, {
     // Arka yüz panelleri: bant başına bir panel; arka yüz köşede ise köşe paneline döner.
     const backCollected = collectBackPanelSurfaces(moduleState);
     if (backCollected.length) {
-      const backSurfaces = swapBackPanels ? applyCornerPanelSwapToSurfaces(backCollected) : backCollected;
+      let backSurfaces = backCollected;
+      if (swapBackPanels) backSurfaces = applyCornerPanelSwapToSurfaces(backCollected);
+      else if (swapBackBands?.length) backSurfaces = applyCornerPanelBandSwap([], backCollected, swapBackBands).surfaces;
       lines = mergeBomLines(lines, panelLinesFromSurfaces(backSurfaces));
       surfaces = [...surfaces, ...backSurfaces];
     }
@@ -311,23 +314,32 @@ export function resolveProjectBom(modules = [], stand = null, assetNames = null)
     for (const moduleId of preview.swapModuleIds) swapIds.add(moduleId);
   }
   const backSwapIds = new Set(preview.appliedJointCount > 0 ? preview.backSwapModuleIds ?? [] : []);
+  for (const moduleId of wallShort.backSwapModuleIds ?? []) backSwapIds.add(moduleId);
+  const backBandsByModule = new Map();
+  for (const entry of wallShort.backPanelSwaps ?? []) {
+    if (backSwapIds.has(entry.moduleId)) continue;
+    backBandsByModule.set(entry.moduleId, entry.bands);
+  }
   const bandByModule = new Map();
   for (const entry of wallShort.panelSwaps ?? []) {
     if (swapIds.has(entry.moduleId)) continue;
     bandByModule.set(entry.moduleId, entry.bands);
   }
-  if (swapIds.size > 0 || bandByModule.size > 0 || backSwapIds.size > 0) {
+  if (swapIds.size > 0 || bandByModule.size > 0 || backSwapIds.size > 0 || backBandsByModule.size > 0) {
     moduleEntries = list.map((moduleState, index) => {
       const moduleId = moduleIdentity(moduleState, index);
       const swapBackPanels = backSwapIds.has(moduleId);
+      const swapBackBands = backBandsByModule.get(moduleId) ?? null;
       if (swapIds.has(moduleId)) {
-        return resolveModuleEntry(moduleState, index, { swapCornerPanels: true, swapBackPanels });
+        return resolveModuleEntry(moduleState, index, { swapCornerPanels: true, swapBackPanels, swapBackBands });
       }
       const bands = bandByModule.get(moduleId);
       if (bands?.length) {
-        return resolveModuleEntry(moduleState, index, { swapBands: bands, swapBackPanels });
+        return resolveModuleEntry(moduleState, index, { swapBands: bands, swapBackPanels, swapBackBands });
       }
-      if (swapBackPanels) return resolveModuleEntry(moduleState, index, { swapBackPanels });
+      if (swapBackPanels || swapBackBands?.length) {
+        return resolveModuleEntry(moduleState, index, { swapBackPanels, swapBackBands });
+      }
       return moduleEntries[index];
     });
   }

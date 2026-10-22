@@ -1532,6 +1532,8 @@ function createDeltaBook() {
   const deltas = new Map();
   const swapModuleIds = [];
   const panelSwaps = [];
+  const backSwapModuleIds = [];
+  const backPanelSwaps = [];
   const moduleCharges = new Map();
   let jointCount = 0;
   let railCount = 0;
@@ -1564,6 +1566,8 @@ function createDeltaBook() {
     deltas,
     swapModuleIds,
     panelSwaps,
+    backSwapModuleIds,
+    backPanelSwaps,
     moduleCharges,
     add,
     charge,
@@ -1628,6 +1632,10 @@ function applyCornerShortJoint(book, a, b, geometry) {
   if (unitsB) book.charge(b.moduleId, -unitsB, unitsB);
   if (payA) noteCornerPanels(book, a, b);
   if (payB) noteCornerPanels(book, b, a);
+  // Arka yüz paneli (`backStrips`): tam boy köşe kuralıyla aynı — partner gövdesi arka yüzdeyse
+  // arka paneller köşe paneline döner; aparat yalnız ön yüz kuralıyla kalır.
+  if (partnerOnBack(a, b, geometry.point)) noteBackCornerPanels(book, a, b);
+  if (partnerOnBack(b, a, geometry.point)) noteBackCornerPanels(book, b, a);
   book.noteJoint();
 }
 
@@ -1647,6 +1655,8 @@ function applyTeeShortJoint(book, branch, host, geometry) {
     book.charge(branch.moduleId, -1, 1);
   }
   if (branchPays) noteCornerPanels(book, branch, host);
+  // T'de gövdeye dikilen kolun arka yüzü de köşededir (tam boy T kuralı).
+  if (partnerOnBack(branch, host, geometry.point)) noteBackCornerPanels(book, branch, host);
   book.noteJoint();
 }
 
@@ -1659,6 +1669,17 @@ function noteCornerPanels(book, frame, partner) {
   const bands = overlappingPanelBands(frame, partner.z);
   if (!bands.length) return;
   book.panelSwaps.push({ moduleId: frame.moduleId, bands });
+}
+
+function noteBackCornerPanels(book, frame, partner) {
+  if (!swapsCornerPanels(frame)) return;
+  if (frame.kind === 'short' || partner?.kind !== 'short') {
+    book.backSwapModuleIds.push(frame.moduleId);
+    return;
+  }
+  const bands = overlappingPanelBands(frame, partner.z);
+  if (!bands.length) return;
+  book.backPanelSwaps.push({ moduleId: frame.moduleId, bands });
 }
 
 function applyProfileRail(book, wall, profile) {
@@ -1779,6 +1800,8 @@ export function planWallShortRelationshipBom(modules = []) {
     deltas: deltasFromBook(book),
     swapModuleIds: Object.freeze([...new Set(book.swapModuleIds)]),
     panelSwaps: Object.freeze(mergePanelSwaps(book.panelSwaps)),
+    backSwapModuleIds: Object.freeze([...new Set(book.backSwapModuleIds)]),
+    backPanelSwaps: Object.freeze(mergePanelSwaps(book.backPanelSwaps)),
     moduleCharges: Object.freeze([...book.moduleCharges.values()].map((charge) => Object.freeze({ ...charge }))),
     jointCount: book.jointCount,
     railCount: book.railCount,
