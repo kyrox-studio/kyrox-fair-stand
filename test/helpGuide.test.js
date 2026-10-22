@@ -68,6 +68,9 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /<strong>Duvar yüksekliği<\/strong>ni seç \(250–500 cm, varsayılan 350;/);
   assert.match(guideSource, /Editörde ışık gölgesi, LED projektör ve raf altı aydınlatmanın panele düşen ışığı kapalıdır/);
   assert.match(guideSource, /<strong>Render Al<\/strong> çizerken gölgeyi, projektör ve raf altı ışıklarını açar/);
+  assert.match(guideSource, /standın tepesinde bir sahne spotu yanar ve ortam ışığı kısılır/);
+  assert.match(guideSource, /<strong>Sahne Işığı<\/strong>, Render Al’ın yanındadır/);
+  assert.match(guideSource, /Seçim oturumluktur, projeye kaydedilmez/);
   assert.match(guideSource, /sunucudaki görsel değişmediyse sonraki açılışta yeniden indirilmez/);
   assert.match(guideSource, /Duvara yapışmaz/);
   assert.match(guideSource, /Alt yüze görsel, Lightbox veya Mesh uygulanmaz/);

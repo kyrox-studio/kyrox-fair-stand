@@ -138,6 +138,13 @@ function moduleSurfaceColor(moduleState, item) {
   return itemDefaultColorCss(item ?? moduleState?.itemKey);
 }
 const PANEL_BACK_COLOR = 0x4b5563;
+// Otomatik alınlığın arka yüz paneli yok; içeriden gövde görünür. Gövde açık renk çizilir ki
+// alınlık içeriden koyu bir şerit gibi durmasın. Yalnız görünüm: BOM ve arka yüz paneli değişmez.
+const FASCIA_BACK_COLOR = 0xe5e7eb;
+
+function opaquePanelBackColor(moduleState) {
+  return moduleState?.autoFascia === true ? FASCIA_BACK_COLOR : PANEL_BACK_COLOR;
+}
 
 function panelFaceBackingMaterial(isGlass) {
   const glass = Boolean(isGlass);
@@ -245,6 +252,29 @@ const GRID_COLOR = 0x7f8994;
 const KEY_LIGHT_OFFSET = Object.freeze({ x: 1.2, y: 12, z: 3 });
 // Gölge kamerasının stand kenarından taşma payı (çevre şeridi + uzun gölgeler).
 const KEY_LIGHT_SHADOW_MARGIN_M = 2;
+// Render Al'da standın tepesindeki sahne spotu: zemine stand merkezli ışık havuzu düşürür,
+// havuz kenarı stand köşelerinin biraz dışında yumuşakça kararır. Gölge atmaz (gölge ana ışıkta).
+const STAND_TOP_SPOT = Object.freeze({
+  heightM: 9,
+  intensityCd: 400,
+  poolMarginM: 2,
+  penumbra: 0.75,
+  decay: 2,
+});
+// Perspektif kameranın yakın kesme mesafesi bakılan noktaya uzaklığın bu oranıdır (sınırlar
+// arasında). Sabit 0.05 m'de derinlik hassasiyeti ~50 m'de 3 mm'ye düşer; panel yüzü ile gövde
+// arasındaki 3 mm boşluk uzaktan titrer (z-fighting). Uzaklaşınca near büyür, yakında 0.05 kalır.
+const PERSPECTIVE_NEAR = Object.freeze({ ratio: 0.01, minM: 0.05, maxM: 1 });
+// Sahne ışığında koridor dolgusu: tam yatay iki çapraz yönlü ışık (ön-sağ, arka-sol). Tepe spotu
+// dışa bakan alınlık yüzüne arkadan vurur; dolgu bu dikey yüzleri aydınlatır, yatay olduğu için
+// zemine düşmez (havuz ve karanlık hol bozulmaz). Gölge atmaz.
+const STAGE_FILL_LIGHT = Object.freeze({
+  intensity: 3,
+  heightM: 2,
+  directions: Object.freeze([Object.freeze({ x: 1, z: 1 }), Object.freeze({ x: -1, z: -1 })]),
+});
+// Render Al çizerken ortam ve ana ışık bu oranlara kısılır; zıtlık ve havuz belirginleşir.
+const RENDER_AMBIENT_DIM = Object.freeze({ hemisphere: 0.35, key: 0.45 });
 // Ölçü katmanı renkleri: taban alanı turuncu kesikli, kenar uzaklığı mavi.
 const MEASURE_FOOTPRINT_COLOR = 0xf97316;
 const MEASURE_DISTANCE_COLOR = 0x2563eb;
@@ -386,6 +416,9 @@ function snapCollisionExemption(magneticSnap) {
 // pikselde hesaplanıp açılışı ve döndürmeyi ağırlaştırıyor, eklenince bütün malzemeleri yeniden
 // derletiyordu. Lens ve LED şerit gibi parlayan parçalar editörde görünür kalır.
 const RENDER_ONLY_LIGHT_LAYER = 1;
+// Stand tepe spotu kendi katmanındadır: Render Al'da ve editördeki Sahne Işığı önizlemesinde
+// yanar. Projektör ve raf altı ışıkları bu katmana girmez, editörde kapalı kalır.
+const STAGE_LIGHT_LAYER = 2;
 
 export function createStandScene(
   container,
@@ -647,6 +680,16 @@ export function createStandScene(
     orthographicCamera.updateProjectionMatrix();
   }
 
+  // Ortho kamerada derinlik doğrusaldır, near ayarı gerekmez.
+  function syncPerspectiveNear() {
+    if (camera !== perspectiveCamera) return;
+    const distanceM = perspectiveCamera.position.distanceTo(controls.target);
+    const nearM = THREE.MathUtils.clamp(distanceM * PERSPECTIVE_NEAR.ratio, PERSPECTIVE_NEAR.minM, PERSPECTIVE_NEAR.maxM);
+    if (Math.abs(nearM - perspectiveCamera.near) < 0.0001) return;
+    perspectiveCamera.near = nearM;
+    perspectiveCamera.updateProjectionMatrix();
+  }
+
   function updateCameraProjection(width, height) {
     const aspect = Math.max(1, width) / Math.max(1, height);
     perspectiveCamera.aspect = aspect;
@@ -696,7 +739,8 @@ export function createStandScene(
   projectionButtons.get('orthographic').addEventListener('click', () => setCameraMode('orthographic'), { signal });
   styleProjectionButtons();
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x7f8790, 2.1));
+  const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x7f8790, 2.1);
+  scene.add(hemisphereLight);
 
   // Ana ışık fuar holündeki gibi tepeden gelir (bkz. aimKeyLightAtStand); hafif öne eğik
   // olduğu için panel yüzleri de aydınlanır, gölge öğenin altına kısa düşer.
@@ -708,9 +752,66 @@ export function createStandScene(
   keyLight.shadow.mapSize.set(2048, 2048);
   scene.add(keyLight, keyLight.target);
 
+  // Render Al'da ve Sahne Işığı önizlemesinde yanar (STAGE_LIGHT_LAYER); kapalıyken editör aydınlık kalır.
+  const standTopSpot = new THREE.SpotLight(
+    0xfff6e8,
+    STAND_TOP_SPOT.intensityCd,
+    0,
+    Math.PI / 4,
+    STAND_TOP_SPOT.penumbra,
+    STAND_TOP_SPOT.decay,
+  );
+  standTopSpot.castShadow = false;
+  standTopSpot.layers.set(STAGE_LIGHT_LAYER);
+  scene.add(standTopSpot, standTopSpot.target);
+
+  const stageFillLights = STAGE_FILL_LIGHT.directions.map(() => {
+    const fillLight = new THREE.DirectionalLight(0xffffff, STAGE_FILL_LIGHT.intensity);
+    fillLight.castShadow = false;
+    fillLight.layers.set(STAGE_LIGHT_LAYER);
+    scene.add(fillLight, fillLight.target);
+    return fillLight;
+  });
+
+  // Sahne ışığı: tepe spotu yanar, ortam ve ana ışık RENDER_AMBIENT_DIM oranlarına kısılır.
+  // Kapalıyken editörün kendi ışık değerleri geri gelir. İki kamera da aynı katmanı görür.
+  const editorLightIntensity = Object.freeze({ hemisphere: hemisphereLight.intensity, key: keyLight.intensity });
+  // Varsayılan açık: editör sahne ışığıyla açılır; Sahne Işığı düğmesi oturum boyunca kapatabilir.
+  let stageLightPreview = true;
+  function applyStageLighting(enabled) {
+    [perspectiveCamera, orthographicCamera].forEach((viewCamera) => {
+      if (enabled) viewCamera.layers.enable(STAGE_LIGHT_LAYER);
+      else viewCamera.layers.disable(STAGE_LIGHT_LAYER);
+    });
+    hemisphereLight.intensity = editorLightIntensity.hemisphere * (enabled ? RENDER_AMBIENT_DIM.hemisphere : 1);
+    keyLight.intensity = editorLightIntensity.key * (enabled ? RENDER_AMBIENT_DIM.key : 1);
+  }
+  applyStageLighting(stageLightPreview);
+
+  // Oturumluk editör önizlemesi; projeye kaydedilmez.
+  function setStageLightPreview(enabled) {
+    stageLightPreview = Boolean(enabled);
+    applyStageLighting(stageLightPreview);
+    requestEditorRender();
+    return stageLightPreview;
+  }
+
   function aimKeyLightAtStand(widthM, depthM) {
     const centerX = widthM / 2;
     const centerZ = depthM / 2;
+    // Spot koni yarıçapı zeminde stand köşegeninin yarısı + pay olur; havuz her ölçüde standı kaplar.
+    const poolRadiusM = Math.hypot(widthM, depthM) / 2 + STAND_TOP_SPOT.poolMarginM;
+    standTopSpot.position.set(centerX, STAND_TOP_SPOT.heightM, centerZ);
+    standTopSpot.target.position.set(centerX, 0, centerZ);
+    standTopSpot.target.updateMatrixWorld();
+    standTopSpot.angle = Math.atan(poolRadiusM / STAND_TOP_SPOT.heightM);
+    // Dolgu ışığı kaynağı ve hedefi aynı yükseklikte: ışık tam yatay gelir.
+    stageFillLights.forEach((fillLight, index) => {
+      const direction = STAGE_FILL_LIGHT.directions[index];
+      fillLight.position.set(centerX + direction.x * 10, STAGE_FILL_LIGHT.heightM, centerZ + direction.z * 10);
+      fillLight.target.position.set(centerX, STAGE_FILL_LIGHT.heightM, centerZ);
+      fillLight.target.updateMatrixWorld();
+    });
     keyLight.position.set(centerX + KEY_LIGHT_OFFSET.x, KEY_LIGHT_OFFSET.y, centerZ + KEY_LIGHT_OFFSET.z);
     keyLight.target.position.set(centerX, 0, centerZ);
     keyLight.target.updateMatrixWorld();
@@ -5175,7 +5276,7 @@ export function createStandScene(
         backing.material.opacity = glass ? PANEL_GLASS_BACKING_APPEARANCE.opacity : 1;
         backing.material.depthWrite = !glass;
         backing.material.roughness = glass ? PANEL_GLASS_BACKING_APPEARANCE.roughness : 0.74;
-        backing.material.color.set(glass ? PANEL_GLASS_BACKING_APPEARANCE.color : PANEL_BACK_COLOR);
+        backing.material.color.set(glass ? PANEL_GLASS_BACKING_APPEARANCE.color : (backing.userData.opaqueBackColor ?? PANEL_BACK_COLOR));
         backing.material.needsUpdate = true;
         backing.castShadow = !glass;
       }
@@ -7044,6 +7145,7 @@ export function createStandScene(
     const cameraChanged = !camera.position.equals(lastCubePosition)
       || !camera.quaternion.equals(lastCubeQuaternion);
     if (cameraChanged) {
+      syncPerspectiveNear();
       viewCube.update();
       lastCubePosition.copy(camera.position);
       lastCubeQuaternion.copy(camera.quaternion);
@@ -7165,6 +7267,7 @@ export function createStandScene(
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.needsUpdate = true;
       camera.layers.enable(RENDER_ONLY_LIGHT_LAYER);
+      applyStageLighting(true);
       renderTransmissionMaterials.forEach((material) => { material.transmission = material.userData.renderTransmission; });
       renderer.render(scene, camera);
 
@@ -7176,6 +7279,8 @@ export function createStandScene(
     } finally {
       renderer.shadowMap.enabled = false;
       camera.layers.disable(RENDER_ONLY_LIGHT_LAYER);
+      // Render öncesi önizleme açıksa açık, kapalıysa kapalı haline döner.
+      applyStageLighting(stageLightPreview);
       renderTransmissionMaterials.forEach((material) => { material.transmission = 0; });
       selectedFrames.forEach((frame, index) => { frame.visible = selectedVisibility[index]; });
       if (moduleSelectionFrame) moduleSelectionFrame.visible = moduleSelectionVisibility;
@@ -7246,6 +7351,7 @@ export function createStandScene(
 
   return {
     captureCurrentViewPng,
+    setStageLightPreview,
     requestRender: requestEditorRender,
     appendModule,
     removeModule,
@@ -10322,11 +10428,12 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
     );
     // Açıklık = modül sahne genişliği (wall item) − stand dikme kesiti. Yaprak panel ölçüsü mesh’i ezmez.
     const isGlass = Boolean(surfaceState.isGlass);
+    const opaqueBackColor = opaquePanelBackColor(moduleState);
 
     const backing = new THREE.Mesh(
       new THREE.BoxGeometry(innerWidth, panelHeight, panelDepth),
       new THREE.MeshStandardMaterial({
-        color: isGlass ? PANEL_GLASS_BACKING_APPEARANCE.color : PANEL_BACK_COLOR,
+        color: isGlass ? PANEL_GLASS_BACKING_APPEARANCE.color : opaqueBackColor,
         roughness: isGlass ? PANEL_GLASS_BACKING_APPEARANCE.roughness : 0.74,
         transparent: isGlass,
         opacity: isGlass ? PANEL_GLASS_BACKING_APPEARANCE.opacity : 1,
@@ -10334,6 +10441,8 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
       }),
     );
     backing.position.set(0, centerY, back ? -backingZ : backingZ);
+    // Cam kaldırılınca geri dönülecek opak gövde rengi.
+    backing.userData.opaqueBackColor = opaqueBackColor;
     backing.castShadow = !isGlass;
     backing.receiveShadow = true;
     group.add(backing);

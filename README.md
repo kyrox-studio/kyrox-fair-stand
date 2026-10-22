@@ -151,6 +151,12 @@ State construction'ın canonical sahibi `src/designState.js` ve ilgili state fac
 
 `src/scene3d.js` Three.js sahnesini ve module rendering akışını yönetir. Placement veya üretim kuralı renderer'ın tek sorumluluğu haline getirilmemelidir.
 
+Işık: editörde ortam (hemisphere) ve tepeden ana ışık (directional) yanar, gölge kapalıdır. Projektör ve raf altı spotları `RENDER_ONLY_LIGHT_LAYER` katmanındadır; yalnız **Render Al** (`captureCurrentViewPng`) çizerken açılır. Stand tepe spotu (`STAND_TOP_SPOT`, gölge atmaz) kendi `STAGE_LIGHT_LAYER` katmanındadır ve stand ölçüsüne göre zemine ışık havuzu düşürür. `applyStageLighting` bu katmanı açıp ortam ve ana ışığı `RENDER_AMBIENT_DIM` oranlarına kısar; Render Al çizerken her zaman, editörde varsayılan açıktır ve üst banttaki **Sahne Işığı** düğmesiyle (`setStageLightPreview`) kapatılabilir. Önizleme oturumluktur, projeye kaydedilmez; Render Al bitince önizlemenin son durumuna dönülür. Aynı katmanda iki tam yatay, gölgesiz dolgu ışığı (`STAGE_FILL_LIGHT`, ön-sağ ve arka-sol çapraz) dışa bakan dikey yüzleri (alınlık) aydınlatır; yatay olduğu için zemindeki havuzu değiştirmez.
+
+Alınlık gövdesi: otomatik alınlık panellerinin (`autoFascia`) arka yüz paneli yoktur; içeriden görünen gövde `FASCIA_BACK_COLOR` açık renkle çizilir (diğer panellerde `PANEL_BACK_COLOR`). Yalnız görünümdür; BOM ve arka yüz paneli değişmez.
+
+Kamera derinliği: perspektif kameranın `near` değeri bakılan noktaya uzaklığın %1'idir (`PERSPECTIVE_NEAR`, 0.05–1 m; `syncPerspectiveNear`). Sabit 0.05 m'de büyük standlarda uzak panellerin yüzü ile gövdesi arasındaki 3 mm boşluk titriyordu (z-fighting); yakın çekimde near 0.05 m kalır.
+
 ### Production / BOM
 
 - PostgreSQL `fair_stand` — Item master ve Item `composition` (reçete/part miktarı) verisi; Fair Stand API (`:8002`) üzerinden bootstrap edilir.
