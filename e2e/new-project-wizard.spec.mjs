@@ -233,7 +233,7 @@ for (const [rows, label, variant] of [['1', 'Tek sıra', 'short_1'], ['2', 'Çif
   });
 }
 
-test('wizard fascia 800 × 800: each open 8 m edge gets a middle upright (max 5 m span)', async ({ page }) => {
+test('wizard fascia 800 × 800: each open 8 m edge gets a middle upright (max 5 m span) and one profile per span', async ({ page }) => {
   await page.goto('/');
   const dialog = wizard(page);
   await dialog.getByRole('button', { name: 'L Stand Sol' }).click();
@@ -253,4 +253,12 @@ test('wizard fascia 800 × 800: each open 8 m edge gets a middle upright (max 5 
   expect(uprights).toEqual([[800, 400], [400, 800], [800, 800]]);
   const panels = fasciaModules.filter((module) => module.type !== 'upright');
   expect(panels.map((module) => module.itemKey)).toEqual(Array(8).fill('wall_200_short_1'));
+
+  // Profil dikmeden dikmeye tek parça: 4 açıklık × 400 cm, üst ve alt ray → 8 × profile_388.
+  await page.locator('#toggle-production-bom').click();
+  const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
+  await totals.locator('summary').click();
+  await expect(totals.locator('li', { hasText: /^8 × .* · profile_388$/ })).toHaveCount(1);
+  // profile_190 yalnız tam boy duvarlardan gelir; kısa panel başına 190'lar (16 adet daha) düşer.
+  await expect(totals.locator('li', { hasText: /^16 × .* · profile_190$/ })).toHaveCount(1);
 });

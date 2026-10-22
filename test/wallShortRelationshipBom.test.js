@@ -329,8 +329,10 @@ test('same-height wall shorts share one upright and one double', () => {
   assert.equal(qty(pair1, 'upright_49_5'), 3);
   assert.equal(qty(pair1, 'connector_single'), 4);
   assert.equal(qty(pair1, 'connector_double'), 1);
-  assert.equal(qty(pair1, 'profile_190'), 2);
-  assert.equal(qty(pair1, 'profile_140_5'), 2);
+  assert.equal(qty(pair1, 'profile_190'), 0);
+  assert.equal(qty(pair1, 'profile_140_5'), 0);
+  assert.equal(qty(pair1, 'profile_289'), 2);
+  assert.equal(qty(pair1, 'profile_41_5'), 2);
   assert.equal(qty(pair1, 'panel_197'), 1);
   assert.equal(qty(pair1, 'panel_147_5'), 1);
   const pair2 = resolveProjectBom([
@@ -340,6 +342,8 @@ test('same-height wall shorts share one upright and one double', () => {
   assert.equal(qty(pair2, 'upright_99'), 3);
   assert.equal(qty(pair2, 'connector_single'), 4);
   assert.equal(qty(pair2, 'connector_double'), 1);
+  assert.equal(qty(pair2, 'profile_91'), 0);
+  assert.equal(qty(pair2, 'profile_190'), 2);
   const corner = resolveProjectBom([
     short1('a', 'wall_100_short_1', { widthCm: 100 }),
     cornerPartner('b', 'wall_100_short_1', 100, { xCm: 100, zCm: 300, heightCm: 50 }),
@@ -863,4 +867,74 @@ test('save and load rebuild the same wall short relationship BOM from placement'
   for (const itemKey of ['upright_49_5', 'upright_346_5', 'connector_single', 'connector_double', 'connector_start']) {
     assert.equal(qty(after, itemKey), qty(before, itemKey), itemKey);
   }
+});
+
+function post(id, xCm, yCm) {
+  return frame(id, 'upright_346_5', { xCm, yCm, widthCm: 8, heightCm: 346.5 });
+}
+
+test('short run profiles span from support to support: L stand front scene', () => {
+  const bom = resolveProjectBom([
+    short1('r1', 'wall_200_short_1', { xCm: 950, yCm: 0, rotationZDeg: 90, widthCm: 200 }),
+    short1('r2', 'wall_200_short_1', { xCm: 950, yCm: 200, rotationZDeg: 90, widthCm: 200 }),
+    short1('r3', 'wall_200_short_1', { xCm: 950, yCm: 400, rotationZDeg: 90, widthCm: 200 }),
+    short1('r4', 'wall_200_short_1', { xCm: 950, yCm: 600, rotationZDeg: 90, widthCm: 200 }),
+    short1('f1', 'wall_200_short_1', { xCm: 0, yCm: 800, widthCm: 200 }),
+    short1('f2', 'wall_200_short_1', { xCm: 200, yCm: 800, widthCm: 200 }),
+    short1('f3', 'wall_100_short_1', { xCm: 400, yCm: 800, widthCm: 100 }),
+    short1('f4', 'wall_50_short_1', { xCm: 500, yCm: 800, widthCm: 50 }),
+    short1('f5', 'wall_200_short_1', { xCm: 550, yCm: 800, widthCm: 200 }),
+    short1('f6', 'wall_200_short_1', { xCm: 750, yCm: 800, widthCm: 200 }),
+    post('p1', 950, 400),
+    post('p2', 500, 800),
+    post('p3', 950, 800),
+  ]);
+  // 950 hattı: 0–400 ve 400–800 → 388; 800 hattı: 0–500 → 487, 500–950 → 388 + 41,5. İki ray.
+  assert.equal(qty(bom, 'profile_388'), 6);
+  assert.equal(qty(bom, 'profile_487'), 2);
+  assert.equal(qty(bom, 'profile_41_5'), 2);
+  assert.equal(qty(bom, 'profile_190'), 0);
+  assert.equal(qty(bom, 'profile_91'), 0);
+  assert.ok(bom.relationshipNotes.includes('Kısa panel profil birleşimi: 8 açıklık.'));
+});
+
+test('short run without a support takes the longest profile plus the rest', () => {
+  const bom = resolveProjectBom([0, 200, 400, 600].map((xCm, index) => (
+    short2(`s${index}`, 'wall_200_short_2', { xCm, widthCm: 200 })
+  )));
+  assert.equal(qty(bom, 'profile_487'), 2);
+  assert.equal(qty(bom, 'profile_289'), 2);
+  assert.equal(qty(bom, 'profile_190'), 0);
+});
+
+test('short run splits at a full-height partner end and at a field upright', () => {
+  const wallEnd = resolveProjectBom([
+    short1('a', 'wall_200_short_1', { widthCm: 200 }),
+    short1('b', 'wall_200_short_1', { xCm: 200, widthCm: 200 }),
+    frame('w', 'wall_100_350', { xCm: 200, yCm: 0, rotationZDeg: 270, widthCm: 100, heightCm: 350 }),
+  ]);
+  assert.equal(qty(wallEnd, 'profile_190'), 4);
+  assert.equal(qty(wallEnd, 'profile_388'), 0);
+  const posted = resolveProjectBom([
+    short1('a', 'wall_200_short_1', { widthCm: 200 }),
+    short1('b', 'wall_200_short_1', { xCm: 200, widthCm: 200 }),
+    post('p', 196, 0),
+  ]);
+  assert.equal(qty(posted, 'profile_190'), 4);
+  assert.equal(qty(posted, 'profile_388'), 0);
+});
+
+test('single and double row shorts side by side share only the aligned top rail', () => {
+  const bom = resolveProjectBom([
+    short1('one', 'wall_200_short_1', { widthCm: 200 }),
+    short2('two', 'wall_200_short_2', { xCm: 200, widthCm: 200 }),
+  ]);
+  assert.equal(qty(bom, 'profile_388'), 1);
+  assert.equal(qty(bom, 'profile_190'), 2);
+});
+
+test('a lone short keeps its own rails', () => {
+  const bom = resolveProjectBom([short1('a', 'wall_200_short_1', { widthCm: 200 })]);
+  assert.equal(qty(bom, 'profile_190'), 2);
+  assert.equal(bom.relationshipNotes.some((note) => note.includes('profil birleşimi')), false);
 });
