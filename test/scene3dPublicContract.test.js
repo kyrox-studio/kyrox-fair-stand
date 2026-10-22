@@ -7,6 +7,7 @@ const mainSource = readFileSync(new URL('../src/main.js', import.meta.url), 'utf
 
 const CREATE_STAND_SCENE_PUBLIC_METHODS = Object.freeze([
   'captureCurrentViewPng',
+  'setStageLightPreview',
   'requestRender',
   'appendModule',
   'removeModule',

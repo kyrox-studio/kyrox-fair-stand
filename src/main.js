@@ -226,6 +226,7 @@ const viewportToolbar = document.querySelector('#viewport-toolbar');
 const viewportToolbarToggle = document.querySelector('#viewport-toolbar-toggle');
 const toggleProductionBomButton = document.querySelector('#toggle-production-bom');
 const renderCurrentViewButton = document.querySelector('#render-current-view');
+const toggleStageLightButton = document.querySelector('#toggle-stage-light');
 const designUndoButton = document.querySelector('#design-undo');
 const designRedoButton = document.querySelector('#design-redo');
 const standTypeButtons = [...document.querySelectorAll('[data-stand-type]')];
@@ -438,6 +439,13 @@ const scene3d = createStandScene(
   },
   (anchor) => selectionToolbar?.update(anchor),
 );
+
+// Sahne Işığı: oturumluk editör önizlemesi; projeye kaydedilmez, sayfa açılışında açıktır.
+toggleStageLightButton?.addEventListener('click', () => {
+  const enabled = scene3d.setStageLightPreview(toggleStageLightButton.getAttribute('aria-pressed') !== 'true');
+  toggleStageLightButton.setAttribute('aria-pressed', String(enabled));
+  toggleStageLightButton.classList.toggle('is-active', enabled);
+});
 
 // Seçili modülün üstündeki işlem çubuğu (tablette sağ tık yerine geçer).
 const selectionToolbar = createSelectionToolbar({

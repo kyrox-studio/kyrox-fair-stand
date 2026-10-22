@@ -4,11 +4,90 @@ import { readFileSync } from 'node:fs';
 
 const scene = readFileSync(new URL('../src/scene3d.js', import.meta.url), 'utf8');
 
-test('projector and shelf spot lights live on the render-only layer', () => {
+test('projector and shelf spots are render-only; stand-top spot has its own stage layer', () => {
   assert.match(scene, /const RENDER_ONLY_LIGHT_LAYER = 1;/);
-  assert.equal((scene.match(/spot\.layers\.set\(RENDER_ONLY_LIGHT_LAYER\);/g) ?? []).length, 2);
-  // Editörde başka gerçek spot ışık yok: her SpotLight bu katmana alınır.
-  assert.equal((scene.match(/new THREE\.SpotLight\(/g) ?? []).length, 2);
+  assert.match(scene, /const STAGE_LIGHT_LAYER = 2;/);
+  assert.equal((scene.match(/ spot\.layers\.set\(RENDER_ONLY_LIGHT_LAYER\);/g) ?? []).length, 2);
+  assert.equal((scene.match(/standTopSpot\.layers\.set\(STAGE_LIGHT_LAYER\);/g) ?? []).length, 1);
+  // Başka gerçek spot ışık yok: her SpotLight editör kamerasının varsayılan katmanı dışındadır.
+  assert.equal((scene.match(/new THREE\.SpotLight\(/g) ?? []).length, 3);
+  // Sahne Işığı önizlemesi yalnız tepe spotu katmanını açar; projektör/raf altı katmanı editörde kapalı.
+  const apply = scene.slice(scene.indexOf('function applyStageLighting('), scene.indexOf('function setStageLightPreview('));
+  assert.match(apply, /viewCamera\.layers\.enable\(STAGE_LIGHT_LAYER\)/);
+  assert.doesNotMatch(apply, /RENDER_ONLY_LIGHT_LAYER/);
+});
+
+test('Sahne Işığı preview is a session-only toggle that inverts ambient light and restores editor values', () => {
+  const apply = scene.slice(scene.indexOf('function applyStageLighting('), scene.indexOf('function setStageLightPreview('));
+  assert.match(apply, /\[perspectiveCamera, orthographicCamera\]\.forEach/);
+  // Açıkken ortam ışığı ters: gök (zemin) koyu, yer (alt yüzler) açık; dikey yüzler (alınlık) aydınlık kalır.
+  assert.match(apply, /hemisphereLight\.color\.setScalar\(STAGE_HEMISPHERE\.sky\);/);
+  assert.match(apply, /hemisphereLight\.groundColor\.setScalar\(STAGE_HEMISPHERE\.ground\);/);
+  assert.match(apply, /hemisphereLight\.intensity = STAGE_HEMISPHERE\.intensity;/);
+  const hemisphere = scene.match(/const STAGE_HEMISPHERE = Object\.freeze\(\{ sky: ([\d.]+), ground: ([\d.]+), intensity: ([\d.]+) \}\);/);
+  assert.ok(hemisphere);
+  assert.ok(Number(hemisphere[1]) < Number(hemisphere[2]), 'gök rengi yer renginden koyu olmalı');
+  // Kapalıyken editörün kendi değerleri geri gelir.
+  assert.match(apply, /hemisphereLight\.color\.copy\(editorHemisphere\.sky\);/);
+  assert.match(apply, /hemisphereLight\.groundColor\.copy\(editorHemisphere\.ground\);/);
+  assert.match(apply, /hemisphereLight\.intensity = editorHemisphere\.intensity;/);
+  // Editörde sahne ışığı açıkken ana ışık kapalı; Render Al'da gölge için kısılarak yanar.
+  assert.match(apply, /keyLight\.visible = !enabled \|\| forRender;/);
+  assert.match(apply, /keyLight\.intensity = editorKeyIntensity \* \(enabled && forRender \? RENDER_KEY_LIGHT_DIM : 1\);/);
+  // Varsayılan açık ve sahne kurulurken uygulanır.
+  assert.match(scene, /let stageLightPreview = true;/);
+  assert.match(scene, /^  applyStageLighting\(stageLightPreview\);\r?$/m);
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.match(main, /scene3d\.setStageLightPreview\(/);
+  assert.match(main, /toggleStageLightButton\.setAttribute\('aria-pressed', String\(enabled\)\);/);
+  // Oturumluk: proje durumuna veya depolamaya yazılmaz.
+  assert.doesNotMatch(main, /stageLightPreview|stageLight:/);
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /<button id="toggle-stage-light" type="button" class="viewport-render-button is-active" aria-pressed="true"/);
+});
+
+test('viewport toolbar markup is identical in index.html and the CRM-embedded configurator markup', async () => {
+  // CRM içindeki konfigüratör HTML'i src/configuratorMarkup.js'ten gelir; index.html'e eklenen
+  // düğme (ör. Sahne Işığı) oraya da eklenmezse CRM'de görünmez.
+  const { FAIR_STAND_MARKUP } = await import('../src/configuratorMarkup.js');
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const toolbar = (source) => {
+    const start = source.indexOf('<div id="viewport-toolbar"');
+    assert.ok(start >= 0);
+    const tags = /<\/?div\b/g;
+    tags.lastIndex = start;
+    let depth = 0;
+    for (let match = tags.exec(source); match; match = tags.exec(source)) {
+      depth += match[0] === '<div' ? 1 : -1;
+      if (depth === 0) return source.slice(start, source.indexOf('>', match.index) + 1);
+    }
+    assert.fail('viewport-toolbar kapanmıyor');
+  };
+  assert.equal(toolbar(FAIR_STAND_MARKUP), toolbar(html));
+  assert.match(toolbar(FAIR_STAND_MARKUP), /id="toggle-stage-light"/);
+});
+
+test('stand-top spot drops a soft pool over the stand without casting shadows', () => {
+  assert.match(scene, /const standTopSpot = new THREE\.SpotLight\(/);
+  assert.match(scene, /standTopSpot\.castShadow = false;/);
+  const aim = scene.slice(scene.indexOf('function aimKeyLightAtStand('), scene.indexOf('shadowCamera.updateProjectionMatrix();'));
+  assert.match(aim, /Math\.hypot\(widthM, depthM\) \/ 2 \+ STAND_TOP_SPOT\.poolMarginM/);
+  assert.match(aim, /standTopSpot\.position\.set\(centerX, STAND_TOP_SPOT\.heightM, centerZ\);/);
+  assert.match(aim, /standTopSpot\.target\.position\.set\(centerX, 0, centerZ\);/);
+  assert.match(aim, /standTopSpot\.angle = Math\.atan\(poolRadiusM \/ STAND_TOP_SPOT\.heightM\);/);
+});
+
+test('Render Al turns stage lighting on while drawing and returns to the preview state', () => {
+  const capture = scene.slice(scene.indexOf('async function captureCurrentViewPng'), scene.indexOf('async function captureCurrentViewPng') + 5000);
+  const on = capture.indexOf('applyStageLighting(true, { forRender: true });');
+  const draw = capture.indexOf('renderer.render(scene, camera);');
+  assert.ok(on > 0 && on < draw);
+  const restore = capture.slice(capture.indexOf('} finally {'));
+  assert.match(restore, /applyStageLighting\(stageLightPreview\);/);
+  // Kısma oranı ışığı söndürmez, yalnız azaltır.
+  const dim = scene.match(/const RENDER_KEY_LIGHT_DIM = ([\d.]+);/);
+  assert.ok(dim);
+  assert.ok(Number(dim[1]) > 0 && Number(dim[1]) < 1);
 });
 
 test('editor draws without shadows and render-only lights; Render Al turns both on and back off', () => {
@@ -39,4 +118,24 @@ test('Render Al shows the loading screen before the heavy draw and hides it afte
   const capture = handler.indexOf('scene3d.captureCurrentViewPng(');
   assert.ok(show > 0 && show < wait && wait < capture);
   assert.match(handler.slice(handler.indexOf('} finally {')), /projectLoading\.hide\(\);/);
+});
+
+test('editor light budget: only one DirectionalLight (key); stage light adds no light in the editor', () => {
+  // Her ışık her pikselde maliyettir; yavaş cihazda (tablet) dokunma gecikir. Sahne ışığı açık editörde
+  // ışık sayısı kapalı editörle aynıdır: ortam + tepe spotu (ana ışık kapalı).
+  assert.equal((scene.match(/new THREE\.DirectionalLight\(/g) ?? []).length, 1);
+  assert.equal((scene.match(/new THREE\.HemisphereLight\(/g) ?? []).length, 1);
+  assert.doesNotMatch(scene, /STAGE_FILL_LIGHT|fillLight/);
+});
+
+test('auto fascia panels get a light backing body; other panels keep the dark body', () => {
+  assert.match(scene, /const FASCIA_BACK_COLOR = 0x[0-9a-f]{6};/);
+  const helper = scene.slice(scene.indexOf('function opaquePanelBackColor('), scene.indexOf('function opaquePanelBackColor(') + 200);
+  assert.match(helper, /moduleState\?\.autoFascia === true \? FASCIA_BACK_COLOR : PANEL_BACK_COLOR/);
+  const flat = scene.slice(scene.indexOf('function createFlatPanelModule('), scene.indexOf('function createDoorModule('));
+  assert.match(flat, /const opaqueBackColor = opaquePanelBackColor\(moduleState\);/);
+  assert.match(flat, /color: isGlass \? PANEL_GLASS_BACKING_APPEARANCE\.color : opaqueBackColor,/);
+  assert.match(flat, /backing\.userData\.opaqueBackColor = opaqueBackColor;/);
+  // Renk/cam uygulanınca açık gövde korunur.
+  assert.match(scene, /backing\.material\.color\.set\(glass \? PANEL_GLASS_BACKING_APPEARANCE\.color : \(backing\.userData\.opaqueBackColor \?\? PANEL_BACK_COLOR\)\);/);
 });
