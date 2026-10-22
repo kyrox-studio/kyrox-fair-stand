@@ -224,7 +224,7 @@ def test_seed_relation_counts(db_session):
     assert assets > 0
     assert bodies > 0
     assert walls > 0
-    assert len(item_keys) == 134  # 0078: +4 profil; 0075: +1; 0072: +3 raf tahtası, +3 kart, +6 sıralı raf; 0074: +2
+    assert len(item_keys) == 135  # 0079: +1 profile_8; 0078: +4 profil; 0075: +1; 0072: +3 raf tahtası, +3 kart, +6 sıralı raf; 0074: +2
     assert {
         "panel_corner_42_5",
         "panel_corner_92",

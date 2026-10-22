@@ -344,6 +344,7 @@ CATALOG_SEED = {
             "components": [],
             "video_wall": None,
             "body_parts": [],
+            "length_parts": ["upright_346_5", "upright_49_5"],
             "assets": [],
         },
         {
@@ -390,6 +391,7 @@ CATALOG_SEED = {
             "components": [],
             "video_wall": None,
             "body_parts": [],
+            "length_parts": ["upright_346_5", "upright_99"],
             "assets": [],
         },
         {
@@ -436,6 +438,7 @@ CATALOG_SEED = {
             "components": [],
             "video_wall": None,
             "body_parts": [],
+            "length_parts": ["upright_346_5", "profile_8", "profile_140_5"],
             "assets": [],
         },
         {
@@ -517,6 +520,52 @@ CATALOG_SEED = {
             },
             "scene_dimensions": {
                 "width_cm": 50,
+                "depth_cm": 8,
+                "height_cm": 350,
+            },
+            "strip_occupancy": None,
+            "components": [],
+            "video_wall": None,
+            "body_parts": [],
+            "assets": [],
+        },
+        {
+            "item_key": "profile_8",
+            "name": "Profil 8",
+            "item_type": "profile",
+            "is_render": False,
+            "accepts_color": False,
+            "accepts_image": False,
+            "accepts_lightbox": False,
+            "accepts_glass": False,
+            "accepts_mesh": False,
+            "unit": "adet",
+            "catalog_visible": False,
+            "category_index": None,
+            "catalog_item_index": None,
+            "preview_id": None,
+            "material": "alüminyum",
+            "default_color": 13685716,
+            "preserve_model_scale": None,
+            "model_rotation_y_deg": None,
+            "visual_rotation_y_deg": None,
+            "composition_mode": None,
+            "paintable": None,
+            "shape": None,
+            "variant": None,
+            "eye_count": None,
+            
+            "dimensions": {
+                "width_cm": 8,
+                "depth_cm": 8,
+                "height_cm": 8,
+
+
+                "mount_height_cm": None,
+                "wall_gap_cm": None,
+            },
+            "scene_dimensions": {
+                "width_cm": 8,
                 "depth_cm": 8,
                 "height_cm": 350,
             },
@@ -800,6 +849,7 @@ CATALOG_SEED = {
             "components": [],
             "video_wall": None,
             "body_parts": [],
+            "length_parts": ["upright_346_5", "profile_41_5"],
             "assets": [],
         },
         {
@@ -846,6 +896,7 @@ CATALOG_SEED = {
             "components": [],
             "video_wall": None,
             "body_parts": [],
+            "length_parts": ["upright_346_5", "profile_140_5"],
             "assets": [],
         },
         {
