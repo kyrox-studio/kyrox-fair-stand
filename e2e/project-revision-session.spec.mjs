@@ -119,6 +119,11 @@ test('aynı oturum Kaydet tek revizyon tutar; yeniden açılış sonraki numaray
   });
 
   await createIslandStand(page, 'E2ESessionRevision');
+  const history = page.locator('#project-revisions');
+  await expect(history).not.toHaveAttribute('open');
+  await expect(page.locator('#project-revision-list')).toBeHidden();
+  await history.locator('summary').click();
+  await expect(page.locator('#project-revision-list')).toBeVisible();
   await expect(page.locator('#project-revision-list')).toContainText('R1');
   await expect(page.locator('#project-name')).toHaveValue('E2ESessionRevision-Ada_500_500');
   await expect(page.locator('#project-name-display')).toHaveText('E2ESessionRevision-Ada_500_500 - R1');
@@ -145,6 +150,8 @@ test('aynı oturum Kaydet tek revizyon tutar; yeniden açılış sonraki numaray
   }, projectId);
   await page.locator('#open-project').click();
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
+  await expect(history).not.toHaveAttribute('open');
+  await history.locator('summary').click();
   expect(store.creates).toBe(1);
 
   await page.locator('#floor-type').evaluate((select) => {

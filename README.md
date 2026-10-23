@@ -6,13 +6,17 @@ Amaç serbest çizim yapmak değil; katalogda tanımlı gerçek modülleri, plac
 
 ## Güncel durum
 
+Revizyonlara **Proje → Geçmiş**, üretim listesine **Ayrıntılar → Üretim Listesi** üzerinden erişilir. İki bölüm de başlangıçta kapalıdır ve Basit/Gelişmiş modda kullanılabilir; açıp kapatmak stand verisini değiştirmez.
+
 Repository ilk MVP taslağının ötesindedir. Mevcut uygulama aşağıdaki ana yetenekleri içerir:
 
 - Gerçek zamanlı Three.js 3D stand sahnesi.
 - Ortak placement, snap, connection ve collision altyapısı. Duvarda dik bağlantı yalnız dikme olan noktadadır; profil ise profilin her noktasına dik bağlanır (iki profilin arasına, ortasına; yapışma 10 cm adım), uç uca eklenir, birbirinin ortasından geçen profiller çakışır.
 - Hata ve uyarılar sağ altta üst üste dizilen kısa bildirimlerdir (`src/toastNotifications.js`); hata için `window.alert` kullanılmaz, ayrıntı konsola da yazılır.
 - Sahnenin sol altında stand özeti görünür ("L Stand Sol · 4 × 3 m · duvar 3,5 m"). Üretim listesinde parça kodu ekranda yazmaz (ipucu ve `data-item-key`); kopyalanan üretim metni kodu taşır.
-- Yardım rehberi "5 Dakikada İlk Standın" adımlarıyla açılır.
+- Yardım rehberi "5 Dakikada İlk Standın" adımlarıyla açılır. Tek açılır/kapanır "Gelişmiş > Ayarlar" bölümü Herşeyi Kilitle, Ölçüleri göster ve Otomatik kayıt kontrollerini anlatır.
+- Sol menüde tek Basit / Gelişmiş seçici bulunur. Ayarlar, Gruplar, Şablonlarım ve Standartlar yalnız Gelişmiş modda görünür. Ölçüler Basitte kapalı, Gelişmişte açık başlar; ölçü tercihi oturumluktur. Herşeyi Kilitle mevcut öğeleri topluca kilitler veya öğe/grup kilitlerini açar; grupları çözmez.
+- Kurulumda genişlik, derinlik ve duvar yüksekliği metre gösterir; 4,5 / 6,5 gibi girişler desteklenir, proje ve hesap birimi cm kalır. Tek öğe/grup taşınırken veya yerleştirme önizlemesinde zemin ızgarası görünür.
 - Module type'a göre merkezi behavior registry.
 - Dikme ve profil katalogda tek kartla gelir; bırakırken boy sorulur (ortak pencere `src/itemSizeDialog.js`; `src/uprightHeight.js`, `src/profileLength.js`). Profil gerçek boy → sahne boyu: 41,5 → 50 … 289 → 300, 388 → 400, 487 → 500 (migration `0078_profile_lengths`). 346,5 cm'yi aşan profil/dikme Üretim Listesi'nde tek satır kalır, adın yanında parça bölünüşü yazar (`Dikme 495 cm (346,5 + 8 + 140,5)`; `fair_stand_item_length_parts`, migration `0080_item_length_parts`).
 - Kısa panel katalogda Tek Sıra / Çift Sıra için birer kartla gelir; ölçü soran kartların (kısa panel, profil, dikme) başlığı ölçüsüzdür ("Panel Tek Sıra", "Profil", "Dikme"), sahnedeki parça, sağ tık ve BOM Item adını yazar; ad sahnedeki öğenin ölçüsünü yazar: "Panel Tek Sıra 200", "Profil 388", "Dikme 346,5"; bırakırken genişlik (50 / 100 / 150 / 200) konum hesabından önce sorulur (`src/wallShortWidth.js`, migration `0079_wall_short_cards`).
@@ -24,7 +28,7 @@ Repository ilk MVP taslağının ötesindedir. Mevcut uygulama aşağıdaki ana 
 - Geri al / İleri al (Ctrl+Z / Ctrl+Y, üst bant düğmeleri): tasarımın son 50 adımı; kaydedilmez (`src/designHistory.js`).
 - Gruplar: çift tık + Ctrl/Cmd+tık seçimi → sağ tık → Grup oluştur. Öğeden bağımsız; her üyede `group: { id, name, locked, fromWallId? }`. Grup her yöne taşınır ve çoğaltılır, tek kısıt stand alanı; kenara bağlı duvar parçaları gruplanınca serbest öğeye çevrilir. Grup kilidi bütün üyeleri kilitler. Gruptaki öğede Shift+R bütün grubu üye merkezlerinin ortası etrafında 45° döndürür (tek kısıt stand alanı).
 - Kurumsal grup şablonu: Gruplar kartı → Şablon olarak kaydet; Şablonlarım kartı → Yerleştir / Adlandır / Sil. Şablon Item değildir; parçaların itemKey, ölçü, göreli konum, açı, renk, cam panel ve metal separatör atamasını tutar; lightbox/mesh kumaş ve görselleri tutmaz (`src/groupTemplates.js`, `src/groupTemplateRemote.js`, `src/groupTemplatePanel.js`). Sunucu: `fair_stand_group_templates` (migration `0067`), API `/api/v1/fair-stand/group-templates`, organizasyon kapsamlı, proje yetkileriyle. Kenar çubuğunda Gruplar kartı (`src/moduleGroups.js`, `src/moduleGroupPanel.js`).
-- Otomatik kayıt süresi (Proje kartı → Otomatik kayıt): Kapalı / 3 / 5 / 7 / 10 dk, varsayılan 3 dk; seçim tarayıcıda (`localStorage` `fairStand.autosaveMinutes`) tutulur (`src/autosaveSettings.js`). Kaydedilmemiş değişiklik sekme gizlenince veya editörden çıkılınca kaydedilir; sayfa kapatılırken tarayıcı uyarır.
+- Otomatik kayıt süresi (Gelişmiş → Ayarlar → Otomatik kayıt): Kapalı / 3 / 5 / 7 / 10 dk, varsayılan 3 dk; seçim tarayıcıda (`localStorage` `fairStand.autosaveMinutes`) tutulur (`src/autosaveSettings.js`). Kaydedilmemiş değişiklik sekme gizlenince veya editörden çıkılınca kaydedilir; sayfa kapatılırken tarayıcı uyarır.
 - Eksik görsel: proje açılırken indirilemeyen görsel (sunucuda dosya yok) açılışı engellemez. Yüzey kendi rengiyle çizilir, durum satırı eksik sayıyı yazar; `imageAssetId` bağlantısı projede korunur (`src/projectRemote.js` `cacheProjectAndAssets`, `src/scene3d.js` `applyStoredImage`).
 - İçe aktarma müşteri ister: paket ve açık editör müşterisizse sunucu hatası yerine yol gösteren mesaj çıkar.
 - Recipe / production-parts tabanlı BOM ve üretim verisi altyapısı.

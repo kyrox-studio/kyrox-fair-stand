@@ -1,3 +1,4 @@
+import { openProductionDetails } from './helpers/productionDetails.mjs';
 import { test, expect } from '@playwright/test';
 
 // Düz duvara sağ tıkla arka yüze panel eklenir ve kaldırılır; üretim listesi iki yüzü sayar.
@@ -35,6 +36,16 @@ function readLatestProject(page) {
 }
 
 async function saveAndReadProject(page) {
+  const selection = page.getByRole('toolbar', { name: 'Seçim işlemleri' });
+  if (await selection.isVisible()) {
+    const selectedRect = await selection.boundingBox();
+    const mainRect = await page.locator('#viewport-toolbar').boundingBox();
+    const overlaps = selectedRect.x < mainRect.x + mainRect.width
+      && selectedRect.x + selectedRect.width > mainRect.x
+      && selectedRect.y < mainRect.y + mainRect.height
+      && selectedRect.y + selectedRect.height > mainRect.y;
+    expect(overlaps).toBe(false);
+  }
   await page.locator('#save-project').click();
   await expect(page.locator('#save-project')).toBeEnabled();
   return readLatestProject(page);
@@ -131,7 +142,9 @@ test('düz duvara sağ tıkla arka yüze panel eklenir, kaldırılır; üretim l
   // Seçim çubuğu üretim listesi düğmesinin önüne geçer; önce seçimi kaldır.
   const canvasBox = await page.locator('#viewport > canvas').boundingBox();
   await page.mouse.click(canvasBox.x + canvasBox.width * 0.2, canvasBox.y + canvasBox.height * 0.85);
+  await openProductionDetails(page);
   await expect(page.locator('#toggle-production-bom')).toBeVisible();
+  await openProductionDetails(page);
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();

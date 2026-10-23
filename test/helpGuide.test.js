@@ -119,7 +119,9 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
 
 test('help guide describes the single floor rectangle and reset clearing it', () => {
   assert.match(guideSource, /title: 'Zemin'/);
-  assert.match(guideSource, /<strong>Zemin Kaplaması<\/strong> standın tamamının baz kaplamasıdır/);
+  assert.match(guideSource, /<strong>Zemin Kaplaması<\/strong> iki modda da standın tamamının baz kaplamasını seçer/);
+  assert.match(guideSource, /Bölgesel zemin kontrolleri yalnız <strong>Gelişmiş<\/strong> modda görünür/);
+  assert.match(guideSource, /Basit \/ Gelişmiş seçimi standı veya tasarım verisini değiştirmez/);
   assert.match(guideSource, /<strong>Zemin Alanı Ekle<\/strong>/);
   assert.match(guideSource, /50 cm ve katlarıdır ve standın içinde kalır/);
   assert.match(guideSource, /<strong>Sahnede Çiz<\/strong>/);

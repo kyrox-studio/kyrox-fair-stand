@@ -473,6 +473,12 @@ function applyEditorView() {
 }
 function setEditorMode(mode) {
   const { mode: editorMode } = editorViewSettings.setMode(mode);
+  // Mod geçişi tasarıma yazmaz; yalnız tamamlanmamış bölgesel çizimi kapatır.
+  if (editorMode === 'simple') {
+    scene3d.setFloorAreaDrawArmed(false);
+    floorAreaDrawButton?.setAttribute('aria-pressed', 'false');
+    if (currentStand) syncFloorAreaControls();
+  }
   document.querySelector('#app')?.setAttribute('data-editor-mode', editorMode);
   editorModeButtons.forEach((button) => {
     button.setAttribute('aria-pressed', String(button.dataset.editorMode === editorMode));
@@ -558,6 +564,7 @@ function renderStageResult(message, isError = false) {
 }
 
 function setStandEditingEnabled(enabled) {
+  if (toggleProductionBomButton) toggleProductionBomButton.disabled = !enabled;
   openModuleCatalogButton.disabled = !enabled;
   clearWallButton.disabled = !enabled;
   moduleDragSidebar?.setEnabled(Boolean(enabled && currentStand));
@@ -2755,6 +2762,7 @@ function renderRevisionList() {
   projectRevisionList.replaceChildren();
   syncProjectNameDisplay();
   if (!revisions.length) {
+    projectRevisions.open = false;
     projectRevisions.hidden = true;
     return;
   }

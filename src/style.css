@@ -1667,6 +1667,7 @@ button[aria-busy="true"]::after {
 #app[data-editor-mode="simple"] #module-groups-card,
 #app[data-editor-mode="simple"] #module-templates-card,
 #app[data-editor-mode="simple"] #stand-standards-card,
+#app[data-editor-mode="simple"] #floor-area-controls,
 #app[data-editor-mode="simple"] .editor-settings-card {
   display: none;
 }
