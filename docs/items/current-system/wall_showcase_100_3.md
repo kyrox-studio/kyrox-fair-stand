@@ -46,4 +46,4 @@ Bu varyant `wall_showcase_100_3` kanonik parent Item'ının aynı recipe zinciri
 
 ## Renderer görünümü (2026-10-21)
 
-`createShowcaseModule()` çerçevesi duvar paneliyle aynıdır (`addPanelModuleFrame`, kanallı profil, reçetedeki `profile_*` sahne kesiti). Paneller profil yüzünün 15 mm önünde ve alt/üstte 4 cm, sağ/solda 3 cm içeride. Vitrin gövdesinin yüksekliğinde dikme çizilmez (`uprightGap`); orada gövdenin yan tahtaları kenar olur. Yalnız görünüm; state ve BOM değişmez.
+`createShowcaseModule()` çerçevesi duvar paneliyle aynıdır (`addPanelModuleFrame`, kanallı profil, reçetedeki `profile_*` sahne kesiti). Paneller profil yüzünün 15 mm önünde ve alt/üstte 4 cm, sağ/solda 2 cm içeride. Vitrin gövdesinin yüksekliğinde dikme çizilmez (`uprightGap`); orada gövdenin yan tahtaları kenar olur. Yalnız görünüm; state ve BOM değişmez.

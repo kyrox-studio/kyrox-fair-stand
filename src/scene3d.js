@@ -10350,9 +10350,9 @@ function addPanelModuleFrame(
   addProfile(railGeometry.clone(), 0, frameTopY - railHeight / 2);
 }
 
-// Panel yüzü çerçevenin dış kenarından alt ve üstte 4 cm, sağ ve solda 3 cm içeride biter.
+// Panel yüzü çerçevenin dış kenarından alt ve üstte 4 cm, sağ ve solda 2 cm içeride biter.
 const PANEL_FRAME_INSET_M = 0.04;
-const PANEL_FRAME_SIDE_INSET_M = 0.03;
+const PANEL_FRAME_SIDE_INSET_M = 0.02;
 
 function panelFrameOpening(frameBottomY, frameTopY) {
   return { bottomY: frameBottomY + PANEL_FRAME_INSET_M, topY: frameTopY - PANEL_FRAME_INSET_M };
