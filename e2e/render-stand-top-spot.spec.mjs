@@ -10,8 +10,8 @@ test('Sahne Işığı önizlemesi açılıp kapanır; Render Al tepe spotuyla PN
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'U Stand' }).click();
-  await page.locator('#stand-size-x').fill('600');
-  await page.locator('#stand-size-y').fill('400');
+  await page.locator('#stand-size-x').fill('6');
+  await page.locator('#stand-size-y').fill('4');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('Render Tepe Spotu');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();

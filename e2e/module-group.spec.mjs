@@ -1,3 +1,4 @@
+import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 
 async function exposeScene(page) {
@@ -7,7 +8,7 @@ async function exposeScene(page) {
     const body = (await response.text())
       .replace(
         'const controls = new OrbitControls(camera, renderer.domElement);',
-        'const controls = new OrbitControls(camera, renderer.domElement); window.__sceneCamera = camera;',
+        'const controls = new OrbitControls(camera, renderer.domElement); window.__sceneCamera = camera; window.__sceneGridVisible = () => scene.getObjectByName("stand-floor-grid")?.visible;',
       )
       .replace(
         '  let surfaceMeshes = [];',
@@ -22,12 +23,13 @@ async function createIslandStand(page) {
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#stand-size-x').fill('600');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('6');
+  await page.locator('#stand-size-y').fill('5');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('E2E Grup');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
+  await openEditorSettings(page);
   await page.locator('#autosave-interval').selectOption('0');
   // Üstten görünüm: stand ekranın ortasında, sürükleme yönleri net.
   await page.locator('body').press('t');
@@ -117,6 +119,14 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   await dropBoxBlock(page, 0.38);
   await dropBoxBlock(page, 0.62);
 
+  // Tek öğe sürüklemesi de aynı ızgara kuralını izler.
+  const singlePoints = Object.values(await boxScreenPoints(page));
+  await page.mouse.move(singlePoints[0].x, singlePoints[0].y);
+  await page.mouse.down();
+  await page.mouse.move(singlePoints[0].x + 35, singlePoints[0].y + 10, { steps: 6 });
+  await expect.poll(() => page.evaluate(() => window.__sceneGridVisible())).toBe(true);
+  await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => window.__sceneGridVisible())).toBe(false);
   const initial = boxes(await storedModules(page));
   expect(initial).toHaveLength(2);
   const [first, second] = initial;
@@ -135,6 +145,7 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   await menu.getByRole('menuitem', { name: 'Grup oluştur…' }).click();
   await expect(page.locator('#selection-info')).toContainText('“Sağ duvar” grubu oluşturuldu · 2 parça');
 
+  await page.locator('#editor-mode-advanced').click();
   const groupsCard = page.locator('#module-groups-card');
   if (!(await groupsCard.evaluate((el) => el.open))) await groupsCard.locator(':scope > summary').click();
   const row = groupsCard.locator('.module-group-row', { hasText: 'Sağ duvar' });
@@ -152,7 +163,10 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   await page.mouse.down();
   await page.mouse.move(start.x + 40, start.y + 10, { steps: 6 });
   await page.mouse.move(start.x + 80, start.y + 20, { steps: 6 });
+  await expect.poll(() => page.evaluate(() => window.__sceneGridVisible())).toBe(true);
+  await expect(page.locator('.scene-measure-label')).toHaveCount(0);
   await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => window.__sceneGridVisible())).toBe(false);
   const moved = boxes(await storedModules(page));
   const deltaOf = (before, after) => ({
     dx: after.placement.xCm - before.placement.xCm,
@@ -165,6 +179,10 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   expect(Math.abs(firstDelta.dx) + Math.abs(firstDelta.dy)).toBeGreaterThan(0);
   expect(secondDelta).toEqual(firstDelta);
 
+  // Gelişmiş modda ölçüler kapalı olsa da taşıma ızgarası çalışır.
+  await page.locator('#editor-mode-advanced').click();
+  await openEditorSettings(page);
+  await page.locator('#show-measurements').uncheck();
   // Çok uzağa sürükleme stand dışına taşırmaz.
   const farPoints = await boxScreenPoints(page);
   const farStart = farPoints[first.id];

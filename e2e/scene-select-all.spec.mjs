@@ -1,3 +1,4 @@
+import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 
 async function createStand(page, name, { width = 500, depth = 500 } = {}) {
@@ -5,8 +6,8 @@ async function createStand(page, name, { width = 500, depth = 500 } = {}) {
   const setup = page.locator('details.stand-setup-card');
   await setup.locator('summary').click();
   await setup.getByRole('button', { name: 'Sırt Duvar' }).click();
-  await page.locator('#stand-size-x').fill(String(width));
-  await page.locator('#stand-size-y').fill(String(depth));
+  await page.locator('#stand-size-x').fill(String(width / 100));
+  await page.locator('#stand-size-y').fill(String(depth / 100));
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill(name);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
@@ -87,6 +88,7 @@ test('Ctrl+A ile grup kurulur; grubun tamamının kilidi açılır ve topluca ç
   await context.locator('[data-module-action="group-create"]').click();
   const grouped = await save(page);
   expect(grouped.modules.every((module) => module.group?.name === 'Bütün stand')).toBe(true);
+  await page.locator('#editor-mode-advanced').click();
   const card = page.locator('#module-groups-card');
   if (!(await card.evaluate((el) => el.open))) await card.locator(':scope > summary').click();
   await card.locator('.module-group-row details > summary').click();
@@ -173,4 +175,49 @@ test('78 öğenin tamamı seçilir: 26 duvar, 26 lamba, 26 masa ve toplu kilit',
   const locked = await save(page);
   expect(locked.modules).toHaveLength(78);
   expect(locked.modules.every((module) => module.locked === true)).toBe(true);
+});
+
+test('Herşeyi Kilitle checkbox tüm öğeleri ve grup kilitlerini yönetir; geri alma ve kayıt korunur', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto('/');
+  await openEditorSettings(page);
+  const allLock = page.getByRole('checkbox', { name: 'Herşeyi Kilitle', exact: true });
+  await expect(allLock).toBeDisabled();
+  await createStand(page, 'Ayarlar Toplu Kilit');
+  await openEditorSettings(page);
+  await expect(allLock).toBeEnabled();
+  const initial = await save(page);
+  await allLock.check();
+  expect((await save(page)).modules.every(module => module.locked === true)).toBe(true);
+  await expect(allLock).toBeChecked();
+  await page.locator('#design-undo').click();
+  expect((await save(page)).modules.map(module => module.locked ?? false)).toEqual(initial.modules.map(module => module.locked ?? false));
+  await page.locator('#design-redo').click();
+  await expect(allLock).toBeChecked();
+  await allLock.uncheck();
+  expect((await save(page)).modules.every(module => module.locked !== true)).toBe(true);
+  await selectAll(page, initial.modules.length);
+  const context = await menu(page);
+  page.once('dialog', dialog => dialog.accept('Toplu Kilit Grubu'));
+  await context.locator('[data-module-action="group-create"]').click();
+  const card = page.locator('#module-groups-card');
+  if (!(await card.evaluate(element => element.open))) await card.locator(':scope > summary').click();
+  await card.locator('.module-group-row details > summary').click();
+  await card.locator('[data-group-action="group-lock"]').click();
+  await expect(allLock).toBeChecked();
+  await allLock.uncheck();
+  const unlocked = await save(page);
+  expect(unlocked.modules.every(module => module.locked !== true && module.group?.locked !== true)).toBe(true);
+  expect(unlocked.modules.every(module => module.group?.name === 'Toplu Kilit Grubu')).toBe(true);
+  await allLock.check();
+  const locked = await save(page);
+  await page.reload();
+  await expect(page.locator('#project-select option[value="' + locked.id + '"]')).toHaveCount(1);
+  await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, locked.id);
+  await page.locator('#open-project').click();
+  await expect(page.locator('#project-status')).toContainText('Açıldı:');
+  await openEditorSettings(page);
+  await expect(allLock).toBeChecked();
+  await allLock.uncheck();
+  expect((await save(page)).modules.every(module => module.locked !== true && module.group?.locked !== true)).toBe(true);
 });

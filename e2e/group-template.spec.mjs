@@ -1,3 +1,4 @@
+import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 
 const ORG_ID = '11111111-1111-4111-8111-111111111111';
@@ -151,12 +152,13 @@ test('grup şablon olarak kaydedilir, yerleştirilir ve silinir', async ({ page 
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#stand-size-x').fill('600');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('6');
+  await page.locator('#stand-size-y').fill('5');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('E2E Sablon');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
+  await openEditorSettings(page);
   await page.locator('#autosave-interval').selectOption('0');
   await page.locator('body').press('t');
   await page.waitForTimeout(400);
@@ -177,6 +179,7 @@ test('grup şablon olarak kaydedilir, yerleştirilir ve silinir', async ({ page 
   await expect(page.locator('#selection-info')).toContainText('“Tezgah” grubu oluşturuldu');
 
   // Gruplar kartından şablon olarak kaydet.
+  await page.locator('#editor-mode-advanced').click();
   const groupsCard = page.locator('#module-groups-card');
   if (!(await groupsCard.evaluate((el) => el.open))) await groupsCard.locator(':scope > summary').click();
   const row = groupsCard.locator('.module-group-row', { hasText: 'Tezgah' });

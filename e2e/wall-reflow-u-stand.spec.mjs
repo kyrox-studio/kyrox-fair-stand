@@ -5,8 +5,8 @@ async function createNamedStand(page, standName, projectName, xCm, yCm) {
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: standName }).click();
-  await page.locator('#stand-size-x').fill(String(xCm));
-  await page.locator('#stand-size-y').fill(String(yCm));
+  await page.locator('#stand-size-x').fill(String(xCm / 100));
+  await page.locator('#stand-size-y').fill(String(yCm / 100));
   await page.locator('#create-stage').click();
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();

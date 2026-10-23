@@ -1,3 +1,4 @@
+import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 
 // Ayaklı vitrin ve broşürlük sahneye gelir, üretim listesine 1 adet yazılır; kopyalarken
@@ -9,7 +10,7 @@ async function exposeScene(page) {
     const body = (await response.text())
       .replace(
         'const controls = new OrbitControls(camera, renderer.domElement);',
-        'const controls = new OrbitControls(camera, renderer.domElement); window.__sceneCamera = camera;',
+        'const controls = new OrbitControls(camera, renderer.domElement); window.__sceneCamera = camera; window.__testScene = scene;',
       )
       .replace(
         '  let surfaceMeshes = [];',
@@ -87,8 +88,8 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('5');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('E2E Vitrin Broşür');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
@@ -158,9 +159,21 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
   const showcasePoint = await moduleScreenPoint(page, showcaseId);
   await page.mouse.dblclick(showcasePoint.x, showcasePoint.y);
   // Seçili öğenin taban alanı ölçüleri: genişlik, derinlik, yükseklik.
+  await expect(page.locator('#editor-mode-advanced')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.scene-measure-label')).toHaveCount(0);
+  await page.locator('#editor-mode-advanced').click();
+  await expect(page.locator('#editor-mode-advanced')).toHaveAttribute('aria-pressed', 'true');
   const sizeLabels = page.locator('.scene-measure-label.is-size');
   await expect(sizeLabels).toHaveCount(3);
   await expect(sizeLabels).toHaveText(['100 cm', '40 cm', '100 cm']);
+  await openEditorSettings(page);
+  await page.locator('#show-measurements').uncheck();
+  await expect(page.locator('.scene-measure-label')).toHaveCount(0);
+  await page.locator('#editor-mode-simple').click();
+  await page.locator('#editor-mode-advanced').click();
+  await expect(page.locator('.scene-measure-label')).toHaveCount(0);
+  await page.locator('#show-measurements').check();
+  await expect(sizeLabels).toHaveCount(3);
   await page.getByRole('toolbar', { name: 'Seçim işlemleri' }).getByRole('button', { name: /Kopyala/ }).click();
   await expect(page.locator('.viewport-wrap')).toHaveClass(/catalog-place-armed/);
   const drop = await floorScreenPoint(page, 250, 120);
@@ -168,6 +181,14 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
   // Taşırken stand kenarlarına uzaklık etiketleri; seçim ölçüleri gizlenir.
   await expect(page.locator('.scene-measure-label.is-distance')).toHaveCount(4);
   await expect(sizeLabels).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.__testScene.getObjectByName('stand-floor-grid')?.visible)).toBe(true);
+  await page.locator('#editor-mode-simple').click();
+  await expect(page.locator('.scene-measure-label')).toHaveCount(0);
+  await page.mouse.move(drop.x, drop.y);
+  await expect.poll(() => page.evaluate(() => window.__testScene.getObjectByName('stand-floor-grid')?.visible)).toBe(true);
+  await page.locator('#editor-mode-advanced').click();
+  await page.mouse.move(drop.x, drop.y);
+  await expect(page.locator('.scene-measure-label.is-distance')).toHaveCount(4);
   // Köşeye yaslı hayalet: yaslı iki kenara uzaklık çizilmez (hayaletin çizim payı hesaba girmez).
   const corner = await floorScreenPoint(page, 448, 478);
   await page.mouse.move(corner.x, corner.y);

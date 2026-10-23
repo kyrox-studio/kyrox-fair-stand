@@ -1,3 +1,4 @@
+import { metersInputToCm, formatMeters } from './standSizeInput.js';
 import { getFairStandHostDocument } from './hostDocument.js';
 
 // Yeni proje sihirbazı: boş sahnenin (#viewport-empty) ortasında 3 adım — stand tipi, ölçü,
@@ -72,6 +73,7 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     depotSize: document.querySelector('#auto-depot-size'),
     depotContents: document.querySelector('#auto-depot-contents'),
     fasciaRows: document.querySelector('#auto-fascia-rows'),
+    floorType: document.querySelector('#floor-type'),
   };
   const emptyCard = container.querySelector('.viewport-empty-card');
 
@@ -156,18 +158,19 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
       return label;
     };
     const x = document.createElement('input');
-    x.type = 'number';
+    x.type = 'text';
+    x.required = true;
     x.id = 'wizard-size-x';
-    x.min = '50';
-    x.step = '50';
-    x.inputMode = 'numeric';
+    x.inputMode = 'decimal';
     x.value = sidebar.sizeX?.value ?? '';
-    x.placeholder = 'ör. 600';
+    x.placeholder = 'ör. 6,5';
     const y = x.cloneNode();
     y.id = 'wizard-size-y';
     y.value = sidebar.sizeY?.value ?? '';
-    y.placeholder = 'ör. 400';
+    y.placeholder = 'ör. 4,5';
     const height = cloneSelect(sidebar.wallHeight, 'wizard-wall-height');
+    [...height.options].forEach(option => { option.textContent = `${formatMeters(option.value)} m`; });
+    const floor = cloneSelect(sidebar.floorType, 'wizard-floor-type');
     // Depo: sol menüdeki gibi tek liste ("Depo yok" + ölçüler); depo seçiliyken içerik kutusu açılır.
     const depotSize = cloneSelect(sidebar.depotSize, 'wizard-depot-size');
     const contents = document.createElement('input');
@@ -187,6 +190,7 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
 
     x.addEventListener('input', () => setControlValue(sidebar.sizeX, x.value));
     y.addEventListener('input', () => setControlValue(sidebar.sizeY, y.value));
+    floor.addEventListener('change', () => setControlValue(sidebar.floorType, floor.value));
     height.addEventListener('change', () => setControlValue(sidebar.wallHeight, height.value));
     depotSize.addEventListener('change', () => {
       setControlValue(sidebar.depotSize, depotSize.value);
@@ -214,24 +218,25 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     fasciaRows.addEventListener('change', syncFascia);
     fasciaRows.disabled = !fascia.checked;
 
-    const contentsLabel = field('Depo içeriği eklensin', contents);
+    const contentsLabel = field('Depo ekipmanlarını ekle', contents);
     contentsLabel.classList.add('wizard-check');
     contentsHint.style.gridColumn = '1 / -1';
-    const fasciaLabel = field('Alınlık olsun', fascia);
+    const fasciaLabel = field('Üst tabela (alınlık) ekle', fascia);
     fasciaLabel.classList.add('wizard-check');
     fields.append(
-      field('Genişlik X (cm)', x),
-      field('Derinlik Y (cm)', y),
+      field('Genişlik (m)', x),
+      field('Derinlik (m)', y),
       field('Duvar yüksekliği', height),
       field('Depo', depotSize),
       contentsLabel,
       contentsHint,
       fasciaLabel,
-      field('Alınlık sırası', fasciaRows),
+      field('Alınlık düzeni', fasciaRows),
+      field('Zemin kaplaması', floor),
     );
     const hint = document.createElement('p');
     hint.className = 'wizard-hint';
-    hint.textContent = '50 cm ve katları. Ölçüler, depo ve alınlık sonradan sol menüden de değiştirilebilir.';
+    hint.textContent = '0,5 m adımlarla gir; örneğin 4,5 m veya 6,5 m. Seçimlerini sonradan sol menüden değiştirebilirsin.';
     body.replaceChildren(fields, hint);
     nextButton.disabled = false;
   }
@@ -245,7 +250,7 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     const fascia = sidebar.fasciaRows?.value ? sidebar.fasciaRows.selectedOptions?.[0]?.textContent ?? '' : 'Yok';
     const summary = document.createElement('p');
     summary.className = 'wizard-summary';
-    summary.innerHTML = `<strong>${type}</strong><br>${sidebar.sizeX?.value} × ${sidebar.sizeY?.value} cm · duvar ${sidebar.wallHeight?.value} cm<br>Depo: ${depot}<br>Alınlık: ${fascia}`;
+    summary.innerHTML = `<strong>${type}</strong><br>${formatMeters(metersInputToCm(sidebar.sizeX?.value))} × ${formatMeters(metersInputToCm(sidebar.sizeY?.value))} m · duvar ${formatMeters(sidebar.wallHeight?.value)} m<br>Depo: ${depot}<br>Alınlık: ${fascia}<br>Zemin: ${sidebar.floorType?.selectedOptions?.[0]?.textContent ?? '—'}`;
     const hint = document.createElement('p');
     hint.className = 'wizard-hint';
     hint.textContent = 'Oluştur dediğinde proje adı sorulur, sahne kurulur ve proje kaydedilir.';

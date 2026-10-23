@@ -13,8 +13,8 @@ test('loading screen stays until the delayed 3D model has arrived', async ({ pag
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#stand-size-x').fill('600');
-  await page.locator('#stand-size-y').fill('600');
+  await page.locator('#stand-size-x').fill('6');
+  await page.locator('#stand-size-y').fill('6');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('E2E Bekle');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();

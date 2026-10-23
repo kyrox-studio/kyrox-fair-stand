@@ -10,6 +10,7 @@ test('seçim hint, standart listesi ve üretim listesi varsayılan girişte kapa
   await expect(page.locator('#production-bom-panel')).toBeHidden();
   await expect(page.locator('#toggle-production-bom')).toBeHidden();
 
+  await page.locator('#editor-mode-advanced').click();
   const standardsPanel = page.locator('details').filter({ hasText: 'Standartlar' }).first();
   await standardsPanel.locator('summary').click();
   await expect(page.locator('#stand-standards-list li').first()).toContainText('Yükseklik:');
@@ -22,8 +23,8 @@ test('toolbar Üretim Listesi butonu paneli açar', async ({ page }) => {
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('5');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('BOM toolbar');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
@@ -43,8 +44,8 @@ test('üretim listesi paneli gerçek girişte düz duvar reçete satırlarını 
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('5');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('BOM satır');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();

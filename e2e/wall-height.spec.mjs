@@ -41,8 +41,8 @@ async function createBackWallStand(page, { wallHeight, projectName }) {
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('5');
   if (wallHeight) await page.locator('#wall-height').selectOption(String(wallHeight));
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill(projectName);
@@ -185,8 +185,8 @@ for (const wallHeight of [250, 300, 350, 400, 450, 500]) {
     const standSetup = page.locator('details.stand-setup-card');
     await standSetup.locator('summary').click();
     await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
-    await page.locator('#stand-size-x').fill('600');
-    await page.locator('#stand-size-y').fill('600');
+    await page.locator('#stand-size-x').fill('6');
+    await page.locator('#stand-size-y').fill('6');
     await page.locator('#wall-height').selectOption(String(wallHeight));
     await page.locator('#create-stage').click();
     await page.locator('form input[name="projectName"]').fill(`E2E Sürükle ${wallHeight}`);

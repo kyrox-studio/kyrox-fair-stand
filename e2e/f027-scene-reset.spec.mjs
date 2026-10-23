@@ -27,8 +27,8 @@ test('Sahneyi Sıfırla rebuilds from the visible setup controls without creatin
   await setupCard.locator('summary').click();
 
   await setupCard.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('5');
   await page.locator('#create-stage').click();
 
   const nameInput = page.locator('form input[name="projectName"]');
@@ -37,8 +37,8 @@ test('Sahneyi Sıfırla rebuilds from the visible setup controls without creatin
   await expect(page.locator('#stage-result')).toContainText('Ada Stand · 500 × 500 cm');
 
   await setupCard.getByRole('button', { name: 'L Stand Sol' }).click();
-  await page.locator('#stand-size-x').fill('900');
-  await page.locator('#stand-size-y').fill('300');
+  await page.locator('#stand-size-x').fill('9');
+  await page.locator('#stand-size-y').fill('3');
   await page.locator('#floor-type').selectOption('hali');
   await page.locator('#auto-depot-size').selectOption('200x200');
   await page.locator('#auto-depot-contents').check();

@@ -86,8 +86,8 @@ test('Tüm Özellikleri Kaldır deletes illuminated foam and preserves other mod
   const setupCard = page.locator('details.stand-setup-card');
   await setupCard.locator('summary').click();
   await setupCard.getByRole('button', { name: 'L Stand Sol' }).click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('300');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('3');
   await page.locator('#create-stage').click();
 
   const nameInput = page.locator('form input[name="projectName"]');

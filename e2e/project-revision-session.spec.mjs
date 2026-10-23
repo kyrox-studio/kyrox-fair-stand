@@ -8,8 +8,8 @@ async function createIslandStand(page, projectName) {
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('5');
   await page.locator('#create-stage').click();
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();

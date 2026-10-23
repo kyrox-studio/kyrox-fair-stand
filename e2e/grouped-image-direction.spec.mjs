@@ -15,8 +15,8 @@ async function preparePanels(page, rotation, side) {
   const setup = page.locator('details.stand-setup-card');
   await setup.locator('summary').click();
   await setup.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#stand-size-x').fill('900');
-  await page.locator('#stand-size-y').fill('900');
+  await page.locator('#stand-size-x').fill('9');
+  await page.locator('#stand-size-y').fill('9');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('Görsel yönü');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();

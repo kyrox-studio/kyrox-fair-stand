@@ -61,8 +61,8 @@ async function openProjectWithShelves(page, projectName, shelves) {
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('400');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('4');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill(projectName);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();

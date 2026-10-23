@@ -10,8 +10,8 @@ test('Üretim Listesi uzun dikmeyi parça bölünüşüyle tek satırda gösteri
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
-  await page.locator('#stand-size-x').fill('300');
-  await page.locator('#stand-size-y').fill('200');
+  await page.locator('#stand-size-x').fill('3');
+  await page.locator('#stand-size-y').fill('2');
   await page.locator('#wall-height').selectOption('500');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('Uzun Parca Bolunus');
