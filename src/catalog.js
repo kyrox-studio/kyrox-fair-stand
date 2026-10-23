@@ -1,4 +1,4 @@
-import { getItem, listRegisteredItems, resolveItemKey } from './items.js';
+import { getItem, isWallShortFamilyDescriptor, listRegisteredItems, resolveItemKey } from './items.js';
 
 let catalogCategories = Object.freeze([]);
 let catalogPreviews = Object.freeze([]);
@@ -85,9 +85,18 @@ function projectCatalogItem(item) {
 
   return Object.freeze({
     itemKey: item.itemKey,
-    label: item.name,
+    label: catalogCardLabel(item),
     previewId,
   });
+}
+
+// Bırakılırken ölçü soran kartlar (profil boyu, dikme boyu, kısa panel genişliği) tek bir ölçünün
+// kartı gibi görünmez: başlık Item adının sonundaki ölçüyü yazmaz ("Profil 289" → "Profil",
+// "Panel Tek Sıra 100" → "Panel Tek Sıra"). Sahnedeki parça, sağ tık ve BOM Item adını kullanır.
+function catalogCardLabel(item) {
+  const asksSize = item.type === 'profile' || item.type === 'upright' || isWallShortFamilyDescriptor(item);
+  if (!asksSize) return item.name;
+  return String(item.name).replace(/\s+\d+(?:[.,]\d+)?$/, '') || item.name;
 }
 
 export function getCatalogItem(itemKey) {
@@ -145,10 +154,10 @@ export function getModuleCatalogItem(descriptor) {
 }
 
 export function getModuleCatalogLabel(descriptor) {
-  // Katalogda gizli Item (ölçü penceresinden gelen profil boyu, kısa panel genişliği) kendi adını taşır.
+  // Sahnedeki parça Item adını taşır ("Profil 289"); kart başlığı ölçüsüz olabilir ("Profil").
   const moduleKey = resolveItemKey(descriptor);
-  return getModuleCatalogItem(descriptor)?.label
-    ?? (moduleKey ? getItem(moduleKey)?.name : null)
+  return (moduleKey ? getItem(moduleKey)?.name : null)
+    ?? getModuleCatalogItem(descriptor)?.label
     ?? (typeof descriptor?.label === 'string' ? descriptor.label : null)
     ?? 'Modül';
 }

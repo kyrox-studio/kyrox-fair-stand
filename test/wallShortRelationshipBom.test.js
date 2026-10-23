@@ -331,8 +331,9 @@ test('same-height wall shorts share one upright and one double', () => {
   assert.equal(qty(pair1, 'connector_double'), 1);
   assert.equal(qty(pair1, 'profile_190'), 0);
   assert.equal(qty(pair1, 'profile_140_5'), 0);
-  assert.equal(qty(pair1, 'profile_289'), 2);
-  assert.equal(qty(pair1, 'profile_41_5'), 2);
+  assert.equal(qty(pair1, 'profile_346_5'), 2);
+  assert.equal(qty(pair1, 'profile_289'), 0);
+  assert.equal(qty(pair1, 'profile_41_5'), 0);
   assert.equal(qty(pair1, 'panel_197'), 1);
   assert.equal(qty(pair1, 'panel_147_5'), 1);
   const pair2 = resolveProjectBom([

@@ -10,8 +10,8 @@ import { formatWallShortWidthLabel, listWallShortWidthItems } from '../src/wallS
 
 const WIDTHS = Object.freeze([50, 100, 150, 200]);
 const CARDS = Object.freeze({
-  'wall-short-1': ['wall_100_short_1', 'Panel Tek Sıra 100'],
-  'wall-short-2': ['wall_100_short_2', 'Panel Çift Sıra 100'],
+  'wall-short-1': ['wall_100_short_1', 'Panel Tek Sıra'],
+  'wall-short-2': ['wall_100_short_2', 'Panel Çift Sıra'],
 });
 
 test('genişlik penceresi kartın varyantındaki 4 paneli genişliğe göre sıralar', () => {
@@ -63,7 +63,8 @@ test('gizli genişlik modülü kendi Item’ıyla kurulur; otomatik alınlık ge
 
 test('sağ tık başlığı sahnedeki öğenin kendi adını yazar (gizli genişlik "Modül" değil)', () => {
   for (const [, [cardKey, cardName]] of Object.entries(CARDS)) {
-    assert.equal(getModuleCatalogLabel(createModuleStateFromCatalogKey(cardKey)), cardName);
+    // Kart başlığı ölçüsüz; sahnedeki kart parçası Item adını (100) yazar.
+    assert.equal(getModuleCatalogLabel(createModuleStateFromCatalogKey(cardKey)), `${cardName} 100`);
   }
   assert.equal(getModuleCatalogLabel(createModuleStateFromCatalogKey('wall_200_short_1')), 'Panel Tek Sıra 200');
   assert.equal(getModuleCatalogLabel(createModuleStateFromCatalogKey('wall_50_short_2')), 'Panel Çift Sıra 50');

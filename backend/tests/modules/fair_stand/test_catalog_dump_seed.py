@@ -48,7 +48,7 @@ def test_dump_seed_skips_when_canonical_seed_already_present():
         session.commit()
     with engine.begin() as bind:
         seed_catalog_if_empty(bind)
-        assert bind.execute(text("SELECT COUNT(*) FROM fair_stand_items")).scalar() == 135
+        assert bind.execute(text("SELECT COUNT(*) FROM fair_stand_items")).scalar() == 136
         assert bind.execute(text("SELECT COUNT(*) FROM fair_stand_categories")).scalar() == 6
         assert bind.execute(
             text("SELECT COUNT(*) FROM fair_stand_categories WHERE catalog_name = 'asdadasdasdasd'")

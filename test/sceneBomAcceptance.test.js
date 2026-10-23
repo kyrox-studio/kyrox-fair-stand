@@ -418,7 +418,7 @@ test('wall short structural partners lock short-band finals, not full-height con
 });
 
 test('wall short to wall short scenes lock shared uprights once', () => {
-  assertBom('short-1 end', [shortOf('a', 'wall_200_short_1'), shortOf('b', 'wall_150_short_1', { xCm: 200 })], shortRun(expectShortJoint('wall_200_short_1', 'wall_150_short_1', 'end'), { drop: ['profile_190', 'profile_140_5'], add: ['profile_289', 'profile_41_5'], rails: 2 }));
+  assertBom('short-1 end', [shortOf('a', 'wall_200_short_1'), shortOf('b', 'wall_150_short_1', { xCm: 200 })], shortRun(expectShortJoint('wall_200_short_1', 'wall_150_short_1', 'end'), { drop: ['profile_190', 'profile_140_5'], add: ['profile_346_5'], rails: 2 }));
   assertBom('short-2 end', [shortOf('a', 'wall_200_short_2'), shortOf('b', 'wall_200_short_2', { xCm: 200 })], shortRun(expectShortJoint('wall_200_short_2', 'wall_200_short_2', 'end'), { drop: ['profile_190', 'profile_190'], add: ['profile_388'], rails: 2 }));
   assertBom('short-1 corner', [shortOf('a', 'wall_100_short_1'), cornerOf('b', 'wall_100_short_1', 100, { zCm: 300, heightCm: 50 })], expectShortJoint('wall_100_short_1', 'wall_100_short_1', 'corner'));
   assertBom('short-2 corner', [shortOf('a', 'wall_100_short_2'), cornerOf('b', 'wall_100_short_2', 100, { zCm: 250, heightCm: 100 })], expectShortJoint('wall_100_short_2', 'wall_100_short_2', 'corner'));
