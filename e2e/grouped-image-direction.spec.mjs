@@ -154,7 +154,7 @@ async function previewState(page) {
 }
 
 for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
-  test(`${mode}: canlı ölçü kayıt ağacına yazılmaz; iptal geri döner, onay tek adımda geri alınır`, async ({ page }) => {
+  test(`${mode}: canlı ölçü kayıt ağacına yazılmaz; iptal geri döner, onay tek adımda geri alınır`, async ({ page }, testInfo) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const projectId = await preparePanels(page, 180, 'front');
@@ -180,6 +180,46 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
       return page.getByRole('dialog', { name: 'Görsel ölçüsü' });
     };
     const dialog = await open();
+    await expect(dialog).toHaveAttribute('aria-modal', 'false');
+    const initialBox = await dialog.boundingBox();
+    expect(initialBox.width).toBeLessThanOrEqual(281);
+    const handle = dialog.locator('[data-image-size-handle]');
+    const handleBox = await handle.boundingBox();
+    await page.mouse.move(handleBox.x + 30, handleBox.y + 10);
+    await page.mouse.down();
+    await page.mouse.move(handleBox.x - 70, handleBox.y + 60, { steps: 5 });
+    await page.mouse.up();
+    const movedBox = await dialog.boundingBox();
+    expect(movedBox.x).toBeLessThan(initialBox.x - 50);
+    await handle.focus();
+    await page.keyboard.press('ArrowLeft');
+    expect((await dialog.boundingBox()).x).toBeCloseTo(movedBox.x - 10, 0);
+    if (mode === 'group') {
+      const viewport = page.viewportSize();
+      await page.setViewportSize({ width: 390, height: 844 });
+      const mobileBox = await dialog.boundingBox();
+      expect(mobileBox.x).toBeGreaterThanOrEqual(0);
+      expect(mobileBox.x + mobileBox.width).toBeLessThanOrEqual(390);
+      expect(mobileBox.y + mobileBox.height).toBeLessThanOrEqual(844);
+      await page.setViewportSize(viewport);
+    }
+    const cameraBefore = await page.evaluate(() => window.__imageControls.object.position.toArray());
+    const canvasBox = await page.locator('#viewport > canvas').boundingBox();
+    await page.mouse.move(canvasBox.x + canvasBox.width * 0.2, canvasBox.y + canvasBox.height * 0.9);
+    await page.mouse.down();
+    await page.mouse.move(canvasBox.x + canvasBox.width * 0.35, canvasBox.y + canvasBox.height * 0.9, { steps: 5 });
+    await page.mouse.up();
+    await expect(dialog).toBeVisible();
+    await expect.poll(() => page.evaluate(before => {
+      const after = window.__imageControls.object.position.toArray();
+      return Math.hypot(...after.map((value, index) => value - before[index]));
+    }, cameraBefore)).toBeGreaterThan(0.01);
+    const distanceBefore = await page.evaluate(() => window.__imageControls.object.position.distanceTo(window.__imageControls.target));
+    await page.mouse.wheel(0, -250);
+    await expect.poll(() => page.evaluate(() => window.__imageControls.object.position.distanceTo(window.__imageControls.target)))
+      .toBeLessThan(distanceBefore);
+    // Sonraki menü kontrolleri için aynı kamera görünümüne dön.
+    await selectImagePanels(page, 'front', mode === 'single');
     const width = dialog.locator('input[name="width"]');
     await width.fill('150');
     await expect.poll(async () => {
@@ -201,6 +241,7 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
       await getActiveAutosaveController().flush();
     });
     const temporary = await previewState(page);
+    if (mode === 'group') await page.screenshot({ path: testInfo.outputPath('panel-preview.png') });
     expect(temporary.states.map(item => item.persistent)).toEqual(original.states.map(item => item.persistent));
     expect(mode === 'lightbox' || mode === 'mesh' ? temporary.overlays : temporary.states.map(item => item.repeat))
       .not.toEqual(mode === 'lightbox' || mode === 'mesh' ? original.overlays : original.states.map(item => item.repeat));
@@ -216,13 +257,13 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
       return mode === 'lightbox' || mode === 'mesh' ? state.overlays : state.states.map(item => item.repeat);
     }).toEqual(mode === 'lightbox' || mode === 'mesh' ? original.overlays : original.states.map(item => item.repeat));
 
-    for (const cancel of ['button', 'outside']) {
+    for (const cancel of ['button', 'close']) {
       const cancelled = await open();
       await cancelled.locator('input[name="width"]').fill('115');
       await expect.poll(async () => (await previewState(page)).states.some(item => item.renderer.imageTransform?.widthCm === 115
         || item.renderer.fabricImageWidthCm === 115)).toBe(true);
       if (cancel === 'button') await cancelled.getByRole('button', { name: 'İptal' }).click();
-      else await cancelled.locator('..').click({ position: { x: 4, y: 4 } });
+      else await cancelled.getByRole('button', { name: 'Ölçülendirmeyi iptal et ve kapat' }).click();
       await expect(cancelled).toHaveCount(0);
       await expect.poll(async () => (await previewState(page)).states.map(item => item.renderer))
         .toEqual(original.states.map(item => item.renderer));

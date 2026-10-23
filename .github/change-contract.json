@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "grouped-image-direction-and-live-size-preview",
   "kind": "feature",
-  "summary": "Birleşik panel görseli dünya X/Y sırasına göre değil yüzeyin dönüş uygulanmış yatay eksenine göre dağıtılır. 180 derece dönük SİMES panel grubunda parça sırası düzelir; kamera yönü hesabı etkilemez. Ön/arka yüz ve 0/90/180/270 dönüşler, farklı genişlikler ve kayıt/açma doğrulanır. Görsel ölçülendirmede geçerli girişler yalnız renderer kopyasında canlı önizlenir; Uygula tek geçmiş adımında kalıcı duruma yazar, İptal/Esc/dışarı tıklama eski görünümü geri getirir. Geciken texture yüklemeleri yeni önizlemeyi ezemez. Kullanım kılavuzu önizleme, görsel sırası ve Doldur/Sığdır/ölçü farklarıyla güncellendi.",
+  "summary": "Birleşik panel görseli dünya X/Y sırasına göre değil yüzeyin dönüş uygulanmış yatay eksenine göre dağıtılır. 180 derece dönük SİMES panel grubunda parça sırası düzelir; kamera yönü hesabı etkilemez. Ön/arka yüz ve 0/90/180/270 dönüşler, farklı genişlikler ve kayıt/açma doğrulanır. Görsel ölçülendirmede geçerli girişler yalnız renderer kopyasında canlı önizlenir; Uygula tek geçmiş adımında kalıcı duruma yazar, İptal/Esc/× eski görünümü geri getirir. Ölçü kartı sahneyi karartmadan kenarda açılır, başlıktan sürüklenir veya ok tuşlarıyla taşınır; kart açıkken yüzey üzerindeki sürükleme kameraya gider, dışarı tıklama kartı kapatmaz. Geciken texture yüklemeleri yeni önizlemeyi ezemez. Kullanım kılavuzu önizleme, görsel sırası ve Doldur/Sığdır/ölçü farklarıyla güncellendi.",
   "owners": [
     "src/rectImageLayout.js",
     "src/scene3d.js",

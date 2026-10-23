@@ -482,6 +482,7 @@ export function createStandScene(
 
   // OrbitControls ends on pointerup/pointercancel, but does not handle blur or
   // a mouse move after a release that happened outside the browser window.
+  let imageSizePreviewActive = false;
   const orbitPointers = new Map();
   const orbitDocument = renderer.domElement.ownerDocument;
   const orbitWindow = orbitDocument.defaultView;
@@ -525,6 +526,13 @@ export function createStandScene(
   renderer.domElement.addEventListener('pointerdown', (event) => {
     if (controls.enabled) orbitPointers.set(event.pointerId, event.pointerType);
   }, { signal });
+  // Ölçü kartı açıkken yüzeyin üstünden de kamera döner; modül sürüklemesi başlamaz.
+  renderer.domElement.addEventListener('pointerdown', event => {
+    if (!imageSizePreviewActive) return;
+    event.stopImmediatePropagation();
+    if (controls.enabled) orbitPointers.set(event.pointerId, event.pointerType);
+    controls._onPointerDown?.(event);
+  }, { capture: true, signal });
   orbitDocument.addEventListener('pointermove', (event) => {
     if (event.pointerType === 'mouse' && event.buttons === 0) {
       cancelOrbitPointer(event.pointerId);
@@ -5766,6 +5774,7 @@ export function createStandScene(
   }
 
   function beginImageSizePreview(meshOrMeshes, assetId) {
+    imageSizePreviewActive = true;
     const meshes = normalizeMeshes(meshOrMeshes);
     const fabricIds = new Set(meshes.map(mesh => mesh.userData.surfaceState?.fabricGroupId).filter(Boolean));
     const targets = surfaceMeshes.filter(mesh => meshes.includes(mesh)
@@ -5784,12 +5793,14 @@ export function createStandScene(
       cancel: () => {
         if (closed) return;
         closed = true;
+        imageSizePreviewActive = false;
         restore();
       },
       commit: dimensions => {
         if (closed) return { ok: false, message: 'Görsel önizlemesi kapandı.' };
         const result = applySizeImageAsset(meshes, assetId, dimensions);
         closed = true;
+        imageSizePreviewActive = false;
         if (!result.ok) restore();
         return result;
       },
@@ -6109,6 +6120,7 @@ export function createStandScene(
   }
 
   renderer.domElement.addEventListener('contextmenu', (event) => {
+    if (imageSizePreviewActive) { event.preventDefault(); return; }
     // Dokunmatik uzun basma menüyü zaten açtıysa tarayıcının kendi contextmenu olayı ikinci kez açmaz.
     if (performance.now() - lastLongPressAt < 800) {
       event.preventDefault();
