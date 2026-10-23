@@ -11,6 +11,7 @@
 // - Bir öğe aynı anda tek grupta olur. Grupta 1 parça kalırsa grup çözülür.
 // - Grup kilidi bütün üyeleri kilitli sayar (bkz. moduleLock.isModuleLocked).
 
+import { remapCopiedSurfaceGroups } from './surfaceStateBinding.js';
 import { isVerticalModuleRotation } from './modulePlacement.js';
 import { STAND_DIMENSIONS } from './standDimensions.js';
 import { usesWallBackboneCollisionDepth } from './moduleBehavior.js';
@@ -431,6 +432,7 @@ export function planGroupDuplicate(modules = [], groupId, stand, { duplicateModu
     if (moduleState.group?.fromWallId) clone.group.fromWallId = moduleState.group.fromWallId;
     return clone;
   });
+  remapCopiedSurfaceGroups(members, clones);
   return { ok: true, group, clones, offset };
 }
 

@@ -136,6 +136,7 @@ function listGuideSections() {
       <p>Modüller serbestçe görünse de bırakıldıkları konum sistem kurallarıyla doğrulanır. Stand sınırı, çarpışma ve modülün kendi snap adımı kontrol edilir.</p>
       <ul>
         <li>Bütün modüller 10 cm adımla hareket eder (duvar, banko, mobilya, projektör dahil).</li>
+        <li><strong>Kopya bağımsızlığı:</strong> Kopyalanan öğe veya grup o anki panel, renk, görsel ölçüsü ve kaplamasını alır. Sonraki görsel, ölçü, renk veya kaplama değişiklikleri kaynağı değiştirmez. Aynı görsel dosyası başka grupta kullanılsa da ölçülendirme yalnız seçilen görsel bloğuna uygulanır.</li>
         <li><strong>Profil bağlantısı:</strong> Profil başka bir profilin her noktasına dik bağlanır (iki profilin arasına, ortasına); yaklaşınca 10 cm adımla yapışır. Profiller uç uca da eklenir. Duvar panelinde dik bağlantı yalnız dikme olan noktadadır.</li>
         <li><strong>Dikey taşıma:</strong> TV, strafor, tül, raf, küp blok, LED projektör, kısa duvar ve profil seçiliyken <strong>↑ / ↓</strong> ile 10 cm iner/çıkar; zemini ve duvar tepesini geçmez. Bu öğelerde ölçülerin yanında zemine ve tavana (duvar tepesine) uzaklık da yazar. Hangi öğenin dikey taşındığı öğe kaydındaki ayardır.</li>
         <li><strong>Profil</strong> seçili duvar yüksekliğinin tepesinde gelir (250 cm duvarda 240 cm'de).</li>

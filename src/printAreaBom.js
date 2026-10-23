@@ -135,7 +135,7 @@ function groupBy(items, keyFn) {
 
 function clusterHorizontal(faces) {
   const pieces = [];
-  for (const row of groupBy(faces, (face) => `${face.imageAssetId}\u0000${face.stripIndex}`).values()) {
+  for (const row of groupBy(faces, (face) => `${face.imageAssetId}\u0000${face.transform?.blockId ?? ""}\u0000${face.stripIndex}`).values()) {
     const sorted = [...row].sort((a, b) => a.moduleIndex - b.moduleIndex || a.stripIndex - b.stripIndex);
     let current = [];
     const flush = () => {
@@ -175,7 +175,7 @@ function regionsContinueVertically(upper, lower) {
 
 function clusterRect(faces) {
   const pieces = [];
-  for (const cells of groupBy(faces, (face) => face.imageAssetId).values()) {
+  for (const cells of groupBy(faces, (face) => JSON.stringify([face.imageAssetId, face.transform?.blockId ?? null])).values()) {
     const indexByKey = new Map(cells.map((cell, index) => [`${cell.moduleIndex}:${cell.stripIndex}`, index]));
     const parent = cells.map((_, index) => index);
     const find = (index) => {
@@ -367,7 +367,7 @@ function looseImagePieces(cells) {
       if (single) pieces.push(single);
     }
   }
-  for (const bucket of groupBy(grouped, (cell) => cell.imageAssetId).values()) {
+  for (const bucket of groupBy(grouped, (cell) => JSON.stringify([cell.imageAssetId, cell.transform?.blockId ?? null])).values()) {
     pieces.push(...clusterLooseRegions(bucket));
   }
   return pieces;

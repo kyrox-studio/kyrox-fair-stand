@@ -1,3 +1,4 @@
+import { createModuleStateFromCatalogKey, duplicateModuleState } from '../src/designState.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -368,4 +369,25 @@ test('thin wall panels on the stand edge stay movable along the edge (thickness 
   const { group } = createGroup(modules, ['w1', 'w2']);
   assert.equal(planGroupTranslate(modules, group.id, 100, 0, stand).ok, true);
   assert.equal(planGroupTranslate(modules, group.id, 0, -10, stand).ok, false);
+});
+
+test('gerçek grup çoğaltması bütün üyelerde ortak ama kaynaktan bağımsız görsel bloğu üretir', () => {
+  const modules = [0, 1].map(index => {
+    const module = createModuleStateFromCatalogKey('wall_100_350');
+    module.placement = { xCm: 100 + index * 100, yCm: 100, zCm: 0, rotationZDeg: 0, wallId: 'free' };
+    module.strips[2].imageAssetId = 'logo';
+    module.strips[2].imageTransform = { mode: 'rect-group', blockId: 'source-block', groupAspect: 4,
+      regionStartX: index / 2, regionWidth: 0.5, regionStartY: 0, regionHeight: 1 };
+    return module;
+  });
+  const group = createGroup(modules, modules.map(module => module.id), { stand: STAND });
+  const before = structuredClone(modules);
+  const result = planGroupDuplicate(modules, group.group.id, STAND, { duplicateModule: duplicateModuleState });
+  assert.equal(result.ok, true);
+  const [a, b] = result.clones.map(module => module.strips[2]);
+  assert.notEqual(a.imageTransform.blockId, 'source-block');
+  assert.equal(a.imageTransform.blockId, b.imageTransform.blockId);
+  a.imageTransform.regionWidth = 0.1;
+  assert.deepEqual(modules, before);
+  assert.equal(b.imageTransform.regionWidth, 0.5);
 });

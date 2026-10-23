@@ -5711,20 +5711,37 @@ export function createStandScene(
     const assetId = seed.userData.surfaceState?.imageAssetId;
     if (!assetId) return [];
 
+    const groupId = getModuleGroupId(findModuleGroup(seed)?.userData?.moduleState);
+    const sameScope = mesh => getModuleGroupId(findModuleGroup(mesh)?.userData?.moduleState) === groupId
+      && (mesh.userData.panelSide ?? 'front') === (seed.userData.panelSide ?? 'front');
     const selected = [...selectedSurfaces].filter((mesh) => (
-      mesh.userData.acceptsImage !== false
+      sameScope(mesh)
+      && mesh.userData.acceptsImage !== false
       && !mesh.userData.surfaceState?.fabricGroupId
       && mesh.userData.surfaceState?.imageAssetId === assetId
     ));
     if (selected.includes(seed) && selected.length > 1) return selected;
 
+    const transform = seed.userData.surfaceState?.imageTransform ?? {};
     const sameAsset = surfaceMeshes.filter((mesh) => (
-      mesh.userData.acceptsImage !== false
+      sameScope(mesh)
+      && mesh.userData.acceptsImage !== false
       && !mesh.userData.surfaceState?.fabricGroupId
       && mesh.userData.surfaceState?.imageAssetId === assetId
+      && (transform.blockId
+        ? mesh.userData.surfaceState?.imageTransform?.blockId === transform.blockId
+        : !mesh.userData.surfaceState?.imageTransform?.blockId
+          && transform.mode !== 'single'
+          && mesh.userData.surfaceState?.imageTransform?.mode === transform.mode)
     ));
-    if (sameAsset.length > 1 && createRectImageLayout(imageLayoutItems(sameAsset)).ok) {
-      return sameAsset;
+    // Eski projede blok kimliği yoksa yalnız fiziksel olarak bağlı modüller birleştirilir.
+    const metas = sameAsset.map(mesh => getSurfaceSelectionPlaneMeta(mesh)).filter(Boolean);
+    const connected = transform.blockId ? sameAsset : sameAsset.filter(mesh => {
+      if (mesh.userData.moduleId === seed.userData.moduleId) return true;
+      return createConnectedPanelModulePath(metas, seed.userData.moduleId, mesh.userData.moduleId).ok;
+    });
+    if (connected.length > 1 && createRectImageLayout(imageLayoutItems(connected)).ok) {
+      return connected;
     }
     return [seed];
   }
@@ -5887,12 +5904,16 @@ export function createStandScene(
       return { ok: false, message: 'Seçili alanın ölçüsü okunamadı.' };
     }
 
+    const existingBlocks = new Set(meshes.map(mesh => mesh.userData.surfaceState?.imageTransform?.blockId));
+    const blockId = existingBlocks.size === 1 && !existingBlocks.has(undefined)
+      ? [...existingBlocks][0] : `image-block-${globalThis.crypto.randomUUID()}`;
     entries.forEach((entry) => {
       writeSurface(entry.mesh, (surfaceState) => {
         surfaceState.imageAssetId = assetId;
         surfaceState.imageTransform = {
           ...createDefaultImageTransform(),
           fit: 'size',
+          blockId,
           mode: entries.length > 1 ? 'size-group' : 'single',
           widthCm: width,
           ...(storedHeight ? { heightCm: storedHeight } : {}),
@@ -5958,11 +5979,13 @@ export function createStandScene(
 
     if (!layout.ok) return layout;
 
+    const blockId = `image-block-${globalThis.crypto.randomUUID()}`;
     layout.entries.forEach((entry) => {
       writePersistentSurface(entry.mesh, (surfaceState) => {
         surfaceState.imageAssetId = assetId;
         surfaceState.imageTransform = {
           mode: 'horizontal-group',
+          blockId,
           groupAspect: layout.groupAspect,
           regionStart: entry.regionStart,
           regionWidth: entry.regionWidth,
@@ -6033,11 +6056,13 @@ export function createStandScene(
 
     if (!layout.ok) return layout;
 
+    const blockId = `image-block-${globalThis.crypto.randomUUID()}`;
     layout.entries.forEach((entry) => {
       writePersistentSurface(entry.mesh, (surfaceState) => {
         surfaceState.imageAssetId = assetId;
         surfaceState.imageTransform = {
           mode: 'rect-group',
+          blockId,
           fit: normalizedFit,
           groupAspect: layout.groupAspect,
           regionStartX: entry.regionStartX,

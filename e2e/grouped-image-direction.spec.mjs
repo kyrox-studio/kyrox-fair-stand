@@ -77,11 +77,12 @@ function imageState(page, side) {
     })).sort((a, b) => b.width - a.width), side);
 }
 
-async function selectImagePanels(page, side, single = false) {
-  const points = await page.evaluate(side => {
+async function selectImagePanels(page, side, single = false, moduleIds = null) {
+  const points = await page.evaluate(({ side, moduleIds }) => {
         const controls = window.__imageControls;
         const panels = window.__imageSurfaces().filter(mesh => mesh.userData.moduleType === 'flat-panel'
-          && mesh.userData.stripIndex === 3 && (mesh.userData.panelSide ?? 'front') === side);
+          && mesh.userData.stripIndex === 3 && (mesh.userData.panelSide ?? 'front') === side
+          && (!moduleIds || moduleIds.includes(mesh.userData.moduleId)));
         panels.forEach(mesh => mesh.updateWorldMatrix(true, false));
         const center = panels[0].getWorldPosition(panels[0].position.clone())
           .add(panels[1].getWorldPosition(panels[1].position.clone())).multiplyScalar(0.5);
@@ -95,7 +96,7 @@ async function selectImagePanels(page, side, single = false) {
           const point = mesh.getWorldPosition(mesh.position.clone()).project(controls.object);
           return { x: box.left + (point.x + 1) * box.width / 2, y: box.top + (1 - point.y) * box.height / 2 };
         });
-      }, side);
+      }, { side, moduleIds });
       await page.mouse.click(points[0].x, points[0].y);
       if (!single) await page.keyboard.down('Control');
       if (!single) await page.mouse.click(points[1].x, points[1].y);
@@ -288,6 +289,108 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
     await expect(page.locator('#project-status')).toContainText('Açıldı:');
     await expect.poll(async () => (await previewState(page)).states.some(item => item.persistent.imageTransform?.widthCm === 140
       || item.persistent.fabricImageWidthCm === 140)).toBe(true);
+    expect(errors).toEqual([]);
+  });
+}
+
+function groupSurfaces(page, ids) {
+  return page.evaluate(ids => window.__imageSurfaces()
+    .filter(mesh => ids.includes(mesh.userData.moduleId))
+    .map(mesh => ({ id: mesh.userData.surfaceId, moduleId: mesh.userData.moduleId,
+      renderer: mesh.userData.surfaceState, persistent: mesh.userData.persistentSurfaceState }))
+    .sort((a, b) => a.id.localeCompare(b.id)), ids);
+}
+
+for (const kind of ['panel', 'legacy', 'lightbox', 'mesh']) {
+  test(`${kind}: kopya grubun görsel ölçüsü değişince kaynak grubun görünümü ve kaydı değişmez`, async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    const projectId = await preparePanels(page, 180, 'front');
+    const points = await selectImagePanels(page, 'front');
+    if (kind === 'lightbox' || kind === 'mesh') {
+      await page.mouse.click(points[0].x, points[0].y, { button: 'right' });
+      await page.locator('.module-context-advanced-toggle').click();
+      await page.locator(`[data-module-action="toggle-${kind === 'mesh' ? 'mesh' : 'fabric'}"]`).click();
+    }
+    const panel = page.locator('details', { has: page.locator('#apply-color') });
+    if (!(await panel.getAttribute('open'))) await panel.locator(':scope > summary').click();
+    await page.locator('#surface-image').setInputFiles({ name: 'shared-logo.png', mimeType: 'image/png',
+      buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') });
+    await expect(page.locator('#selection-info')).toContainText('görsel');
+    const originalIds = await page.evaluate(async kind => {
+      const { createGroup } = await import('/src/moduleGroups.js');
+      const modules = new Map();
+      window.__imageSurfaces().forEach(mesh => {
+        let parent = mesh;
+        while (parent && !parent.userData.moduleState) parent = parent.parent;
+        if (parent) modules.set(parent.userData.moduleState.id, parent.userData.moduleState);
+        if (kind === 'legacy') {
+          delete mesh.userData.surfaceState.imageTransform?.blockId;
+          delete mesh.userData.persistentSurfaceState.imageTransform?.blockId;
+        }
+      });
+      const list = [...modules.values()];
+      const result = createGroup(list, [...modules.keys()], { stand: { standType: 'island', standXCm: 900, standYCm: 900 } });
+      if (!result.ok) throw new Error(result.message);
+      return [...modules.keys()];
+    }, kind);
+    const original = await groupSurfaces(page, originalIds);
+    await page.mouse.click(points[0].x, points[0].y, { button: 'right' });
+    await page.locator('[data-module-action="group-duplicate"]').click();
+    await expect.poll(() => page.evaluate(ids => new Set(window.__imageSurfaces()
+      .filter(mesh => !ids.includes(mesh.userData.moduleId)).map(mesh => mesh.userData.moduleId)).size, originalIds)).toBe(2);
+    const cloneIds = await page.evaluate(ids => [...new Set(window.__imageSurfaces()
+      .filter(mesh => !ids.includes(mesh.userData.moduleId)).map(mesh => mesh.userData.moduleId))], originalIds);
+    if (kind === 'legacy') await page.evaluate(ids => {
+      window.__imageSurfaces().filter(mesh => ids.includes(mesh.userData.moduleId)).forEach(mesh => {
+        delete mesh.userData.surfaceState.imageTransform?.blockId;
+        delete mesh.userData.persistentSurfaceState.imageTransform?.blockId;
+      });
+    }, cloneIds);
+    const copyPoint = await page.evaluate(ids => {
+      const surfaces = window.__imageSurfaces().filter(mesh => ids.includes(mesh.userData.moduleId) && mesh.userData.stripIndex === 3);
+      surfaces.forEach(mesh => mesh.updateWorldMatrix(true, false));
+      const controls = window.__imageControls;
+      const center = surfaces.reduce((sum, mesh) => sum.add(mesh.getWorldPosition(mesh.position.clone())), surfaces[0].position.clone().set(0, 0, 0)).multiplyScalar(1 / surfaces.length);
+      controls.target.copy(center);
+      controls.object.position.copy(center).addScaledVector(surfaces[0].getWorldDirection(surfaces[0].position.clone()), 8);
+      controls.update(); controls.object.updateMatrixWorld(true);
+      const point = surfaces[0].getWorldPosition(surfaces[0].position.clone()).project(controls.object);
+      const box = document.querySelector('#viewport > canvas').getBoundingClientRect();
+      return { x: box.left + (point.x + 1) * box.width / 2, y: box.top + (1 - point.y) * box.height / 2 };
+    }, cloneIds);
+    await page.mouse.click(copyPoint.x, copyPoint.y, { button: 'right' });
+    await page.locator('[data-module-action="resize-image"]').click();
+    const dialog = page.getByRole('dialog', { name: 'Görsel ölçüsü' });
+    expect(Number(await dialog.locator('input[name="width"]').inputValue())).toBeLessThan(350);
+    await dialog.locator('input[name="width"]').fill('120');
+    await expect.poll(async () => (await groupSurfaces(page, cloneIds)).some(item => item.renderer.imageTransform?.widthCm === 120
+      || item.renderer.fabricImageWidthCm === 120)).toBe(true);
+    expect(await groupSurfaces(page, originalIds)).toEqual(original);
+    await dialog.getByRole('button', { name: 'Uygula' }).click();
+    await expect.poll(async () => (await groupSurfaces(page, cloneIds)).some(item => item.persistent.imageTransform?.widthCm === 120
+      || item.persistent.fabricImageWidthCm === 120)).toBe(true);
+    expect(await groupSurfaces(page, originalIds)).toEqual(original);
+    await page.locator('#save-project').click();
+    await expect(page.locator('#project-status')).toContainText('Kaydedildi:');
+    await page.reload();
+    await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, projectId);
+    await page.locator('#open-project').click();
+    await expect(page.locator('#project-status')).toContainText('Açıldı:');
+    await expect.poll(() => groupSurfaces(page, originalIds)).toEqual(original);
+    await expect.poll(async () => (await groupSurfaces(page, cloneIds)).some(item => item.persistent.imageTransform?.widthCm === 120
+      || item.persistent.fabricImageWidthCm === 120)).toBe(true);
+    await selectImagePanels(page, 'front', false, cloneIds);
+    const imagePanel = page.locator('details', { has: page.locator('#apply-color') });
+    if (!(await imagePanel.getAttribute('open'))) await imagePanel.locator(':scope > summary').click();
+    await page.locator('#surface-image').setInputFiles({ name: 'replacement-logo.png', mimeType: 'image/png',
+      buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') });
+    const sourceAssets = new Set(original.map(item => item.persistent.fabricImageAssetId ?? item.persistent.imageAssetId).filter(Boolean));
+    await expect.poll(async () => (await groupSurfaces(page, cloneIds)).some(item => {
+      const asset = item.persistent.fabricImageAssetId ?? item.persistent.imageAssetId;
+      return asset && !sourceAssets.has(asset);
+    })).toBe(true);
+    expect(await groupSurfaces(page, originalIds)).toEqual(original);
     expect(errors).toEqual([]);
   });
 }
