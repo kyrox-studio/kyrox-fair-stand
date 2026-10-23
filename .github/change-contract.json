@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "fair-stand-quick-usability-pack",
   "kind": "feature",
-  "summary": "Hızlı kullanılabilirlik paketi: (1) Sağ alt bildirimler (sürükleme / ok tuşu yerleşim uyarıları dahil: showPlacementFeedback artık imleç balonu değil bildirim) (src/toastNotifications.js): kullanıcının işini etkileyen bütün hatalar (yerleşim, kaydetme, açma, görsel, revizyon, render, otomatik kayıt, 3B model, çizilemeyen modül, eksik görsel) sağ altta üst üste dizilen, × ile kapanan, tekrar etmeyen bildirimdir; hata için window.alert kalmadı; ayrıntı konsola da yazılır (reportError); 'Render hazır' yeşil bildirim. (2) Üretim listesi ekranda parça kodu yazmaz (ipucu + data-item-key), 'Toplam parça listesi', 'Parça yok'; kopyalanan üretim metni kodu taşır. (3) Rehber '5 Dakikada İlk Standın' adımlarıyla açılır; eski metin 'Hızlı Başlangıç Ayrıntıları'. (4) Sahnenin sol altında stand özeti ('L Stand Sol · 4 × 3 m · duvar 3,5 m'). (5) Profil profile her noktada dik bağlanır (iki profilin arasına, ortasına; 10 cm yapışma adımı), uç uca eklenir; X kesişim çakışır; duvarda dikme kuralı aynı. BOM değişmez. CRM içindeki konfigüratör bildirim stilini mountFairStand inline CSS listesinden alır.",
+  "summary": "Hızlı kullanılabilirlik paketi: (1) Sağ alt bildirimler (sürükleme / ok tuşu yerleşim uyarıları dahil: showPlacementFeedback artık imleç balonu değil bildirim) (src/toastNotifications.js): kullanıcının işini etkileyen bütün hatalar (yerleşim, kaydetme, açma, görsel, revizyon, render, otomatik kayıt, 3B model, çizilemeyen modül, eksik görsel) sağ altta üst üste dizilen, × ile kapanan, tekrar etmeyen bildirimdir; hata için window.alert kalmadı; ayrıntı konsola da yazılır (reportError); 'Render hazır' yeşil bildirim. (2) Üretim listesi ekranda parça kodu yazmaz (ipucu + data-item-key), 'Toplam parça listesi', 'Parça yok'; kopyalanan üretim metni kodu taşır. (3) Rehber '5 Dakikada İlk Standın' adımlarıyla açılır; eski metin 'Hızlı Başlangıç Ayrıntıları'. (4) Sahnenin sol altında stand özeti ('L Stand Sol · 4 × 3 m · duvar 3,5 m'). (5) Profil profile her noktada dik bağlanır (iki profilin arasına, ortasına; 10 cm yapışma adımı), uç uca eklenir; X kesişim çakışır; duvarda dikme kuralı aynı. BOM değişmez. CRM içindeki konfigüratör bildirim stilini mountFairStand inline CSS listesinden alır. Kamera E2E ölçümü sabit bekleme yerine mevcut 4,5 saniyelik sınır içinde bekleyen çizimin tüketilmesini bekler; duran sahne iki düşük FPS aralığı boyunca denetlenir.",
   "owners": [
     "index.html",
     "src/configuratorMarkup.js",
@@ -811,7 +811,8 @@
         "e2e/new-project-wizard.spec.mjs",
         "e2e/shelf-rows-flow.spec.mjs",
         "e2e/toast-notifications.spec.mjs",
-        "e2e/visible-ui-b.spec.mjs"
+        "e2e/visible-ui-b.spec.mjs",
+        "e2e/camera-pointer-lifecycle.spec.mjs"
       ],
       "reason": "Bildirim, üretim listesi ve stand özeti tarayıcıda görünür; profil bağlantısı yerleşim davranışı."
     }

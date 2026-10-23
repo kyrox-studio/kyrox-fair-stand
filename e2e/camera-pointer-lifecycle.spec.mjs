@@ -7,7 +7,7 @@ async function openScene(page, { frameIntervalMs = 0 } = {}) {
     const source = await response.text();
     let body = source.replace(
       'const controls = new OrbitControls(camera, renderer.domElement);',
-      'const controls = new OrbitControls(camera, renderer.domElement); window.__cameraControls = controls;',
+      'const controls = new OrbitControls(camera, renderer.domElement); window.__cameraControls = controls; window.__cameraRenderIdle = () => !editorRenderRequested;',
     ).replace(
       // Count frames the editor actually draws, not animation-loop ticks: an idle
       // scene keeps ticking but must not draw.
@@ -68,11 +68,17 @@ async function expectIdleAndRepeatable(page, box) {
   expect((await camera(page)).state).toBe(-1);
   const releasedRenders = await renders(page);
   // Retained damping is allowed to settle; released mouse motion must not restart orbit.
+  // Son sönümleme karesi çizildikten sonra bekleyen son çizim de tüketilmelidir.
+  // Düşük FPS koşulunda sabit 3,5 saniye bu iki kare arasına düşebilir.
   await page.waitForTimeout(3500);
+  await expect.poll(() => page.evaluate(() => window.__cameraRenderIdle()), {
+    timeout: 1000,
+    intervals: [50],
+  }).toBe(true);
   const settledRenders = await renders(page);
   const before = (await camera(page)).position;
   await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.25, { steps: 5 });
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(500);
   const after = (await camera(page)).position;
   expect(Math.hypot(...after.map((v, i) => v - before[i]))).toBeLessThan(0.001);
   // A settled scene draws nothing, even while the released mouse moves over it.
