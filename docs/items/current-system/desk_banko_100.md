@@ -68,7 +68,7 @@ Move snap `50 cm`dir. Free placement stand sınırları içinde footprint ile cl
 - width `100 cm`, depth `50 cm`, height `100 cm`,
 - 4 corner post,
 - köşe dikmeleri ve alt/üst raylar aynı kare kanallı profil kesitinde (`addBoxModuleFrame`; reçetedeki `profile_*` sahne ölçüsü),
-- yüz panelleri profil dış yüzünün 15 mm önünde ve çerçevenin dış kenarından dört yanda 4 cm içeride (`placeBoxPanelFace`); gövde reçetedeki `panel_*` kalınlığında,
+- yüz panelleri profil dış yüzünün 15 mm önünde ve çerçevenin dış kenarından alt/üstte 4 cm, sağ/solda 3 cm içeride (`placeBoxPanelFace`); gövde reçetedeki `panel_*` kalınlığında,
 - yalnız bottom + top rail (middle rail yok),
 - top thickness `4 cm`, overhang `2 cm`,
 - 6 editable face,
