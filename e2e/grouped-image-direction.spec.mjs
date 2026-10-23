@@ -6,6 +6,7 @@ async function preparePanels(page, rotation, side) {
     const body = (await response.text())
       .replace('const controls = new OrbitControls(camera, renderer.domElement);',
         'const controls = new OrbitControls(camera, renderer.domElement); window.__imageControls = controls;')
+      .replace('  let fabricOverlayMeshes = [];', '  let fabricOverlayMeshes = []; window.__imageOverlays = () => fabricOverlayMeshes;')
       .replace('  let surfaceMeshes = [];',
         '  let surfaceMeshes = []; window.__imageSurfaces = () => surfaceMeshes;');
     await route.fulfill({ response, body });
@@ -76,13 +77,8 @@ function imageState(page, side) {
     })).sort((a, b) => b.width - a.width), side);
 }
 
-for (const rotation of [0, 90, 180, 270]) {
-  for (const side of ['front', 'back']) {
-    test(`${rotation} derece ${side}: birleşik görsel doğru sırada kaydolur ve yeniden açılır`, async ({ page }) => {
-      const errors = [];
-      page.on('pageerror', error => errors.push(error.message));
-      const id = await preparePanels(page, rotation, side);
-      const points = await page.evaluate(side => {
+async function selectImagePanels(page, side, single = false) {
+  const points = await page.evaluate(side => {
         const controls = window.__imageControls;
         const panels = window.__imageSurfaces().filter(mesh => mesh.userData.moduleType === 'flat-panel'
           && mesh.userData.stripIndex === 3 && (mesh.userData.panelSide ?? 'front') === side);
@@ -101,9 +97,19 @@ for (const rotation of [0, 90, 180, 270]) {
         });
       }, side);
       await page.mouse.click(points[0].x, points[0].y);
-      await page.keyboard.down('Control');
-      await page.mouse.click(points[1].x, points[1].y);
-      await page.keyboard.up('Control');
+      if (!single) await page.keyboard.down('Control');
+      if (!single) await page.mouse.click(points[1].x, points[1].y);
+      if (!single) await page.keyboard.up('Control');
+  return points;
+}
+
+for (const rotation of [0, 90, 180, 270]) {
+  for (const side of ['front', 'back']) {
+    test(`${rotation} derece ${side}: birleşik görsel doğru sırada kaydolur ve yeniden açılır`, async ({ page }) => {
+      const errors = [];
+      page.on('pageerror', error => errors.push(error.message));
+      const id = await preparePanels(page, rotation, side);
+      await selectImagePanels(page, side);
       const panel = page.locator('details', { has: page.locator('#apply-color') });
       if (!(await panel.getAttribute('open'))) await panel.locator(':scope > summary').click();
       const png = await page.evaluate(() => {
@@ -134,4 +140,113 @@ for (const rotation of [0, 90, 180, 270]) {
       expect(errors).toEqual([]);
     });
   }
+}
+
+async function previewState(page) {
+  return page.evaluate(() => {
+    const surfaces = window.__imageSurfaces().filter(mesh => mesh.userData.moduleType === 'flat-panel'
+      && mesh.userData.stripIndex === 3 && (mesh.userData.panelSide ?? 'front') === 'front');
+    const states = surfaces.sort((a, b) => a.userData.surfaceId.localeCompare(b.userData.surfaceId)).map(mesh => ({ renderer: mesh.userData.surfaceState,
+      persistent: mesh.userData.persistentSurfaceState, repeat: mesh.material.map?.repeat.toArray() ?? null }));
+    const overlays = window.__imageOverlays().map(mesh => mesh.material.map?.repeat.toArray() ?? null);
+    return { states, overlays };
+  });
+}
+
+for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
+  test(`${mode}: canlı ölçü kayıt ağacına yazılmaz; iptal geri döner, onay tek adımda geri alınır`, async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    const projectId = await preparePanels(page, 180, 'front');
+    const points = await selectImagePanels(page, 'front', mode === 'single');
+    if (mode === 'lightbox' || mode === 'mesh') {
+      await page.mouse.click(points[0].x, points[0].y, { button: 'right' });
+      await page.locator('.module-context-advanced-toggle').click();
+      await page.locator(`[data-module-action="toggle-${mode === 'mesh' ? 'mesh' : 'fabric'}"]`).click();
+    }
+    const panel = page.locator('details', { has: page.locator('#apply-color') });
+    if (!(await panel.getAttribute('open'))) await panel.locator(':scope > summary').click();
+    await page.locator('#surface-image').setInputFiles({ name: 'preview.png', mimeType: 'image/png',
+      buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') });
+    await expect.poll(async () => {
+      const state = await previewState(page);
+      return mode === 'lightbox' || mode === 'mesh' ? state.overlays.some(Boolean)
+        : state.states.some(item => Boolean(item.renderer.imageAssetId) && Boolean(item.repeat));
+    }).toBe(true);
+    const original = await previewState(page);
+    const open = async () => {
+      await page.mouse.click(points[0].x, points[0].y, { button: 'right' });
+      await page.locator('[data-module-action="resize-image"]').click();
+      return page.getByRole('dialog', { name: 'Görsel ölçüsü' });
+    };
+    const dialog = await open();
+    const width = dialog.locator('input[name="width"]');
+    await width.fill('150');
+    await expect.poll(async () => {
+      const state = await previewState(page);
+      return state.states.some(item => item.renderer.imageTransform?.widthCm === 150
+        || item.renderer.fabricImageWidthCm === 150);
+    }).toBe(true);
+    await width.fill('120');
+    await dialog.locator('input[name="height"]').fill('30');
+    await expect.poll(async () => {
+      const state = await previewState(page);
+      return state.states.some(item => item.renderer.imageTransform?.widthCm === 120
+        || item.renderer.fabricImageWidthCm === 120);
+    }).toBe(true);
+    await page.waitForTimeout(1200); // Geçmiş ve otomatik kayıt izleyicileri en az bir tur çalışır.
+    // Kayıt önizleme açıkken tetiklense bile yalnız onaylı ağaç serileşir.
+    await page.evaluate(async () => {
+      const { getActiveAutosaveController } = await import('/src/autosaveController.js');
+      await getActiveAutosaveController().flush();
+    });
+    const temporary = await previewState(page);
+    expect(temporary.states.map(item => item.persistent)).toEqual(original.states.map(item => item.persistent));
+    expect(mode === 'lightbox' || mode === 'mesh' ? temporary.overlays : temporary.states.map(item => item.repeat))
+      .not.toEqual(mode === 'lightbox' || mode === 'mesh' ? original.overlays : original.states.map(item => item.repeat));
+    await width.fill(''); // Geçersiz değer önizlemeyi bozmaz.
+    await page.waitForTimeout(120);
+    expect((await previewState(page)).states.map(item => item.renderer)).toEqual(temporary.states.map(item => item.renderer));
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect.poll(async () => (await previewState(page)).states.map(item => item.renderer))
+      .toEqual(original.states.map(item => item.renderer));
+    await expect.poll(async () => {
+      const state = await previewState(page);
+      return mode === 'lightbox' || mode === 'mesh' ? state.overlays : state.states.map(item => item.repeat);
+    }).toEqual(mode === 'lightbox' || mode === 'mesh' ? original.overlays : original.states.map(item => item.repeat));
+
+    for (const cancel of ['button', 'outside']) {
+      const cancelled = await open();
+      await cancelled.locator('input[name="width"]').fill('115');
+      await expect.poll(async () => (await previewState(page)).states.some(item => item.renderer.imageTransform?.widthCm === 115
+        || item.renderer.fabricImageWidthCm === 115)).toBe(true);
+      if (cancel === 'button') await cancelled.getByRole('button', { name: 'İptal' }).click();
+      else await cancelled.locator('..').click({ position: { x: 4, y: 4 } });
+      await expect(cancelled).toHaveCount(0);
+      await expect.poll(async () => (await previewState(page)).states.map(item => item.renderer))
+        .toEqual(original.states.map(item => item.renderer));
+    }
+    const confirmed = await open();
+    await confirmed.locator('input[name="width"]').fill('140');
+    await confirmed.locator('input[name="height"]').fill('35');
+    await confirmed.getByRole('button', { name: 'Uygula' }).click();
+    await expect.poll(async () => (await previewState(page)).states.some(item => item.persistent.imageTransform?.widthCm === 140
+      || item.persistent.fabricImageWidthCm === 140)).toBe(true);
+    await page.locator('#design-undo').click();
+    await expect.poll(async () => (await previewState(page)).states.map(item => item.persistent))
+      .toEqual(original.states.map(item => item.persistent));
+    await page.locator('#design-redo').click();
+    await expect.poll(async () => (await previewState(page)).states.some(item => item.persistent.imageTransform?.widthCm === 140
+      || item.persistent.fabricImageWidthCm === 140)).toBe(true);
+    await page.locator('#save-project').click();
+    await expect(page.locator('#project-status')).toContainText('Kaydedildi:');
+    await page.reload();
+    await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, projectId);
+    await page.locator('#open-project').click();
+    await expect(page.locator('#project-status')).toContainText('Açıldı:');
+    await expect.poll(async () => (await previewState(page)).states.some(item => item.persistent.imageTransform?.widthCm === 140
+      || item.persistent.fabricImageWidthCm === 140)).toBe(true);
+    expect(errors).toEqual([]);
+  });
 }

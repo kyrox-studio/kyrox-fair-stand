@@ -3385,7 +3385,7 @@ function describeSizeResult(result) {
   return `Görsel seçili alana ${sizeLabel} olarak oturdu.`;
 }
 
-function requestImageAreaDimensions(area) {
+function requestImageAreaDimensions(area, onPreview = () => {}) {
   const areaWidth = formatCm(area.areaWidthCm);
   const areaHeight = formatCm(area.areaHeightCm);
   const widthValue = formatCm(area.currentWidthCm);
@@ -3401,7 +3401,7 @@ function requestImageAreaDimensions(area) {
     form.style.cssText = 'width:min(400px,100%);background:#fff;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(15,23,42,.28);display:grid;gap:12px;font:500 13px/1.35 Inter,ui-sans-serif,system-ui,sans-serif;color:#16161a';
     form.innerHTML = [
       '<strong id="image-area-size-title" style="font-size:16px">Görsel ölçüsü</strong>',
-      `<span style="color:#64748b">Seçili alan ${areaWidth} × ${areaHeight} cm. Görsel önce bu ölçüde oturur. Küçültürsen boşluklar tekrarlanır, büyütürsen taşar.</span>`,
+      `<span style="color:#64748b">Seçili alan ${areaWidth} × ${areaHeight} cm. Değerleri değiştirirken sahnede önizle. Uygula ile onayla; İptal veya Esc ile eski görünüme dön. Küçültürsen boşluklar tekrarlanır, büyütürsen taşar.</span>`,
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">',
       `<label style="display:grid;gap:5px">Genişlik (cm)<input name="width" type="number" min="1" max="5000" step="0.1" value="${widthValue}" required style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px"></label>`,
       `<label style="display:grid;gap:5px">Yükseklik (cm)<input name="height" type="number" min="1" max="5000" step="0.1" value="${heightValue}" required style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px"></label>`,
@@ -3410,12 +3410,21 @@ function requestImageAreaDimensions(area) {
     ].join('');
     overlay.appendChild(form);
     document.body.appendChild(overlay);
+    let previewTimer = null;
+    form.addEventListener('input', () => {
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(() => {
+        if (!form.checkValidity()) return;
+        onPreview({ widthCm: Number(form.elements.width.value), heightCm: Number(form.elements.height.value) });
+      }, 80);
+    });
     const onKeyDown = (event) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
       finish(null);
     };
     const finish = (value) => {
+      clearTimeout(previewTimer);
       document.removeEventListener('keydown', onKeyDown, true);
       overlay.remove();
       resolve(value);
@@ -3445,9 +3454,17 @@ async function resizeContextImage(context) {
     selectionInfo.textContent = area.message;
     return;
   }
-  const dimensions = await requestImageAreaDimensions(area);
-  if (!dimensions) return;
-  const result = scene3d.applySizeImageAsset(block, area.assetId, dimensions);
+  designHistory.capture();
+  const preview = scene3d.beginImageSizePreview(block, area.assetId);
+  let result;
+  try {
+    const dimensions = await requestImageAreaDimensions(area, values => preview.update(values));
+    if (!dimensions) return;
+    result = preview.commit(dimensions);
+  } finally {
+    preview.cancel();
+  }
+  if (result.ok) designHistory.capture();
   if (!result.ok) {
     selectionInfo.textContent = result.message;
     return;

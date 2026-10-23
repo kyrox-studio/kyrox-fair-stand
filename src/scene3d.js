@@ -4787,6 +4787,10 @@ export function createStandScene(
     textureLoader.load(
       assetUrl,
       (sourceTexture) => {
+        if (!overlay.parent) {
+          sourceTexture.dispose();
+          return;
+        }
         requestEditorRender();
         if (fit === 'size') {
           const image = sourceTexture.image;
@@ -4877,10 +4881,10 @@ export function createStandScene(
     );
   }
 
-  function rebuildFabricOverlays() {
+  function rebuildFabricOverlays({ normalizeOwnership = true } = {}) {
     requestEditorRender();
     clearFabricOverlays();
-    normalizeFabricOwnership();
+    if (normalizeOwnership) normalizeFabricOwnership();
 
     const groups = new Map();
     surfaceMeshes.forEach((surface) => {
@@ -5426,13 +5430,21 @@ export function createStandScene(
     mesh.material.needsUpdate = true;
   }
 
+  const imageLoadVersions = new WeakMap();
+
   function loadSingleImageOnSurface(mesh, assetId) {
     const assetUrl = getAssetUrl(assetId);
     if (!mesh?.material || !assetUrl || mesh.userData.acceptsImage === false) return;
 
+    const version = (imageLoadVersions.get(mesh) ?? 0) + 1;
+    imageLoadVersions.set(mesh, version);
     textureLoader.load(
       assetUrl,
       (sourceTexture) => {
+        if (imageLoadVersions.get(mesh) !== version) {
+          sourceTexture.dispose();
+          return;
+        }
         requestEditorRender();
         const surfaceState = mesh.userData.surfaceState;
         if (surfaceState?.fabricGroupId || surfaceState?.imageAssetId !== assetId) {
@@ -5505,6 +5517,7 @@ export function createStandScene(
       },
       undefined,
       () => {
+        if (imageLoadVersions.get(mesh) !== version) return;
         const surfaceState = mesh.userData.surfaceState;
         const stateColor = surfaceState?.isGlass
           ? GLASS_APPEARANCE.color
@@ -5518,9 +5531,15 @@ export function createStandScene(
     const assetUrl = getAssetUrl(assetId);
     if (!mesh?.material || !assetUrl || mesh.userData.acceptsImage === false) return;
 
+    const version = (imageLoadVersions.get(mesh) ?? 0) + 1;
+    imageLoadVersions.set(mesh, version);
     textureLoader.load(
       assetUrl,
       (sourceTexture) => {
+        if (imageLoadVersions.get(mesh) !== version) {
+          sourceTexture.dispose();
+          return;
+        }
         requestEditorRender();
         const surfaceState = mesh.userData.surfaceState;
         const transform = surfaceState?.imageTransform;
@@ -5560,6 +5579,7 @@ export function createStandScene(
       },
       undefined,
       () => {
+        if (imageLoadVersions.get(mesh) !== version) return;
         const surfaceState = mesh.userData.surfaceState;
         const stateColor = surfaceState?.isGlass
           ? GLASS_APPEARANCE.color
@@ -5745,7 +5765,42 @@ export function createStandScene(
     };
   }
 
-  function applySizeImageAsset(meshOrMeshes, assetId, { widthCm, heightCm = null } = {}) {
+  function beginImageSizePreview(meshOrMeshes, assetId) {
+    const meshes = normalizeMeshes(meshOrMeshes);
+    const fabricIds = new Set(meshes.map(mesh => mesh.userData.surfaceState?.fabricGroupId).filter(Boolean));
+    const targets = surfaceMeshes.filter(mesh => meshes.includes(mesh)
+      || fabricIds.has(mesh.userData.surfaceState?.fabricGroupId));
+    let closed = false;
+    function restore() {
+      targets.forEach(mesh => {
+        syncRendererSurfaceState(mesh.userData.surfaceState, mesh.userData.persistentSurfaceState);
+        if (!mesh.userData.surfaceState?.fabricGroupId) loadImageOnSurface(mesh, assetId);
+      });
+      if (fabricIds.size) rebuildFabricOverlays({ normalizeOwnership: false });
+      requestEditorRender();
+    }
+    return {
+      update: dimensions => closed ? null : applySizeImageAsset(meshes, assetId, { ...dimensions, preview: true }),
+      cancel: () => {
+        if (closed) return;
+        closed = true;
+        restore();
+      },
+      commit: dimensions => {
+        if (closed) return { ok: false, message: 'Görsel önizlemesi kapandı.' };
+        const result = applySizeImageAsset(meshes, assetId, dimensions);
+        closed = true;
+        if (!result.ok) restore();
+        return result;
+      },
+    };
+  }
+
+  function applySizeImageAsset(meshOrMeshes, assetId, { widthCm, heightCm = null, preview = false } = {}) {
+    // Önizleme yalnız renderer kopyasına yazar; kayıt ağacı ve BOM değişmez.
+    const writeSurface = preview
+      ? (mesh, mutate) => mutate(mesh.userData.surfaceState)
+      : writePersistentSurface;
     if (!assetId) return { ok: false, message: 'Önce bir görsel seç.' };
     const width = Number(widthCm);
     if (!Number.isFinite(width) || width <= 0) {
@@ -5772,7 +5827,7 @@ export function createStandScene(
         (surface) => surface.userData.surfaceState?.fabricGroupId === fabric.groupId,
       );
       groupSurfaces.forEach((surface) => {
-        writePersistentSurface(surface, (state) => {
+        writeSurface(surface, (state) => {
           state.fabricImageAssetId = assetId;
           state.fabricImageFit = 'size';
           state.fabricImageWidthCm = width;
@@ -5780,7 +5835,7 @@ export function createStandScene(
           else delete state.fabricImageHeightCm;
         });
       });
-      rebuildFabricOverlays();
+      rebuildFabricOverlays({ normalizeOwnership: !preview });
       return {
         ok: true,
         panelCount: groupSurfaces.length,
@@ -5822,7 +5877,7 @@ export function createStandScene(
     }
 
     entries.forEach((entry) => {
-      writePersistentSurface(entry.mesh, (surfaceState) => {
+      writeSurface(entry.mesh, (surfaceState) => {
         surfaceState.imageAssetId = assetId;
         surfaceState.imageTransform = {
           ...createDefaultImageTransform(),
@@ -7348,6 +7403,7 @@ export function createStandScene(
     applySizeImageAsset,
     resolveImageBlock,
     describeImageSizeTarget,
+    beginImageSizePreview,
     applyHorizontalImageAsset,
     applyRectImageAsset,
     clearImage,

@@ -83,7 +83,7 @@ function listGuideSections() {
         <li><strong>Ölçü / opacity…:</strong> Kutu blok seçiliyken genişlik, derinlik, yükseklik ve 0–1 opacity açılır. Yüzler, renk ve taşıma <strong>Kutu Blok</strong> bölümündedir.</li>
         <li><strong>Kutu yürütme:</strong> Ok tuşları kutuyu sağa, sola, ileri, geri ve yukarı, aşağı yürütür. Taban zeminin altına inmez. Kutunun tepesi stand tavanını geçmez.</li>
         <li><strong>Tül Z:</strong> Ok yukarı/aşağı tülü yükseltir veya alçaltır. Taban zeminin altına inmez; levhanın tepesi stand tavanını geçmez.</li>
-        <li><strong>Görseli ölçülendir…:</strong> Görsel, Lightbox veya Mesh görseli atanmış yüzeyde açılır. Başlangıç ölçüsü seçili alanın kendi ölçüsüdür. Küçültünce boşluklar tekrarlanır, büyütünce görsel alanın dışına taşar. Aynı ölçü penceresi panel, Lightbox ve Mesh için geçerlidir.</li>
+        <li><strong>Görseli ölçülendir…:</strong> Görsel, Lightbox veya Mesh görseli atanmış yüzeyde açılır. Başlangıç ölçüsü seçili alanın kendi ölçüsüdür. Ölçüleri değiştirirken sahnede canlı önizleme görünür; Uygula onaylar, İptal veya Esc eski görünümü geri getirir. Küçültünce boşluklar tekrarlanır, büyütünce görsel alanın dışına taşar. Aynı ölçü penceresi panel, Lightbox ve Mesh için geçerlidir. Birleşik panel görseli yüzün gerçek soldan sağa yönüne göre bölünür; kamera yönü ve modüllerin eklenme sırası sonucu değiştirmez.</li>
         <li><strong>Gelişmiş:</strong> Cam, Metal Separatör, Lightbox ve Mesh dönüşümleri menüde <strong>Gelişmiş ▸</strong> altındadır; açık/kapalı tercihi oturum boyunca hatırlanır.</li>
         <li><strong>Cam Panele Çevir / Normal Panele Çevir:</strong> Uygun panelin cam durumunu değiştirir.</li>
         <li><strong>Metal Separatöre Çevir / Normal Panele Çevir:</strong> Uygun paneli tel ızgaraya çevirir. Deliklerden arkası görünür. Ctrl ile seçilen tam dikdörtgen tek ölçüdür.</li>
@@ -165,10 +165,10 @@ function listGuideSections() {
     title: 'Görsel Kütüphanesi ve Görsel Uygulama',
     html: `
       <ul>
-        <li><strong>Dosya Seç:</strong> Görseli aktif projenin görsel arşivine ekler. En fazla ${getMaxImageUploadMb()} MB; aşıldığında popup uyarır. Büyük görseller sahne için küçültülür; şeffaf arka plan korunur. SVG olduğu gibi kalır.</li>
-        <li><strong>Doldur:</strong> Alanı tamamen kaplar; gerekirse görüntüyü kırpar.</li>
-        <li><strong>Sığdır:</strong> Görselin tamamını seçili alana sığdırır.</li>
-        <li><strong>Ölçü:</strong> Sağ tık → Görseli ölçülendir. Panel, Lightbox ve Mesh görseli aynı pencereden ölçülür. Seçili alanın kendi ölçüsü başlangıçtır; 400×200 alandaki görsel önce 400×200 oturur. 300×150 yazınca daralır ve boşluk tekrarlanır, 500×300 yazınca alanın dışına taşar. Tek panelde de aynıdır.</li>
+        <li><strong>Dosya Seç:</strong> Görseli aktif projenin görsel arşivine ekler. En fazla ${getMaxImageUploadMb()} MB; aşıldığında sağ altta bildirim gösterilir. Büyük görseller sahne için küçültülür; şeffaf arka plan korunur. SVG olduğu gibi kalır.</li>
+        <li><strong>Doldur:</strong> Görselin en-boy oranını koruyarak alanı tamamen kaplar; taşan kısmı ortadan kırpar.</li>
+        <li><strong>Sığdır:</strong> Görselin tamamını en-boy oranını koruyarak seçili alana sığdırır; gerekirse boşluk bırakır.</li>
+        <li><strong>Ölçü:</strong> Sağ tık → Görseli ölçülendir. Panel, Lightbox ve Mesh görseli aynı pencereden ölçülür. Önizleme otomatik kayda veya geri alma geçmişine girmez; Uygula tek geri alma adımıdır. İptal, Esc veya pencere dışına tıklama değişikliği iptal eder. Ölçü vermek görseli bu genişlik ve yüksekliğe oturtur; Doldur ve Sığdır ise en-boy oranını korur. Seçili alanın kendi ölçüsü başlangıçtır; 400×200 alandaki görsel önce 400×200 oturur. 300×150 yazınca daralır ve boşluk tekrarlanır, 500×300 yazınca alanın dışına taşar. Tek panelde de aynıdır.</li>
         <li><strong>Kaldır:</strong> Görseli panel/bez üzerinden kaldırır; kütüphaneden silmez.</li>
         <li>Dikdörtgen çoklu panel seçiminde tek büyük görsel panellere bölünerek uygulanabilir.</li>
         <li>Lightbox Kumaşa ve Mesh Brandaya görsel tek parça olarak uygulanır.</li>

@@ -43,7 +43,7 @@ test('fabric conversion allows a rectangular panel block and renders one overlay
   assert.match(scene, /if \(!surfaces\.length\) return;/);
   assert.match(scene, /createRectSelection\(/);
   assert.match(scene, /fabricGroupId/);
-  assert.match(scene, /function rebuildFabricOverlays\(\)/);
+  assert.match(scene, /function rebuildFabricOverlays\(/);
   assert.match(scene, /overlay\.userData\.role = fabricType === 'mesh' \? 'mesh-branda' : 'lightbox-fabric'/);
   assert.match(scene, /new THREE\.PlaneGeometry\(width, height\)/);
   assert.match(scene, /overlay\.raycast = \(\) => \{\}/);

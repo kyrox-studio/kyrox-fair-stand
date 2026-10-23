@@ -1,32 +1,36 @@
 {
   "schemaVersion": 2,
-  "id": "grouped-image-surface-direction",
-  "kind": "bugfix",
-  "summary": "Birleşik panel görseli dünya X/Y sırasına göre değil yüzeyin dönüş uygulanmış yatay eksenine göre dağıtılır. 180 derece dönük SİMES panel grubunda parça sırası düzelir; kamera yönü hesabı etkilemez. Ön/arka yüz ve 0/90/180/270 dönüşler, farklı genişlikler ve kayıt/açma doğrulanır.",
+  "id": "grouped-image-direction-and-live-size-preview",
+  "kind": "feature",
+  "summary": "Birleşik panel görseli dünya X/Y sırasına göre değil yüzeyin dönüş uygulanmış yatay eksenine göre dağıtılır. 180 derece dönük SİMES panel grubunda parça sırası düzelir; kamera yönü hesabı etkilemez. Ön/arka yüz ve 0/90/180/270 dönüşler, farklı genişlikler ve kayıt/açma doğrulanır. Görsel ölçülendirmede geçerli girişler yalnız renderer kopyasında canlı önizlenir; Uygula tek geçmiş adımında kalıcı duruma yazar, İptal/Esc/dışarı tıklama eski görünümü geri getirir. Geciken texture yüklemeleri yeni önizlemeyi ezemez. Kullanım kılavuzu önizleme, görsel sırası ve Doldur/Sığdır/ölçü farklarıyla güncellendi.",
   "owners": [
     "src/rectImageLayout.js",
-    "src/scene3d.js"
+    "src/scene3d.js",
+    "src/main.js",
+    "src/helpGuide.js"
   ],
   "sourceOfTruth": [
     "src/rectImageLayout.js",
-    "src/scene3d.js"
+    "src/scene3d.js",
+    "src/surfaceStateBinding.js",
+    "src/main.js"
   ],
   "impact": {
-    "catalog": "not-applicable",
+    "catalog": "affected",
     "behavior": "affected",
     "state": "affected",
     "placement": "affected",
     "renderer": "affected",
-    "persistence": "not-applicable",
-    "bom": "not-applicable",
-    "ui": "not-applicable",
-    "composition": "not-applicable",
-    "assets": "not-applicable",
-    "storage": "not-applicable",
-    "importExport": "not-applicable",
+    "persistence": "affected",
+    "bom": "affected",
+    "ui": "affected",
+    "composition": "affected",
+    "assets": "affected",
+    "storage": "affected",
+    "importExport": "affected",
     "performance": "affected",
-    "accessibility": "not-applicable",
-    "architecture": "not-applicable",
+    "accessibility": "affected",
+    "architecture": "affected",
     "security": "not-applicable",
     "tests": "affected"
   },
@@ -78,13 +82,16 @@
       "src/rectSelection.js",
       "src/runtimeSettings.js",
       "src/scene3d.js",
+      "src/selectionFeedback.js",
       "src/selectionToolbar.js",
+      "src/style.css",
+      "src/surfaceStateBinding.js",
+      "src/systemChangeContract.js",
       "src/uprightHeight.js",
       "src/viewCube.js",
       "src/wallReflow.js",
       "src/wallShortWidth.js",
-      "vite.config.js",
-      "src/systemChangeContract.js"
+      "vite.config.js"
     ],
     "affectedTests": [
       "e2e/base-items-contract.spec.mjs",
@@ -109,6 +116,7 @@
       "e2e/furniture-items-contract.spec.mjs",
       "e2e/glass-bar-table.spec.mjs",
       "e2e/group-template.spec.mjs",
+      "e2e/grouped-image-direction.spec.mjs",
       "e2e/helpers/module-lock-fixture.mjs",
       "e2e/illuminated-foam-placement-feedback.spec.mjs",
       "e2e/indoor-plant-items-contract.spec.mjs",
@@ -190,6 +198,7 @@
       "test/depotBackWallRecipe.test.js",
       "test/depotFreeDragSnap.test.js",
       "test/depotFrontRecipe.test.js",
+      "test/designHistory.test.js",
       "test/designState.test.js",
       "test/deskBankoItemsContract.test.js",
       "test/developerEntrypointDocs.test.js",
@@ -225,6 +234,7 @@
       "test/illuminatedFoamModule.test.js",
       "test/imageAssetDeletion.test.js",
       "test/imageAssetLiveDelete.test.js",
+      "test/imageFit.test.js",
       "test/imageOptimize.test.js",
       "test/indoorPlantItemsContract.test.js",
       "test/indoorPlants.test.js",
@@ -304,7 +314,9 @@
       "test/projectSaveAs.test.js",
       "test/projectUiMainIntegration.test.js",
       "test/raisedPlatform.test.js",
+      "test/rawBomSelectionParser.test.js",
       "test/recipeWallPanelSlots.test.js",
+      "test/rectImageLayout.test.js",
       "test/rectSelection.test.js",
       "test/registerCanonicalItemCatalog.mjs",
       "test/relationshipBomEndToEnd.test.js",
@@ -318,6 +330,7 @@
       "test/sceneBomAcceptance.test.js",
       "test/sceneSurroundSingleSource.test.js",
       "test/selectedModuleRotationCursor.test.js",
+      "test/selectionFeedback.test.js",
       "test/selectionFeedbackMainIntegration.test.js",
       "test/shelfCatalogPanelSeam.test.js",
       "test/shelfItemsItemContract.test.js",
@@ -368,14 +381,13 @@
       "test/wallShortRelationshipBom.test.js",
       "test/wallShortVerticalMove.test.js",
       "test/wallShortWidth.test.js",
-      "test/wallShowcaseItemContract.test.js",
-      "test/rectImageLayout.test.js",
-      "e2e/grouped-image-direction.spec.mjs"
+      "test/wallShowcaseItemContract.test.js"
     ],
     "affectedDocs": [
       "FRESH_REPOSITORY_REVIEW.md",
       "MODULE_BEHAVIOR_STANDARD.md",
       "PROJECT_RULES.md",
+      "README.md",
       "RELEASE_HARDENING_ROADMAP.md",
       "REPOSITORY_CLEANUP_PROGRESS.md",
       "SYSTEM_AUDIT_CHECKLIST.md",
@@ -406,6 +418,7 @@
       "audit/remediation/A03_F011_CLOSURE.md",
       "audit/remediation/A03_F012_CLOSURE.md",
       "audit/remediation/A04_F013_CLOSURE.md",
+      "audit/remediation/A07_F017_CLOSURE.md",
       "audit/remediation/A11_F029_CLOSURE.md",
       "docs/AUTOSAVE_INTEGRATION_NOTES.md",
       "docs/assets/PUBLIC_MODEL_ATTRIBUTION.md",
@@ -761,8 +774,7 @@
       "docs/refactor/ITEM_3D_PREVIEW.md",
       "docs/refactor/PENDING_ITEM_DECISIONS.md",
       "docs/refactor/REFACTOR.md",
-      "docs/refactor/SCENE_POSE.md",
-      "README.md"
+      "docs/refactor/SCENE_POSE.md"
     ],
     "relatedFindings": {
       "affected": [],
@@ -782,11 +794,15 @@
         "F-033"
       ]
     },
-    "notes": "Görsel dağıtımı ve ortak ölçüm tüketicileri (görsel blok düzenleme, kumaş alan ölçümü) incelendi. Item/BOM/placement kimliği, yetki, tenant ve API sınırları değişmez. Mevcut imageTransform şeması korunur; eski kayıtlar yeniden atamaya kadar aynen açılır. SaaS plan/kota/iş/veri yaşam döngüsü değişikliği yoktur."
+    "notes": "Görsel dağıtımı ve ortak ölçüm tüketicileri (görsel blok düzenleme, kumaş alan ölçümü) incelendi. Item/BOM/placement kimliği, yetki, tenant ve API sınırları değişmez. Mevcut imageTransform şeması korunur; eski kayıtlar yeniden atamaya kadar aynen açılır. SaaS plan/kota/iş/veri yaşam döngüsü değişikliği yoktur. Önizleme kayıt ağacına, otomatik kayıt imzasına, BOM veya geçmişe yazmaz; onay mevcut proje kaydetme semantiğini izler. Backend/API/yetki ve tenant sınırları değişmez."
   },
   "tests": {
     "targeted": [
-      "test/rectImageLayout.test.js"
+      "test/rectImageLayout.test.js",
+      "test/surfaceStateBinding.test.js",
+      "test/imageFit.test.js",
+      "test/designHistory.test.js",
+      "test/helpGuide.test.js"
     ],
     "fullSuite": true,
     "build": true,
