@@ -125,12 +125,12 @@ test('rejects gaps between selected columns', () => {
 });
 
 // Gerçek sahne dönüşleriyle eşit olmayan panel genişlikleri ve ters ekleme sırası.
+for (const widths of [[2, 1, 0.5], [0.5, 2, 1]]) {
 for (const rotationDeg of [0, 90, 180, 270]) {
   for (const back of [false, true]) {
-    test(`${rotationDeg} derece ${back ? 'arka' : 'ön'} yüzde görsel yüzün solundan başlar`, async () => {
+    test(`${widths.join("+")} metre ${rotationDeg} derece ${back ? 'arka' : 'ön'} yüzde görsel yüzün solundan başlar`, async () => {
       const { Group, Mesh, PlaneGeometry, MeshBasicMaterial } = await import('three');
       const vertical = rotationDeg % 180 !== 0;
-      const widths = [2, 1, 0.5];
       const items = widths.map((width, index) => {
         const parent = new Group();
         parent.rotation.y = rotationDeg * Math.PI / 180;
@@ -154,4 +154,5 @@ for (const rotationDeg of [0, 90, 180, 270]) {
       }
     });
   }
+}
 }
