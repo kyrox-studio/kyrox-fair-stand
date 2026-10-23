@@ -143,8 +143,9 @@ const WALL_SHORT_2 = {
 // Kısa panelde katalog kartı varyant başına tek (migration 0079); diğer genişlikler katalogda
 // gizlidir ve Item'dan kurulur (genişlik penceresinin yolu). Kart da kendi ölçülü adını taşır.
 const WALL_SHORT_CARDS = Object.freeze({
-  wall_100_short_1: 'Panel Tek Sıra 100',
-  wall_100_short_2: 'Panel Çift Sıra 100',
+  // Kart genişlik sorar; başlık ölçüsüzdür (sahnedeki parça Item adını taşır).
+  wall_100_short_1: 'Panel Tek Sıra',
+  wall_100_short_2: 'Panel Çift Sıra',
 });
 
 function wallShortDescriptor(itemKey) {

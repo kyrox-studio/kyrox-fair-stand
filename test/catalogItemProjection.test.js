@@ -5,8 +5,9 @@ import {
   listCatalogGroups,
   listCatalogItems,
   getCatalogItem,
+  getModuleCatalogLabel,
 } from '../src/catalog.js';
-import { listRegisteredItems } from '../src/items.js';
+import { getItem, listRegisteredItems } from '../src/items.js';
 
 const BASELINE = JSON.parse(
   readFileSync(new URL('./catalogProjectionBaseline.json', import.meta.url), 'utf8'),
@@ -32,7 +33,7 @@ test('listCatalogItems 54 görünür Item’ı Item kaydından üretir; hardcode
   const projected = listCatalogItems();
   const catalogSource = readFileSync(new URL('../src/catalog.js', import.meta.url), 'utf8');
 
-  assert.equal(items.length, 132);
+  assert.equal(items.length, 133);
   assert.equal(visible.length, 54);
   assert.equal(projected.length, 54);
   assert.equal(new Set(projected.map((item) => item.itemKey)).size, 54);
@@ -80,4 +81,19 @@ test('kategori sırası, adı, üye sayısı ve Item sırası değişmez', () =>
     assert.equal(group.catalogIndex, expected.catalogIndex);
     assert.deepEqual([...group.keys], expected.keys);
   });
+});
+
+test('ölçü soran kartlar ölçüsüz başlık taşır; sahnedeki parça Item adını taşır', () => {
+  const labels = Object.fromEntries(listCatalogItems().map((item) => [item.itemKey, item.label]));
+  assert.equal(labels.profile_289, 'Profil');
+  assert.equal(labels.upright_346_5, 'Dikme');
+  assert.equal(labels.wall_100_short_1, 'Panel Tek Sıra');
+  assert.equal(labels.wall_100_short_2, 'Panel Çift Sıra');
+  for (const itemKey of ['profile_289', 'upright_346_5', 'wall_100_short_1', 'wall_100_short_2']) {
+    assert.equal(getModuleCatalogLabel({ itemKey }), getItem(itemKey).name, itemKey);
+  }
+  // Ölçü sormayan kart Item adını aynen gösterir.
+  const other = listCatalogItems().find((item) => !['profile', 'upright'].includes(getItem(item.itemKey).type)
+    && !item.itemKey.includes('_short_'));
+  assert.equal(other.label, getItem(other.itemKey).name);
 });

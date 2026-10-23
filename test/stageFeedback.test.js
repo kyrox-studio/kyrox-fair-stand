@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  formatCapacityPopup,
   renderStageResult,
   renderWallResult,
 } from '../src/stageFeedback.js';
@@ -40,15 +39,3 @@ test('renderWallResult only warns for error messages', () => {
   assert.deepEqual(calls, ['Sorun']);
 });
 
-test('formatCapacityPopup preserves the current Turkish capacity details', () => {
-  assert.equal(
-    formatCapacityPopup({
-      axis: 'x',
-      limitCm: 300,
-      currentCm: 200,
-      addedCm: 150,
-      projectedCm: 350,
-    }, 'Modül eklenemedi'),
-    'Modül eklenemedi\n\nX stand sınırı: 300 cm\nMevcut toplam: 200 cm\nEklenmek istenen: 150 cm\nOluşacak toplam: 350 cm\n\nAktif stand alanı aşılamaz.',
-  );
-});

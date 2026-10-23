@@ -237,15 +237,17 @@ test('profil kartı tek; bırakırken boy sorulur, seçilen boyun Item’ıyla k
   const card = page.locator('.module-drag-card[data-module-key="profile_289"]').first();
   const group = page.locator('.module-drag-group', { has: card });
   if (!(await group.getAttribute('open'))) await group.locator(':scope > summary').click();
-  // Diğer boyların kartı yoktur.
+  // Kart ölçü yazmaz; diğer boyların kartı yoktur.
+  await expect(card.locator('strong')).toHaveText('Profil');
+  await expect(page.locator('.module-drag-card[data-module-key="upright_346_5"] strong')).toHaveText('Dikme');
   await expect(page.locator('.module-drag-card[data-module-key="profile_190"]')).toHaveCount(0);
 
   const dialog = page.getByRole('dialog', { name: 'Profil boyu' });
   await dropCatalogCard(page, 'profile_289');
   await expect(dialog).toBeVisible();
-  // Kartın boyu seçili; 8 boy, gerçek ve sahne boyu yazar.
+  // Kartın boyu seçili; 9 boy (0081: 346,5), gerçek ve sahne boyu yazar.
   await expect(dialog.locator('select')).toHaveValue('profile_289');
-  await expect(dialog.locator('option')).toHaveCount(8);
+  await expect(dialog.locator('option')).toHaveCount(9);
   await expect(dialog.locator('option[value="profile_41_5"]')).toHaveText('41,5 cm (sahnede 50 cm)');
   await expect(dialog.locator('option[value="profile_487"]')).toHaveText('487 cm (sahnede 500 cm)');
   await dialog.locator('select').selectOption('profile_388');

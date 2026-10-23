@@ -147,8 +147,9 @@ test('kısa panel kartı tek; bırakırken genişlik sorulur, seçilen genişli�
   const card = page.locator('.module-drag-card[data-module-key="wall_100_short_1"]').first();
   const group = page.locator('.module-drag-group', { has: card });
   if (!(await group.getAttribute('open'))) await group.locator(':scope > summary').click();
-  await expect(card.locator('strong')).toHaveText('Panel Tek Sıra 100');
-  await expect(page.locator('.module-drag-card[data-module-key="wall_100_short_2"] strong')).toHaveText('Panel Çift Sıra 100');
+  // Kart genişlik sorar; başlık ölçüsüzdür.
+  await expect(card.locator('strong')).toHaveText('Panel Tek Sıra');
+  await expect(page.locator('.module-drag-card[data-module-key="wall_100_short_2"] strong')).toHaveText('Panel Çift Sıra');
   // Diğer genişliklerin kartı yoktur.
   for (const itemKey of ['wall_50_short_1', 'wall_150_short_1', 'wall_200_short_1', 'wall_50_short_2', 'wall_150_short_2', 'wall_200_short_2']) {
     await expect(page.locator(`.module-drag-card[data-module-key="${itemKey}"]`)).toHaveCount(0);

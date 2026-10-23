@@ -20,11 +20,11 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     shelf_unit = next(item for item in body["items"] if item["itemKey"] == "shelf_100")
     assert "unitName" not in shelf_unit
     assert len(body["categories"]) == 6
-    assert len(body["items"]) == 135  # 0079: profile_8; 0078: profil 239,5 + 289 + 388 + 487; 0075: bar masası; 0068: 5 yükseklik dikmesi; 0072: 3 raf tahtası + 3 kart + 6 sıralı raf; 0074: vitrin + broşürlük
+    assert len(body["items"]) == 136  # 0081: profile_346_5; 0079: profile_8; 0078: profil 239,5 + 289 + 388 + 487; 0075: bar masası; 0068: 5 yükseklik dikmesi; 0072: 3 raf tahtası + 3 kart + 6 sıralı raf; 0074: vitrin + broşürlük
     visible = [item for item in body["items"] if item["catalogVisible"] is True]
     hidden = [item for item in body["items"] if item["catalogVisible"] is not True]
     assert len(visible) == 54  # 0079: 6 kısa panel gizlendi, Tek/Çift Sıra için birer kart; 0078: 4 profil gizlendi, profile_289 kartı
-    assert len(hidden) == 81  # 0080: profile_8 gizli; 0079: 6 kısa panel genişliği gizli; 0078: 4 profil gizlendi + 239,5 / 388 / 487; 0068: 5 gizli dikme; 0072: 3 tekli raf gizlenir, 3 tahta + 6 sıralı raf gizli
+    assert len(hidden) == 82  # 0081: profile_346_5 gizli; 0080: profile_8 gizli; 0079: 6 kısa panel genişliği gizli; 0078: 4 profil gizlendi + 239,5 / 388 / 487; 0068: 5 gizli dikme; 0072: 3 tekli raf gizlenir, 3 tahta + 6 sıralı raf gizli
     shelf = next(item for item in body["items"] if item["itemKey"] == "shelf_100")
     assert shelf["categoryId"] == 3
     assert "catalogCategory" not in shelf

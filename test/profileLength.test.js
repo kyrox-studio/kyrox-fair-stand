@@ -22,11 +22,12 @@ const PROFILE_LENGTHS = Object.freeze([
   ['profile_190', 190, 200],
   ['profile_239_5', 239.5, 250],
   ['profile_289', 289, 300],
+  ['profile_346_5', 346.5, 350],
   ['profile_388', 388, 400],
   ['profile_487', 487, 500],
 ]);
 
-test('profil boy penceresi 8 çizilebilir profili sahne boyuna göre sıralar', () => {
+test('profil boy penceresi 9 çizilebilir profili sahne boyuna göre sıralar', () => {
   const items = listProfileLengthItems();
   assert.deepEqual(items.map((item) => item.itemKey), PROFILE_LENGTHS.map(([itemKey]) => itemKey));
   for (const [itemKey, realCm, sceneCm] of PROFILE_LENGTHS) {

@@ -7,7 +7,7 @@ import {
   listCatalogItems,
   listCatalogGroups,
 } from '../src/catalog.js';
-import { resolveItemKey } from '../src/items.js';
+import { getItem, resolveItemKey } from '../src/items.js';
 
 test('every catalog module belongs to exactly one catalog group', () => {
   const groupedKeys = listCatalogGroups().flatMap((group) => group.keys);
@@ -21,7 +21,8 @@ test('every catalog module resolves its single-source key and label', () => {
     const module = getCatalogItem(moduleKey);
     assert.ok(module, moduleKey);
     assert.equal(resolveItemKey({ ...module, itemKey: moduleKey }), moduleKey);
-    assert.equal(getModuleCatalogLabel({ ...module, itemKey: moduleKey }), module.label);
+    // Sahnedeki parça Item adını taşır; ölçü soran kartın başlığı ölçüsüz olabilir.
+    assert.equal(getModuleCatalogLabel({ ...module, itemKey: moduleKey }), getItem(moduleKey).name);
   });
 });
 

@@ -114,7 +114,7 @@ import {
 import { DEFAULT_SELECTION_HINT, describeFloorAreaSelection, describeFloorSelection, describeSurfaceSelection } from './selectionFeedback.js';
 import { createSidebarController } from './sidebarController.js';
 import { createViewportToolbarController } from './viewportToolbarController.js';
-import { formatCapacityPopup, renderStageResult as renderStageResultInto, renderWallResult } from './stageFeedback.js';
+import { renderStageResult as renderStageResultInto, renderWallResult } from './stageFeedback.js';
 import {
   defaultUprightItemKeyForWallHeight,
   readUprightHeightPreference,
