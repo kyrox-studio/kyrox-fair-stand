@@ -28,7 +28,9 @@ export default defineConfig({
       ? 'set FAIR_STAND_E2E_CATALOG=1&& npm run dev -- --host 127.0.0.1 --port 4173'
       : 'FAIR_STAND_E2E_CATALOG=1 npm run dev -- --host 127.0.0.1 --port 4173',
     url: 'http://127.0.0.1:4173',
-    reuseExistingServer: !process.env.CI,
+    // Her koşu kendi Vite sunucusunu başlatır: yarıda kalan bir koşudan kalan sunucu başka bir
+    // klasörü/dalı sunabilir; 4173 doluysa koşu sessizce yanlış koda bağlanmak yerine hata verir.
+    reuseExistingServer: false,
     timeout: 120_000,
   },
   projects: [

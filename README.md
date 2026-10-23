@@ -66,6 +66,7 @@ npm run build            # production build
 npm run e2e:deps         # pinned Playwright test runner'ı local node_modules'a kur
 npm run e2e:install      # Chromium browser binary'sini kur
 npm run e2e              # real-browser Playwright E2E suite
+                         # her koşu 4173'te kendi Vite sunucusunu açar; port doluysa önce eski sunucuyu kapat
 npm run preview          # built application preview
 ```
 
