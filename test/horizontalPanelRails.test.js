@@ -41,7 +41,7 @@ test('wall, door and showcase frames draw all four edges with the stand frame cr
   ]) {
     const block = functionBlock(startName, endName);
     assert.match(block, /addPanelModuleFrame\(group, moduleState, \{/, startName);
-    // Panel yüzü sağ/solda PANEL_FRAME_SIDE_INSET_M (3 cm), alt/üstte PANEL_FRAME_INSET_M (4 cm) içeride biter.
+    // Panel yüzü sağ/solda PANEL_FRAME_SIDE_INSET_M (2 cm), alt/üstte PANEL_FRAME_INSET_M (4 cm) içeride biter.
     assert.match(block, /const innerWidth = Math\.max\(widthM - PANEL_FRAME_SIDE_INSET_M \* 2, 0\.02\);/, startName);
     assert.match(block, /const panelOpening = panelFrameOpening\(/, startName);
     assert.match(block, /fitPanelToFrameOpening\(/, startName);
@@ -61,7 +61,7 @@ test('counter and door panel systems do not create intermediate horizontal rails
 
 test('panel inset is 4 cm at top/bottom and 3 cm at left/right frame edges', () => {
   assert.match(scene, /const PANEL_FRAME_INSET_M = 0\.04;/);
-  assert.match(scene, /const PANEL_FRAME_SIDE_INSET_M = 0\.03;/);
+  assert.match(scene, /const PANEL_FRAME_SIDE_INSET_M = 0\.02;/);
   assert.doesNotMatch(scene, /PANEL_FRAME_INSET_M \* 2/);
   assert.match(scene, /return \{ bottomY: frameBottomY \+ PANEL_FRAME_INSET_M, topY: frameTopY - PANEL_FRAME_INSET_M \};/);
 });
