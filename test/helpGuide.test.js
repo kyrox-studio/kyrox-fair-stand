@@ -23,7 +23,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /Klavye Kısayolları/);
   assert.match(guideSource, /Sağ Tık Menüsü/);
   assert.match(guideSource, /Stand Oluşturma ve Sistem Standartları/);
-  assert.match(guideSource, /<strong>Kaydet:<\/strong> sahne varken/);
+  assert.match(guideSource, /<strong>Kaydet:<\/strong> üst araç çubuğundadır; sahne varken/);
   assert.match(guideSource, /<strong>3, 5, 7 veya 10 dk<\/strong> \(varsayılan 3 dk\)/);
   assert.match(guideSource, /Kapalı \(Otomatik Kayıt Kapalı\)/);
   assert.match(guideSource, /Kaydedilmemiş değişiklik koruması/);
@@ -65,7 +65,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /tablette seçim çubuğundaki <strong>Çoklu modül<\/strong> ile\) en az 2 öğe seç/);
   assert.match(guideSource, /menüde <strong>Gelişmiş ▸<\/strong> altındadır/);
   assert.match(guideSource, /Tablette karta dokunup sahnede yere dokunmak da modülü oraya ekler/);
-  assert.match(guideSource, /<strong>Duvar yüksekliği<\/strong>ni seç \(250–500 cm, varsayılan 350;/);
+  assert.match(guideSource, /<strong>Duvar yüksekliği<\/strong>ni seç \(2,5–5 m, varsayılan 3,5 m;/);
   assert.match(guideSource, /Editörde ışık gölgesi, LED projektör ve raf altı aydınlatmanın panele düşen ışığı kapalıdır/);
   assert.match(guideSource, /<strong>Render Al<\/strong> çizerken gölgeyi, projektör ve raf altı ışıklarını açar/);
   assert.match(guideSource, /standın tepesinde bir sahne spotu yanar ve ortam ışığı kısılır/);

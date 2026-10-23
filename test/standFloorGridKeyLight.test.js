@@ -24,12 +24,15 @@ test('stand zemini ızgarası: 50 cm ince, her 2. çizgi (1 m) kalın; yalnız s
   assert.match(grid, /lines\.raycast = \(\) => \{\};/);
 });
 
-test('ızgara yalnız yerleştirme önizlemesi görünürken çizilir; boşta gizli', () => {
+test('ızgara yerleştirme ve tekil/grup taşıma sırasında görünür; boşta gizli', () => {
   assert.match(scene, /const STAND_GRID_OPACITY = Object\.freeze\(\{ bold: 0\.8, fine: 0\.45 \}\);/);
   assert.match(functionBlock('function createStandFloorGrid(', 'function setStandFloorGridActive('), /group\.visible = false;/);
   assert.match(functionBlock('function setStandFloorGridActive(', 'function disposeStandFloorGrid('), /standFloorGrid\.visible = active;/);
   const sync = functionBlock('function syncPlacementGhostDom(', 'function disposePlacementGhost(');
-  assert.match(sync, /setStandFloorGridActive\(Boolean\(placementGhost\?\.root\?\.visible\)\);/);
+  assert.match(sync, /syncStandFloorGrid\(\);/);
+  const visibility = functionBlock('function syncStandFloorGrid(', 'function syncPlacementGhostDom(');
+  assert.match(visibility, /placementGhost\?\.root\?\.visible \|\| dragSession\?\.dragging/);
+  assert.match(scene, /syncStandFloorGrid\(\);[\s\S]*if \(!editorRenderRequested\) return;/);
   assert.match(scene, /standFloorGrid = createStandFloorGrid\(widthM, depthM\);/);
   assert.match(scene, /scene\.add\(grid, standFloorGrid, standOutline, \.\.\.activeWallGuides\);/);
   assert.match(functionBlock('function disposeGroundGuides(', 'function '), /disposeStandFloorGrid\(\);/);
@@ -60,3 +63,12 @@ test('ölçü katmanı: seçilen öğenin taban alanı ve ölçüleri; taşırke
   assert.match(capture, /measureGroup\.visible = false;/);
   assert.match(capture, /if \(standFloorGrid\) standFloorGrid\.visible = false;/);
 });
+
+ test('ölçü kontrolü varsayılan kapalıdır; ızgarayı veya proje durumunu değiştirmez', () => {
+  assert.match(scene, /let measurementsVisible = false;/);
+  const setter = functionBlock('function setMeasurementsVisible(', 'function clearMeasureOverlay(');
+  assert.match(setter, /syncMeasureOverlay\(\);/);
+  assert.doesNotMatch(setter, /standFloorGrid|currentModules|localStorage/);
+  const sync = functionBlock('function syncMeasureOverlay(', 'function createActiveWallGuides(');
+  assert.match(sync, /if \(!measurementsVisible\) \{[\s\S]*clearMeasureOverlay\(\);[\s\S]*measureSignature = '';[\s\S]*return;/);
+ });

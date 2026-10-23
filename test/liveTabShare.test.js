@@ -138,7 +138,7 @@ test('idle, zero viewers, one viewer, and stop cleanup', async () => {
   const ui = controls();
   applyLiveShareControls(ui, { phase: 'idle', viewerCount: 0, error: '', watchUrl: '', popoverOpen: false });
   assert.equal(ui.start.hidden, false);
-  assert.equal(ui.start.textContent, 'Canlı Paylaş');
+  assert.equal(ui.start.textContent, 'Ekranı paylaş');
   assert.equal(ui.stop.hidden, true);
   assert.equal(ui.link.hidden, true);
 
@@ -224,7 +224,7 @@ test('idle, zero viewers, one viewer, and stop cleanup', async () => {
 
   await controller.stop('user');
   assert.equal(ui.start.hidden, false);
-  assert.equal(ui.start.textContent, 'Canlı Paylaş');
+  assert.equal(ui.start.textContent, 'Ekranı paylaş');
   assert.equal(ui.stop.hidden, true);
   assert.equal(video.stopped, true);
   assert.equal(stopped, 1);
@@ -507,7 +507,7 @@ test('live share details stay in a popover and closing it keeps the stream', asy
     return node;
   };
   const root = make('live-share');
-  const start = make('live-share-start', 'Canlı Paylaş');
+  const start = make('live-share-start', 'Ekranı paylaş');
   start.hidden = false;
   const popover = make('live-share-popover');
   popover.hidden = true;
@@ -567,7 +567,7 @@ test('live share details stay in a popover and closing it keeps the stream', asy
     clipboard: view.navigator.clipboard,
   });
 
-  assert.equal(start.textContent, 'Canlı Paylaş');
+  assert.equal(start.textContent, 'Ekranı paylaş');
   assert.equal(popover.hidden, true);
   assert.equal(stop.hidden, true);
   assert.equal(link.hidden, true);
@@ -609,7 +609,7 @@ test('live share details stay in a popover and closing it keeps the stream', asy
   await stop.listeners.click({ stopPropagation() {} });
   assert.equal(stopped, 1);
   assert.equal(video.stopped, true);
-  assert.equal(start.textContent, 'Canlı Paylaş');
+  assert.equal(start.textContent, 'Ekranı paylaş');
   assert.equal(popover.hidden, true);
   assert.equal(stop.hidden, true);
 });

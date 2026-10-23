@@ -14,6 +14,13 @@ export function isModuleLocked(moduleState) {
   return moduleState?.locked === true || moduleState?.group?.locked === true;
 }
 
+// Toplu kilit kontrolü grup kilidini de gerçek kilit durumuna dahil eder.
+export function getModulesLockState(modules = []) {
+  const total = modules.length;
+  const locked = modules.filter(isModuleLocked).length;
+  return { total, locked, allLocked: total > 0 && locked === total, partiallyLocked: locked > 0 && locked < total };
+}
+
 /** Toplu silme atomiktir: seçimde kilit varsa hiçbir öğe silinmez. */
 export function planSelectionRemoval(modules = [], moduleIds = []) {
   const ids = new Set(moduleIds);

@@ -15,8 +15,8 @@ async function createStand(page, { standName, projectName, xCm = '500', yCm = '5
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: standName }).click();
-  await page.locator('#stand-size-x').fill(xCm);
-  await page.locator('#stand-size-y').fill(yCm);
+  await page.locator('#stand-size-x').fill(String(Number(xCm) / 100));
+  await page.locator('#stand-size-y').fill(String(Number(yCm) / 100));
 
   const createStage = page.locator('#create-stage');
   await expect(createStage).toBeEnabled();

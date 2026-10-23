@@ -52,13 +52,28 @@
     </style>
   </head>
   <body>
-    <div id="app">
+    <div id="app" data-editor-mode="simple">
       <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="Menüyü kapat" aria-expanded="true" title="Menüyü kapat">‹</button>
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-intro">
           <h1>Maxima Konfigüratörü</h1>
           <p class="muted">Önce stand tipini ve gerçek stand alanını belirle; sahne yalnızca bu bilgiler tamamlandığında oluşturulur.</p>
         </div>
+
+        <div class="editor-mode-switch" role="group" aria-label="Düzenleme modu">
+          <button id="editor-mode-simple" type="button" data-editor-mode="simple" aria-pressed="true">Basit</button>
+          <button id="editor-mode-advanced" type="button" data-editor-mode="advanced" aria-pressed="false">Gelişmiş</button>
+        </div>
+
+        <details class="panel-card editor-settings-card collapsible-panel">
+          <summary class="panel-summary"><span>Ayarlar</span><span class="panel-chevron" aria-hidden="true"></span></summary>
+          <div class="panel-card-content">
+            <label class="view-setting-toggle" for="lock-all-modules"><input id="lock-all-modules" type="checkbox" disabled /> Herşeyi Kilitle</label>
+            <label class="view-setting-toggle" for="show-measurements"><input id="show-measurements" type="checkbox" /> Ölçüleri göster</label>
+            <p class="muted view-settings-hint">Parça ölçüleri ve kenarlara uzaklıklar.</p>
+            <label class="stand-size-field autosave-interval-field" for="autosave-interval"><span>Otomatik kayıt</span><select id="autosave-interval"><option value="0">Kapalı (Otomatik Kayıt Kapalı)</option><option value="3" selected>3 dk</option><option value="5">5 dk</option><option value="7">7 dk</option><option value="10">10 dk</option></select></label>
+          </div>
+        </details>
 
         <details class="panel-card project-card collapsible-panel" open>
           <summary class="panel-summary"><span>Proje</span><span class="panel-chevron" aria-hidden="true"></span></summary>
@@ -74,7 +89,7 @@
           <label for="project-select" hidden><strong>Kayıtlı projeler</strong></label>
           <select id="project-select" hidden><option value="">Kayıtlı proje yok</option></select>
           <div class="project-actions">
-            <button id="save-project" type="button" class="primary" disabled>Kaydet</button>
+
             <button id="save-as-project" type="button" hidden disabled>Farklı Kaydet</button>
             <button id="open-project" type="button">Aç</button>
             <button id="export-project" type="button" hidden>Dışarı Aktar</button>
@@ -82,7 +97,7 @@
             <input id="import-project-file" type="file" accept=".zip,application/zip" hidden />
             <button id="delete-project" type="button" class="danger ghost">Sil</button>
           </div>
-          <label class="stand-size-field autosave-interval-field" for="autosave-interval"><span>Otomatik kayıt</span><select id="autosave-interval"><option value="0">Kapalı (Otomatik Kayıt Kapalı)</option><option value="3" selected>3 dk</option><option value="5">5 dk</option><option value="7">7 dk</option><option value="10">10 dk</option></select></label>
+
           <div id="project-revisions" hidden>
             <strong>Revizyonlar</strong>
             <div id="project-revision-list" class="project-revision-list" role="list"></div>
@@ -103,12 +118,12 @@
           </div>
 
           <div class="stand-size-grid">
-            <label class="stand-size-field" for="stand-size-x"><span>X (cm)</span><input id="stand-size-x" type="number" min="50" max="5000" step="50" placeholder="1000" inputmode="decimal" /></label>
-            <label class="stand-size-field" for="stand-size-y"><span>Y (cm)</span><input id="stand-size-y" type="number" min="50" max="5000" step="50" placeholder="500" inputmode="decimal" /></label>
+            <label class="stand-size-field" for="stand-size-x"><span>Genişlik (m)</span><input id="stand-size-x" type="text" min="0.5" max="50" step="0.5" placeholder="10" inputmode="decimal" /></label>
+            <label class="stand-size-field" for="stand-size-y"><span>Derinlik (m)</span><input id="stand-size-y" type="text" min="0.5" max="50" step="0.5" placeholder="5" inputmode="decimal" /></label>
           </div>
-          <p class="stand-limit-note">50 cm ve katları · Maksimum: 5000 × 5000 cm (50 × 50 m)</p>
-          <label class="stand-size-field" for="wall-height"><span>Duvar yüksekliği</span><select id="wall-height"><option value="250">250 cm</option><option value="300">300 cm</option><option value="350" selected>350 cm</option><option value="400">400 cm</option><option value="450">450 cm</option><option value="500">500 cm</option></select></label>
-          <label class="stand-size-field" for="floor-type"><span>Zemin Kaplaması</span><select id="floor-type"><option value="karolaj">Karolaj · 100 × 100 cm</option><option value="hali">Halı</option><option value="parke-acik">Beyaz Meşe</option><option value="parke-sari">Sarı Meşe</option><option value="parke-beton">Beton Parke</option></select></label>
+          <p class="stand-limit-note">0,5 m adımlarla (ör. 4,5 veya 6,5) · Maksimum: 50 × 50 m</p>
+          <label class="stand-size-field" for="wall-height"><span>Duvar yüksekliği</span><select id="wall-height"><option value="250">2,5 m</option><option value="300">3 m</option><option value="350" selected>3,5 m</option><option value="400">4 m</option><option value="450">4,5 m</option><option value="500">5 m</option></select></label>
+          <label class="stand-size-field" for="floor-type"><span>Zemin kaplaması</span><select id="floor-type"><option value="karolaj">Karolaj (1 × 1 m modüler zemin)</option><option value="hali">Halı</option><option value="parke-acik">Parke · Beyaz meşe</option><option value="parke-sari">Parke · Sarı meşe</option><option value="parke-beton">Parke · Beton görünümü</option></select></label>
           <div id="floor-area-controls" hidden>
             <div class="stand-size-grid">
               <label class="stand-size-field" for="floor-area-x"><span>Alan X</span><input id="floor-area-x" type="number" min="0" max="5000" step="50" disabled /></label>
@@ -126,11 +141,11 @@
           </div>
           <div class="auto-depot-row" style="display:grid;gap:8px;padding:10px 0 4px">
             <label class="stand-size-field" for="auto-depot-size"><span>Depo</span><select id="auto-depot-size"><option value="" selected>Depo yok</option><option value="100x100">1 × 1 m</option><option value="150x100">1,5 × 1 m</option><option value="200x100">2 × 1 m</option><option value="200x200">2 × 2 m</option></select></label>
-            <label style="display:flex;align-items:center;gap:8px;min-height:38px;font-weight:700"><input id="auto-depot-contents" type="checkbox" disabled /> Depo içeriği eklensin</label>
+            <label style="display:flex;align-items:center;gap:8px;min-height:38px;font-weight:700"><input id="auto-depot-contents" type="checkbox" disabled /> Depo ekipmanlarını ekle</label>
             <span id="auto-depot-contents-hint" class="muted" style="grid-column:1/-1" hidden>Seçilirse Mini Buzdolabı + Kettle + Askılık + Çöp Kutusu otomatik eklenir.</span>
           </div>
           <div class="auto-fascia-row" style="display:grid;gap:8px;padding:4px 0 4px">
-            <label class="stand-size-field" for="auto-fascia-rows"><span>Alınlık</span><select id="auto-fascia-rows"><option value="" selected>Alınlık yok</option><option value="1">Tek sıra</option><option value="2">Çift sıra</option></select></label>
+            <label class="stand-size-field" for="auto-fascia-rows"><span>Üst tabela (alınlık)</span><select id="auto-fascia-rows"><option value="" selected>Alınlık yok</option><option value="1">Tek sıra</option><option value="2">Çift sıra</option></select></label>
           </div>
           <button id="create-stage" type="button" class="primary" disabled>Sahneyi Oluştur</button>
           <p id="stage-result" class="status">Stand tipi ile X ve Y ölçülerinin üçü de tamamlanmadan sahne oluşmaz.</p>
@@ -180,16 +195,16 @@
           </div>
         </details>
 
-        <details class="panel-card compact collapsible-panel">
+        <details class="panel-card compact collapsible-panel" id="stand-standards-card">
           <summary class="panel-summary"><span>Standartlar</span><span class="panel-chevron" aria-hidden="true"></span></summary>
           <div class="panel-card-content"><ul id="stand-standards-list"></ul></div>
         </details>
       </aside>
 
       <main class="viewport-wrap">
-        <div id="viewport-toolbar" class="viewport-toolbar" hidden><button id="viewport-toolbar-toggle" class="viewport-toolbar-toggle" type="button" aria-label="Üst bandı kapat" aria-expanded="true" title="Üst bandı kapat">›</button><button id="design-undo" type="button" class="viewport-render-button" title="Geri al (Ctrl+Z)" aria-keyshortcuts="Control+Z" disabled>Geri al</button><button id="design-redo" type="button" class="viewport-render-button" title="İleri al (Ctrl+Y)" aria-keyshortcuts="Control+Y Control+Shift+Z" disabled>İleri al</button><button id="toggle-production-bom" type="button" class="viewport-render-button" aria-pressed="false" title="Üretim listesi">Üretim Listesi</button><button id="render-current-view" type="button" class="viewport-render-button">Render Al</button><button id="toggle-stage-light" type="button" class="viewport-render-button is-active" aria-pressed="true" title="Sahne ışığı: tepe spotunu yakar, ortam ışığını kısar">Sahne Işığı</button><div id="live-share" class="live-share"><button id="live-share-start" type="button" class="viewport-render-button" aria-expanded="false" aria-controls="live-share-popover">Canlı Paylaş</button><div id="live-share-popover" class="live-share-popover" hidden role="dialog" aria-label="Canlı Paylaşım"><p class="live-share-popover-title">Canlı Paylaşım</p><p id="live-share-status">Durum: Hazır</p><p id="live-share-viewers" hidden>İzleyici: 0 / 1</p><p id="live-share-link" class="live-share-link" hidden></p><div class="live-share-popover-actions"><button id="live-share-copy" type="button" class="viewport-render-button" hidden>Linki Kopyala</button><button id="live-share-stop" type="button" class="viewport-render-button" hidden>Paylaşımı Durdur</button></div><p id="live-share-error" class="live-share-error" hidden></p></div></div></div>
+        <div id="viewport-toolbar" class="viewport-toolbar" hidden><button id="viewport-toolbar-toggle" class="viewport-toolbar-toggle" type="button" aria-label="Üst bandı kapat" aria-expanded="true" title="Üst bandı kapat">›</button><button id="save-project" type="button" class="primary viewport-render-button" disabled>Kaydet</button><button id="design-undo" type="button" class="viewport-render-button" title="Geri al (Ctrl+Z)" aria-keyshortcuts="Control+Z" disabled>Geri al</button><button id="design-redo" type="button" class="viewport-render-button" title="İleri al (Ctrl+Y)" aria-keyshortcuts="Control+Y Control+Shift+Z" disabled>İleri al</button><button id="toggle-production-bom" type="button" class="viewport-render-button" aria-pressed="false" title="Üretim listesi">Üretim Listesi</button><button id="render-current-view" type="button" class="viewport-render-button">Render Al</button><button id="toggle-stage-light" type="button" class="viewport-render-button is-active" aria-pressed="true" title="Sahne ışığı: tepe spotunu yakar, ortam ışığını kısar">Sahne Işığı</button><div id="live-share" class="live-share"><button id="live-share-start" type="button" class="viewport-render-button" aria-expanded="false" aria-controls="live-share-popover">Ekranı paylaş</button><div id="live-share-popover" class="live-share-popover" hidden role="dialog" aria-label="Canlı Paylaşım"><p class="live-share-popover-title">Canlı Paylaşım</p><p id="live-share-status">Durum: Hazır</p><p id="live-share-viewers" hidden>İzleyici: 0 / 1</p><p id="live-share-link" class="live-share-link" hidden></p><div class="live-share-popover-actions"><button id="live-share-copy" type="button" class="viewport-render-button" hidden>Linki Kopyala</button><button id="live-share-stop" type="button" class="viewport-render-button" hidden>Paylaşımı Durdur</button></div><p id="live-share-error" class="live-share-error" hidden></p></div></div></div>
         <div id="viewport"></div><div id="stand-summary-chip" class="stand-summary-chip" hidden aria-live="polite"></div>
-        <div id="viewport-empty" class="viewport-empty"><div class="viewport-empty-card"><strong>Sahne hazır değil</strong><span>Stand tipini seç, X ve Y ölçülerini cm olarak gir ve “Sahneyi Oluştur” butonuna bas.</span></div></div>
+        <div id="viewport-empty" class="viewport-empty"><div class="viewport-empty-card"><strong>Sahne hazır değil</strong><span>Stand tipini ve ölçülerini belirle ve “Sahneyi Oluştur” butonuna bas.</span></div></div>
       </main>
     </div>
     <div id="project-loading-overlay" class="project-loading-overlay" hidden aria-live="polite" aria-busy="true"><div class="project-loading-card"><div class="project-loading-spinner" aria-hidden="true"></div><strong id="project-loading-title">Proje yükleniyor…</strong><span id="project-loading-detail">Görseller ve sahne hazırlanıyor.</span></div></div>

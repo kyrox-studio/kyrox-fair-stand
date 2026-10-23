@@ -66,8 +66,8 @@ for (const wallHeight of HEIGHTS) {
     const standSetup = page.locator('details.stand-setup-card');
     await standSetup.locator('summary').click();
     await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
-    await page.locator('#stand-size-x').fill('3000');
-    await page.locator('#stand-size-y').fill('1000');
+    await page.locator('#stand-size-x').fill('30');
+    await page.locator('#stand-size-y').fill('10');
     await page.locator('#wall-height').selectOption(String(wallHeight));
     await page.locator('#create-stage').click();
     await page.locator('form input[name="projectName"]').fill(`E2E Matris ${wallHeight}`);

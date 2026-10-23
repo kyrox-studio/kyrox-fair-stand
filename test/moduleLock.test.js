@@ -5,6 +5,7 @@ import {
   findLockedModuleMoves,
   guardPlanAgainstLocks,
   isModuleLocked,
+  getModulesLockState,
   planSelectionRemoval,
   setModulesLocked,
 } from '../src/moduleLock.js';
@@ -101,4 +102,12 @@ test('zincire ekleme kilitli komşuyu kaydıracaksa plan reddedilir, kaydırmıy
   const withLockedA = build('a');
   const planA = insert(withLockedA);
   assert.equal(guardPlanAgainstLocks(planA, withLockedA), planA, 'yerinde kalan kilitli a engellemez');
+});
+
+test('toplu kilit durumu boş sahne, karma kilit ve grup kilidini doğru sayar', () => {
+  assert.deepEqual(getModulesLockState(), { total: 0, locked: 0, allLocked: false, partiallyLocked: false });
+  const modules = [{ id: 'a', locked: true }, { id: 'b' }, { id: 'c', group: { locked: true } }];
+  assert.deepEqual(getModulesLockState(modules), { total: 3, locked: 2, allLocked: false, partiallyLocked: true });
+  setModulesLocked(modules, modules.map(module => module.id), true);
+  assert.deepEqual(getModulesLockState(modules), { total: 3, locked: 3, allLocked: true, partiallyLocked: false });
 });

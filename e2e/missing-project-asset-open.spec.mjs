@@ -1,3 +1,4 @@
+import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 
 const ORG_ID = '11111111-1111-4111-8111-111111111111';
@@ -149,12 +150,13 @@ test('sunucuda dosyası olmayan görsel projeyi açmayı engellemez', async ({ p
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('5');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('EksikGorsel');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
+  await openEditorSettings(page);
   await page.locator('#autosave-interval').selectOption('0');
   await dropBoxBlock(page);
 

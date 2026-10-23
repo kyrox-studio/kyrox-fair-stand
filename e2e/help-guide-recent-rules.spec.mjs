@@ -15,6 +15,18 @@ test('help guide explains metal separator splitting, duplicate groups and placem
   const dialog = page.getByRole('dialog', { name: 'Kullanım Kılavuzu' });
   await expect(dialog).toBeVisible();
 
+  const settings = guideSection(page, 'Gelişmiş > Ayarlar');
+  await expect(settings).not.toHaveAttribute('open');
+  await settings.locator('summary').click();
+  await expect(settings).toHaveAttribute('open', '');
+  await expect(settings.getByRole('heading', { name: 'Herşeyi Kilitle', exact: true })).toBeVisible();
+  await expect(settings.getByRole('heading', { name: 'Ölçüleri göster', exact: true })).toBeVisible();
+  await expect(settings.getByRole('heading', { name: 'Otomatik kayıt', exact: true })).toBeVisible();
+  await expect(settings).toContainText('grupları çözmez');
+  await expect(settings).toContainText('Kilitler projeyle kaydedilir');
+  await expect(settings).toContainText('Ölçü gösterimi projeye kaydedilmez');
+  await settings.locator('summary').click();
+  await expect(settings).not.toHaveAttribute('open');
   const metal = guideSection(page, 'Metal Separatör');
   await metal.locator('summary').click();
   await expect(metal).toContainText('Aynı grup her zaman tek levha değildir.');

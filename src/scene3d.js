@@ -1331,7 +1331,7 @@ export function createStandScene(
 
   // Stand zemini ızgarası: 1 m'de kalın, 50 cm'de ince çizgi, yalnız stand alanında. Yalnız
   // görüntüdür; öğe kendi taşıma adımıyla (10 cm) oturur. Yalnız yerleştirme önizlemesi
-  // (katalog, kopya, taşıma) görünürken çizilir; bırakınca kaybolur.
+  // (katalog, kopya) veya tekil/grup sürüklemesi sürerken çizilir; bırakınca kaybolur.
   function createStandFloorGrid(widthM, depthM) {
     const y = ACTIVE_PLATFORM_HEIGHT_M + 0.014;
     const boldOffsetM = 0.006;
@@ -1398,6 +1398,14 @@ export function createStandScene(
   scene.add(measureGroup);
   let measureLabels = [];
   let measureSignature = '';
+  let measurementsVisible = false;
+
+  function setMeasurementsVisible(visible) {
+    measurementsVisible = Boolean(visible);
+    syncMeasureOverlay();
+    requestEditorRender();
+    return measurementsVisible;
+  }
 
   function clearMeasureOverlay() {
     measureGroup.children.slice().forEach((child) => {
@@ -1540,6 +1548,11 @@ export function createStandScene(
   }
 
   function syncMeasureOverlay() {
+    if (!measurementsVisible) {
+      if (measureSignature || measureLabels.length) clearMeasureOverlay();
+      measureSignature = '';
+      return;
+    }
     const ghostVisible = Boolean(placementGhost?.root?.visible);
     let box = null;
     let mode = '';
@@ -3009,8 +3022,12 @@ export function createStandScene(
     };
   }
 
+  function syncStandFloorGrid() {
+    setStandFloorGridActive(Boolean(placementGhost?.root?.visible || dragSession?.dragging));
+  }
+
   function syncPlacementGhostDom() {
-    setStandFloorGridActive(Boolean(placementGhost?.root?.visible));
+    syncStandFloorGrid();
     const canvas = renderer.domElement;
     if (!canvas?.dataset) return;
     if (!placementGhost?.root?.visible) {
@@ -7186,6 +7203,7 @@ export function createStandScene(
     controls.dampingFactor = 1 - Math.pow(1 - 0.05, elapsedMs * 60 / 1000);
     const controlsChanged = Boolean(controls.update());
     const activelyDragging = Boolean(dragSession?.dragging);
+    syncStandFloorGrid();
     if (controlsChanged || activelyDragging) editorRenderRequested = true;
     if (!editorRenderRequested) return;
     const frameInterval = (controlsChanged || activelyDragging) ? activeFrameIntervalMs : 0;
@@ -7402,6 +7420,7 @@ export function createStandScene(
   return {
     captureCurrentViewPng,
     setStageLightPreview,
+    setMeasurementsVisible,
     requestRender: requestEditorRender,
     appendModule,
     removeModule,

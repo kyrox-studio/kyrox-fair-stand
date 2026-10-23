@@ -1,3 +1,4 @@
+import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 
 async function createIslandProject(page, baseName) {
@@ -6,8 +7,8 @@ async function createIslandProject(page, baseName) {
   if (!isOpen) await standSetup.locator('summary').click();
 
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('5');
   await page.locator('#create-stage').click();
   const nameInput = page.locator('form input[name="projectName"]');
   await expect(nameInput).toBeVisible();
@@ -68,6 +69,7 @@ test('Kapalı disables timed autosave, manual save still works, and choice survi
   await page.goto('/');
 
   const select = page.locator('#autosave-interval');
+  await openEditorSettings(page);
   await select.selectOption('0');
   const projectName = await createIslandProject(page, 'Autosave Kapali');
   const initialFloor = await readStoredFloorType(page, projectName);
@@ -91,12 +93,14 @@ test('switching from Kapalı to 5 minutes schedules the pending change', async (
   await page.clock.install();
   await page.goto('/');
 
+  await openEditorSettings(page);
   await page.locator('#autosave-interval').selectOption('0');
   await createIslandProject(page, 'Autosave Bes');
   await page.locator('#floor-type').selectOption('hali');
   await page.clock.runFor(1500);
   await expect(page.locator('#project-status')).toContainText('otomatik kayıt kapalı');
 
+  await openEditorSettings(page);
   await page.locator('#autosave-interval').selectOption('5');
   await expect(page.locator('#project-status')).toContainText('5 dk içinde otomatik kaydedilecek');
 });
@@ -107,6 +111,7 @@ test('Kapalı: image upload, hidden tab, Aç and ← Standlar never save; only K
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
+  await openEditorSettings(page);
   await page.locator('#autosave-interval').selectOption('0');
   const projectName = await createIslandProject(page, 'Autosave Yalniz Kaydet');
   const initialFloor = await readStoredFloorType(page, projectName);

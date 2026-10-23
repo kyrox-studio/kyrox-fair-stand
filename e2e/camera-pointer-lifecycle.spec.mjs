@@ -27,8 +27,8 @@ async function openScene(page, { frameIntervalMs = 0 } = {}) {
   const setup = page.locator('details.stand-setup-card');
   await setup.locator('summary').click();
   await setup.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#stand-size-x').fill('400');
-  await page.locator('#stand-size-y').fill('400');
+  await page.locator('#stand-size-x').fill('4');
+  await page.locator('#stand-size-y').fill('4');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('Camera lifecycle');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();

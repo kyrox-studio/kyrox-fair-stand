@@ -1,3 +1,5 @@
+import { validateStandSetupMeters, formatMeters } from './standSizeInput.js';
+import { createEditorViewSettings } from './editorViewSettings.js';
 import { createStandScene, prefetchModuleModels } from './scene3d.js';
 import { initHelpGuide } from './helpGuide.js';
 import { planAutomaticDepot } from './autoDepot.js';
@@ -70,6 +72,7 @@ import {
   MODULE_LOCKED_MESSAGE,
   guardPlanAgainstLocks,
   isModuleLocked,
+  getModulesLockState,
   planSelectionRemoval,
   setModulesLocked,
 } from './moduleLock.js';
@@ -446,6 +449,44 @@ const scene3d = createStandScene(
   (anchor) => selectionToolbar?.update(anchor),
 );
 
+// Mod varsayılanları ve oturumluk kullanıcı tercihleri proje verisinden ayrıdır.
+const editorModeButtons = [...document.querySelectorAll('.editor-mode-switch [data-editor-mode]')];
+const showMeasurementsInput = document.querySelector('#show-measurements');
+const lockAllModulesInput = document.querySelector('#lock-all-modules');
+function syncAllModulesLockControl() {
+  if (!lockAllModulesInput) return;
+  const state = getModulesLockState(currentStand ? currentModules : []);
+  lockAllModulesInput.checked = state.allLocked;
+  lockAllModulesInput.indeterminate = state.partiallyLocked;
+  lockAllModulesInput.disabled = state.total === 0;
+}
+lockAllModulesInput?.addEventListener('change', () => {
+  designHistory.capture();
+  changeModuleLock(currentModules.map(module => module.id), lockAllModulesInput.checked);
+  designHistory.capture();
+});
+const editorViewSettings = createEditorViewSettings();
+function applyEditorView() {
+  const { measurementsVisible: visible } = editorViewSettings.getSnapshot();
+  if (showMeasurementsInput) showMeasurementsInput.checked = visible;
+  scene3d.setMeasurementsVisible(visible);
+}
+function setEditorMode(mode) {
+  const { mode: editorMode } = editorViewSettings.setMode(mode);
+  document.querySelector('#app')?.setAttribute('data-editor-mode', editorMode);
+  editorModeButtons.forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.editorMode === editorMode));
+  });
+  applyEditorView();
+}
+editorModeButtons.forEach((button) => {
+  button.addEventListener('click', () => setEditorMode(button.dataset.editorMode));
+});
+showMeasurementsInput?.addEventListener('change', () => {
+  editorViewSettings.setMeasurementsVisible(showMeasurementsInput.checked);
+  applyEditorView();
+});
+
 // Sahne Işığı: oturumluk editör önizlemesi; projeye kaydedilmez, sayfa açılışında açıktır.
 toggleStageLightButton?.addEventListener('click', () => {
   const enabled = scene3d.setStageLightPreview(toggleStageLightButton.getAttribute('aria-pressed') !== 'true');
@@ -527,10 +568,10 @@ function setStandEditingEnabled(enabled) {
 }
 
 function readStandSetup() {
-  return validateStandSetup({
+  return validateStandSetupMeters({
     standType: selectedStandType,
-    xCm: standSizeXInput.value,
-    yCm: standSizeYInput.value,
+    width: standSizeXInput.value,
+    depth: standSizeYInput.value,
   });
 }
 
@@ -582,6 +623,7 @@ function getGroupStand() {
 }
 
 function renderModuleGroupPanel() {
+  syncAllModulesLockControl();
   moduleGroupPanel?.render(currentStand ? currentModules : []);
   renderGroupTemplatePanel();
 }
@@ -2962,8 +3004,8 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     standTypeButtons.forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.standType === selectedStandType));
     });
-    standSizeXInput.value = String(currentStand.xCm);
-    standSizeYInput.value = String(currentStand.yCm);
+    standSizeXInput.value = formatMeters(currentStand.xCm);
+    standSizeYInput.value = formatMeters(currentStand.yCm);
     if (wallHeightSelect) wallHeightSelect.value = String(activeWallHeightCm());
     const resolvedFloor = resolveStandFloorItemKey(currentStand);
     currentStand = assignStandFloorItem(currentStand, resolvedFloor);

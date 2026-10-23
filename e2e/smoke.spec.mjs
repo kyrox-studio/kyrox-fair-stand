@@ -15,8 +15,8 @@ test('user can create an island stand through the real browser UI', async ({ pag
   const islandButton = standSetup.getByRole('button', { name: 'Ada Stand' });
   await expect(islandButton).toBeVisible();
   await islandButton.click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('5');
 
   const createStage = page.locator('#create-stage');
   await expect(createStage).toBeEnabled();

@@ -1602,3 +1602,75 @@ button[aria-busy="true"]::after {
 .stand-summary-chip[hidden] {
   display: none;
 }
+/* Basit ve Gelişmiş modun ortak menü şablonu. */
+.editor-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 0 0 auto;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--border-strong);
+  border-radius: 11px;
+  background: var(--primary-soft);
+}
+.editor-mode-switch button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+}
+.editor-mode-switch button[aria-pressed="true"] {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.editor-mode-switch button:focus-visible,
+.sidebar > .collapsible-panel > .panel-summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.sidebar > .collapsible-panel {
+  padding: 0;
+  gap: 0;
+}
+.sidebar > .collapsible-panel > .panel-summary {
+  min-height: 48px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+}
+.sidebar > .collapsible-panel > .panel-summary > span:first-child {
+  flex: 1;
+}
+.sidebar > .collapsible-panel[open] > .panel-summary {
+  background: var(--primary-soft);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.sidebar > .collapsible-panel[open] > .panel-summary::before {
+  content: none;
+}
+.sidebar > .collapsible-panel > .panel-card-content {
+  padding: 12px 14px 14px;
+  gap: 10px;
+}
+.view-setting-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.view-setting-toggle input { width: 18px; height: 18px; accent-color: var(--primary); }
+.view-settings-hint { margin: 0; font-size: 12px; line-height: 1.5; }
+/* Ayrıntılı yönetim bölümleri yalnız Gelişmiş modda erişilebilir. */
+#app[data-editor-mode="simple"] #module-groups-card,
+#app[data-editor-mode="simple"] #module-templates-card,
+#app[data-editor-mode="simple"] #stand-standards-card,
+#app[data-editor-mode="simple"] .editor-settings-card {
+  display: none;
+}
+.stand-size-grid input[type="text"] {
+  width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; color: var(--text); background: var(--surface);
+}

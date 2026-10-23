@@ -160,7 +160,7 @@ export function viewerStatusForError(code) {
 }
 
 export function liveShareButtonLabel(state) {
-  if (state.phase !== 'live') return 'Canlı Paylaş';
+  if (state.phase !== 'live') return 'Ekranı paylaş';
   return `● CANLI · ${state.viewerCount || 0}`;
 }
 

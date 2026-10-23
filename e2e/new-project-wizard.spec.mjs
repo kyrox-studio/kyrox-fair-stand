@@ -26,20 +26,24 @@ test('new project wizard sets up an L stand in three steps', async ({ page }) =>
   await dialog.getByRole('button', { name: 'L Stand Sol' }).click();
   await next.click();
   await expect(dialog).toContainText('Adım 2 / 3');
-  await dialog.locator('#wizard-size-x').fill('600');
-  await dialog.locator('#wizard-size-y').fill('400');
+  await dialog.locator('#wizard-size-x').fill('6,5');
+  await dialog.locator('#wizard-size-y').fill('4,5');
   await dialog.locator('#wizard-wall-height').selectOption('300');
+  await dialog.locator('#wizard-floor-type').selectOption('hali');
+  await expect(page.locator('#floor-type')).toHaveValue('hali');
+  await expect(dialog.getByLabel('Genişlik (m)', { exact: true })).toHaveValue('6,5');
+  await expect(dialog.getByLabel('Derinlik (m)', { exact: true })).toHaveValue('4,5');
   // Sol menüdeki asıl alanlar güncellenir.
-  await expect(page.locator('#stand-size-x')).toHaveValue('600');
+  await expect(page.locator('#stand-size-x')).toHaveValue('6,5');
   await expect(page.locator('#wall-height')).toHaveValue('300');
   await next.click();
   await expect(dialog).toContainText('Adım 3 / 3');
   await expect(dialog).toContainText('L Stand Sol');
-  await expect(dialog).toContainText('600 × 400 cm · duvar 300 cm');
+  await expect(dialog).toContainText('6,5 × 4,5 m · duvar 3 m');
 
   await dialog.getByRole('button', { name: 'Oluştur' }).click();
   await finishNameDialog(page, 'E2E Sihirbaz');
-  await expect(page.locator('#stage-result')).toContainText('L Stand Sol · 600 × 400 cm');
+  await expect(page.locator('#stage-result')).toContainText('L Stand Sol · 650 × 450 cm');
   await expect(dialog).toBeHidden();
   expect(errors).toEqual([]);
 });
@@ -49,8 +53,8 @@ test('wizard shows the size error on the step and close falls back to the sideba
   const dialog = wizard(page);
   await dialog.getByRole('button', { name: 'Ada Stand' }).click();
   await dialog.getByRole('button', { name: 'İleri →' }).click();
-  await dialog.locator('#wizard-size-x').fill('55');
-  await dialog.locator('#wizard-size-y').fill('400');
+  await dialog.locator('#wizard-size-x').fill('0.55');
+  await dialog.locator('#wizard-size-y').fill('4');
   await dialog.getByRole('button', { name: 'İleri →' }).click();
   await expect(dialog).toContainText('Adım 2 / 3');
   await expect(dialog.locator('.wizard-error')).toBeVisible();
@@ -68,8 +72,8 @@ test.describe('first-use tips', () => {
     const dialog = wizard(page);
     await dialog.getByRole('button', { name: 'Ada Stand' }).click();
     await dialog.getByRole('button', { name: 'İleri →' }).click();
-    await dialog.locator('#wizard-size-x').fill('500');
-    await dialog.locator('#wizard-size-y').fill('500');
+    await dialog.locator('#wizard-size-x').fill('5');
+    await dialog.locator('#wizard-size-y').fill('5');
     await dialog.getByRole('button', { name: 'İleri →' }).click();
     await dialog.getByRole('button', { name: 'Oluştur' }).click();
     await finishNameDialog(page, 'E2E Ipucu');
@@ -87,8 +91,8 @@ test.describe('first-use tips', () => {
     const standSetup = page.locator('details.stand-setup-card');
     if (!(await standSetup.evaluate((el) => el.open))) await standSetup.locator('summary').click();
     await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
-    await page.locator('#stand-size-x').fill('500');
-    await page.locator('#stand-size-y').fill('300');
+    await page.locator('#stand-size-x').fill('5');
+    await page.locator('#stand-size-y').fill('3');
     await page.locator('#create-stage').click();
     page.once('dialog', (confirm) => confirm.accept());
     await finishNameDialog(page, 'E2E Ipucu 2');
@@ -104,8 +108,8 @@ test.describe('tablet', () => {
     const dialog = wizard(page);
     await dialog.getByRole('button', { name: 'Sırt Duvar' }).tap();
     await dialog.getByRole('button', { name: 'İleri →' }).tap();
-    await dialog.locator('#wizard-size-x').fill('400');
-    await dialog.locator('#wizard-size-y').fill('300');
+    await dialog.locator('#wizard-size-x').fill('4');
+    await dialog.locator('#wizard-size-y').fill('3');
     await dialog.getByRole('button', { name: 'İleri →' }).tap();
     await dialog.getByRole('button', { name: 'Oluştur' }).tap();
     await finishNameDialog(page, 'E2E Sihirbaz Tablet');
@@ -159,8 +163,8 @@ test('wizard depot: the same list and contents box, mirrored to the sidebar and 
   const dialog = wizard(page);
   await dialog.getByRole('button', { name: 'Ada Stand' }).click();
   await dialog.getByRole('button', { name: 'İleri →' }).click();
-  await dialog.locator('#wizard-size-x').fill('600');
-  await dialog.locator('#wizard-size-y').fill('600');
+  await dialog.locator('#wizard-size-x').fill('6');
+  await dialog.locator('#wizard-size-y').fill('6');
   const contents = dialog.locator('#wizard-depot-contents');
   await expect(dialog.locator('#wizard-depot-size')).toHaveValue('');
   await expect(contents).toBeDisabled();
@@ -202,8 +206,8 @@ for (const [rows, label, variant] of [['1', 'Tek sıra', 'short_1'], ['2', 'Çif
     const dialog = wizard(page);
     await dialog.getByRole('button', { name: 'L Stand Sol' }).click();
     await dialog.getByRole('button', { name: 'İleri →' }).click();
-    await dialog.locator('#wizard-size-x').fill('300');
-    await dialog.locator('#wizard-size-y').fill('300');
+    await dialog.locator('#wizard-size-x').fill('3');
+    await dialog.locator('#wizard-size-y').fill('3');
     const fascia = dialog.locator('#wizard-fascia');
     const fasciaRows = dialog.locator('#wizard-fascia-rows');
     await expect(fascia).not.toBeChecked();
@@ -238,8 +242,8 @@ test('wizard fascia 800 × 800: each open 8 m edge gets a middle upright (max 5 
   const dialog = wizard(page);
   await dialog.getByRole('button', { name: 'L Stand Sol' }).click();
   await dialog.getByRole('button', { name: 'İleri →' }).click();
-  await dialog.locator('#wizard-size-x').fill('800');
-  await dialog.locator('#wizard-size-y').fill('800');
+  await dialog.locator('#wizard-size-x').fill('8');
+  await dialog.locator('#wizard-size-y').fill('8');
   await dialog.locator('#wizard-fascia').check();
   await dialog.getByRole('button', { name: 'İleri →' }).click();
   await dialog.getByRole('button', { name: 'Oluştur' }).click();
@@ -261,4 +265,30 @@ test('wizard fascia 800 × 800: each open 8 m edge gets a middle upright (max 5 
   await expect(totals.locator('li[data-item-key="profile_388"]')).toHaveText(/^8 × .* · adet$/);
   // profile_190 yalnız tam boy duvarlardan gelir; kısa panel başına 190'lar (16 adet daha) düşer.
   await expect(totals.locator('li[data-item-key="profile_190"]')).toHaveText(/^16 × .* · adet$/);
+});
+
+test('sol menü metre ve virgüllü giriş kullanır; kayıt cm kalır ve açılınca metre görünür', async ({ page }) => {
+  await page.goto('/');
+  await wizard(page).getByRole('button', { name: 'Sihirbazı kapat' }).click();
+  const panel = page.locator('details.stand-setup-card');
+  if (!(await panel.evaluate(element => element.open))) await panel.locator('summary').click();
+  await panel.getByRole('button', { name: 'Ada Stand', exact: true }).click();
+  await page.getByLabel('Genişlik (m)', { exact: true }).fill('6,5');
+  await page.getByLabel('Derinlik (m)', { exact: true }).fill('4,5');
+  await page.locator('#wall-height').selectOption('350');
+  await expect(page.locator('#wall-height option:checked')).toHaveText('3,5 m');
+  await page.locator('#create-stage').click();
+  await finishNameDialog(page, 'Metre Girisi');
+  const before = await savedProject(page);
+  expect(before.stand.xCm).toBe(650);
+  expect(before.stand.yCm).toBe(450);
+  expect(before.stand.wallHeightCm).toBe(350);
+  await page.reload();
+  await expect(page.locator('#project-select option[value="' + before.id + '"]')).toHaveCount(1);
+  await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, before.id);
+  await page.locator('#open-project').click();
+  await expect(page.locator('#project-status')).toContainText('Açıldı:');
+  await expect(page.locator('#stand-size-x')).toHaveValue('6,5');
+  await expect(page.locator('#stand-size-y')).toHaveValue('4,5');
+  await expect(page.locator('#wall-height option:checked')).toHaveText('3,5 m');
 });

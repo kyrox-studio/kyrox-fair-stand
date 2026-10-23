@@ -5,8 +5,8 @@ async function createBackWallStand(page, projectName, widthCm = 500) {
   const setup = page.locator('details.stand-setup-card');
   await setup.locator('summary').click();
   await setup.getByRole('button', { name: 'Sırt Duvar' }).click();
-  await page.locator('#stand-size-x').fill(String(widthCm));
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill(String(widthCm / 100));
+  await page.locator('#stand-size-y').fill('5');
   await page.locator('#create-stage').click();
   const input = page.locator('form input[name="projectName"]');
   await expect(input).toBeVisible();

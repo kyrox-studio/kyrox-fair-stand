@@ -19,8 +19,8 @@ test('bar masası 108 cm, cam masa 74 cm; aynı çizim ailesi', async ({ page })
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#stand-size-x').fill('500');
-  await page.locator('#stand-size-y').fill('500');
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('5');
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('E2E Bar Masası');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
