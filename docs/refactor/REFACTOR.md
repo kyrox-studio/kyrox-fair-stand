@@ -95,6 +95,10 @@ yeni DB alanı, Alembic migration veya BOM değişikliği yoktur.
 
 **Hata:** Kopya/katalog yerleştirirken Shift+R seçili kalan asıl öğeyi de döndürüyordu. Yerleştirme dinleyicisi Shift+R'yi yakalama aşamasında tüketir (`moduleDragSidebar.js`, `stopImmediatePropagation`); sahne dinleyicisine ulaşmaz.
 
+## 2026-10-23 — Profil profile her noktada dik bağlanır
+
+Ürün kararı: 2026-10-21 kuralı duvarlar için geçerli kalır; profil ise başka bir profilin her noktasına dik bağlanır (iki profilin arasına, ortasına) ve uç uca eklenir. Çakışma (`collisionSegmentsOverlap`): iki profil dik kesişince birinin ucu birleşimdeyse izin, birbirinin ortasından geçerse (X) çakışma; `isMidWallTeeContact` profil çiftinde dikme mesajını vermez (`isProfilePair`). Yapışma (`getSegmentSnapCoordinates`): profil hedef profile yaklaşınca uçlara ek olarak `PROFILE_TEE_SNAP_STEP_CM` (10 cm) adımla ara noktalar `tee` adayıdır. Profil T bağlantısı için BOM'a ayrı aparat eklenmez.
+
 ## 2026-10-21 — Dik bağlantı yalnız dikme olan noktaya
 
 Ürün kararı: tek duvarın ortasında dikme yoktur; dik duvar (kısa ya da tam boy) oraya bağlanamaz. Yerleşim (`collisionSegmentsOverlap`): iki ince duvar dik kesiştiğinde ikisinin de ucu birleşimdeyse (L ya da iki duvarın birleşim ucunda T) izin; yalnız birinin ucu diğerinin ortasındaysa çakışma, mesaj `MID_WALL_TEE_MESSAGE` "Dik bağlantı yalnız dikme olan noktaya yapılır.". Magnetic snap (`getSegmentSnapCoordinates`) yalnız hedefin uçlarını aday üretir; 50 cm'lik ara noktalar kalktı. Kayıtlı eski yerleşimler yerinde kalır; taşınınca yeni kurala uyar. Testler `test/modulePlacement.test.js` ürün kararına göre güncellendi.

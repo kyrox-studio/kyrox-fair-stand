@@ -891,8 +891,11 @@ function collisionSegmentsOverlap(a, moduleA, b, moduleB) {
     const thinEndpointJoin = horizontalDepth <= standWallDepthCm() + EPSILON_CM
       && verticalDepth <= standWallDepthCm() + EPSILON_CM;
     if (!thinEndpointJoin) return true;
-    // Dik bağlantı yalnız dikme olan noktada: ikisinin de ucu birleşimdeyse L ya da T (komşu duvarla
-    // ortak dikme). Yalnız birinin ucu diğerinin ortasındaysa orada dikme yoktur; çakışma sayılır.
+    // Profil profile her noktada dik bağlanır (iki profilin arasına, ortasına): birinin ucu yeter;
+    // birbirinin ortasından geçen iki profil (X) çakışır.
+    if (isProfilePair(horizontalModule, verticalModule)) return !(horizontalEndpoint || verticalEndpoint);
+    // Duvarda dik bağlantı yalnız dikme olan noktada: ikisinin de ucu birleşimdeyse L ya da T (komşu
+    // duvarla ortak dikme). Yalnız birinin ucu diğerinin ortasındaysa orada dikme yoktur; çakışma sayılır.
     return !(horizontalEndpoint && verticalEndpoint);
   }
 
@@ -1061,8 +1064,14 @@ function wallShortProfileExemptIds(candidate, modules, snapTargetModuleId, snapK
 
 export const MID_WALL_TEE_MESSAGE = 'Dik bağlantı yalnız dikme olan noktaya yapılır.';
 
+/** Profil ile profil: dik bağlantı (T) hedefin her noktasına yapılabilir. */
+function isProfilePair(moduleA, moduleB) {
+  return isProfileModule(moduleA) && isProfileModule(moduleB);
+}
+
 // İki ince duvar dik kesişir ve yalnız birinin ucu diğerinin ortasına (dikmesiz yere) gelir.
 function isMidWallTeeContact(moduleA, moduleB) {
+  if (isProfilePair(moduleA, moduleB)) return false;
   const segmentsA = getModuleCollisionSegments(moduleA);
   const segmentsB = getModuleCollisionSegments(moduleB);
   return segmentsA.some(({ segment: a, module: ma }) => segmentsB.some(({ segment: b, module: mb }) => {
@@ -1223,10 +1232,18 @@ export function withStandEdgeWallIds(modules = [], standType, standXCm) {
 
 // Dik bağlantı noktası yalnız dikme olan yerdir: hedef modülün iki ucu. Modülün ortasında dikme
 // yoktur; T, iki duvarın birleştiği uçta (ortak dikme) kurulur.
-function getSegmentSnapCoordinates(segment) {
-  return nearlyEqual(segment.startCm, segment.endCm)
-    ? [segment.startCm]
-    : [segment.startCm, segment.endCm];
+// Profil profile dik bağlanırken hedef profilin uçlarına ek olarak bu adımla ara noktalar aday olur.
+export const PROFILE_TEE_SNAP_STEP_CM = 10;
+
+function getSegmentSnapCoordinates(segment, { interiorStepCm = null } = {}) {
+  if (nearlyEqual(segment.startCm, segment.endCm)) return [segment.startCm];
+  const coordinates = [segment.startCm, segment.endCm];
+  if (interiorStepCm > 0) {
+    for (let cm = segment.startCm + interiorStepCm; cm < segment.endCm - EPSILON_CM; cm += interiorStepCm) {
+      coordinates.push(cm);
+    }
+  }
+  return coordinates;
 }
 
 function createEndpointConnectionPlacement({
@@ -1524,7 +1541,9 @@ export function snapPlacementToModules({
       });
     }
 
-    getSegmentSnapCoordinates(target).forEach((coordinateCm) => {
+    getSegmentSnapCoordinates(target, {
+      interiorStepCm: moduleType === 'profile' && isProfileModule(targetModuleForDepth) ? PROFILE_TEE_SNAP_STEP_CM : null,
+    }).forEach((coordinateCm) => {
       const pointXCm = target.axis === 'x' ? coordinateCm : target.fixedCm;
       const pointYCm = target.axis === 'y' ? coordinateCm : target.fixedCm;
       const targetEndpoint = nearlyEqual(coordinateCm, target.startCm)
@@ -1734,7 +1753,10 @@ export function snapPlacementToModules({
     }
 
     // Dik modül: hedefin uçları aday (dikme olan nokta). Uçta komşu duvar varsa bağlantı T olur.
-    getSegmentSnapCoordinates(target).forEach((coordinateCm) => {
+    // Profil profile bağlanırken hedef profilin ara noktaları da adaydır.
+    getSegmentSnapCoordinates(target, {
+      interiorStepCm: moduleType === 'profile' && isProfileModule(targetModule) ? PROFILE_TEE_SNAP_STEP_CM : null,
+    }).forEach((coordinateCm) => {
       const pointXCm = target.axis === 'x' ? coordinateCm : target.fixedCm;
       const pointYCm = target.axis === 'y' ? coordinateCm : target.fixedCm;
       const targetEndpoint = nearlyEqual(coordinateCm, target.startCm)

@@ -46,8 +46,8 @@ test('paying-face corner connectors appear on each module card; the combined lis
   assert.match(html, /data-role="bom-download"/);
   assert.doesNotMatch(html, /data-role="bom-corner-connectors"/);
   assert.doesNotMatch(html, /Modül kartında yok/);
-  assert.equal(modules.match(/6 × Köşe Aparatı · adet · connector_corner/g)?.length, 2);
-  assert.match(totals, /12 × Köşe Aparatı · adet · connector_corner/);
+  assert.equal(modules.match(/<li data-item-key="connector_corner" title="connector_corner">6 × Köşe Aparatı · adet<\/li>/g)?.length, 2);
+  assert.match(totals, /<li data-item-key="connector_corner" title="connector_corner">12 × Köşe Aparatı · adet<\/li>/);
 
   const text = formatProductionBomText(bom);
   const moduleText = text.split('Birleşik leaf toplam')[0];
@@ -66,9 +66,9 @@ test('end-to-end doubles appear on both module cards; the combined list counts t
   const html = buildProductionBomHtml(bom);
   const modules = html.split('data-bom-collapse-key="__modules__"')[1].split('data-bom-collapse-key="__totals__"')[0];
   const totals = html.split('data-bom-collapse-key="__totals__"')[1];
-  assert.equal(modules.match(/7 × Çiftli Aparat · adet · connector_double/g)?.length, 2);
-  assert.equal(modules.match(/6 × Tekli Aparat · adet · connector_single/g)?.length, 2);
-  assert.match(totals, /7 × Çiftli Aparat · adet · connector_double/);
+  assert.equal(modules.match(/<li data-item-key="connector_double" title="connector_double">7 × Çiftli Aparat · adet<\/li>/g)?.length, 2);
+  assert.equal(modules.match(/<li data-item-key="connector_single" title="connector_single">6 × Tekli Aparat · adet<\/li>/g)?.length, 2);
+  assert.match(totals, /<li data-item-key="connector_double" title="connector_double">7 × Çiftli Aparat · adet<\/li>/);
   assert.doesNotMatch(totals, /14 × Çiftli Aparat/);
 
   const text = formatProductionBomText(bom);

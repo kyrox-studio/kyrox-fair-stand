@@ -62,5 +62,7 @@ test('üretim listesi paneli gerçek girişte düz duvar reçete satırlarını 
   const firstLine = firstModule.locator('.production-bom-module__list li').first();
   await expect(firstLine).toBeVisible();
   await expect(firstLine).toContainText('×');
-  await expect(firstModule.locator('.production-bom-module__key')).toContainText('wall_');
+  // Modülün Item kodu ekranda yazmaz; başlığın ipucunda kalır.
+  await expect(firstModule.locator('summary')).toHaveAttribute('data-item-key', /^wall_/);
+  await expect(firstModule.locator('.production-bom-module__list li').first()).not.toContainText('wall_');
 });

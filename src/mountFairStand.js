@@ -3,6 +3,7 @@ import colorEditorCss from './colorEditor.css?inline';
 import imageActionsCss from './imageActions.css?inline';
 import helpGuideCss from './helpGuide.css?inline';
 import productionBomPanelCss from './productionBomPanel.css?inline';
+import toastNotificationsCss from './toastNotifications.css?inline';
 import { FAIR_STAND_MARKUP } from './configuratorMarkup.js';
 import { bindLiveTabShare } from './liveTabShare.js';
 import { setFairStandHostDocument } from './hostDocument.js';
@@ -80,6 +81,7 @@ const MOUNT_STYLE_CSS = [
   imageActionsCss,
   helpGuideCss,
   productionBomPanelCss,
+  toastNotificationsCss,
   TRASH_BIN_PREVIEW_CSS,
   HOST_CHROME_RESET_CSS,
 ].join('\n');

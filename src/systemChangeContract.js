@@ -175,6 +175,8 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/standStandardsCopy.js': frozenDomains('ui', 'catalog'),
   'src/stripOccupancy.js': frozenDomains('architecture', 'behavior', 'placement', 'renderer'),
   'src/surfaceStateBinding.js': frozenDomains('state', 'renderer', 'persistence'),
+  'src/toastNotifications.css': frozenDomains('ui'),
+  'src/toastNotifications.js': frozenDomains('ui', 'accessibility'),
   'src/uprightHeight.js': frozenDomains('ui', 'catalog', 'state'),
   'src/profileLength.js': frozenDomains('ui', 'catalog', 'state'),
   'src/itemSizeDialog.js': frozenDomains('ui', 'catalog', 'accessibility'),

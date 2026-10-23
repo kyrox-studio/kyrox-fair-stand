@@ -1582,3 +1582,23 @@ button[aria-busy="true"]::after {
 .module-group-members .module-group-action { min-width: 0; padding: 3px 6px; font-size: 11px; }
 .module-group-members .module-group-member { flex: 1 1 auto; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .module-template-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+
+/* Sahnenin sol altında her zaman görünen stand özeti (main.js renderStandSummaryChip). */
+.stand-summary-chip {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 5;
+  padding: 6px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  color: #1e293b;
+  font: 600 13px/1.3 system-ui, sans-serif;
+  pointer-events: none;
+}
+
+.stand-summary-chip[hidden] {
+  display: none;
+}

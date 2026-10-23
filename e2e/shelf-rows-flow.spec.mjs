@@ -196,13 +196,13 @@ test('eski tekli raflar aynen açılır; sıralı raflar her genişlikte reçete
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();
-  for (const text of [
-    '6 × Raf 100 Tek · adet · shelf_100_self',
-    '6 × Raf 150 Tek · adet · shelf_150_self',
-    '6 × Raf 200 Tek · adet · shelf_200_self',
-    '48 × Raf Ayağı · adet · shelf_leg',
+  for (const [itemKey, text] of [
+    ['shelf_100_self', '6 × Raf 100 Tek · adet'],
+    ['shelf_150_self', '6 × Raf 150 Tek · adet'],
+    ['shelf_200_self', '6 × Raf 200 Tek · adet'],
+    ['shelf_leg', '48 × Raf Ayağı · adet'],
   ]) {
-    await expect(totals.locator('li', { hasText: text })).toHaveCount(1);
+    await expect(totals.locator(`li[data-item-key="${itemKey}"]`)).toHaveText(text);
   }
   expect(errors).toEqual([]);
 });

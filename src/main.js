@@ -115,6 +115,7 @@ import { DEFAULT_SELECTION_HINT, describeFloorAreaSelection, describeFloorSelect
 import { createSidebarController } from './sidebarController.js';
 import { createViewportToolbarController } from './viewportToolbarController.js';
 import { renderStageResult as renderStageResultInto, renderWallResult } from './stageFeedback.js';
+import { reportError, showToast } from './toastNotifications.js';
 import {
   defaultUprightItemKeyForWallHeight,
   readUprightHeightPreference,
@@ -269,6 +270,7 @@ const autoDepotContentsHint = document.querySelector('#auto-depot-contents-hint'
 // Alınlık: "Alınlık yok" / tek sıra / çift sıra; açık kenarlara wall-short + köşe dikmesi.
 const autoFasciaRowsSelect = document.querySelector('#auto-fascia-rows');
 const stageResult = document.querySelector('#stage-result');
+const standSummaryChip = document.querySelector('#stand-summary-chip');
 const openModuleCatalogButton = document.querySelector('#open-module-catalog');
 const clearWallButton = document.querySelector('#clear-wall');
 const selectionInfo = document.querySelector('#selection-info');
@@ -493,6 +495,23 @@ const selectionToolbar = createSelectionToolbar({
   },
 });
 
+// Sahnenin sol altında her zaman görünen stand özeti: "L Stand Sol · 4 × 3 m · duvar 3,5 m".
+function formatMeters(cm) {
+  return String(Math.round(Number(cm)) / 100).replace('.', ',');
+}
+
+function renderStandSummaryChip(setup) {
+  if (!standSummaryChip) return;
+  if (!setup?.ok) {
+    standSummaryChip.hidden = true;
+    standSummaryChip.textContent = '';
+    return;
+  }
+  const label = STAND_TYPE_LABELS[setup.standType];
+  standSummaryChip.textContent = `${label} · ${formatMeters(setup.xCm)} × ${formatMeters(setup.yCm)} m · duvar ${formatMeters(activeWallHeightCm())} m`;
+  standSummaryChip.hidden = false;
+}
+
 function renderStageResult(message, isError = false) {
   renderStageResultInto(stageResult, message, isError);
 }
@@ -588,7 +607,7 @@ async function refreshGroupTemplates() {
   try {
     groupTemplates = await listGroupTemplates();
   } catch (error) {
-    console.warn('Şablonlar okunamadı:', error);
+    reportError('Şablonlar okunamadı', error);
     groupTemplatePanel?.showMessage(`Şablonlar okunamadı: ${error.message}`);
     return;
   }
@@ -975,7 +994,7 @@ function commitDroppedCatalogModule(moduleState, dropResult, catalogKey = null) 
     try {
       rebuildWall({ resetView: false });
     } catch (rollbackError) {
-      console.warn('Drop geri alma rebuild başarısız:', rollbackError);
+      reportError('Bırakma geri alınamadı; sahneyi yenileyin', rollbackError);
     }
     return {
       ok: false,
@@ -1066,7 +1085,6 @@ function validateCatalogAddBatch({
     const plan = planCatalogAppendInsertion(moduleStates);
     if (!plan.ok) {
       renderWallResult(plan.message, true);
-      window.alert(`Modüller eklenemedi\n\n${plan.message}`);
     }
     return plan;
   }
@@ -1085,7 +1103,6 @@ function validateCatalogAddBatch({
     const plan = planContextFreeInsertion(visualOrderedStates, context, placement);
     if (!plan.ok) {
       renderWallResult(plan.message, true);
-      window.alert(`Modüller eklenemedi\n\n${plan.message}`);
     }
     return plan;
   }
@@ -1097,7 +1114,6 @@ function validateCatalogAddBatch({
   const plan = planContextContinuousInsertion(moduleStates, context, placement);
   if (!plan.ok) {
     renderWallResult(plan.message, true);
-    window.alert(`Modüller eklenemedi\n\n${plan.message}`);
   }
   return plan;
 }
@@ -1162,7 +1178,6 @@ function flushCatalogModuleAdds() {
     const plan = planCatalogAppendInsertion(moduleStates);
     if (!plan.ok) {
       renderWallResult(plan.message, true);
-      window.alert(`Modüller eklenemedi\n\n${plan.message}`);
       return;
     }
 
@@ -1188,7 +1203,6 @@ function flushCatalogModuleAdds() {
       const plan = planContextFreeInsertion(visualOrderedStates, context, placementMode);
       if (!plan.ok) {
         renderWallResult(plan.message, true);
-        window.alert(`Modüller eklenemedi\n\n${plan.message}`);
         return;
       }
 
@@ -1200,7 +1214,6 @@ function flushCatalogModuleAdds() {
     const plan = planContextContinuousInsertion(moduleStates, context, placementMode);
     if (!plan.ok) {
       renderWallResult(plan.message, true);
-      window.alert(`Modüller eklenemedi\n\n${plan.message}`);
       return;
     }
 
@@ -1214,7 +1227,6 @@ function flushCatalogModuleAdds() {
   });
   if (!placementPlan.ok) {
     renderWallResult(placementPlan.message, true);
-    window.alert(`Modüller eklenemedi\n\n${placementPlan.message}`);
     return;
   }
 
@@ -1977,9 +1989,9 @@ renderCurrentViewButton?.addEventListener('click', async () => {
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    renderWallResult('Render hazır · ' + result.width + ' × ' + result.height + ' px PNG.');
+    showToast('Render hazır · ' + result.width + ' × ' + result.height + ' px PNG.', { kind: 'success' });
   } catch (error) {
-    console.warn('Render alınamadı:', error);
+    reportError('Render alınamadı', error);
     renderWallResult('Render alınamadı.', true);
   } finally {
     projectLoading.hide();
@@ -2281,6 +2293,7 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fa
   renderStageResult(
     `${label} · ${setup.xCm} × ${setup.yCm} cm aktif alan · ${setup.sceneWidthM} × ${setup.sceneDepthM} m toplam sahne`,
   );
+  renderStandSummaryChip(setup);
   syncFloorAreaControls();
   resetDesignHistory();
   return true;
@@ -2329,7 +2342,7 @@ createStageButton.addEventListener('click', async () => {
     projectStatus.textContent = 'Oluşturuldu ve kaydedildi: ' + projectName;
     onboardingTips.maybeShow();
   } catch (error) {
-    console.warn('Yeni proje ilk kayıt sırasında kaydedilemedi:', error);
+    reportError('Yeni proje ilk kayıt sırasında kaydedilemedi', error);
     autosaveController.disable();
     projectStatus.textContent = 'Proje oluşturuldu ancak kaydedilemedi.';
   }
@@ -2740,7 +2753,7 @@ const autosaveController = createAutosaveController({
   getSignature: getProjectStateSignature,
   persist: persistActiveProject,
   setStatus: (message) => { projectStatus.textContent = message; },
-  onError: (error) => console.warn('Otomatik kayıt başarısız:', error),
+  onError: (error) => reportError('Otomatik kayıt başarısız', error),
 });
 
 // Otomatik kayıt süresi: tarayıcıda saklanan dakika seçimi; 0 = kapalı.
@@ -2919,7 +2932,7 @@ async function showProjectCustomerName() {
     const name = await loadCustomerDisplayName(activeCustomerId);
     projectCustomerDisplay.textContent = name || TEMPORARY_CUSTOMER_LABEL;
   } catch (error) {
-    console.warn('Müşteri adı yüklenemedi:', error);
+    reportError('Müşteri adı yüklenemedi', error);
     projectCustomerDisplay.textContent = TEMPORARY_CUSTOMER_LABEL;
   }
 }
@@ -3005,7 +3018,9 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
         `${label} · ${restoredSetup.xCm} × ${restoredSetup.yCm} cm aktif alan · ${restoredSetup.sceneWidthM} × ${restoredSetup.sceneDepthM} m toplam sahne`,
       );
     }
+    renderStandSummaryChip(restoredSetup);
   } else {
+    renderStandSummaryChip(null);
     currentModules = [];
     selectedStandType = null;
     standTypeButtons.forEach((button) => button.setAttribute('aria-pressed', 'false'));
@@ -3048,6 +3063,7 @@ function countMissingImageReferences() {
 }
 
 function missingImageNotice(count) {
+  if (count > 0) showToast(`${count} görsel bulunamadı; ilgili yüzeyler kendi rengiyle gösteriliyor.`);
   return count > 0 ? ` · ${count} görsel bulunamadı, ilgili yüzeyler kendi rengiyle gösteriliyor` : '';
 }
 
@@ -3082,7 +3098,7 @@ async function openHistoricalRevision(revisionNumber) {
     }, { historicalRevisionNumber: revisionNumber });
     await waitForSceneToFill();
   } catch (error) {
-    console.warn('Revizyon açılamadı:', error);
+    reportError('Revizyon açılamadı', error);
     projectStatus.textContent = 'Revizyon açılamadı.';
   } finally {
     projectLoading.hide();
@@ -3104,7 +3120,7 @@ async function returnToLiveProject() {
     await restoreProject(project);
     await waitForSceneToFill();
   } catch (error) {
-    console.warn('Revizyon açılamadı:', error);
+    reportError('Revizyon açılamadı', error);
     projectStatus.textContent = `${label} açılamadı.`;
   } finally {
     projectLoading.hide();
@@ -3255,7 +3271,7 @@ async function requestDeleteImageAsset(assetId) {
         const removed = await persistActiveProject({ quiet: true });
         if (removed?.enableAutosave !== false) autosaveController.enableFromCurrentState();
       } catch (persistError) {
-        console.warn('Görsel silindi ama otomatik kayıt başarısız:', persistError);
+        reportError('Görsel silindi ama otomatik kayıt başarısız', persistError);
         assetStatus.textContent = 'Görsel silindi · otomatik kayıt başarısız.';
         return true;
       }
@@ -3266,7 +3282,7 @@ async function requestDeleteImageAsset(assetId) {
       : 'Görsel silindi.';
     return true;
   } catch (error) {
-    console.warn('Görsel silinemedi:', error);
+    reportError('Görsel silinemedi', error);
     assetStatus.textContent = `Görsel silinemedi: ${error?.message || 'Bilinmeyen hata.'}`;
     return false;
   }
@@ -3746,7 +3762,7 @@ async function initializeAssetLibrary() {
     renderAssetLibrary();
     if (activeAssetId) setActiveAsset(activeAssetId);
   } catch (error) {
-    console.warn('Görsel arşivi açılamadı:', error);
+    reportError('Görsel arşivi açılamadı', error);
     assetStatus.textContent = 'Tarayıcı görsel arşivini açamadı.';
   }
 }
@@ -3816,7 +3832,7 @@ imageInput.addEventListener('change', async () => {
     return;
   }
   if (!isImageUploadWithinSizeLimit(file.size)) {
-    window.alert(formatImageUploadTooLargeMessage());
+    showToast(formatImageUploadTooLargeMessage());
     return;
   }
 
@@ -3837,17 +3853,14 @@ imageInput.addEventListener('change', async () => {
         const added = await persistActiveProject({ quiet: true });
         if (added?.enableAutosave !== false) autosaveController.enableFromCurrentState();
       } catch (persistError) {
-        console.warn('Görsel eklendi ama otomatik kayıt başarısız:', persistError);
+        reportError('Görsel eklendi ama otomatik kayıt başarısız', persistError);
         assetStatus.textContent = 'Görsel eklendi · otomatik kayıt başarısız.';
       }
     }
   } catch (error) {
-    console.warn('Görsel kaydedilemedi:', error);
     const message = error?.message || 'Görsel arşive kaydedilemedi.';
-    if (message === formatImageUploadTooLargeMessage()) {
-      window.alert(message);
-      return;
-    }
+    reportError(message, error);
+    if (message === formatImageUploadTooLargeMessage()) return;
     assetStatus.textContent = message;
   }
 });
@@ -3868,7 +3881,7 @@ renameProjectButton?.addEventListener('click', async () => {
       if (renamed?.enableAutosave !== false) autosaveController.enableFromCurrentState();
       projectStatus.textContent = 'Proje adı değiştirildi ve kaydedildi: ' + nextName;
     } catch (error) {
-      console.warn('Proje adı değiştirilemedi:', error);
+      reportError('Proje adı değiştirilemedi', error);
       projectStatus.textContent = 'Proje adı değiştirildi ancak kaydedilemedi.';
     }
   } else {
@@ -3884,7 +3897,7 @@ saveProjectButton.addEventListener('click', async () => {
     const saved = await persistActiveProject({ reason: 'design' });
     if (saved?.enableAutosave !== false) autosaveController.enableFromCurrentState();
   } catch (error) {
-    console.warn('Proje kaydedilemedi:', error);
+    reportError('Proje kaydedilemedi', error);
     projectStatus.textContent = 'Proje kaydedilemedi.';
   } finally {
     setButtonBusy(saveProjectButton, false);
@@ -3952,7 +3965,7 @@ saveAsProjectButton?.addEventListener('click', async () => {
         console.warn('Başarısız farklı kaydet temizlenemedi:', cleanupError);
       }
     }
-    console.warn('Proje farklı kaydedilemedi:', error);
+    reportError('Proje farklı kaydedilemedi', error);
     projectStatus.textContent = `Proje farklı kaydedilemedi: ${error?.message || 'Bilinmeyen hata.'}`;
   } finally {
     setButtonBusy(saveAsProjectButton, false);
@@ -4025,7 +4038,7 @@ exportProjectButton.addEventListener('click', async () => {
     }
     projectStatus.textContent = `Dışarı aktarıldı · ${assetCount} görsel`;
   } catch (error) {
-    console.warn('Proje dışarı aktarılamadı:', error);
+    reportError('Proje dışarı aktarılamadı', error);
     projectStatus.textContent = 'Proje dışarı aktarılamadı.';
   } finally {
     setButtonBusy(exportProjectButton, false);
@@ -4132,7 +4145,7 @@ importProjectFileInput.addEventListener('change', async () => {
         console.warn('Başarısız içe aktarma temizlenemedi:', cleanupError);
       }
     }
-    console.warn('Proje içe aktarılamadı:', error);
+    reportError('Proje içe aktarılamadı', error);
     projectStatus.textContent = `Proje ZIP içe aktarılamadı: ${error?.message || 'Bilinmeyen hata.'}`;
   } finally {
     projectLoading.hide();
@@ -4200,7 +4213,7 @@ async function openStoredProject(projectId) {
     await waitForSceneToFill();
     return true;
   } catch (error) {
-    console.warn('Proje açılamadı:', error);
+    reportError('Proje açılamadı', error);
     projectStatus.textContent = 'Proje açılamadı.';
     return false;
   } finally {
@@ -4252,7 +4265,7 @@ deleteProjectButton.addEventListener('click', async () => {
     if (deletingActive) resetToFirstOpenState();
     await refreshProjectList();
     if (!deletingActive) projectStatus.textContent = 'Proje silindi.';
-  } catch (error) { console.warn('Proje silinemedi:', error); projectStatus.textContent = 'Proje silinemedi.'; }
+  } catch (error) { reportError('Proje silinemedi', error); projectStatus.textContent = 'Proje silinemedi.'; }
 });
 
 fillImageButton.addEventListener('click', () => {
@@ -4322,7 +4335,7 @@ applyProjectCapabilityVisibility();
 syncSaveProjectButton();
 void showProjectCustomerName();
 
-void refreshProjectList().catch((error) => console.warn('Proje listesi açılamadı:', error));
+void refreshProjectList().catch((error) => reportError('Proje listesi açılamadı', error));
 void refreshGroupTemplates();
 if (initialProjectId) {
   void openStoredProject(initialProjectId);

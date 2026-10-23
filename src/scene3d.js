@@ -71,7 +71,8 @@ import {
 import { createViewCube, resolveHomeViewDirection } from './viewCube.js';
 import { isEditableKeyboardTarget, resolveViewKeyboardShortcut } from './viewKeyboardShortcuts.js';
 import { computeGroupSizeSlice, computeImageFit, computeImageSizeTile, resolveImageTileHeightCm } from './imageFit.js';
-import { formatPlacementFeedbackMessage, formatWallOverlayFeedback, hasPlacementFeedbackPointer } from './placementFeedback.js';
+import { formatPlacementFeedbackMessage, formatWallOverlayFeedback } from './placementFeedback.js';
+import { showToast } from './toastNotifications.js';
 import { SCENE_SURROUND_M } from './sceneDimensions.js';
 import {
   WALL_OVERLAY_DEFAULT_CENTER_CM,
@@ -310,6 +311,7 @@ const gltfSceneCache = new Map();
 
 function notifyGltfLoadFailure(url, error) {
   console.warn('GLB modeli yüklenemedi:', url, error);
+  showToast('3D model yüklenemedi. Modül yerinde kalır; görünür geometri eksik olabilir.');
   const el = getFairStandHostDocument()?.querySelector('#stage-result') ?? null;
   if (!el) return;
   el.textContent = '3D model yüklenemedi. Modül yerinde kalır; görünür geometri eksik olabilir.';
@@ -1676,8 +1678,7 @@ export function createStandScene(
   let dragSession = null;
   let keyboardRotationCursor = null;
   let dragBadge = null;
-  let placementFeedback = null;
-  let placementFeedbackTimer = null;
+  let placementFeedbackText = null;
   // Structural wall rebuilds (insert/delete/reorder) reuse the already uploaded GPU
   // textures. This prevents branded panels from flashing blank while TextureLoader
   // reloads the same assets after every catalog operation. Keys prefer the persistent
@@ -1735,62 +1736,20 @@ export function createStandScene(
     rebuildTextureTransfer = null;
   }
 
+  // Yerleşim uyarıları sağ alt bildirimdir (toastNotifications.js) ve kendi süresiyle kapanır;
+  // sahne akışı uyarıyı gösterdikten hemen sonra temizleyebildiği için burada kapatılmaz.
   function clearPlacementFeedback() {
-    if (placementFeedbackTimer) {
-      window.clearTimeout(placementFeedbackTimer);
-      placementFeedbackTimer = null;
-    }
-    placementFeedback?.remove?.();
-    placementFeedback = null;
+    placementFeedbackText = null;
   }
 
-  function showPlacementFeedback(message, { clientX = null, clientY = null, durationMs = 1800 } = {}) {
+  function showPlacementFeedback(message, { durationMs = 1800 } = {}) {
     const text = formatPlacementFeedbackMessage(message);
     if (!text) {
       clearPlacementFeedback();
       return;
     }
-
-    if (placementFeedbackTimer) {
-      window.clearTimeout(placementFeedbackTimer);
-      placementFeedbackTimer = null;
-    }
-
-    if (!placementFeedback) {
-      placementFeedback = document.createElement('div');
-      placementFeedback.style.cssText = [
-        'position:fixed',
-        'z-index:10002',
-        'max-width:320px',
-        'padding:8px 11px',
-        'border:1px solid rgba(220,38,38,.35)',
-        'border-radius:9px',
-        'background:rgba(127,29,29,.94)',
-        'box-shadow:0 8px 24px rgba(15,23,42,.2)',
-        'color:#fff',
-        'font:600 12px/1.35 system-ui,sans-serif',
-        'pointer-events:none',
-        'user-select:none',
-      ].join(';');
-      document.body.appendChild(placementFeedback);
-    }
-
-    placementFeedback.textContent = text;
-    const rect = renderer.domElement.getBoundingClientRect();
-    const hasPointer = hasPlacementFeedbackPointer(clientX, clientY);
-    const rawX = hasPointer ? Number(clientX) + 18 : rect.left + rect.width / 2;
-    const rawY = hasPointer ? Number(clientY) + 18 : rect.top + 72;
-    const x = Math.min(window.innerWidth - 20, Math.max(20, rawX));
-    const y = Math.min(window.innerHeight - 52, Math.max(12, rawY));
-    placementFeedback.style.left = `${x}px`;
-    placementFeedback.style.top = `${y}px`;
-    placementFeedback.style.transform = hasPointer ? 'none' : 'translateX(-50%)';
-
-    if (durationMs > 0) {
-      placementFeedbackTimer = window.setTimeout(() => {
-        clearPlacementFeedback();
-      }, durationMs);
-    }
+    placementFeedbackText = text;
+    showToast(text, { kind: 'error', durationMs: Math.max(durationMs, 3000) });
   }
 
   function findModuleGroupById(moduleId) {
@@ -2694,10 +2653,12 @@ export function createStandScene(
           moduleState?.id,
           error,
         );
+        showToast('Projedeki bir modül çizilemedi; sahnede eksik görünebilir.');
         return;
       }
       if (!module) {
         console.warn('Desteklenmeyen modül tipi atlandı:', moduleState.type, moduleState.id);
+        showToast('Projede tanınmayan bir modül atlandı.');
         return;
       }
 
@@ -7417,7 +7378,6 @@ export function createStandScene(
       controls.dispose?.();
       renderer.dispose();
       renderer.domElement.remove();
-      placementFeedback?.remove?.();
       dragBadge?.remove?.();
       measureLabels.forEach(({ element }) => element.remove());
     },

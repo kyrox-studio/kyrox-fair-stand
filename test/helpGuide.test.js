@@ -143,3 +143,18 @@ test('help guide describes short panel profiles running support to support in th
   assert.match(guideSource, /en uzun uygun profil \+ kalan parça yazılır \(ör\. 450 cm → 388 \+ 41,5\)/);
   assert.match(guideSource, /o raydaki panel profilinin yerine geçer/);
 });
+
+test('rehber "5 Dakikada İlk Standın" adımlarıyla açılır; ayrıntılar ayrı bölümde kalır', () => {
+  assert.match(guideSource, /title: '5 Dakikada İlk Standın',\s*open: true,/);
+  assert.match(guideSource, /<ol class="help-guide-steps">/);
+  for (const step of ['Standı kur.', 'Ürün ekle.', 'Yerleştir.', 'Giydir.', 'Kaydet ve göster.']) {
+    assert.match(guideSource, new RegExp(`<li><strong>${step.replace('.', '\.')}</strong>`));
+  }
+  assert.match(guideSource, /nedeni sağ altta bildirim olarak yazar/);
+  assert.match(guideSource, /title: 'Hızlı Başlangıç Ayrıntıları',/);
+});
+
+test('rehber profil profile her noktada dik bağlanır kuralını anlatır', () => {
+  assert.match(guideSource, /<strong>Profil bağlantısı:<\/strong> Profil başka bir profilin her noktasına dik bağlanır/);
+  assert.match(guideSource, /Duvar panelinde dik bağlantı yalnız dikme olan noktadadır\./);
+});

@@ -258,7 +258,7 @@ test('wizard fascia 800 × 800: each open 8 m edge gets a middle upright (max 5 
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();
-  await expect(totals.locator('li', { hasText: /^8 × .* · profile_388$/ })).toHaveCount(1);
+  await expect(totals.locator('li[data-item-key="profile_388"]')).toHaveText(/^8 × .* · adet$/);
   // profile_190 yalnız tam boy duvarlardan gelir; kısa panel başına 190'lar (16 adet daha) düşer.
-  await expect(totals.locator('li', { hasText: /^16 × .* · profile_190$/ })).toHaveCount(1);
+  await expect(totals.locator('li[data-item-key="profile_190"]')).toHaveText(/^16 × .* · adet$/);
 });

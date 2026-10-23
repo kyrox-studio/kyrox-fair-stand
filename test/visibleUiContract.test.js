@@ -42,3 +42,14 @@ test('üretim listesi toolbar butonu ile açılır; sahne oluşturunca otomatik 
   assert.match(markup, /toggle-production-bom/);
   assert.match(main, /toggleProductionBomButton/);
 });
+
+test('sahnede stand özeti etiketi: index.html ile CRM işaretlemesi aynı, main özetini yazar', async () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const { FAIR_STAND_MARKUP } = await import('../src/configuratorMarkup.js');
+  const chip = '<div id="stand-summary-chip" class="stand-summary-chip" hidden aria-live="polite"></div>';
+  assert.ok(html.includes(`<div id="viewport"></div>${chip}`));
+  assert.ok(FAIR_STAND_MARKUP.includes(`<div id="viewport"></div>${chip}`));
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.match(main, /standSummaryChip\.textContent = `\$\{label\} · \$\{formatMeters\(setup\.xCm\)\} × \$\{formatMeters\(setup\.yCm\)\} m · duvar \$\{formatMeters\(activeWallHeightCm\(\)\)\} m`;/);
+  assert.match(main, /renderStandSummaryChip\(null\);/);
+});
