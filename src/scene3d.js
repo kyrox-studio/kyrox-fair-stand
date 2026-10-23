@@ -57,7 +57,7 @@ import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { rectangleFromCorners } from './floorArea.js';
 import { resolveModuleStripOccupancy } from './stripOccupancy.js';
 import { createHorizontalImageLayout } from './horizontalImageLayout.js';
-import { createRectImageLayout, visualImageColumnItems } from './rectImageLayout.js';
+import { createRectImageLayout, visualImageColumnItems, surfaceImagePathCm } from './rectImageLayout.js';
 import { createConnectedPanelModulePath, createPanelRangeSelection, createRectSelection } from './rectSelection.js';
 import { applyColorOverride, createDefaultImageTransform, ensureBoxBlockFaces } from './designState.js';
 import {
@@ -482,6 +482,7 @@ export function createStandScene(
 
   // OrbitControls ends on pointerup/pointercancel, but does not handle blur or
   // a mouse move after a release that happened outside the browser window.
+  let imageSizePreviewActive = false;
   const orbitPointers = new Map();
   const orbitDocument = renderer.domElement.ownerDocument;
   const orbitWindow = orbitDocument.defaultView;
@@ -525,6 +526,13 @@ export function createStandScene(
   renderer.domElement.addEventListener('pointerdown', (event) => {
     if (controls.enabled) orbitPointers.set(event.pointerId, event.pointerType);
   }, { signal });
+  // Ölçü kartı açıkken yüzeyin üstünden de kamera döner; modül sürüklemesi başlamaz.
+  renderer.domElement.addEventListener('pointerdown', event => {
+    if (!imageSizePreviewActive) return;
+    event.stopImmediatePropagation();
+    if (controls.enabled) orbitPointers.set(event.pointerId, event.pointerType);
+    controls._onPointerDown?.(event);
+  }, { capture: true, signal });
   orbitDocument.addEventListener('pointermove', (event) => {
     if (event.pointerType === 'mouse' && event.buttons === 0) {
       cancelOrbitPointer(event.pointerId);
@@ -4787,6 +4795,10 @@ export function createStandScene(
     textureLoader.load(
       assetUrl,
       (sourceTexture) => {
+        if (!overlay.parent) {
+          sourceTexture.dispose();
+          return;
+        }
         requestEditorRender();
         if (fit === 'size') {
           const image = sourceTexture.image;
@@ -4877,10 +4889,10 @@ export function createStandScene(
     );
   }
 
-  function rebuildFabricOverlays() {
+  function rebuildFabricOverlays({ normalizeOwnership = true } = {}) {
     requestEditorRender();
     clearFabricOverlays();
-    normalizeFabricOwnership();
+    if (normalizeOwnership) normalizeFabricOwnership();
 
     const groups = new Map();
     surfaceMeshes.forEach((surface) => {
@@ -5426,13 +5438,21 @@ export function createStandScene(
     mesh.material.needsUpdate = true;
   }
 
+  const imageLoadVersions = new WeakMap();
+
   function loadSingleImageOnSurface(mesh, assetId) {
     const assetUrl = getAssetUrl(assetId);
     if (!mesh?.material || !assetUrl || mesh.userData.acceptsImage === false) return;
 
+    const version = (imageLoadVersions.get(mesh) ?? 0) + 1;
+    imageLoadVersions.set(mesh, version);
     textureLoader.load(
       assetUrl,
       (sourceTexture) => {
+        if (imageLoadVersions.get(mesh) !== version) {
+          sourceTexture.dispose();
+          return;
+        }
         requestEditorRender();
         const surfaceState = mesh.userData.surfaceState;
         if (surfaceState?.fabricGroupId || surfaceState?.imageAssetId !== assetId) {
@@ -5505,6 +5525,7 @@ export function createStandScene(
       },
       undefined,
       () => {
+        if (imageLoadVersions.get(mesh) !== version) return;
         const surfaceState = mesh.userData.surfaceState;
         const stateColor = surfaceState?.isGlass
           ? GLASS_APPEARANCE.color
@@ -5518,9 +5539,15 @@ export function createStandScene(
     const assetUrl = getAssetUrl(assetId);
     if (!mesh?.material || !assetUrl || mesh.userData.acceptsImage === false) return;
 
+    const version = (imageLoadVersions.get(mesh) ?? 0) + 1;
+    imageLoadVersions.set(mesh, version);
     textureLoader.load(
       assetUrl,
       (sourceTexture) => {
+        if (imageLoadVersions.get(mesh) !== version) {
+          sourceTexture.dispose();
+          return;
+        }
         requestEditorRender();
         const surfaceState = mesh.userData.surfaceState;
         const transform = surfaceState?.imageTransform;
@@ -5560,6 +5587,7 @@ export function createStandScene(
       },
       undefined,
       () => {
+        if (imageLoadVersions.get(mesh) !== version) return;
         const surfaceState = mesh.userData.surfaceState;
         const stateColor = surfaceState?.isGlass
           ? GLASS_APPEARANCE.color
@@ -5625,7 +5653,7 @@ export function createStandScene(
         moduleId: mesh.userData.moduleId ?? mesh.userData.moduleIndex,
         moduleIndex: mesh.userData.moduleIndex,
         stripIndex: mesh.userData.stripIndex,
-        pathCm: meta?.pathCm,
+        pathCm: meta ? surfaceImagePathCm(mesh) : undefined,
         axis: meta?.axis ?? null,
         crossCm: meta?.crossCm,
         planeKey: meta?.planeKey ?? null,
@@ -5683,20 +5711,37 @@ export function createStandScene(
     const assetId = seed.userData.surfaceState?.imageAssetId;
     if (!assetId) return [];
 
+    const groupId = getModuleGroupId(findModuleGroup(seed)?.userData?.moduleState);
+    const sameScope = mesh => getModuleGroupId(findModuleGroup(mesh)?.userData?.moduleState) === groupId
+      && (mesh.userData.panelSide ?? 'front') === (seed.userData.panelSide ?? 'front');
     const selected = [...selectedSurfaces].filter((mesh) => (
-      mesh.userData.acceptsImage !== false
+      sameScope(mesh)
+      && mesh.userData.acceptsImage !== false
       && !mesh.userData.surfaceState?.fabricGroupId
       && mesh.userData.surfaceState?.imageAssetId === assetId
     ));
     if (selected.includes(seed) && selected.length > 1) return selected;
 
+    const transform = seed.userData.surfaceState?.imageTransform ?? {};
     const sameAsset = surfaceMeshes.filter((mesh) => (
-      mesh.userData.acceptsImage !== false
+      sameScope(mesh)
+      && mesh.userData.acceptsImage !== false
       && !mesh.userData.surfaceState?.fabricGroupId
       && mesh.userData.surfaceState?.imageAssetId === assetId
+      && (transform.blockId
+        ? mesh.userData.surfaceState?.imageTransform?.blockId === transform.blockId
+        : !mesh.userData.surfaceState?.imageTransform?.blockId
+          && transform.mode !== 'single'
+          && mesh.userData.surfaceState?.imageTransform?.mode === transform.mode)
     ));
-    if (sameAsset.length > 1 && createRectImageLayout(imageLayoutItems(sameAsset)).ok) {
-      return sameAsset;
+    // Eski projede blok kimliği yoksa yalnız fiziksel olarak bağlı modüller birleştirilir.
+    const metas = sameAsset.map(mesh => getSurfaceSelectionPlaneMeta(mesh)).filter(Boolean);
+    const connected = transform.blockId ? sameAsset : sameAsset.filter(mesh => {
+      if (mesh.userData.moduleId === seed.userData.moduleId) return true;
+      return createConnectedPanelModulePath(metas, seed.userData.moduleId, mesh.userData.moduleId).ok;
+    });
+    if (connected.length > 1 && createRectImageLayout(imageLayoutItems(connected)).ok) {
+      return connected;
     }
     return [seed];
   }
@@ -5745,7 +5790,45 @@ export function createStandScene(
     };
   }
 
-  function applySizeImageAsset(meshOrMeshes, assetId, { widthCm, heightCm = null } = {}) {
+  function beginImageSizePreview(meshOrMeshes, assetId) {
+    imageSizePreviewActive = true;
+    const meshes = normalizeMeshes(meshOrMeshes);
+    const fabricIds = new Set(meshes.map(mesh => mesh.userData.surfaceState?.fabricGroupId).filter(Boolean));
+    const targets = surfaceMeshes.filter(mesh => meshes.includes(mesh)
+      || fabricIds.has(mesh.userData.surfaceState?.fabricGroupId));
+    let closed = false;
+    function restore() {
+      targets.forEach(mesh => {
+        syncRendererSurfaceState(mesh.userData.surfaceState, mesh.userData.persistentSurfaceState);
+        if (!mesh.userData.surfaceState?.fabricGroupId) loadImageOnSurface(mesh, assetId);
+      });
+      if (fabricIds.size) rebuildFabricOverlays({ normalizeOwnership: false });
+      requestEditorRender();
+    }
+    return {
+      update: dimensions => closed ? null : applySizeImageAsset(meshes, assetId, { ...dimensions, preview: true }),
+      cancel: () => {
+        if (closed) return;
+        closed = true;
+        imageSizePreviewActive = false;
+        restore();
+      },
+      commit: dimensions => {
+        if (closed) return { ok: false, message: 'Görsel önizlemesi kapandı.' };
+        const result = applySizeImageAsset(meshes, assetId, dimensions);
+        closed = true;
+        imageSizePreviewActive = false;
+        if (!result.ok) restore();
+        return result;
+      },
+    };
+  }
+
+  function applySizeImageAsset(meshOrMeshes, assetId, { widthCm, heightCm = null, preview = false } = {}) {
+    // Önizleme yalnız renderer kopyasına yazar; kayıt ağacı ve BOM değişmez.
+    const writeSurface = preview
+      ? (mesh, mutate) => mutate(mesh.userData.surfaceState)
+      : writePersistentSurface;
     if (!assetId) return { ok: false, message: 'Önce bir görsel seç.' };
     const width = Number(widthCm);
     if (!Number.isFinite(width) || width <= 0) {
@@ -5772,7 +5855,7 @@ export function createStandScene(
         (surface) => surface.userData.surfaceState?.fabricGroupId === fabric.groupId,
       );
       groupSurfaces.forEach((surface) => {
-        writePersistentSurface(surface, (state) => {
+        writeSurface(surface, (state) => {
           state.fabricImageAssetId = assetId;
           state.fabricImageFit = 'size';
           state.fabricImageWidthCm = width;
@@ -5780,7 +5863,7 @@ export function createStandScene(
           else delete state.fabricImageHeightCm;
         });
       });
-      rebuildFabricOverlays();
+      rebuildFabricOverlays({ normalizeOwnership: !preview });
       return {
         ok: true,
         panelCount: groupSurfaces.length,
@@ -5821,12 +5904,16 @@ export function createStandScene(
       return { ok: false, message: 'Seçili alanın ölçüsü okunamadı.' };
     }
 
+    const existingBlocks = new Set(meshes.map(mesh => mesh.userData.surfaceState?.imageTransform?.blockId));
+    const blockId = existingBlocks.size === 1 && !existingBlocks.has(undefined)
+      ? [...existingBlocks][0] : `image-block-${globalThis.crypto.randomUUID()}`;
     entries.forEach((entry) => {
-      writePersistentSurface(entry.mesh, (surfaceState) => {
+      writeSurface(entry.mesh, (surfaceState) => {
         surfaceState.imageAssetId = assetId;
         surfaceState.imageTransform = {
           ...createDefaultImageTransform(),
           fit: 'size',
+          blockId,
           mode: entries.length > 1 ? 'size-group' : 'single',
           widthCm: width,
           ...(storedHeight ? { heightCm: storedHeight } : {}),
@@ -5892,11 +5979,13 @@ export function createStandScene(
 
     if (!layout.ok) return layout;
 
+    const blockId = `image-block-${globalThis.crypto.randomUUID()}`;
     layout.entries.forEach((entry) => {
       writePersistentSurface(entry.mesh, (surfaceState) => {
         surfaceState.imageAssetId = assetId;
         surfaceState.imageTransform = {
           mode: 'horizontal-group',
+          blockId,
           groupAspect: layout.groupAspect,
           regionStart: entry.regionStart,
           regionWidth: entry.regionWidth,
@@ -5967,11 +6056,13 @@ export function createStandScene(
 
     if (!layout.ok) return layout;
 
+    const blockId = `image-block-${globalThis.crypto.randomUUID()}`;
     layout.entries.forEach((entry) => {
       writePersistentSurface(entry.mesh, (surfaceState) => {
         surfaceState.imageAssetId = assetId;
         surfaceState.imageTransform = {
           mode: 'rect-group',
+          blockId,
           fit: normalizedFit,
           groupAspect: layout.groupAspect,
           regionStartX: entry.regionStartX,
@@ -6054,6 +6145,7 @@ export function createStandScene(
   }
 
   renderer.domElement.addEventListener('contextmenu', (event) => {
+    if (imageSizePreviewActive) { event.preventDefault(); return; }
     // Dokunmatik uzun basma menüyü zaten açtıysa tarayıcının kendi contextmenu olayı ikinci kez açmaz.
     if (performance.now() - lastLongPressAt < 800) {
       event.preventDefault();
@@ -7348,6 +7440,7 @@ export function createStandScene(
     applySizeImageAsset,
     resolveImageBlock,
     describeImageSizeTarget,
+    beginImageSizePreview,
     applyHorizontalImageAsset,
     applyRectImageAsset,
     clearImage,

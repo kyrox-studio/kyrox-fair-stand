@@ -43,6 +43,7 @@ const CREATE_STAND_SCENE_PUBLIC_METHODS = Object.freeze([
   'applySizeImageAsset',
   'resolveImageBlock',
   'describeImageSizeTarget',
+  'beginImageSizePreview',
   'applyHorizontalImageAsset',
   'applyRectImageAsset',
   'clearImage',

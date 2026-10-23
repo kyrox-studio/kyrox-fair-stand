@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRectImageLayout, visualImageColumnItems } from '../src/rectImageLayout.js';
+import { createRectImageLayout, visualImageColumnItems, surfaceImagePathCm } from '../src/rectImageLayout.js';
 
 function makeGrid({ columns, rows, widths, height = 0.46 }) {
   const items = [];
@@ -123,3 +123,36 @@ test('rejects gaps between selected columns', () => {
 
   assert.equal(result.ok, false);
 });
+
+// Gerçek sahne dönüşleriyle eşit olmayan panel genişlikleri ve ters ekleme sırası.
+for (const widths of [[2, 1, 0.5], [0.5, 2, 1]]) {
+for (const rotationDeg of [0, 90, 180, 270]) {
+  for (const back of [false, true]) {
+    test(`${widths.join("+")} metre ${rotationDeg} derece ${back ? 'arka' : 'ön'} yüzde görsel yüzün solundan başlar`, async () => {
+      const { Group, Mesh, PlaneGeometry, MeshBasicMaterial } = await import('three');
+      const vertical = rotationDeg % 180 !== 0;
+      const items = widths.map((width, index) => {
+        const parent = new Group();
+        parent.rotation.y = rotationDeg * Math.PI / 180;
+        parent.position.set(vertical ? 4 : index * 3, 0, vertical ? index * 3 : 4);
+        const surface = new Mesh(new PlaneGeometry(width, 0.5), new MeshBasicMaterial());
+        if (back) surface.rotation.y = Math.PI;
+        parent.add(surface);
+        return { moduleId: `p${index}`, moduleIndex: 7 - index, stripIndex: 0,
+          pathCm: surfaceImagePathCm(surface), planeKey: 'same-plane', width, height: 0.5 };
+      });
+      const layout = createRectImageLayout(visualImageColumnItems(items));
+      assert.equal(layout.ok, true);
+      const reversed = (rotationDeg === 90 || rotationDeg === 180) !== back;
+      const order = reversed ? [2, 1, 0] : [0, 1, 2];
+      let widthBefore = 0;
+      for (const index of order) {
+        const entry = layout.entries.find(item => item.moduleId === `p${index}`);
+        assert.ok(Math.abs(entry.regionStartX - widthBefore / 3.5) < 1e-9);
+        assert.ok(Math.abs(entry.regionWidth - widths[index] / 3.5) < 1e-9);
+        widthBefore += widths[index];
+      }
+    });
+  }
+}
+}

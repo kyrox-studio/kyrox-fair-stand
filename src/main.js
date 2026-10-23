@@ -3385,23 +3385,23 @@ function describeSizeResult(result) {
   return `Görsel seçili alana ${sizeLabel} olarak oturdu.`;
 }
 
-function requestImageAreaDimensions(area) {
+function requestImageAreaDimensions(area, onPreview = () => {}) {
   const areaWidth = formatCm(area.areaWidthCm);
   const areaHeight = formatCm(area.areaHeightCm);
   const widthValue = formatCm(area.currentWidthCm);
   const heightValue = formatCm(area.currentHeightCm);
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:12000;background:rgba(15,23,42,.48);display:grid;place-items:center;padding:20px';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:12000;pointer-events:none';
     overlay.setAttribute('role', 'presentation');
     const form = document.createElement('form');
     form.setAttribute('role', 'dialog');
-    form.setAttribute('aria-modal', 'true');
+    form.setAttribute('aria-modal', 'false');
     form.setAttribute('aria-labelledby', 'image-area-size-title');
-    form.style.cssText = 'width:min(400px,100%);background:#fff;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(15,23,42,.28);display:grid;gap:12px;font:500 13px/1.35 Inter,ui-sans-serif,system-ui,sans-serif;color:#16161a';
+    form.style.cssText = 'position:absolute;pointer-events:auto;width:min(280px,calc(100vw - 24px));box-sizing:border-box;max-height:calc(100dvh - 24px);overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:12px;box-shadow:0 20px 60px rgba(15,23,42,.28);display:grid;gap:10px;font:500 12px/1.35 Inter,ui-sans-serif,system-ui,sans-serif;color:#16161a';
     form.innerHTML = [
-      '<strong id="image-area-size-title" style="font-size:16px">Görsel ölçüsü</strong>',
-      `<span style="color:#64748b">Seçili alan ${areaWidth} × ${areaHeight} cm. Görsel önce bu ölçüde oturur. Küçültürsen boşluklar tekrarlanır, büyütürsen taşar.</span>`,
+      '<div style="display:flex;align-items:center;gap:8px"><div data-image-size-handle tabindex="0" role="button" aria-label="Ölçü panelini taşı" title="Sürükle veya ok tuşlarıyla taşı" style="flex:1;cursor:grab;touch-action:none"><strong id="image-area-size-title" style="font-size:14px">Görsel ölçüsü</strong><span aria-hidden="true" style="margin-left:6px;color:#64748b">⠿</span></div><button type="button" data-cancel aria-label="Ölçülendirmeyi iptal et ve kapat" style="padding:2px 8px">×</button></div>',
+      `<span style="color:#64748b">Seçili alan ${areaWidth} × ${areaHeight} cm. Ölçüleri değiştirerek önizle. Kamerayı kullanabilir, kartı başlığından taşıyabilirsin.</span>`,
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">',
       `<label style="display:grid;gap:5px">Genişlik (cm)<input name="width" type="number" min="1" max="5000" step="0.1" value="${widthValue}" required style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px"></label>`,
       `<label style="display:grid;gap:5px">Yükseklik (cm)<input name="height" type="number" min="1" max="5000" step="0.1" value="${heightValue}" required style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px"></label>`,
@@ -3410,20 +3410,71 @@ function requestImageAreaDimensions(area) {
     ].join('');
     overlay.appendChild(form);
     document.body.appendChild(overlay);
+    const handle = form.querySelector('[data-image-size-handle]');
+    let position = { x: 0, y: 0 };
+    const place = (x, y) => {
+      position = {
+        x: Math.max(12, Math.min(x, window.innerWidth - form.offsetWidth - 12)),
+        y: Math.max(12, Math.min(y, window.innerHeight - form.offsetHeight - 12)),
+      };
+      form.style.left = `${position.x}px`;
+      form.style.top = `${position.y}px`;
+    };
+    place(window.innerWidth - form.offsetWidth - 16,
+      window.innerWidth <= 600 ? window.innerHeight - form.offsetHeight - 12 : 96);
+    const onResize = () => place(position.x, position.y);
+    window.addEventListener('resize', onResize);
+    let drag = null;
+    handle.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      drag = { pointerId: event.pointerId, pointerX: event.clientX, pointerY: event.clientY, ...position };
+      handle.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+    handle.addEventListener('pointermove', event => {
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      place(drag.x + event.clientX - drag.pointerX, drag.y + event.clientY - drag.pointerY);
+    });
+    const endDrag = () => { drag = null; };
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
+    handle.addEventListener('lostpointercapture', endDrag);
+    handle.addEventListener('keydown', event => {
+      const offsets = { ArrowLeft: [-10, 0], ArrowRight: [10, 0], ArrowUp: [0, -10], ArrowDown: [0, 10] };
+      if (!offsets[event.key]) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const [dx, dy] = offsets[event.key];
+      place(position.x + dx, position.y + dy);
+    });
+    let previewTimer = null;
+    form.addEventListener('input', () => {
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(() => {
+        if (!form.checkValidity()) return;
+        onPreview({ widthCm: Number(form.elements.width.value), heightCm: Number(form.elements.height.value) });
+      }, 80);
+    });
     const onKeyDown = (event) => {
-      if (event.key !== 'Escape') return;
+      if (event.key !== 'Escape') {
+        if (!form.contains(event.target)) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          if (event.key === 'Tab') form.querySelector('input[name="width"]')?.focus();
+        }
+        return;
+      }
       event.preventDefault();
       finish(null);
     };
     const finish = (value) => {
+      clearTimeout(previewTimer);
       document.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('resize', onResize);
       overlay.remove();
       resolve(value);
     };
-    form.querySelector('[data-cancel]').addEventListener('click', () => finish(null));
-    overlay.addEventListener('pointerdown', (event) => {
-      if (event.target === overlay) finish(null);
-    });
+    form.querySelectorAll('[data-cancel]').forEach(button => button.addEventListener('click', () => finish(null)));
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       const data = new FormData(form);
@@ -3445,9 +3496,17 @@ async function resizeContextImage(context) {
     selectionInfo.textContent = area.message;
     return;
   }
-  const dimensions = await requestImageAreaDimensions(area);
-  if (!dimensions) return;
-  const result = scene3d.applySizeImageAsset(block, area.assetId, dimensions);
+  designHistory.capture();
+  const preview = scene3d.beginImageSizePreview(block, area.assetId);
+  let result;
+  try {
+    const dimensions = await requestImageAreaDimensions(area, values => preview.update(values));
+    if (!dimensions) return;
+    result = preview.commit(dimensions);
+  } finally {
+    preview.cancel();
+  }
+  if (result.ok) designHistory.capture();
   if (!result.ok) {
     selectionInfo.textContent = result.message;
     return;

@@ -645,3 +645,16 @@ test('an imported strip without a panel identity takes it from the parent recipe
     assert.equal(bom.lines.find((line) => line.itemKey === 'mesh_fabric').quantity, mesh.totalAreaM2);
   });
 });
+
+test('aynı görseli kullanan bağımsız kopya bloklar baskıda iki ayrı parça sayılır', () => {
+  const modules = ['source', 'copy'].map(blockId => ({ id: blockId, type: 'box-block', faces: Object.fromEntries([0, 1].map(index => [index, {
+    widthCm: 100, heightCm: 50, imageAssetId: 'same-logo', imageTransform: { mode: 'size-group', blockId,
+      regionStartX: index / 2, regionWidth: 0.5, regionStartY: 0, regionHeight: 1 },
+  }])) }));
+  const print = section(collectPrintAreas(modules), 'image');
+  assert.equal(print.lines.length, 1);
+  assert.equal(print.lines[0].widthCm, 200);
+  assert.equal(print.lines[0].heightCm, 50);
+  assert.equal(print.lines[0].quantity, 2);
+  assert.equal(print.totalAreaM2, 2);
+});

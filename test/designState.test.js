@@ -84,7 +84,10 @@ test('duplicating a module preserves its design but creates independent identiti
   assert.equal(duplicate.widthCm, 150);
   assert.equal(duplicate.strips[1].color, '#ff5500');
   assert.equal(duplicate.strips[3].imageAssetId, 'asset-42');
-  assert.deepEqual(duplicate.strips[3].imageTransform, original.strips[3].imageTransform);
+  const { blockId, ...copiedTransform } = duplicate.strips[3].imageTransform;
+  assert.ok(blockId);
+  assert.notEqual(blockId, original.strips[3].imageTransform.blockId);
+  assert.deepEqual(copiedTransform, original.strips[3].imageTransform);
   duplicate.strips.forEach((strip, index) => {
     assert.notEqual(strip.id, original.strips[index].id);
   });
