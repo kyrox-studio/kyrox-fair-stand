@@ -117,6 +117,7 @@ async function saveAndReadProject(page) {
 }
 
 test('baz halıya tek dikdörtgen karolaj eklenir, sahnede görünür ve kayıtta kalır', async ({ page }) => {
+  test.setTimeout(60_000);
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await createIslandStand(page, 'Floor Split V1');
@@ -124,6 +125,9 @@ test('baz halıya tek dikdörtgen karolaj eklenir, sahnede görünür ve kayıtt
   const canvas = page.locator('#viewport > canvas');
   const before = decodePng(await canvas.screenshot());
 
+  await expect(page.locator('#floor-type')).toBeVisible();
+  await expect(page.locator('#floor-area-controls')).toBeHidden();
+  await page.locator('#editor-mode-advanced').click();
   await expect(page.locator('#floor-area-controls')).toBeVisible();
   await page.locator('#floor-area-add').click();
   await page.locator('#floor-area-type').selectOption('karolaj');
@@ -161,6 +165,25 @@ test('baz halıya tek dikdörtgen karolaj eklenir, sahnede görünür ve kayıtt
   });
   expect(saved.modules.some((module) => module.itemKey === 'karolaj' || module.itemKey === 'hali')).toBe(false);
 
+  await page.locator('#floor-area-draw').click();
+  await expect(page.locator('#floor-area-draw')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#editor-mode-simple').click();
+  await expect(page.locator('#floor-area-controls')).toBeHidden();
+  await expect(page.locator('#floor-type')).toBeVisible();
+  await expect(page.locator('#floor-area-draw')).toHaveAttribute('aria-pressed', 'false');
+  const simpleSaved = await saveAndReadProject(page);
+  expect(simpleSaved.stand).toEqual(saved.stand);
+  expect(simpleSaved.modules).toEqual(saved.modules);
+  const simpleView = decodePng(await canvas.screenshot());
+  expect(changedPixelRatio(after, simpleView)).toBeLessThan(0.01);
+  await page.locator('#editor-mode-advanced').click();
+  await expect(page.locator('#floor-area-controls')).toBeVisible();
+  await expect(page.locator('#floor-area-x')).toHaveValue('100');
+  await expect(page.locator('#floor-area-width')).toHaveValue('200');
+  const advancedSaved = await saveAndReadProject(page);
+  expect(advancedSaved.stand).toEqual(saved.stand);
+  expect(advancedSaved.modules).toEqual(saved.modules);
+
   await page.reload();
   await expect(page.locator('#viewport-empty')).toBeVisible();
   const projectSelect = page.locator('#project-select');
@@ -170,6 +193,10 @@ test('baz halıya tek dikdörtgen karolaj eklenir, sahnede görünür ve kayıtt
   }, saved.id);
   await page.locator('#open-project').click();
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
+  await expect(page.locator('#floor-area-controls')).toBeHidden();
+  const restored = await saveAndReadProject(page);
+  expect(restored.stand).toEqual(saved.stand);
+  await page.locator('#editor-mode-advanced').click();
   await expect(page.locator('#floor-type')).toHaveValue('hali');
   await expect(page.locator('#floor-area-x')).toHaveValue('100');
   await expect(page.locator('#floor-area-y')).toHaveValue('100');

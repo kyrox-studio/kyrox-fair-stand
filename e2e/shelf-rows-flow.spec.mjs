@@ -1,3 +1,4 @@
+import { openProductionDetails } from './helpers/productionDetails.mjs';
 import { test, expect } from '@playwright/test';
 
 // Raf kartları (Tekli / 2 / 3 sıralı) gerçek kullanıcı akışında: proje uygulamanın kendi koduyla
@@ -193,6 +194,7 @@ test('eski tekli raflar aynen açılır; sıralı raflar her genişlikte reçete
   expect(saved.modules.filter((module) => module.type === 'shelf').map((module) => module.itemKey)).toEqual(shelfKeys);
 
   // Tahta: her genişlikte 1 + 2 + 3 = 6. Ayak: 100'de 2 × 6 = 12, 150 ve 200'de 3 × 6 = 18.
+  await openProductionDetails(page);
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();

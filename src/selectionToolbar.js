@@ -130,7 +130,16 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
     const width = bar.offsetWidth || 260;
     const height = bar.offsetHeight || 48;
     const left = Math.min(Math.max(margin, anchor.clientX - width / 2), (window?.innerWidth ?? 1024) - width - margin);
-    const top = Math.max(margin, anchor.clientY - height - 14);
+    let top = Math.max(margin, anchor.clientY - height - 14);
+    // Üst bant daralsa da seçim işlemleri Kaydet ve diğer ana işlemleri örtmesin.
+    const viewportToolbar = document.querySelector('#viewport-toolbar');
+    if (viewportToolbar && !viewportToolbar.hidden) {
+      const toolbarRect = viewportToolbar.getBoundingClientRect();
+      if (left < toolbarRect.right && left + width > toolbarRect.left
+        && top < toolbarRect.bottom && top + height > toolbarRect.top) {
+        top = toolbarRect.bottom + margin;
+      }
+    }
     bar.style.left = `${Math.round(left)}px`;
     bar.style.top = `${Math.round(top)}px`;
   }

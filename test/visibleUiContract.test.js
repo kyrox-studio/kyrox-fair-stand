@@ -32,7 +32,7 @@ test('ışıklı strafor ölçü penceresi dialog semantiği ve Escape taşır',
   assert.match(main, /event\.key !== 'Escape'/);
 });
 
-test('üretim listesi toolbar butonu ile açılır; sahne oluşturunca otomatik açılmaz', () => {
+test('üretim listesi Ayrıntılar içinden açılır; sahne oluşturunca otomatik açılmaz', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   const markup = readFileSync(new URL('../src/configuratorMarkup.js', import.meta.url), 'utf8');
@@ -41,6 +41,9 @@ test('üretim listesi toolbar butonu ile açılır; sahne oluşturunca otomatik 
   assert.match(main, /createProductionBomPanel/);
   assert.match(markup, /toggle-production-bom/);
   assert.match(main, /toggleProductionBomButton/);
+  assert.match(html, /<details id="design-details"[^>]*>[\s\S]*?id="toggle-production-bom"/);
+  assert.doesNotMatch(html.slice(html.indexOf('id="viewport-toolbar"')), /id="toggle-production-bom"/);
+  assert.match(html, /<details id="project-revisions"[^>]*>[\s\S]*?<span>Geçmiş<\/span>/);
 });
 
 test('sahnede stand özeti etiketi: index.html ile CRM işaretlemesi aynı, main özetini yazar', async () => {

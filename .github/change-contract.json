@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "simple-advanced-wizard-and-menu",
   "kind": "ui-control",
-  "summary": "Tek Basit/Gelişmiş mod seçici ve ortak açılır/kapanır menü şablonu eklendi. Ayarlar, Gruplar, Şablonlarım ve Standartlar yalnız Gelişmiş modda görünür. Ölçü gösterimi mod varsayılanından bağımsız oturumluk tercihtir; taşıma ızgarası tek öğe/grup/kopya/katalog için ölçü ayarından bağımsızdır. Otomatik kayıt kontrolü Ayarlara, aynı Kaydet düğmesi üst araç alanına taşındı; paylaşım düğmesinin adı Ekranı paylaş oldu. Sol menü ve sihirbaz ortak metre girişi kullanır; virgüllü/noktalı değerler ve 0,5 m adımları cm hesaplarına aktarılır. Duvar yüksekliği seçenekleri iki yerde de metre gösterir; depo/alınlık/zemin seçenekleri sadeleştirildi ve zemin sihirbaza eklendi. Sol menünün Stand/Ürün ekle/Tasarım olarak yeniden düzenlenmesi beklemede; uygulanmadı. Gelişmiş/Ayarlar altındaki Herşeyi Kilitle kutusu mevcut toplu kilit API’siyle bütün öğeleri kilitler veya öğe/grup kilitlerini açar; gerçek, kısmi ve boş sahne durumlarını yansıtır.",
+  "summary": "Tek Basit/Gelişmiş mod seçici ve ortak açılır/kapanır menü şablonu eklendi. Ayarlar, Gruplar, Şablonlarım ve Standartlar yalnız Gelişmiş modda görünür. Ölçü gösterimi mod varsayılanından bağımsız oturumluk tercihtir; taşıma ızgarası tek öğe/grup/kopya/katalog için ölçü ayarından bağımsızdır. Otomatik kayıt kontrolü Ayarlara, aynı Kaydet düğmesi üst araç alanına taşındı; paylaşım düğmesinin adı Ekranı paylaş oldu. Sol menü ve sihirbaz ortak metre girişi kullanır; virgüllü/noktalı değerler ve 0,5 m adımları cm hesaplarına aktarılır. Duvar yüksekliği seçenekleri iki yerde de metre gösterir; depo/alınlık/zemin seçenekleri sadeleştirildi ve zemin sihirbaza eklendi. Sol menünün Stand/Ürün ekle/Tasarım olarak yeniden düzenlenmesi beklemede; uygulanmadı. Gelişmiş/Ayarlar altındaki Herşeyi Kilitle kutusu mevcut toplu kilit API’siyle bütün öğeleri kilitler veya öğe/grup kilitlerini açar; gerçek, kısmi ve boş sahne durumlarını yansıtır. Bölgesel zemin kontrolleri yalnız Gelişmiş modda görünür; tüm stand kaplaması iki modda da erişilebilir. Mod geçişi tasarım verisine yazmaz; yalnız tamamlanmamış zemin çizimini kapatır. Revizyonlar Proje/Geçmiş altında kapalı details bölümünde; Üretim Listesi aynı düğme/handler ile üst banttan iki modda erişilen Ayrıntılar bölümüne taşındı.",
   "owners": [
     "src/scene3d.js",
     "src/main.js",
@@ -14,7 +14,8 @@
     "src/newProjectWizard.js",
     "src/liveTabShare.js",
     "src/standSizeInput.js",
-    "src/moduleLock.js"
+    "src/moduleLock.js",
+    "src/selectionToolbar.js"
   ],
   "sourceOfTruth": [
     "src/scene3d.js",
@@ -27,7 +28,8 @@
     "src/newProjectWizard.js",
     "src/liveTabShare.js",
     "src/standSizeInput.js",
-    "src/moduleLock.js"
+    "src/moduleLock.js",
+    "src/selectionToolbar.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -902,7 +904,7 @@
         "F-019"
       ]
     },
-    "notes": "Ölçü katmanı renderer oturum durumudur. Main yalnız kontrolü bağlar; kayıt/geri alma/BOM/snap verilerine yazılmaz. Izgara bağımsız syncPlacementGhostDom üzerinden korunur. Geniş main/scene bağımlılıkları ve eski ölçü E2E tüketicileri incelendi; iki ölçü senaryosu açık kontrolü kullanacak şekilde güncellendi. Findings ürün kimliği, BOM ve state sahipliğini kapsar; bu görünürlük değişikliği bunları değiştirmez. Standalone index.html ile CRM gömülü markup eşliği korundu. Tek satırlık üst çubuk HTML değişimi canlı paylaşım tokenlarını da keşfe katıyor; backend canlı paylaşım endpointleri ve testleri salt referans olarak incelendi, protokol veya davranış değişmiyor. Mod tercihleri editorViewSettings sahibinde tutulur; proje şemasına, kalıcı depolamaya ve undo geçmişine girmez. Ortak details/summary bölüm sınıfları iki modda da aynıdır, klavye ile açılıp kapanır. Mod başına overrides sayfa yeniden açılınca varsayılana döner. F-028 reset-features senaryosundaki gelişmiş context-menu bölümü ayrı mevcut işlemdir; yeni uygulama modu bu ürün özelliklerini sıfırlamaz. Grup sürüklemesi hayalet üretmeden gerçek üyeleri taşır. syncStandFloorGrid her çizimde hayalet veya etkin sürüklemeyi kontrol ederek bütün taşıma yollarını kapsar; measurementsVisible ile ilişkili değildir. Başlat/bitir, tekil/grup, ölçüler kapalı ve mod değişimi targeted Chromium akışında doğrulanır. Otomatik kayıt kontrolünün kimliği, seçenekleri, autosaveSettings depolaması ve autosaveController değişmedi. Test kullanıcıları Ayarlar başlığından bölümü açar. Mod değiştirmek otomatik kayıt tercihini sıfırlamaz. Sihirbaz sunum birimi m, canonical proje/hesap birimi cm korunur. 4,5 / 6,5 ve 0,5 m adımı kaynak cm input metadata sınırlarıyla doğrulanır. Kaydet aynı DOM kimliği, handler ve capability kontrolüyle yalnız yer değiştirir. Paylaşım yalnız düğme adıdır; güvenlik domaini liveTabShare.js path mapping gereği affected, signaling/yetki sınırları değişmez. Gelişmiş kartlar CSS ile gizlenir; içerik, grup üyeliği ve şablon verileri silinmez. compact/primary HTML tokenları backend sıralama/sanitize ve tarihî migration referanslarını da keşfe kattı; bu backend kuralları değişmiyor. projectActionSaveGuard mevcut button kimlikleriyle çalışmayı sürdürüyor; Kaydet taşıması korumayı değiştirmiyor. Kullanım rehberi yeni konum ve etiketleri anlatacak şekilde güncellendi. Sol menü ve sihirbazın ortak giriş/gösterim sahibi standSizeInput.js oldu. readStandSetup UI metresini cm’ye çevirir; restoreProject kayıtlı cm verisini mevcut validateStandSetup ile doğrular, ekranda metre biçimler. Duvar yüksekliği option value değerleri cm kalır; yalnız etiketleri metreye çevrildi. Dikme tanımları ve BOM ölçüleri değişmedi. 150 dolayındaki tarayıcı kurulum adımı yeni kullanıcı birimine uyarlandı; canonical kayıt beklentileri cm olarak korundu. Yeni metre kayıt/açma senaryosu x/y/wallHeight cm değerlerini ayrıca doğrular. Toplu kilit kontrolü yeni bir kalıcı ayar veya kilit politikası oluşturmaz: currentModules kimlikleri changeModuleLock üzerinden mevcut setModulesLocked ve unlockFullySelectedGroups akışına gider. İleride eklenen öğeler zorla kilitlenmez; kutu gerçek durumu yansıtır. Ortak renderModuleGroupPanel yolu, tekil/grup işlemi, oluşturma/silme, undo/redo ve proje açılışında kutuyu günceller. Boş sahnede kapalıdır. Önce/sonra history capture tek adımlı geri almayı korur. Gerçek Chromium akışı grup kimliğinin korunmasını, toplu kilit açmayı ve kayıt/açma sonucunu doğrular."
+    "notes": "Ölçü katmanı renderer oturum durumudur. Main yalnız kontrolü bağlar; kayıt/geri alma/BOM/snap verilerine yazılmaz. Izgara bağımsız syncPlacementGhostDom üzerinden korunur. Geniş main/scene bağımlılıkları ve eski ölçü E2E tüketicileri incelendi; iki ölçü senaryosu açık kontrolü kullanacak şekilde güncellendi. Findings ürün kimliği, BOM ve state sahipliğini kapsar; bu görünürlük değişikliği bunları değiştirmez. Standalone index.html ile CRM gömülü markup eşliği korundu. Tek satırlık üst çubuk HTML değişimi canlı paylaşım tokenlarını da keşfe katıyor; backend canlı paylaşım endpointleri ve testleri salt referans olarak incelendi, protokol veya davranış değişmiyor. Mod tercihleri editorViewSettings sahibinde tutulur; proje şemasına, kalıcı depolamaya ve undo geçmişine girmez. Ortak details/summary bölüm sınıfları iki modda da aynıdır, klavye ile açılıp kapanır. Mod başına overrides sayfa yeniden açılınca varsayılana döner. F-028 reset-features senaryosundaki gelişmiş context-menu bölümü ayrı mevcut işlemdir; yeni uygulama modu bu ürün özelliklerini sıfırlamaz. Grup sürüklemesi hayalet üretmeden gerçek üyeleri taşır. syncStandFloorGrid her çizimde hayalet veya etkin sürüklemeyi kontrol ederek bütün taşıma yollarını kapsar; measurementsVisible ile ilişkili değildir. Başlat/bitir, tekil/grup, ölçüler kapalı ve mod değişimi targeted Chromium akışında doğrulanır. Otomatik kayıt kontrolünün kimliği, seçenekleri, autosaveSettings depolaması ve autosaveController değişmedi. Test kullanıcıları Ayarlar başlığından bölümü açar. Mod değiştirmek otomatik kayıt tercihini sıfırlamaz. Sihirbaz sunum birimi m, canonical proje/hesap birimi cm korunur. 4,5 / 6,5 ve 0,5 m adımı kaynak cm input metadata sınırlarıyla doğrulanır. Kaydet aynı DOM kimliği, handler ve capability kontrolüyle yalnız yer değiştirir. Paylaşım yalnız düğme adıdır; güvenlik domaini liveTabShare.js path mapping gereği affected, signaling/yetki sınırları değişmez. Gelişmiş kartlar CSS ile gizlenir; içerik, grup üyeliği ve şablon verileri silinmez. compact/primary HTML tokenları backend sıralama/sanitize ve tarihî migration referanslarını da keşfe kattı; bu backend kuralları değişmiyor. projectActionSaveGuard mevcut button kimlikleriyle çalışmayı sürdürüyor; Kaydet taşıması korumayı değiştirmiyor. Kullanım rehberi yeni konum ve etiketleri anlatacak şekilde güncellendi. Sol menü ve sihirbazın ortak giriş/gösterim sahibi standSizeInput.js oldu. readStandSetup UI metresini cm’ye çevirir; restoreProject kayıtlı cm verisini mevcut validateStandSetup ile doğrular, ekranda metre biçimler. Duvar yüksekliği option value değerleri cm kalır; yalnız etiketleri metreye çevrildi. Dikme tanımları ve BOM ölçüleri değişmedi. 150 dolayındaki tarayıcı kurulum adımı yeni kullanıcı birimine uyarlandı; canonical kayıt beklentileri cm olarak korundu. Yeni metre kayıt/açma senaryosu x/y/wallHeight cm değerlerini ayrıca doğrular. Toplu kilit kontrolü yeni bir kalıcı ayar veya kilit politikası oluşturmaz: currentModules kimlikleri changeModuleLock üzerinden mevcut setModulesLocked ve unlockFullySelectedGroups akışına gider. İleride eklenen öğeler zorla kilitlenmez; kutu gerçek durumu yansıtır. Ortak renderModuleGroupPanel yolu, tekil/grup işlemi, oluşturma/silme, undo/redo ve proje açılışında kutuyu günceller. Boş sahnede kapalıdır. Önce/sonra history capture tek adımlı geri almayı korur. Gerçek Chromium akışı grup kimliğinin korunmasını, toplu kilit açmayı ve kayıt/açma sonucunu doğrular. Bölgesel zemin mevcut stand.floorArea kaydını, renderer ve BOM akışını kullanır. Basitte yalnız kontrol grubu CSS ile gizlenir; floorArea verisi silinmez. setEditorMode tamamlanmamış çizimi iptal eder, mevcut alanı değiştirmez. floor-area E2E tüm stand/modules kaydının iki yöndeki geçişte aynı kaldığını, görüntünün korunduğunu ve Basitte kayıt/açma sonrası alanın geri geldiğini doğrular. Kamera çizim testi Gelişmiş moddan çalışır. Geçmiş yalnız project-revisions kapsayıcısının details/summary sunumudur; revisionSession ve API değişmez. Üretim Listesi aynı id/handler/resolver panelini kullanır; düğme sahne yokken pasiftir. index.html ve gömülü configuratorMarkup eşlendi. Mevcut BOM E2E girişleri Ayrıntılar başlığını açarak ilerler. Üst banttan BOM düğmesi çıkarılınca değişen geometri, seçim çubuğunun Kaydet üzerine gelmesini görünür kıldı. selectionToolbar mevcut üst bant dikdörtgeniyle çakışırsa altına alınır. Flat-panel E2E seçim sırasında dikdörtgen çakışmadığını ve normal Kaydet tıklamasını doğrular."
   },
   "tests": {
     "targeted": [
@@ -912,7 +914,8 @@
       "test/scene3dPublicContract.test.js",
       "test/newProjectWizard.test.js",
       "test/liveTabShare.test.js",
-      "test/moduleLock.test.js"
+      "test/moduleLock.test.js",
+      "test/visibleUiContract.test.js"
     ],
     "fullSuite": true,
     "build": true,
@@ -929,7 +932,14 @@
         "e2e/live-tab-share.spec.mjs",
         "e2e/group-template.spec.mjs",
         "e2e/visible-ui-b.spec.mjs",
-        "e2e/scene-select-all.spec.mjs"
+        "e2e/scene-select-all.spec.mjs",
+        "e2e/floor-area.spec.mjs",
+        "e2e/camera-pointer-lifecycle.spec.mjs",
+        "e2e/project-revision-session.spec.mjs",
+        "e2e/flat-panel-back-strips.spec.mjs",
+        "e2e/metal-separator-bom-gap.spec.mjs",
+        "e2e/long-part-split-label.spec.mjs",
+        "e2e/shelf-rows-flow.spec.mjs"
       ],
       "reason": "Mod varsayılanları, bağımsız kullanıcı ayarları, bölüm açma/kapatma, dar ekran ve gerçek sahnede ölçü/ızgara ayrımı doğrulanır."
     }

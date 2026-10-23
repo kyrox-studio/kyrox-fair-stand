@@ -1,3 +1,4 @@
+import { openProductionDetails } from './helpers/productionDetails.mjs';
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 
@@ -214,6 +215,7 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
   // Üretim listesi: tek kalem, adet.
   const canvasBox = await page.locator('#viewport > canvas').boundingBox();
   await page.mouse.click(canvasBox.x + canvasBox.width * 0.1, canvasBox.y + canvasBox.height * 0.9);
+  await openProductionDetails(page);
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();

@@ -181,6 +181,7 @@ test('selection modifiers and floor drawing keep their pointer ownership', async
     await page.keyboard.up(key);
   }
   await page.keyboard.press('t');
+  await page.locator('#editor-mode-advanced').click();
   await page.locator('#floor-area-add').click();
   await page.locator('#floor-area-draw').click();
   await expect(page.locator('#floor-area-draw')).toHaveAttribute('aria-pressed', 'true');

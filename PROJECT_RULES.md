@@ -6,6 +6,10 @@ BOM, üretim veya maliyet hesabına girebilen fiziksel öğelerin kök semantiğ
 
 Modül tipine göre değişen move snap, placement, collision, side-insert ve ghost davranışları burada tekrar edilmez. Canonical runtime: `src/moduleBehavior.js`, sözleşme: `MODULE_BEHAVIOR_STANDARD.md`. Sahne Z dönüşü Item kolonlarıdır: `docs/refactor/ROTATION.md`.
 
+## Editör modu tasarım verisini değiştirmez
+
+Basit / Gelişmiş geçişi yalnız arayüz kontrollerini ve yardımcı gösterimleri değiştirir. Stand ölçüleri, öğeler, yerleşimler, gruplar, kilitler, yüzeyler, zemin kaplamaları ve bölgesel zeminler korunur; mod geçişi sahneyi yeniden kurmaz, proje verisine yazmaz veya BOM sonucunu değiştirmez. Tamamlanmamış işlem önizlemesi iptal edilebilir; uygulanmış tasarım korunur.
+
 ## 1. Koordinat sistemi
 
 - Proje mantığında **X/Y zemin düzlemi, Z yükseklik** olarak kabul edilir.

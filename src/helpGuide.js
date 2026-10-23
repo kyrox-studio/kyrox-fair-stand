@@ -13,7 +13,7 @@ function listGuideSections() {
         <li><strong>Ürün ekle.</strong> Sol menüde <strong>Modül ekle</strong>'yi aç, kartı sahneye sürükle (tablette karta dokun, sonra sahnede yerine dokun). Profil, dikme ve kısa panel bırakılınca ölçü sorar.</li>
         <li><strong>Yerleştir.</strong> Modülü tutup sürükle; seçili modülde <strong>Döndür</strong>, <strong>Kopyala</strong>, <strong>Sil</strong> üstteki seçim çubuğundadır, diğer işlemler <strong>⋯</strong> düğmesinde. Kırmızı gölge oraya konamayacağını gösterir; nedeni sağ altta bildirim olarak yazar.</li>
         <li><strong>Giydir.</strong> Panele tıkla; açılan bölümden renk, görsel, cam, Lightbox veya Mesh uygula.</li>
-        <li><strong>Kaydet ve göster.</strong> Proje kendiliğinden kaydedilir (<strong>Kaydet</strong> ile hemen). Üstteki <strong>Ekranı paylaş</strong> canlı ekran paylaşımını açar. <strong>Render Al</strong> görsel verir, <strong>Üretim Listesi</strong> parça listesini gösterir. Yanlışlıkta <strong>Ctrl+Z</strong> geri alır.</li>
+        <li><strong>Kaydet ve göster.</strong> Proje kendiliğinden kaydedilir (<strong>Kaydet</strong> ile hemen). Üstteki <strong>Ekranı paylaş</strong> canlı ekran paylaşımını açar. <strong>Render Al</strong> görsel verir, <strong>Ayrıntılar → Üretim Listesi</strong> parça listesini gösterir. Yanlışlıkta <strong>Ctrl+Z</strong> geri alır.</li>
       </ol>
       <p>Hata ve uyarılar sağ altta kısa bildirim olarak çıkar; kapatmak için × düğmesine bas.</p>
     `,
@@ -316,10 +316,18 @@ function listGuideSections() {
     html: getHelpStandardsTableHtml(),
   },
   {
+    title: 'Geçmiş',
+    html: `
+      <p>Kaydedilmiş revizyonları görmek için sol menüde <strong>Proje → Geçmiş</strong> başlığını aç. Bölüm başlangıçta kapalıdır; yeniden başlığa basarak kapatabilirsin. Revizyon kaydı yoksa bölüm görünmez. Basit ve Gelişmiş modda erişilebilir.</p>
+      <p>Listeden bir revizyon seçerek o kaydı açabilirsin; seçili revizyon vurgulanır. Son revizyonu seçerek güncel çalışmaya dönersin. Bölümü açıp kapatmak kayıt oluşturmaz ve standı değiştirmez. Bu liste, Ctrl+Z ile kullanılan oturumluk geri alma geçmişinden ayrıdır.</p>
+    `,
+  },
+  {
     title: 'Zemin',
     html: `
       <p>Mevcut seçenekler: Karolaj ${getStandStandardsFacts().gridWidthCm} × ${getStandStandardsFacts().gridDepthCm} cm, Halı, Beyaz Meşe, Sarı Meşe ve Beton Parke.</p>
-      <p><strong>Zemin Kaplaması</strong> standın tamamının baz kaplamasıdır. Sahne oluştuktan sonra içine tek bir dikdörtgen eklenebilir. Dikdörtgenin dışı baz kaplama kalır.</p>
+      <p><strong>Zemin Kaplaması</strong> iki modda da standın tamamının baz kaplamasını seçer. Bölgesel zemin kontrolleri yalnız <strong>Gelişmiş</strong> modda görünür: sahne oluştuktan sonra içine tek bir dikdörtgen eklenebilir. Dikdörtgenin dışı baz kaplama kalır.</p>
+      <p><strong>Mod geçişi:</strong> Basit / Gelişmiş seçimi standı veya tasarım verisini değiştirmez. Bölgesel zemin Basit modda da sahnede ve proje kaydında korunur; Gelişmişe dönünce aynı alan düzenlenebilir. Yalnız henüz uygulanmamış çizim önizlemesi kapanır.</p>
       <ul>
         <li><strong>Zemin Alanı Ekle</strong> bir dikdörtgen açar. X, Y, genişlik ve derinlik 50 cm ve katlarıdır ve standın içinde kalır.</li>
         <li><strong>Alan kaplaması</strong> aynı zemin seçeneklerinden biridir.</li>
@@ -357,7 +365,7 @@ function listGuideSections() {
       <p>Editörde ışık gölgesi, LED projektör ve raf altı aydınlatmanın panele düşen ışığı kapalıdır; sahne hızlı açılır, döner ve köşeler karanlıkta kalmaz. Projektör lensi ve raf altı LED şeridi editörde de parlar. <strong>Render Al</strong> çizerken gölgeyi, projektör ve raf altı ışıklarını açar. Fuar holündeki gibi standın tepesinde bir sahne spotu yanar ve ortam ışığı kısılır; stand ışık havuzunda kalır, çevre yumuşakça kararır. İndirilen görsel ışıklı, gölgeli ve derinliklidir.</p>
       <p><strong>Sahne Işığı</strong>, Render Al’ın yanındadır. Açınca editörde de tepe spotu yanar ve ortam ışığı kısılır; render’daki ışık havuzu sahnede görünür. Alınlık gibi dışa bakan yüzler de aydınlık kalır. Projektör ve raf altı ışıkları editörde yine kapalıdır, gölge yalnız Render Al’da çizilir. Sayfa açılışında açıktır; kapatınca sahne düz aydınlık editör ışığına döner. Seçim oturumluktur, projeye kaydedilmez.</p>
       <p>Seçim çerçeveleri ve yardımcı duvar çizgileri render çıktısına dahil edilmez.</p>
-      <p><strong>Üretim Listesi</strong>, sahne kurulunca Render Al’ın yanında açılır. Panel sürüklenebilir, boyutu değişir ve <strong>Ayrı pencere</strong> ile dışarı alınır. <strong>Metin indir</strong> aynı listeyi metin dosyası olarak kaydeder.</p>
+      <p><strong>Üretim Listesi</strong>, sahne kurulunca sol menüde <strong>Ayrıntılar → Üretim Listesi</strong> üzerinden açılır. Ayrıntılar başlangıçta kapalıdır ve iki modda da erişilebilir. Panel sürüklenebilir, boyutu değişir ve <strong>Ayrı pencere</strong> ile dışarı alınır. <strong>Metin indir</strong> aynı listeyi metin dosyası olarak kaydeder; hesaplama değişmez.</p>
       <p>Baskı satırları Dijital Baskı, Lightbox Bezi, Mesh - Delikli Branda ve Işıklı Strafor / Logo başlıklarının altındadır. Satırda görselin dosya adı, cm ölçüsü ve m² yazar. Aynı görsel aynı ölçüdeyse adet birleşir. Aynı görsel farklı ölçülerdeyse satırlar ayrı kalır ve altında o görselin toplam m²’si yazar. Lightbox veya mesh görsel atanmadan çevrilirse satırda o panelin rengi hex olarak yazar. Ölçü, panelde scene dimensions varsa oradan, o alan boşsa item dimensions değerinden gelir.</p>
     `,
   },
