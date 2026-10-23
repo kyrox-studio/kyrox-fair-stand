@@ -41,8 +41,8 @@ test('wall, door and showcase frames draw all four edges with the stand frame cr
   ]) {
     const block = functionBlock(startName, endName);
     assert.match(block, /addPanelModuleFrame\(group, moduleState, \{/, startName);
-    // Panel yüzü çerçevenin dış kenarından dört yanda PANEL_FRAME_INSET_M (4 cm) içeride biter.
-    assert.match(block, /const innerWidth = Math\.max\(widthM - PANEL_FRAME_INSET_M \* 2, 0\.02\);/, startName);
+    // Panel yüzü sağ/solda PANEL_FRAME_SIDE_INSET_M (3 cm), alt/üstte PANEL_FRAME_INSET_M (4 cm) içeride biter.
+    assert.match(block, /const innerWidth = Math\.max\(widthM - PANEL_FRAME_SIDE_INSET_M \* 2, 0\.02\);/, startName);
     assert.match(block, /const panelOpening = panelFrameOpening\(/, startName);
     assert.match(block, /fitPanelToFrameOpening\(/, startName);
     assert.doesNotMatch(block, /railGeometry/, startName);
@@ -59,8 +59,10 @@ test('counter and door panel systems do not create intermediate horizontal rails
   assert.match(door, /frameBottomY: 0,\s*frameTopY: height,/);
 });
 
-test('panel inset is 4 cm from every frame edge', () => {
+test('panel inset is 4 cm at top/bottom and 3 cm at left/right frame edges', () => {
   assert.match(scene, /const PANEL_FRAME_INSET_M = 0\.04;/);
+  assert.match(scene, /const PANEL_FRAME_SIDE_INSET_M = 0\.03;/);
+  assert.doesNotMatch(scene, /PANEL_FRAME_INSET_M \* 2/);
   assert.match(scene, /return \{ bottomY: frameBottomY \+ PANEL_FRAME_INSET_M, topY: frameTopY - PANEL_FRAME_INSET_M \};/);
 });
 
@@ -78,7 +80,7 @@ test('panel face stands PANEL_FACE_OFFSET_M (15 mm) in front of the wall/profile
   }
 });
 
-test('base and counters use square profile rails and 4 cm inset panels in front of the frame', () => {
+test('base and counters use square profile rails and inset panels in front of the frame', () => {
   const boxFrame = functionBlock('function addBoxModuleFrame(', 'function resolveBoxPanelBackingDepth(');
   assert.match(boxFrame, /createSlottedProfileGeometry\(profileM, frameHeightM, profileM\)/);
   assert.match(boxFrame, /createSlottedProfileGeometry\(length, profileM, profileM\)/);
@@ -92,7 +94,7 @@ test('base and counters use square profile rails and 4 cm inset panels in front 
   ]) {
     const block = functionBlock(startName, endName);
     assert.match(block, /addBoxModuleFrame\(group, frameMaterial, \{/, startName);
-    assert.match(block, /PANEL_FRAME_INSET_M \* 2/, startName);
+    assert.match(block, /PANEL_FRAME_SIDE_INSET_M \* 2/, startName);
     assert.match(block, /panelFrameOpening\(0, frameHeightM\)/, startName);
     assert.match(block, /placeBoxPanelFace\(backing, surface, anchor, outward, backingDepth\);/, startName);
   }

@@ -80,4 +80,4 @@ Eski uppercase katalog kimliği için runtime compatibility bağı tutulmaz.
 
 ## Renderer görünümü (2026-10-21)
 
-`createDoorModule()` çerçevesi duvar paneliyle aynıdır (`addPanelModuleFrame`): iki dikme ile alt/üst profil reçetedeki `profile_*` sahne kesitinde, kanallı (`src/profileGeometry.js`). Kapı kanadı ve üst paneller profil yüzünün 15 mm önünde, çerçevenin dış kenarından dört yanda 4 cm içeride. Yalnız görünüm; state ve BOM değişmez.
+`createDoorModule()` çerçevesi duvar paneliyle aynıdır (`addPanelModuleFrame`): iki dikme ile alt/üst profil reçetedeki `profile_*` sahne kesitinde, kanallı (`src/profileGeometry.js`). Kapı kanadı ve üst paneller profil yüzünün 15 mm önünde, çerçevenin dış kenarından alt/üstte 4 cm, sağ/solda 3 cm içeride. Yalnız görünüm; state ve BOM değişmez.
