@@ -39,3 +39,14 @@ test('renderWallResult only warns for error messages', () => {
   assert.deepEqual(calls, ['Sorun']);
 });
 
+
+test('hata mesajları sağ alt bildirime de gider; bilgi mesajları gitmez', () => {
+  const notified = [];
+  const notify = (message, options) => notified.push([message, options?.kind]);
+  renderWallResult('Bilgi', false, () => {}, notify);
+  renderWallResult('Sorun', true, () => {}, notify);
+  const element = createElement();
+  renderStageResult(element, 'Hazır', false, notify);
+  renderStageResult(element, 'Stand hatası', true, notify);
+  assert.deepEqual(notified, [['Sorun', 'error'], ['Stand hatası', 'error']]);
+});

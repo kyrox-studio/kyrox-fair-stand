@@ -5,8 +5,21 @@ import { getMaxImageUploadMb } from './runtimeSettings.js';
 function listGuideSections() {
   return [
   {
-    title: 'Hızlı Başlangıç',
+    title: '5 Dakikada İlk Standın',
     open: true,
+    html: `
+      <ol class="help-guide-steps">
+        <li><strong>Standı kur.</strong> Yeni projede açılan sihirbazda stand tipini (Sırt Duvar, U, L, Ada) ve ölçüleri seç, <strong>Oluştur</strong>'a bas, projeye ad ver. Duvarlar kendiliğinden gelir.</li>
+        <li><strong>Ürün ekle.</strong> Sol menüde <strong>Modül ekle</strong>'yi aç, kartı sahneye sürükle (tablette karta dokun, sonra sahnede yerine dokun). Profil, dikme ve kısa panel bırakılınca ölçü sorar.</li>
+        <li><strong>Yerleştir.</strong> Modülü tutup sürükle; seçili modülde <strong>Döndür</strong>, <strong>Kopyala</strong>, <strong>Sil</strong> üstteki seçim çubuğundadır, diğer işlemler <strong>⋯</strong> düğmesinde. Kırmızı gölge oraya konamayacağını gösterir; nedeni sağ altta bildirim olarak yazar.</li>
+        <li><strong>Giydir.</strong> Panele tıkla; açılan bölümden renk, görsel, cam, Lightbox veya Mesh uygula.</li>
+        <li><strong>Kaydet ve göster.</strong> Proje kendiliğinden kaydedilir (<strong>Kaydet</strong> ile hemen). <strong>Render Al</strong> görsel verir, <strong>Üretim Listesi</strong> parça listesini gösterir. Yanlışlıkta <strong>Ctrl+Z</strong> geri alır.</li>
+      </ol>
+      <p>Hata ve uyarılar sağ altta kısa bildirim olarak çıkar; kapatmak için × düğmesine bas.</p>
+    `,
+  },
+  {
+    title: 'Hızlı Başlangıç Ayrıntıları',
     html: `
       <p>Stand tipini seç, X ve Y ölçülerini gir, <strong>Duvar yüksekliği</strong>ni seç (250–500 cm, varsayılan 350; duvar, kapı, vitrin, ayırıcı ve kısa duvar bu yüksekliğe göre kurulur, üretim listesi panel ve aparat sayısını buna göre verir); istersen <strong>Depo</strong> listesinde <strong>Depo yok</strong> yerine 1×1, 1,5×1, 2×1 veya 2×2 m depo ölçüsünü seç. Depo seçiliyken yanındaki <strong>Depo içeriği eklensin</strong> açılır; seçilirse Mini Buzdolabı, Kettle, Askılık ve Çöp Kutusu da otomatik yerleşir. Sonra <strong>Sahneyi Oluştur</strong> butonuna bas ve yalnızca proje/stand adını gir. Sistem stand tipi ve ölçülerini ada otomatik ekler, projeyi oluşturur ve ilk kaydı otomatik yapar.</p>
       <p><strong>Yeni proje sihirbazı:</strong> Yeni projede boş sahnenin ortasında 3 adım açılır: stand tipi, ölçü (genişlik, derinlik, duvar yüksekliği; depo listesinde Depo yok veya ölçü, depo varsa içerik; Alınlık olsun işaretlenirse Tek / Çift sıra) ve özet. Alınlık duvarı olmayan açık kenarların tepesine kısa panel dizer, iki yanı açık köşelere dikme koyar; 5 m'yi aşan kenara eşit aralıklı ara dikme gelir (6–10 m bir, 10,5–15 m iki…); sol menüde Alınlık listesinden de seçilir. <strong>Oluştur</strong> proje adını sorar ve sahneyi kurar. Sihirbaz sol menüdeki aynı alanları doldurur; ✕ ile kapatıp sol menüden de devam edebilirsin. Mevcut proje açılınca sihirbaz çıkmaz.</p>
@@ -123,6 +136,7 @@ function listGuideSections() {
       <p>Modüller serbestçe görünse de bırakıldıkları konum sistem kurallarıyla doğrulanır. Stand sınırı, çarpışma ve modülün kendi snap adımı kontrol edilir.</p>
       <ul>
         <li>Bütün modüller 10 cm adımla hareket eder (duvar, banko, mobilya, projektör dahil).</li>
+        <li><strong>Profil bağlantısı:</strong> Profil başka bir profilin her noktasına dik bağlanır (iki profilin arasına, ortasına); yaklaşınca 10 cm adımla yapışır. Profiller uç uca da eklenir. Duvar panelinde dik bağlantı yalnız dikme olan noktadadır.</li>
         <li><strong>Dikey taşıma:</strong> TV, strafor, tül, raf, küp blok, LED projektör, kısa duvar ve profil seçiliyken <strong>↑ / ↓</strong> ile 10 cm iner/çıkar; zemini ve duvar tepesini geçmez. Bu öğelerde ölçülerin yanında zemine ve tavana (duvar tepesine) uzaklık da yazar. Hangi öğenin dikey taşındığı öğe kaydındaki ayardır.</li>
         <li><strong>Profil</strong> seçili duvar yüksekliğinin tepesinde gelir (250 cm duvarda 240 cm'de).</li>
         <li><strong>Profil:</strong> Katalogda tek kart vardır; bırakılınca boy sorulur (gerçek boy ve sahnedeki boy yazar: 41,5 → 50 … 487 → 500 cm). <strong>Bir daha sorma, aynı ölçüde getir</strong> işaretlenirse sonraki profiller sormadan o boyda gelir (bu tarayıcıda). Sağ tık <strong>Profil boyu…</strong> boyu değiştirir; çentik oradan kaldırılınca yeniden sorulur.</li>

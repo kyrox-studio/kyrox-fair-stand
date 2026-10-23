@@ -196,7 +196,7 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();
-  await expect(totals.locator('li', { hasText: /^2 × .* · floor_showcase_100$/ })).toHaveCount(1);
-  await expect(totals.locator('li', { hasText: /^1 × .* · brochure_stand$/ })).toHaveCount(1);
+  await expect(totals.locator('li[data-item-key="floor_showcase_100"]')).toHaveText(/^2 × .* · adet$/);
+  await expect(totals.locator('li[data-item-key="brochure_stand"]')).toHaveText(/^1 × .* · adet$/);
   expect(errors).toEqual([]);
 });

@@ -135,8 +135,8 @@ test('düz duvara sağ tıkla arka yüze panel eklenir, kaldırılır; üretim l
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();
-  await expect(totals.locator('li', { hasText: /^14 × .* · panel_98$/ })).toHaveCount(1);
-  await expect(totals.locator('li', { hasText: /^2 × .* · profile_91$/ })).toHaveCount(1);
-  await expect(totals.locator('li', { hasText: /^2 × .* · upright_346_5$/ })).toHaveCount(1);
+  await expect(totals.locator('li[data-item-key="panel_98"]')).toHaveText(/^14 × .* · adet$/);
+  await expect(totals.locator('li[data-item-key="profile_91"]')).toHaveText(/^2 × .* · adet$/);
+  await expect(totals.locator('li[data-item-key="upright_346_5"]')).toHaveText(/^2 × .* · adet$/);
   expect(errors).toEqual([]);
 });

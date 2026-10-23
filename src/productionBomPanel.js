@@ -41,11 +41,22 @@ function escapeHtml(value) {
     .replaceAll('"', '&quot;');
 }
 
-function lineLabel(line) {
+function lineDisplayLabel(line) {
   // Uzun profil/dikmede parça bölünüşü adın yanında: "Dikme 495 cm (346,5 + 8 + 140,5)".
   const parts = formatItemLengthParts(line.itemKey);
   const name = parts ? `${line.name} (${parts})` : line.name;
-  return `${formatNumber(line.quantity)} × ${name} · ${line.unit} · ${line.itemKey}`;
+  return `${formatNumber(line.quantity)} × ${name} · ${line.unit}`;
+}
+
+// Kopyalanan üretim metni parça kodunu taşır (üretim ekibi için).
+function lineLabel(line) {
+  return `${lineDisplayLabel(line)} · ${line.itemKey}`;
+}
+
+// Ekrandaki satır kodu göstermez; kod ipucunda ve data-item-key niteliğinde kalır.
+function lineItemHtml(line) {
+  const key = escapeHtml(line.itemKey);
+  return `<li data-item-key="${key}" title="${key}">${escapeHtml(lineDisplayLabel(line))}</li>`;
 }
 
 function moduleCollapseKey(entry) {
@@ -57,8 +68,9 @@ function renderModuleHtml(entry, { open = false } = {}) {
   const keyAttr = escapeHtml(moduleCollapseKey(entry));
   const openAttr = open ? ' open' : '';
   const unresolvedClass = entry.status === 'unresolved' ? ' production-bom-module--unresolved' : '';
-  const key = entry.itemKey
-    ? `<div class="production-bom-module__key">${escapeHtml(entry.itemKey)}</div>`
+  // Modülün Item kodu ekranda yazmaz; başlığın ipucunda ve data-item-key niteliğinde kalır.
+  const keyAttrs = entry.itemKey
+    ? ` data-item-key="${escapeHtml(entry.itemKey)}" title="${escapeHtml(entry.itemKey)}"`
     : '';
 
   let content;
@@ -66,20 +78,19 @@ function renderModuleHtml(entry, { open = false } = {}) {
     content = `<p class="production-bom-module__error">${escapeHtml(entry.message)}</p>`;
   } else if (entry.lines.length) {
     content = `<ul class="production-bom-module__list">${entry.lines.map((line) => (
-      `<li>${escapeHtml(lineLabel(line))}</li>`
+      lineItemHtml(line)
     )).join('')}</ul>`;
   } else {
-    content = '<p class="production-bom-panel__empty">Alt item yok.</p>';
+    content = '<p class="production-bom-panel__empty">Parça yok.</p>';
   }
 
   return `
     <details class="panel-card compact collapsible-panel production-bom-module${unresolvedClass}" data-bom-collapse-key="${keyAttr}"${openAttr}>
-      <summary class="panel-summary">
+      <summary class="panel-summary"${keyAttrs}>
         <span>${head}</span>
         <span class="panel-chevron" aria-hidden="true"></span>
       </summary>
       <div class="panel-card-content">
-        ${key}
         ${content}
       </div>
     </details>
@@ -203,7 +214,7 @@ function renderTotalsHtml(lines, printAreas, { open = false } = {}) {
     ? groups.map((group) => {
       const view = visibleGroupLines(group, printAreas);
       const rows = [
-        ...view.hardware.map((line) => `<li>${escapeHtml(lineLabel(line))}</li>`),
+        ...view.hardware.map((line) => lineItemHtml(line)),
         ...view.sizes.map((line) => `<li>${escapeHtml(metalSizeLabel(line))}</li>`),
       ];
       if (!rows.length) return '';
@@ -212,13 +223,13 @@ function renderTotalsHtml(lines, printAreas, { open = false } = {}) {
         <ul class="production-bom-module__list">${rows.join('')}</ul>
       </section>`;
     }).join('')
-    : (printHtml ? '' : '<p class="production-bom-panel__empty">Birleşik leaf satır yok.</p>');
+    : (printHtml ? '' : '<p class="production-bom-panel__empty">Parça yok.</p>');
   const body = `${hardware}${printHtml}`;
 
   return `
     <details class="panel-card compact collapsible-panel production-bom-module" data-bom-collapse-key="__totals__"${openAttr}>
       <summary class="panel-summary">
-        <span>Birleşik leaf toplam</span>
+        <span>Toplam parça listesi</span>
         <span class="panel-chevron" aria-hidden="true"></span>
       </summary>
       <div class="panel-card-content">${body}</div>

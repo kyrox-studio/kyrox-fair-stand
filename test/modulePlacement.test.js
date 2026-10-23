@@ -1001,3 +1001,90 @@ test('every module type uses the 10 cm free-placement grid', () => {
   assert.equal(regular.placement.xCm, 270);
   assert.equal(regular.placement.yCm, 345);
 });
+
+function profileAt(id, itemKey, widthCm, { xCm, yCm, rotationZDeg = 0 }) {
+  return {
+    id,
+    type: 'profile',
+    itemKey,
+    widthCm,
+    depthCm: 10,
+    heightCm: 10,
+    placement: { xCm, yCm, zCm: 340, rotationZDeg, wallId: 'free' },
+  };
+}
+
+function validateProfile(itemKey, widthCm, placement, modules) {
+  return validatePlacementAgainstModules({
+    moduleId: 'moving',
+    moduleType: 'profile',
+    itemKey,
+    widthCm,
+    depthCm: 10,
+    heightCm: 10,
+    placement: { zCm: 340, wallId: 'free', ...placement },
+    modules,
+    standType: 'island',
+    standXCm: 800,
+    standYCm: 600,
+  });
+}
+
+test('profil profilin ortasına dik bağlanır ve iki profilin arasına bırakılır; çapraz geçiş çakışır', () => {
+  const top = profileAt('top', 'profile_388', 400, { xCm: 100, yCm: 200 });
+  const bottom = profileAt('bottom', 'profile_388', 400, { xCm: 100, yCm: 400 });
+
+  // Ucu üst profilin ortasında: T (dikme mesajı yok).
+  const stem = validateProfile('profile_91', 100, { xCm: 250, yCm: 200, rotationZDeg: 90 }, [top]);
+  assert.equal(stem.ok, true, stem.message);
+
+  // İki paralel profilin arasına: iki ucu da birer profilin ortasında.
+  const between = validateProfile('profile_190', 200, { xCm: 300, yCm: 200, rotationZDeg: 90 }, [top, bottom]);
+  assert.equal(between.ok, true, between.message);
+
+  // Uç uca: aynı hatta peş peşe.
+  const endToEnd = validateProfile('profile_190', 200, { xCm: 500, yCm: 200 }, [top]);
+  assert.equal(endToEnd.ok, true, endToEnd.message);
+
+  // İki profil birbirinin ortasından geçerse (X) çakışır.
+  const cross = validateProfile('profile_190', 200, { xCm: 250, yCm: 100, rotationZDeg: 90 }, [top]);
+  assert.equal(cross.ok, false);
+  assert.notEqual(cross.message, MID_WALL_TEE_MESSAGE);
+});
+
+test('duvarda dikme kuralı aynı kalır: profil değilse ortaya dik bağlantı reddedilir', () => {
+  const wall = { id: 'wall', widthCm: 300, placement: { xCm: 100, yCm: 200, zCm: 0, rotationZDeg: 0, wallId: 'free' } };
+  const midWall = validatePlacementAgainstModules({
+    moduleId: 't',
+    widthCm: 100,
+    placement: { xCm: 250, yCm: 100, zCm: 0, rotationZDeg: 90, wallId: 'free' },
+    modules: [wall],
+    standType: 'u-stand',
+    standXCm: 800,
+    standYCm: 600,
+  });
+  assert.equal(midWall.ok, false);
+  assert.equal(midWall.message, MID_WALL_TEE_MESSAGE);
+});
+
+test('mıknatıslı yapışma profili hedef profilin ortasına (10 cm adımla) T olarak oturtur', () => {
+  const target = profileAt('target', 'profile_388', 400, { xCm: 100, yCm: 200 });
+  const result = snapPlacementToModules({
+    moduleId: 'moving',
+    moduleType: 'profile',
+    itemKey: 'profile_91',
+    widthCm: 100,
+    depthCm: 10,
+    heightCm: 10,
+    pointerXCm: 262,
+    pointerYCm: 251,
+    rotationZDeg: 90,
+    modules: [target],
+    standType: 'island',
+    standXCm: 800,
+    standYCm: 600,
+  });
+  assert.equal(result?.snapKind, 'tee');
+  assert.equal(result?.placement?.xCm, 260);
+  assert.equal(result?.placement?.yCm, 200);
+});

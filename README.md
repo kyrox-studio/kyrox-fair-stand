@@ -9,7 +9,10 @@ Amaç serbest çizim yapmak değil; katalogda tanımlı gerçek modülleri, plac
 Repository ilk MVP taslağının ötesindedir. Mevcut uygulama aşağıdaki ana yetenekleri içerir:
 
 - Gerçek zamanlı Three.js 3D stand sahnesi.
-- Ortak placement, snap, connection ve collision altyapısı.
+- Ortak placement, snap, connection ve collision altyapısı. Duvarda dik bağlantı yalnız dikme olan noktadadır; profil ise profilin her noktasına dik bağlanır (iki profilin arasına, ortasına; yapışma 10 cm adım), uç uca eklenir, birbirinin ortasından geçen profiller çakışır.
+- Hata ve uyarılar sağ altta üst üste dizilen kısa bildirimlerdir (`src/toastNotifications.js`); hata için `window.alert` kullanılmaz, ayrıntı konsola da yazılır.
+- Sahnenin sol altında stand özeti görünür ("L Stand Sol · 4 × 3 m · duvar 3,5 m"). Üretim listesinde parça kodu ekranda yazmaz (ipucu ve `data-item-key`); kopyalanan üretim metni kodu taşır.
+- Yardım rehberi "5 Dakikada İlk Standın" adımlarıyla açılır.
 - Module type'a göre merkezi behavior registry.
 - Dikme ve profil katalogda tek kartla gelir; bırakırken boy sorulur (ortak pencere `src/itemSizeDialog.js`; `src/uprightHeight.js`, `src/profileLength.js`). Profil gerçek boy → sahne boyu: 41,5 → 50 … 289 → 300, 388 → 400, 487 → 500 (migration `0078_profile_lengths`). 346,5 cm'yi aşan profil/dikme Üretim Listesi'nde tek satır kalır, adın yanında parça bölünüşü yazar (`Dikme 495 cm (346,5 + 8 + 140,5)`; `fair_stand_item_length_parts`, migration `0080_item_length_parts`).
 - Kısa panel katalogda Tek Sıra / Çift Sıra için birer kartla gelir; ölçü soran kartların (kısa panel, profil, dikme) başlığı ölçüsüzdür ("Panel Tek Sıra", "Profil", "Dikme"), sahnedeki parça, sağ tık ve BOM Item adını yazar; ad sahnedeki öğenin ölçüsünü yazar: "Panel Tek Sıra 200", "Profil 388", "Dikme 346,5"; bırakırken genişlik (50 / 100 / 150 / 200) konum hesabından önce sorulur (`src/wallShortWidth.js`, migration `0079_wall_short_cards`).

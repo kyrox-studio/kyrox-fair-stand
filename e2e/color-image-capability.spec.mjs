@@ -103,15 +103,20 @@ test('5 MB üstü görsel arşive yazılmaz', async ({ page }) => {
   await createStand(page, 'Ada Stand', 'E2E Image Size Cap');
   await openSurfacePanel(page);
 
-  const filesPromise = page.locator('#surface-image').setInputFiles({
+  // Hata pencere (alert) açmaz; sağ altta bildirim olarak görünür.
+  const dialogs = [];
+  page.on('dialog', (dialog) => { dialogs.push(dialog.message()); void dialog.dismiss(); });
+  await page.locator('#surface-image').setInputFiles({
     name: 'too-big.png',
     mimeType: 'image/png',
     buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 1),
   });
-  const dialog = await page.waitForEvent('dialog');
-  expect(dialog.message()).toBe('Görsel en fazla 5 MB olabilir.');
-  await dialog.accept();
-  await filesPromise;
+  const toast = page.locator('.toast-stack .toast--error', { hasText: 'Görsel en fazla 5 MB olabilir.' });
+  await expect(toast).toHaveCount(1);
+  await expect(toast).toHaveAttribute('role', 'alert');
+  await toast.locator('.toast__close').click();
+  await expect(toast).toHaveCount(0);
+  expect(dialogs).toEqual([]);
   await expect(page.locator('#asset-status')).toHaveText('Görsel seçilmedi.');
   await expect(page.locator('.asset-tile')).toHaveCount(0);
   expect(pageErrors).toEqual([]);

@@ -22,10 +22,12 @@ test('Üretim Listesi uzun dikmeyi parça bölünüşüyle tek satırda gösteri
   const panel = page.locator('#production-bom-panel');
   await expect(panel).toBeVisible();
   const lines = panel.locator('li');
-  await expect(lines.filter({ hasText: 'upright_495' }).first()).toContainText('Dikme 495 (346,5 + 8 + 140,5) · adet · upright_495');
+  // Satır parça kodunu yazmaz; kod data-item-key / ipucunda.
+  await expect(panel.locator('li[data-item-key="upright_495"]').first()).toContainText('Dikme 495 (346,5 + 8 + 140,5) · adet');
+  await expect(panel.locator('li[data-item-key="upright_495"]').first()).not.toContainText('upright_495');
   // Bölünüş yalnız etiket: profile_8 ayrı satır olarak görünmez.
-  await expect(lines.filter({ hasText: '· profile_8' })).toHaveCount(0);
-  const standard = lines.filter({ hasText: '· profile_190' }).first();
+  await expect(panel.locator('li[data-item-key="profile_8"]')).toHaveCount(0);
+  const standard = panel.locator('li[data-item-key="profile_190"]').first();
   await expect(standard).not.toContainText('(');
 
   expect(pageErrors).toEqual([]);

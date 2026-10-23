@@ -1,4 +1,5 @@
 import { getActiveAutosaveController } from './autosaveController.js';
+import { reportError } from './toastNotifications.js';
 
 const GUARDED_BUTTON_IDS = new Set([
   'open-project',
@@ -60,7 +61,7 @@ export function bindProjectActionSaveGuard({
       await controller.flush({ quiet: true });
       return true;
     } catch (error) {
-      console.warn('İşlem öncesi proje kaydedilemedi:', error);
+      reportError(failureMessage, error);
       if (status) status.textContent = failureMessage;
       return false;
     }
