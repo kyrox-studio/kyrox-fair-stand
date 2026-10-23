@@ -1,42 +1,32 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-quick-usability-pack",
-  "kind": "feature",
-  "summary": "Hızlı kullanılabilirlik paketi: (1) Sağ alt bildirimler (sürükleme / ok tuşu yerleşim uyarıları dahil: showPlacementFeedback artık imleç balonu değil bildirim) (src/toastNotifications.js): kullanıcının işini etkileyen bütün hatalar (yerleşim, kaydetme, açma, görsel, revizyon, render, otomatik kayıt, 3B model, çizilemeyen modül, eksik görsel) sağ altta üst üste dizilen, × ile kapanan, tekrar etmeyen bildirimdir; hata için window.alert kalmadı; ayrıntı konsola da yazılır (reportError); 'Render hazır' yeşil bildirim. (2) Üretim listesi ekranda parça kodu yazmaz (ipucu + data-item-key), 'Toplam parça listesi', 'Parça yok'; kopyalanan üretim metni kodu taşır. (3) Rehber '5 Dakikada İlk Standın' adımlarıyla açılır; eski metin 'Hızlı Başlangıç Ayrıntıları'. (4) Sahnenin sol altında stand özeti ('L Stand Sol · 4 × 3 m · duvar 3,5 m'). (5) Profil profile her noktada dik bağlanır (iki profilin arasına, ortasına; 10 cm yapışma adımı), uç uca eklenir; X kesişim çakışır; duvarda dikme kuralı aynı. BOM değişmez. CRM içindeki konfigüratör bildirim stilini mountFairStand inline CSS listesinden alır. Kamera E2E ölçümü sabit bekleme yerine mevcut 4,5 saniyelik sınır içinde bekleyen çizimin tüketilmesini bekler; duran sahne iki düşük FPS aralığı boyunca denetlenir.",
+  "id": "grouped-image-surface-direction",
+  "kind": "bugfix",
+  "summary": "Birleşik panel görseli dünya X/Y sırasına göre değil yüzeyin dönüş uygulanmış yatay eksenine göre dağıtılır. 180 derece dönük SİMES panel grubunda parça sırası düzelir; kamera yönü hesabı etkilemez. Ön/arka yüz ve 0/90/180/270 dönüşler, farklı genişlikler ve kayıt/açma doğrulanır.",
   "owners": [
-    "index.html",
-    "src/configuratorMarkup.js",
-    "src/helpGuide.js",
-    "src/main.js",
-    "src/modulePlacement.js",
-    "src/mountFairStand.js",
-    "src/productionBomPanel.js",
-    "src/scene3d.js",
-    "src/stageFeedback.js",
-    "src/style.css",
-    "src/toastNotifications.css",
-    "src/toastNotifications.js"
+    "src/rectImageLayout.js",
+    "src/scene3d.js"
   ],
   "sourceOfTruth": [
-    "src/toastNotifications.js",
-    "src/modulePlacement.js"
+    "src/rectImageLayout.js",
+    "src/scene3d.js"
   ],
   "impact": {
-    "catalog": "affected",
+    "catalog": "not-applicable",
     "behavior": "affected",
     "state": "affected",
     "placement": "affected",
     "renderer": "affected",
-    "persistence": "affected",
-    "bom": "affected",
-    "ui": "affected",
-    "composition": "affected",
-    "assets": "affected",
-    "storage": "affected",
-    "importExport": "affected",
+    "persistence": "not-applicable",
+    "bom": "not-applicable",
+    "ui": "not-applicable",
+    "composition": "not-applicable",
+    "assets": "not-applicable",
+    "storage": "not-applicable",
+    "importExport": "not-applicable",
     "performance": "affected",
-    "accessibility": "affected",
-    "architecture": "affected",
+    "accessibility": "not-applicable",
+    "architecture": "not-applicable",
     "security": "not-applicable",
     "tests": "affected"
   },
@@ -93,7 +83,8 @@
       "src/viewCube.js",
       "src/wallReflow.js",
       "src/wallShortWidth.js",
-      "vite.config.js"
+      "vite.config.js",
+      "src/systemChangeContract.js"
     ],
     "affectedTests": [
       "e2e/base-items-contract.spec.mjs",
@@ -377,7 +368,9 @@
       "test/wallShortRelationshipBom.test.js",
       "test/wallShortVerticalMove.test.js",
       "test/wallShortWidth.test.js",
-      "test/wallShowcaseItemContract.test.js"
+      "test/wallShowcaseItemContract.test.js",
+      "test/rectImageLayout.test.js",
+      "e2e/grouped-image-direction.spec.mjs"
     ],
     "affectedDocs": [
       "FRESH_REPOSITORY_REVIEW.md",
@@ -768,7 +761,8 @@
       "docs/refactor/ITEM_3D_PREVIEW.md",
       "docs/refactor/PENDING_ITEM_DECISIONS.md",
       "docs/refactor/REFACTOR.md",
-      "docs/refactor/SCENE_POSE.md"
+      "docs/refactor/SCENE_POSE.md",
+      "README.md"
     ],
     "relatedFindings": {
       "affected": [],
@@ -788,42 +782,32 @@
         "F-033"
       ]
     },
-    "notes": "Hata yolu görünür olur; iş kuralları değişmez (duvar dik bağlantı kuralı aynı, yalnız profil çifti serbest). Onay pencereleri (silinsin mi?) confirm olarak kalır."
+    "notes": "Görsel dağıtımı ve ortak ölçüm tüketicileri (görsel blok düzenleme, kumaş alan ölçümü) incelendi. Item/BOM/placement kimliği, yetki, tenant ve API sınırları değişmez. Mevcut imageTransform şeması korunur; eski kayıtlar yeniden atamaya kadar aynen açılır. SaaS plan/kota/iş/veri yaşam döngüsü değişikliği yoktur."
   },
   "tests": {
     "targeted": [
-      "test/toastNotifications.test.js",
-      "test/stageFeedback.test.js",
-      "test/productionBomPanelEntry.test.js",
-      "test/helpGuide.test.js",
-      "test/visibleUiContract.test.js",
-      "test/modulePlacement.test.js"
+      "test/rectImageLayout.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
+        "e2e/grouped-image-direction.spec.mjs",
         "e2e/color-image-capability.spec.mjs",
         "e2e/flat-panel-back-strips.spec.mjs",
-        "e2e/floor-showcase-brochure-copy-rotate.spec.mjs",
-        "e2e/long-part-split-label.spec.mjs",
-        "e2e/new-project-wizard.spec.mjs",
-        "e2e/shelf-rows-flow.spec.mjs",
-        "e2e/toast-notifications.spec.mjs",
-        "e2e/visible-ui-b.spec.mjs",
-        "e2e/camera-pointer-lifecycle.spec.mjs"
+        "e2e/box-block-face-image-restore.spec.mjs"
       ],
-      "reason": "Bildirim, üretim listesi ve stand özeti tarayıcıda görünür; profil bağlantısı yerleşim davranışı."
+      "reason": "Birleşik görselin yönü gerçek sahnede ön/arka yüzlerde atanıp kaydedilir ve yeniden açılır."
     }
   },
   "risk": {
     "level": "low",
-    "notes": "Görünürlük ve tek bir yerleşim gevşetmesi (profil-profil)."
+    "notes": "Yüzeyin dünya dönüşü okunarak yalnız görsel sütun sırası hesaplanır; panel ölçüsü ve UV aynalama değiştirilmez."
   },
   "migration": {
     "required": false,
-    "notes": "DB değişikliği yok."
+    "notes": "DB ve proje şeması değişmez. Önceden yanlış atanmış görsel yeniden atanmalıdır."
   },
-  "rollback": "Bu PR'ı geri al."
+  "rollback": "Bu düzeltme commitlerini geri al."
 }

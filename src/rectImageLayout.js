@@ -1,3 +1,13 @@
+import { Vector3 } from 'three';
+
+// Görselin yatay ekseni yüzeyin yerel X eksenidir; modül ve arka yüz dönüşleri
+// bu ekseni birlikte taşır. Kamera konumu görsel sırasının parçası değildir.
+export function surfaceImagePathCm(surface) {
+  surface.updateWorldMatrix(true, false);
+  const right = new Vector3(1, 0, 0).transformDirection(surface.matrixWorld);
+  return surface.getWorldPosition(new Vector3()).dot(right) * 100;
+}
+
 function uniqueSorted(values) {
   return [...new Set(values)].sort((a, b) => a - b);
 }

@@ -57,7 +57,7 @@ import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { rectangleFromCorners } from './floorArea.js';
 import { resolveModuleStripOccupancy } from './stripOccupancy.js';
 import { createHorizontalImageLayout } from './horizontalImageLayout.js';
-import { createRectImageLayout, visualImageColumnItems } from './rectImageLayout.js';
+import { createRectImageLayout, visualImageColumnItems, surfaceImagePathCm } from './rectImageLayout.js';
 import { createConnectedPanelModulePath, createPanelRangeSelection, createRectSelection } from './rectSelection.js';
 import { applyColorOverride, createDefaultImageTransform, ensureBoxBlockFaces } from './designState.js';
 import {
@@ -5625,7 +5625,7 @@ export function createStandScene(
         moduleId: mesh.userData.moduleId ?? mesh.userData.moduleIndex,
         moduleIndex: mesh.userData.moduleIndex,
         stripIndex: mesh.userData.stripIndex,
-        pathCm: meta?.pathCm,
+        pathCm: meta ? surfaceImagePathCm(mesh) : undefined,
         axis: meta?.axis ?? null,
         crossCm: meta?.crossCm,
         planeKey: meta?.planeKey ?? null,
