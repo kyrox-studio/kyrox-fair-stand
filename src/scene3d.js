@@ -9637,9 +9637,9 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
     frameHeightM - railHeightM - PANEL_VERTICAL_CLEARANCE_M,
     0.05,
   );
-  // Panel yüzü çerçevenin dış kenarından dört yanda PANEL_FRAME_INSET_M içeride biter.
-  const frontPanelWidthM = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.05);
-  const sidePanelWidthM = Math.max(depthM - PANEL_FRAME_INSET_M * 2, 0.05);
+  // Panel yüzü çerçevenin dış kenarından sağ/solda PANEL_FRAME_SIDE_INSET_M, alt/üstte PANEL_FRAME_INSET_M içeride biter.
+  const frontPanelWidthM = Math.max(widthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
+  const sidePanelWidthM = Math.max(depthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
   const railSpanXM = Math.max(widthM - profileM * 2, 0.02);
   const railSpanZM = Math.max(depthM - profileM * 2, 0.02);
   const group = new THREE.Group();
@@ -9771,9 +9771,9 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
     stripHeightM - railHeightM - PANEL_VERTICAL_CLEARANCE_M,
     0.05,
   );
-  // Panel yüzü çerçevenin dış kenarından dört yanda PANEL_FRAME_INSET_M içeride biter.
-  const frontPanelWidthM = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.05);
-  const sidePanelWidthM = Math.max(depthM - PANEL_FRAME_INSET_M * 2, 0.05);
+  // Panel yüzü çerçevenin dış kenarından sağ/solda PANEL_FRAME_SIDE_INSET_M, alt/üstte PANEL_FRAME_INSET_M içeride biter.
+  const frontPanelWidthM = Math.max(widthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
+  const sidePanelWidthM = Math.max(depthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
   const railSpanXM = Math.max(widthM - profileM * 2, 0.02);
   const railSpanZM = Math.max(depthM - profileM * 2, 0.02);
   const group = new THREE.Group();
@@ -9917,10 +9917,10 @@ function createLCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   const frameHeightM = heightM - topThicknessM;
   const stripHeightM = frameHeightM / 2;
   const panelHeightM = Math.max(stripHeightM - railHeightM - PANEL_VERTICAL_CLEARANCE_M, 0.05);
-  // Panel yüzü çerçevenin dış kenarından dört yanda PANEL_FRAME_INSET_M içeride biter.
-  const frontPanelM = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.05);
-  const rightPanelM = Math.max(depthM - PANEL_FRAME_INSET_M * 2, 0.05);
-  const shortPanelM = Math.max(armM - PANEL_FRAME_INSET_M * 2, 0.05);
+  // Panel yüzü çerçevenin dış kenarından sağ/solda PANEL_FRAME_SIDE_INSET_M, alt/üstte PANEL_FRAME_INSET_M içeride biter.
+  const frontPanelM = Math.max(widthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
+  const rightPanelM = Math.max(depthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
+  const shortPanelM = Math.max(armM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
   const group = new THREE.Group();
   group.userData = { kind:'module', moduleIndex, moduleId:moduleState.id, type:'counter', widthCm, depthCm, heightCm:100, counterShape:'L' };
   const frameMaterial = new THREE.MeshStandardMaterial({ color:frameColorForModule(moduleState), metalness:0.68, roughness:0.28 });
@@ -10294,7 +10294,8 @@ function positiveSceneCm(value) {
 // Panel taşıyan duvar modüllerinde (düz panel, bazalı duvar, kapı, vitrin) dört çerçeve kenarı
 // da aynı kare profil kesitiyle çizilir (getProceduralFrameCrossSectionM): kapalı alüminyum çerçeve.
 // Yalnız 3B görünümdür; modül kutusu, panel state'i, panelRailHeight ve BOM değişmez. Paneller
-// çerçevenin önünde durur ve dört kenardan PANEL_FRAME_INSET_M içeri girer; çerçeve panel çevresinde görünür.
+// çerçevenin önünde durur; sağ/sol kenardan PANEL_FRAME_SIDE_INSET_M, alt/üst kenardan PANEL_FRAME_INSET_M içeri
+// girer; çerçeve panel çevresinde görünür.
 // Kenar çizgisi profil renginin koyu tonudur; profil rengi değişmez.
 const PANEL_FRAME_EDGE_SHADE = 0.55;
 
@@ -10349,8 +10350,9 @@ function addPanelModuleFrame(
   addProfile(railGeometry.clone(), 0, frameTopY - railHeight / 2);
 }
 
-// Panel yüzü çerçevenin dış kenarından alt, üst, sağ ve sol 4 cm içeride biter.
+// Panel yüzü çerçevenin dış kenarından alt ve üstte 4 cm, sağ ve solda 3 cm içeride biter.
 const PANEL_FRAME_INSET_M = 0.04;
+const PANEL_FRAME_SIDE_INSET_M = 0.03;
 
 function panelFrameOpening(frameBottomY, frameTopY) {
   return { bottomY: frameBottomY + PANEL_FRAME_INSET_M, topY: frameTopY - PANEL_FRAME_INSET_M };
@@ -10409,7 +10411,7 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
 
   const railHeight = STAND_DIMENSIONS.panelRailHeight;
   const surfaces = [];
-  const innerWidth = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.02);
+  const innerWidth = Math.max(widthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.02);
   const bandPanelHeight = stripHeight - railHeight - PANEL_VERTICAL_CLEARANCE_M;
   const { panelDepth, backingZ } = resolvePanelSlab(moduleState, depth);
   const panelOpening = panelFrameOpening(frameBottomY, frameBottomY + frameHeight);
@@ -10547,7 +10549,7 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
   });
 
   const surfaces = [];
-  const innerWidth = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.02);
+  const innerWidth = Math.max(widthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.02);
   const { panelDepth, backingZ } = resolvePanelSlab(moduleState, depth);
 
   // Alt bölüm: kapalı kapı kanadı. Sahne düzleminden dışarı açılmaz.
@@ -10872,7 +10874,7 @@ function createShowcaseModule(moduleState, moduleIndex, onSurfaceReady) {
   const frameMaterial = new THREE.MeshStandardMaterial({ color: frameColorForModule(moduleState), metalness: 0.68, roughness: 0.28 });
   const showcaseBodyMaterial = new THREE.MeshStandardMaterial({ color: bodyColor, metalness: 0, roughness: 0.72 });
   const railHeight = STAND_DIMENSIONS.panelRailHeight;
-  const innerWidth = Math.max(widthM - PANEL_FRAME_INSET_M * 2, 0.02);
+  const innerWidth = Math.max(widthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.02);
 
   const surfaces = [];
   const bandPanelHeight = stripHeight - railHeight - PANEL_VERTICAL_CLEARANCE_M;

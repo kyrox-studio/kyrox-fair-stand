@@ -1,16 +1,13 @@
 {
   "schemaVersion": 2,
-  "id": "fair-stand-dead-code-sweep-2026-10-23",
-  "kind": "architecture",
-  "summary": "Stand ölü kod taraması (davranış değişmez): hiçbir kaynak/test/CRM/belgeden çağrılmayan tanımlar silindi. Frontend: src/cornerPlacement.js (yetim; üretim yolu wallReflow, test/cornerPlacement.test.js import edilmediğini korumaya devam eder), catalog.js resetCatalogCategories/resetCatalogPreviews/listCatalogPreviews, items.js isItemCatalogReady + yalnız yazılan catalogReady, itemProvidesSnapCapability, itemSnap.js resolveSnapAnchorZCm, relationshipBom.js isEndToEndBomWallModule/applyEndToEndBomAdjustments/endpointPoints/cornerEndpointsTouch, designState.js takeParts/renderPartSurfaces, main.js syncWallLengthFromSetup/validateCurrentAxisCapacity/getRequestWallId/defaultCurrentCapacityCm ve boşta kalan importlar (describeRectSelection, validateStandAxisCapacity, getWallAxis), productionBomPanel.js renderLineList, scene3d.js PLACEMENT_GHOST_OPACITY; systemChangeContract haritasından silinen dosya çıkarıldı. Backend: kullanılmayan importlar (auth.py datetime/UTC, iki seed modülünde select), extension_for_mime, scope_css, ensure_type_behavior_slice1, has_runtime_settings, has_stand_dimensions. alembic.ini path_separator = os (Alembic eski bölme davranışı uyarısı). Belgeler: CATALOG.md, connector_corner.md, RELEASE_HARDENING_ROADMAP.md.",
+  "id": "fair-stand-panel-side-inset-3cm-2026-10-23",
+  "kind": "feature",
+  "summary": "Panel yüzü yan payı: duvar (düz panel, bazalı duvar, kapı, vitrin), baza, banko ve L banko panelleri çerçevenin dış kenarından sağ/solda 4 cm yerine 3 cm içeride biter (yeni PANEL_FRAME_SIDE_INSET_M = 0.03); panel profillerin üzerine her yanda 1 cm daha çıkar ve duvar birleşimlerinde açıkta kalan dikme şeridi daralır. Alt/üst pay 4 cm kalır (PANEL_FRAME_INSET_M, panelFrameOpening). Yalnız 3B görünüm; Item ölçüsü, strip state, BOM, maliyet ve persistence değişmez. Belgeler (docs/items/current-system, REFACTOR.md) ve horizontalPanelRails sözleşme testi güncellendi.",
   "owners": [
-    "src/systemChangeContract.js",
-    "src/main.js",
-    "src/relationshipBom.js",
-    "backend/alembic.ini"
+    "src/scene3d.js"
   ],
   "sourceOfTruth": [
-    "src/systemChangeContract.js"
+    "src/scene3d.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -94,6 +91,7 @@
       "src/selectionFeedback.js",
       "src/standStandardsCopy.js",
       "src/stripOccupancy.js",
+      "src/systemChangeContract.js",
       "src/uprightHeight.js",
       "src/viewCube.js",
       "src/wallPanelBand.js",
@@ -886,23 +884,23 @@
   },
   "tests": {
     "targeted": [
-      "test/systemChangeGate.test.js",
-      "test/cornerPlacement.test.js",
-      "test/stageFeedbackMainIntegration.test.js"
+      "test/horizontalPanelRails.test.js",
+      "test/panelFrameOpening.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/smoke.spec.mjs"
+        "e2e/smoke.spec.mjs",
+        "e2e/wall-height-matrix.spec.mjs"
       ],
-      "reason": "Silinen kodun çalışan yolda olmadığı tam E2E paketiyle doğrulanır."
+      "reason": "Panel yan genişliği değişti; alt/üst yüzey payı (wall-height-matrix) ve sahne yüklemesi değişmemeli."
     }
   },
   "risk": {
     "level": "low",
-    "notes": "Davranış değişikliği yok; silinen her tanımın çağrılmadığı arama ve tam testle doğrulandı."
+    "notes": "Yalnız render genişliği 2 cm artar; seçim çerçevesi ve yüzey görseli aynı innerWidth ile büyür. BOM/state etkilenmez."
   },
   "migration": {
     "required": false,

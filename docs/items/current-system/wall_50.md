@@ -124,7 +124,7 @@ Automatic depot tarafında da wall spec'leri `flat-panel` state'e çevrilir. Bu 
 | Panel gövdesi | reçete `panel_*` kalınlığı (`0.8 cm`), yüz profilin 15 mm önünde |
 | Render panel sayısı | `7` |
 
-Çerçeve görünümü (2026-10-21, `addPanelModuleFrame`): iki dikme ile alt/üst profil aynı kare kesitte çizilir; kesit reçetedeki `profile_*` Item'ının sahne ölçüsüdür (`resolveProceduralFrameCrossSectionCm`, depth × height; yerel DB'de 10 × 10). Profiller kanallıdır (`src/profileGeometry.js`: dört yüzde 2 cm ağız, 1,5 cm derinlik). Panel yüzü profil yüzünün 15 mm önünde ve çerçevenin dış kenarından dört yanda 4 cm içeride biter; en alt ve en üst bant bu 4 cm kadar kısalır. Panel gövdesi reçetedeki `panel_*` Item kalınlığındadır (0,8 cm). Yalnız görünüm; strip state ve BOM değişmez.
+Çerçeve görünümü (2026-10-21, `addPanelModuleFrame`): iki dikme ile alt/üst profil aynı kare kesitte çizilir; kesit reçetedeki `profile_*` Item'ının sahne ölçüsüdür (`resolveProceduralFrameCrossSectionCm`, depth × height; yerel DB'de 10 × 10). Profiller kanallıdır (`src/profileGeometry.js`: dört yüzde 2 cm ağız, 1,5 cm derinlik). Panel yüzü profil yüzünün 15 mm önünde ve çerçevenin dış kenarından alt/üstte 4 cm, sağ/solda 3 cm içeride biter; en alt ve en üst bant bu 4 cm kadar kısalır. Panel gövdesi reçetedeki `panel_*` Item kalınlığındadır (0,8 cm). Yalnız görünüm; strip state ve BOM değişmez.
 
 Renderer yalnız alt ve üst profili üretir. Her strip yüzeyi `selectionMode = panel`, `acceptsImage = true` ile oluşturulur. Eksik strip state'i varsa o panel atlanır ve console warning yazılır.
 
