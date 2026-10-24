@@ -58,7 +58,7 @@ test('ölçü katmanı: seçilen öğenin taban alanı ve ölçüleri; taşırke
   assert.match(distances, /new THREE\.Vector3\(stageLayout\.widthM, y, centerZ\)/);
   assert.match(distances, /new THREE\.Vector3\(centerX, y, stageLayout\.depthM\)/);
   assert.match(distances, /if \(distanceM < MEASURE_MIN_DISTANCE_M\) return;/);
-  assert.match(scene, /syncMeasureOverlay\(\);\s*const renderStartedAt = performance\.now\(\);/);
+  assert.match(scene, /syncMeasureOverlay\(\);\s*if \(groupSelectionFrame.visible\) syncGroupSelectionBounds\(\);\s*const renderStartedAt = performance\.now\(\);/);
   const capture = scene.slice(scene.indexOf('async function captureCurrentViewPng'), scene.indexOf('async function captureCurrentViewPng') + 5000);
   assert.match(capture, /measureGroup\.visible = false;/);
   assert.match(capture, /if \(standFloorGrid\) standFloorGrid\.visible = false;/);

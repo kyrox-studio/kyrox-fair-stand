@@ -59,7 +59,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /<th>Seçim çubuğu<\/th>/);
   assert.match(guideSource, /<strong>Çoklu modül<\/strong> açıkken modüle dokunmak aynı işi yapar/);
   assert.match(guideSource, /<strong>Çoklu panel<\/strong>’e basıp parmağı bir panelden diğerine kaydırmak aynı dikdörtgeni seçer/);
-  assert.match(guideSource, /panel seçimi mavi, modül seçimi turuncudur/);
+  assert.match(guideSource, /tek öğenin kapladığı alan mavi kesik çizgili kutu, grup ve çoklu öğe seçimi tamamını saran tek turuncu kesik çizgili kutuyla gösterilir/);
   assert.match(guideSource, /kaydırmadan başka bir panele dokunmak da ilk seçili panelden oraya kadar seçer/);
   assert.match(guideSource, /Tablette: panele dokun, seçim çubuğunda <strong>Çoklu panel<\/strong>’e bas/);
   assert.match(guideSource, /tablette seçim çubuğundaki <strong>Çoklu modül<\/strong> ile\) en az 2 öğe seç/);

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createSelectionBoundsFrame, fitSelectionBoundsFrame } from './selectionBoundsFrame.js';
 import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
@@ -295,9 +296,9 @@ function listFloorTypeKeys() {
 }
 const FLOOR_TOP_EPSILON_M = 0.006;
 const SELECTION_COLOR = 0x2563eb;
-// Küme seçimi (Shift+tık toplu seçim, grup üyeleri): Kyrox bakırı (kyrox-brand --kyrox-copper #C47A3A).
+// Grup ve çoklu öğe seçiminin ortak sınırı turuncu; tek öğe mavi.
 // Tek öğe ve panel seçimi mavi kalır.
-const GROUP_SELECTION_COLOR = 0xc47a3a;
+const GROUP_SELECTION_COLOR = 0xf97316;
 const PLACEMENT_VALID_COLOR = 0x16a34a;
 const PLACEMENT_INVALID_COLOR = 0xdc2626;
 const DRAG_THRESHOLD_PX = 5;
@@ -1833,7 +1834,9 @@ export function createStandScene(
         heightM + paddingM,
         depthM + paddingM,
       )),
-      new THREE.LineBasicMaterial({
+      new THREE.LineDashedMaterial({
+        dashSize: 0.08,
+        gapSize: 0.05,
         color: SELECTION_COLOR,
         transparent: true,
         opacity: 0.95,
@@ -1847,6 +1850,7 @@ export function createStandScene(
       Number.isFinite(centerZ) ? centerZ : 0,
     );
     frame.renderOrder = 1000;
+    frame.computeLineDistances();
     frame.visible = false;
     frame.userData.paddingM = paddingM;
     // Seçim görselleri yalnızca göstergedir; asla tıklama hedefi olmamalı.
@@ -1885,17 +1889,30 @@ export function createStandScene(
     }
   }
 
-  // Gruptaki bir öğe seçiliyken grubun diğer üyelerinde modül çerçevesi görünür.
+  // Gruptaki bir öğe seçiliyken bütün üyelerin ortak dış sınırı gösterilir.
   let groupHighlightIds = new Set();
+  const groupSelectionFrame = createSelectionBoundsFrame(GROUP_SELECTION_COLOR);
+  groupSelectionFrame.name = 'group-selection-bounds';
+  scene.add(groupSelectionFrame);
+
+  function syncGroupSelectionBounds() {
+    const bounds = new THREE.Box3();
+    groupHighlightIds.forEach((id) => {
+      const member = findModuleGroupById(id);
+      const local = member && computeModuleLocalBounds(member);
+      if (local) bounds.union(local.applyMatrix4(member.matrixWorld));
+    });
+    fitSelectionBoundsFrame(groupSelectionFrame, bounds);
+  }
 
   function refreshGroupHighlight() {
-    const next = new Set();
+    const next = new Set(multiSelectedModuleIds.size > 1 ? multiSelectedModuleIds : []);
     if (!multiSelectedModuleIds.size) {
       const selectedState = getSingleSelectedModuleGroup()?.userData?.moduleState;
       const groupId = getModuleGroupId(selectedState);
       if (groupId) {
         getGroupMembers(getRenderedModuleStates(), groupId).forEach((member) => {
-          if (member.id !== selectedState.id) next.add(member.id);
+          next.add(member.id);
         });
       }
     }
@@ -1904,8 +1921,17 @@ export function createStandScene(
         setModuleSelectionVisual(moduleId, false);
       }
     });
-    next.forEach((moduleId) => setModuleSelectionVisual(moduleId, true, GROUP_SELECTION_COLOR));
+    next.forEach((moduleId) => setModuleSelectionVisual(moduleId, false));
     groupHighlightIds = next;
+    selectedSurfaces.forEach((surface) => {
+      if (surface.userData.selectionFrame) surface.userData.selectionFrame.visible = next.size <= 1;
+    });
+    if (next.size > 1) syncGroupSelectionBounds();
+    else {
+      groupSelectionFrame.visible = false;
+      const single = getSingleSelectedModuleGroup();
+      if (single) setModuleSelectionVisual(single.userData.moduleId, true, SELECTION_COLOR);
+    }
   }
 
   function notifySelection() {
@@ -7219,6 +7245,7 @@ export function createStandScene(
       lastCubeQuaternion.copy(camera.quaternion);
     }
     syncMeasureOverlay();
+    if (groupSelectionFrame.visible) syncGroupSelectionBounds();
     const renderStartedAt = performance.now();
     const programsBefore = renderer.info.programs?.length ?? 0;
     const texturesBefore = renderer.info.memory?.textures ?? 0;
@@ -7311,6 +7338,7 @@ export function createStandScene(
     const selectedVisibility = selectedFrames.map((frame) => frame.visible);
     const moduleSelectionFrame = findModuleGroupById(selectedModuleId)?.userData?.moduleSelectionFrame ?? null;
     const moduleSelectionVisibility = moduleSelectionFrame?.visible ?? false;
+    const groupSelectionVisibility = groupSelectionFrame.visible;
     const guideVisibility = activeWallGuides.map((guide) => guide.visible);
     const renderTransmissionMaterials = new Set();
     scene.traverse((object) => {
@@ -7323,6 +7351,7 @@ export function createStandScene(
     try {
       selectedFrames.forEach((frame) => { frame.visible = false; });
       if (moduleSelectionFrame) moduleSelectionFrame.visible = false;
+      groupSelectionFrame.visible = false;
       activeWallGuides.forEach((guide) => { guide.visible = false; });
       // Müşteriye giden görselde ölçü katmanı ve zemin ızgarası yok.
       measureGroup.visible = false;
@@ -7352,6 +7381,7 @@ export function createStandScene(
       renderTransmissionMaterials.forEach((material) => { material.transmission = 0; });
       selectedFrames.forEach((frame, index) => { frame.visible = selectedVisibility[index]; });
       if (moduleSelectionFrame) moduleSelectionFrame.visible = moduleSelectionVisibility;
+      groupSelectionFrame.visible = groupSelectionVisibility;
       activeWallGuides.forEach((guide, index) => { guide.visible = guideVisibility[index]; });
       [measureGroup.visible] = editorAidVisibility;
       if (standFloorGrid) standFloorGrid.visible = editorAidVisibility[1];
@@ -11088,35 +11118,17 @@ function createShowcaseModule(moduleState, moduleIndex, onSurfaceReady) {
 }
 
 function createSelectionFrame(width, height) {
-  const group = new THREE.Group();
-  group.position.z = 0.006;
-  group.renderOrder = 100;
-
-  const material = new THREE.MeshBasicMaterial({
-    color: SELECTION_COLOR,
-    depthTest: false,
-    depthWrite: false,
-    toneMapped: false,
-  });
-  const thickness = 0.022;
-  const extra = 0.03;
-
-  const horizontalGeometry = new THREE.BoxGeometry(width + extra, thickness, 0.004);
-  const verticalGeometry = new THREE.BoxGeometry(thickness, height + extra, 0.004);
-
-  const top = new THREE.Mesh(horizontalGeometry.clone(), material.clone());
-  top.position.y = height / 2 + thickness / 2;
-  const bottom = new THREE.Mesh(horizontalGeometry.clone(), material.clone());
-  bottom.position.y = -height / 2 - thickness / 2;
-  const left = new THREE.Mesh(verticalGeometry.clone(), material.clone());
-  left.position.x = -width / 2 - thickness / 2;
-  const right = new THREE.Mesh(verticalGeometry.clone(), material.clone());
-  right.position.x = width / 2 + thickness / 2;
-
-  [top, bottom, left, right].forEach((part) => {
-    part.renderOrder = 100;
-    group.add(part);
-  });
-
-  return group;
+  const x = width / 2 + 0.015;
+  const y = height / 2 + 0.015;
+  const frame = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-x, -y, 0), new THREE.Vector3(x, -y, 0),
+    new THREE.Vector3(x, y, 0), new THREE.Vector3(-x, y, 0), new THREE.Vector3(-x, -y, 0),
+  ]), new THREE.LineDashedMaterial({ color: SELECTION_COLOR, dashSize: 0.08, gapSize: 0.05,
+    depthTest: false, depthWrite: false, toneMapped: false }));
+  frame.position.z = 0.006;
+  frame.renderOrder = 1000;
+  frame.computeLineDistances();
+  frame.raycast = () => {};
+  frame.userData.isModuleSelectionVisual = true;
+  return frame;
 }

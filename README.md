@@ -11,6 +11,7 @@ Revizyonlara **Proje → Geçmiş**, üretim listesine **Ayrıntılar → Üreti
 Repository ilk MVP taslağının ötesindedir. Mevcut uygulama aşağıdaki ana yetenekleri içerir:
 
 - Gerçek zamanlı Three.js 3D stand sahnesi.
+- Tek öğenin sınırı mavi kesik çizgili kutudur; grup ve çoklu öğe seçimi tamamını saran tek turuncu kesik çizgili kutuyla gösterilir. Bu yardımcılar render çıktısına ve proje verisine eklenmez.
 - Ortak placement, snap, connection ve collision altyapısı. Duvarda dik bağlantı yalnız dikme olan noktadadır; profil ise profilin her noktasına dik bağlanır (iki profilin arasına, ortasına; yapışma 10 cm adım), uç uca eklenir, birbirinin ortasından geçen profiller çakışır.
 - Hata ve uyarılar sağ altta üst üste dizilen kısa bildirimlerdir (`src/toastNotifications.js`); hata için `window.alert` kullanılmaz, ayrıntı konsola da yazılır.
 - Sahnenin sol altında stand özeti görünür ("L Stand Sol · 4 × 3 m · duvar 3,5 m"). Üretim listesinde parça kodu ekranda yazmaz (ipucu ve `data-item-key`); kopyalanan üretim metni kodu taşır.
