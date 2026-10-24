@@ -1,7 +1,7 @@
 import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument.js';
 
 // Seçili modülün üstünde küçük işlem çubuğu: Döndür / Kopyala / Sil / Çoklu panel|modül / ⋯ (sağ tık menüsü).
-// Renk kuralı: mavi = panel / alan seçimi, turuncu = modülün tamamı.
+// Sahnede tek öğe mavi, grup/çoklu seçim ortak turuncu kesik sınırla gösterilir.
 // Fare ve dokunmatikte aynı çalışır; tablette sağ tık yerine geçer. Konumu sahne bildirir
 // (seçili modülün tepe ortası, ekran pikseli); seçim yoksa veya sürüklenirken gizlenir.
 

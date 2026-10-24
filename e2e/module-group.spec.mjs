@@ -110,6 +110,24 @@ function boxes(modules) {
   return modules.filter((module) => module.type === 'box-block');
 }
 
+function selectionFrames(page) {
+  return page.evaluate(() => {
+    let root = window.__sceneSurfaces()[0];
+    while (root.parent) root = root.parent;
+    const frames = [];
+    root.traverse(object => {
+      if (object.visible && object.isLineSegments && object.userData.isModuleSelectionVisual) {
+        object.geometry.computeBoundingBox();
+        const box = object.geometry.boundingBox;
+        frames.push({ group: object.name === 'group-selection-bounds',
+          dashed: Boolean(object.material.isLineDashedMaterial), color: object.material.color.getHex(),
+          width: box.max.x - box.min.x });
+      }
+    });
+    return frames;
+  });
+}
+
 test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, sil, çöz', async ({ page }) => {
   test.setTimeout(120_000);
   const pageErrors = [];
@@ -136,6 +154,9 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   expect(Object.keys(bodiesBeforeGroup)).toHaveLength(2);
   const points = await boxScreenPoints(page);
   await page.mouse.dblclick(points[first.id].x, points[first.id].y);
+  await expect.poll(() => selectionFrames(page)).toEqual([
+    { group: false, dashed: true, color: 0x2563eb, width: expect.any(Number) },
+  ]);
   await page.keyboard.down('Control');
   await page.mouse.click(points[second.id].x, points[second.id].y);
   await page.keyboard.up('Control');
@@ -144,12 +165,21 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
   await menu.getByRole('menuitem', { name: 'Grup oluştur…' }).click();
   await expect(page.locator('#selection-info')).toContainText('“Sağ duvar” grubu oluşturuldu · 2 parça');
+  await page.mouse.click(points[first.id].x, points[first.id].y);
+  await expect.poll(async () => (await selectionFrames(page)).map(({ group, dashed, color }) => ({ group, dashed, color })))
+    .toEqual([{ group: true, dashed: true, color: 0xf97316 }]);
+  const [groupFrame] = await selectionFrames(page);
+  expect(groupFrame.width).toBeGreaterThan(first.widthCm / 100 + 0.02);
+  await page.screenshot({ path: 'test-results/group-dashed-selection.png' });
 
   await page.locator('#editor-mode-advanced').click();
   const groupsCard = page.locator('#module-groups-card');
   if (!(await groupsCard.evaluate((el) => el.open))) await groupsCard.locator(':scope > summary').click();
   const row = groupsCard.locator('.module-group-row', { hasText: 'Sağ duvar' });
   await expect(row.locator('.module-group-meta')).toHaveText('2 parça');
+  await row.locator('summary').click();
+  await row.getByRole('button', { name: 'Seç', exact: true }).click();
+  await row.locator('summary').click();
   // Grup oluşturmak kutuları yeniden yaratmaz.
   expect(await bodyUuids(page)).toEqual(bodiesBeforeGroup);
 

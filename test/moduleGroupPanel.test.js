@@ -131,10 +131,11 @@ test('scene moves the whole group on drag and arrows, and refuses Shift+R for me
   assert.doesNotMatch(sceneSource, /GROUP_ROTATE_MESSAGE/);
 });
 
-test('multi-selection and group member frames use Kyrox copper; single selection stays blue', () => {
+test('grup ve çoklu seçim ortak turuncu sınır kullanır; tek öğe mavi kalır', () => {
   assert.match(sceneSource, /const SELECTION_COLOR = 0x2563eb;/);
-  assert.match(sceneSource, /const GROUP_SELECTION_COLOR = 0xc47a3a;/);
-  assert.match(sceneSource, /next\.forEach\(\(moduleId\) => setModuleSelectionVisual\(moduleId, true, GROUP_SELECTION_COLOR\)\);/);
+  assert.match(sceneSource, /const GROUP_SELECTION_COLOR = 0xf97316;/);
+  assert.match(sceneSource, /createSelectionBoundsFrame\(GROUP_SELECTION_COLOR\)/);
+  assert.match(sceneSource, /next\.forEach\(\(moduleId\) => setModuleSelectionVisual\(moduleId, false\)\);/);
   assert.match(sceneSource, /multiSelectedModuleIds\.forEach\(\(id\) => setModuleSelectionVisual\(id, true, GROUP_SELECTION_COLOR\)\);/);
   assert.match(sceneSource, /selectedModuleId = moduleId \?\? null;\n {4}setModuleSelectionVisual\(selectedModuleId, true\);/);
   // Modül seçim çerçevesi panel seçimi gibi hemen yeniden çizilmeli.
