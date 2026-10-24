@@ -21,7 +21,8 @@ const CASES = [
     itemKey: 'floor_showcase_100',
     type: 'floor-showcase',
     label: 'Ayaklı Vitrin 100',
-    group: 'Raf & Vitrin',
+    // 0086: Ayaklı Vitrin Banko & Baza altında.
+    group: 'Banko & Baza',
     previewId: 29,
     size: [100, 40, 100],
     factory: createFloorShowcaseModuleState,

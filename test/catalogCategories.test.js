@@ -11,39 +11,39 @@ import {
 import { getItem, listRegisteredItems } from '../src/items.js';
 
 const EXPECTED_CATEGORIES = Object.freeze([
-  Object.freeze({ id: 1, catalogName: 'Panel & Duvar', catalogIndex: 1, itemCount: 3 }),
+  Object.freeze({ id: 1, catalogName: 'Panel & Duvar', catalogIndex: 1, itemCount: 4 }),
   Object.freeze({ id: 2, catalogName: 'Panel Ek Modül', catalogIndex: 2, itemCount: 5 }),
-  Object.freeze({ id: 3, catalogName: 'Raf & Vitrin', catalogIndex: 3, itemCount: 6 }),
-  Object.freeze({ id: 4, catalogName: 'Banko & Baza', catalogIndex: 4, itemCount: 3 }),
-  Object.freeze({ id: 5, catalogName: 'Extra', catalogIndex: 5, itemCount: 19 }),
-  Object.freeze({ id: 6, catalogName: 'Elektronik & Aydınlatma', catalogIndex: 6, itemCount: 7 }),
+  Object.freeze({ id: 3, catalogName: 'Raf & Vitrin', catalogIndex: 3, itemCount: 1 }),
+  Object.freeze({ id: 4, catalogName: 'Banko & Baza', catalogIndex: 4, itemCount: 4 }),
+  Object.freeze({ id: 5, catalogName: 'Extra', catalogIndex: 5, itemCount: 17 }),
+  Object.freeze({ id: 6, catalogName: 'Elektronik & Aydınlatma', catalogIndex: 6, itemCount: 4 }),
 ]);
 
 const EXPECTED_GROUP_KEYS = Object.freeze({
   1: Object.freeze([
     'wall_100_350', 'wall_separator_100_350',
-    'wall_door_100_350',
+    'wall_door_100_350', 'wall_showcase_100_3_350',
   ]),
   2: Object.freeze([
     'wall_100_short_2', 'wall_100_short_1',
     'upright_346_5', 'profile_289', 'box_block',
   ]),
+  // 0086: Vitrin Panel & Duvar'a, Ayaklı Vitrin Banko & Baza'ya taşındı; Raf tek kart.
   3: Object.freeze([
-    'wall_showcase_100_3_350', 'wall_showcase_100_2_350',
-    'shelf_row_1', 'shelf_row_2', 'shelf_row_3', 'floor_showcase_100',
+    'shelf_row_1',
   ]),
   4: Object.freeze([
-    'desk_banko_100', 'desk_banko_100_l', 'base_100',
+    'desk_banko_100', 'desk_banko_100_l', 'base_100', 'floor_showcase_100',
   ]),
   5: Object.freeze([
     'furniture_sofa_set_classic', 'furniture_sofa_single_classic', 'furniture_sofa_double_classic',
     'furniture_coffee_table_classic', 'furniture_table_chair_set_eames', 'chair_eames',
     'glass_table', 'furniture_bar_stool_classic', 'mini_fridge_avanti', 'kettle',
     'coat_rack', 'plastic_trash_bin', 'extra_indoor_plant_1',
-    'extra_long_planter_100', 'extra_long_planter_150', 'extra_long_planter_200', 'tulle_fabric', 'brochure_stand', 'glass_bar_table',
+    'extra_long_planter_100', 'tulle_fabric', 'brochure_stand', 'glass_bar_table',
   ]),
   6: Object.freeze([
-    'tv_42', 'tv_55', 'video_wall_2x2', 'video_wall_3x3', 'tv_65', 'led_floodlight', 'illuminated-foam',
+    'tv_42', 'video_wall_2x2', 'led_floodlight', 'illuminated-foam',
   ]),
 });
 
@@ -130,7 +130,7 @@ test('listCatalogGroups kategori sırası, adı ve Item sırasını korur', () =
     });
   });
 
-  assert.equal(visibleTotal, 43);
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 43);
+  assert.equal(visibleTotal, 35);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 35);
   assert.deepEqual([...listCatalogItems().map((item) => item.itemKey)], groups.flatMap((group) => group.keys));
 });

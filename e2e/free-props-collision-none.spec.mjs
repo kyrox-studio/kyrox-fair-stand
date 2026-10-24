@@ -18,7 +18,7 @@ async function createIslandStand(page, projectName) {
 }
 
 async function dragCatalogCard(page, moduleKey, targetPosition) {
-  const button = page.locator('#open-module-catalog');
+  const button = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: button });
   await modulePanel.evaluate((el) => { el.open = true; });
 

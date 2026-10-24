@@ -24,7 +24,7 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 **Kod:** Katalog verisinde `lengthParts` (item_mapper; admin kopyalama da taşır). `items.js > formatItemLengthParts` parça boylarını (en uzun ölçü) "346,5 + 8 + 140,5" olarak yazar; `productionBomPanel.js > lineLabel` ekranda ve "Metin indir"de adın yanına ekler.
 ## 2026-10-22 — Kısa panel kartı ve genişlik seçimi (migration 0079)
 
-**Ürün kararı:** Kısa panel profil gibi katalogda tek kartla gelir: Tek Sıra (`wall_100_short_1`, "Panel Tek Sıra 100") ve Çift Sıra (`wall_100_short_2`, "Panel Çift Sıra 100"). Ad sahnedeki öğenin ölçüsünü yazar: kısa panel "Panel Tek Sıra 50 … 200" / "Panel Çift Sıra 50 … 200", profil ve dikme gerçek boyla ("Profil 41,5" … "Profil 487", "Dikme 49,5" … "Dikme 495"); kart da kendi Item adını gösterir. Sağ tık başlığı katalogda gizli Item için Item adını yazar (`getModuleCatalogLabel`). Bırakırken genişlik sorulur: 50 / 100 / 150 / 200. Sağ tık menüsü eklenmez; "Bir daha sorma" tercihi yoktur.
+**Ürün kararı:** Kısa panel profil gibi katalogda tek kartla gelir: Tek Sıra (`wall_100_short_1`, "Panel Tek Sıra 100") ve Çift Sıra (`wall_100_short_2`, "Panel Çift Sıra 100"). Ad sahnedeki öğenin ölçüsünü yazar: kısa panel "Panel Tek Sıra 50 … 200" / "Panel Çift Sıra 50 … 200", profil ve dikme gerçek boyla ("Profil 41,5" … "Profil 487", "Dikme 49,5" … "Dikme 495"); kart da kendi Item adını gösterir. Sağ tık başlığı katalogda gizli Item için Item adını yazar (`getModuleCatalogLabel`). Bırakırken genişlik sorulur: 50 / 100 / 150 / 200. Sağ tık menüsü eklenmez; "Bir daha sorma" tercihi yoktur. **0086 ile değişti:** kart 100 cm bırakılır, pencere açılmaz; genişlik Özellikler panelindeki varyant düğmelerinden seçilir.
 
 **DB:** `0079_wall_short_cards` — diğer altı genişlik katalogda gizlenir (katalog alanları boşaltılır), iki kartın adı değişir, kategori içi görünür sıra 1…n olur. Item'lar, `itemKey`, `variant` ve reçeteler değişmez; otomatik alınlık (`resolveFasciaPanelItemKey`) ve kayıtlı projeler gizli genişlikleri kullanmaya devam eder.
 
@@ -115,7 +115,7 @@ yeni DB alanı, Alembic migration veya BOM değişikliği yoktur.
 
 ## 2026-10-21 — Raf: Tekli / 2 sıralı / 3 sıralı (migration 0072)
 
-**Katalog:** Raf & Vitrin altında üç kart: `shelf_row_1` Tekli raf, `shelf_row_2` 2 sıralı raf, `shelf_row_3` 3 sıralı raf. Kartta genişlik yok; `shelf_100/150/200` katalogdan çıktı (Tekli kartın ürünleri). Yeni tablo `fair_stand_item_width_variants` kart → ürün eşlemesini tutar; genişlik ürünün `dimensions.widthCm` değeridir (`getWidthVariantFamily`, `resolveWidthVariantItemKey`). Anahtar deseni ve `if (itemKey === …)` yok.
+**Katalog:** Raf & Vitrin altında üç kart: `shelf_row_1` Tekli raf, `shelf_row_2` 2 sıralı raf, `shelf_row_3` 3 sıralı raf (**0086 ile değişti:** katalogda yalnız "Raf" kartı `shelf_row_1`; 2 ve 3 sıralı raf `variant` `shelf-row` ile Özellikler panelinde seçilir). Kartta genişlik yok; `shelf_100/150/200` katalogdan çıktı (Tekli kartın ürünleri). Yeni tablo `fair_stand_item_width_variants` kart → ürün eşlemesini tutar; genişlik ürünün `dimensions.widthCm` değeridir (`getWidthVariantFamily`, `resolveWidthVariantItemKey`). Anahtar deseni ve `if (itemKey === …)` yok.
 
 **Ürünler ve BOM:** Tekli raf mevcut `shelf_W` (reçete `shelf_W_self` × 1 + `shelf_leg` × 2/3/3; canlıda vardı, migration yoksa ekler). Sıralı raf `shelf_row_n_W` = `shelf_W` × n: 2 sıralı 150 → 2 tahta + 6 ayak. Sıra sayısı Item kolonu değil, reçeteden okunur (`resolveShelfRows`).
 

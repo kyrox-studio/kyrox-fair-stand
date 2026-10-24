@@ -20,7 +20,7 @@ test('loading screen stays until the delayed 3D model has arrived', async ({ pag
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   await modulePanel.locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="extra_indoor_plant_1"]');

@@ -24,6 +24,7 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
       'wall_100_350',
       'wall_separator_100_350',
       'wall_door_100_350',
+      'wall_showcase_100_3_350',
     ]),
   }),
   Object.freeze({
@@ -38,13 +39,9 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
   }),
   Object.freeze({
     label: 'Raf & Vitrin',
+    // 0086: Raf tek kart; vitrinler Panel & Duvar ve Banko & Baza altına taşındı.
     keys: Object.freeze([
-      'wall_showcase_100_3_350',
-      'wall_showcase_100_2_350',
       'shelf_row_1',
-      'shelf_row_2',
-      'shelf_row_3',
-      'floor_showcase_100',
     ]),
   }),
   Object.freeze({
@@ -53,6 +50,7 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
       'desk_banko_100',
       'desk_banko_100_l',
       'base_100',
+      'floor_showcase_100',
     ]),
   }),
   Object.freeze({
@@ -72,8 +70,6 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
       'plastic_trash_bin',
       'extra_indoor_plant_1',
       'extra_long_planter_100',
-      'extra_long_planter_150',
-      'extra_long_planter_200',
       'tulle_fabric',
       'brochure_stand',
       'glass_bar_table',
@@ -83,10 +79,7 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
     label: 'Elektronik & Aydınlatma',
     keys: Object.freeze([
       'tv_42',
-      'tv_55',
       'video_wall_2x2',
-      'video_wall_3x3',
-      'tv_65',
       'led_floodlight',
       'illuminated-foam',
     ]),

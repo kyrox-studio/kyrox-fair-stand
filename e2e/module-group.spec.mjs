@@ -37,7 +37,7 @@ async function createIslandStand(page) {
 }
 
 async function dropBoxBlock(page, xRatio) {
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   if (!(await modulePanel.evaluate((el) => el.open))) await modulePanel.locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="box_block"]');
@@ -285,14 +285,15 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   expect(Object.keys(bodiesAfterDuplicate)).toHaveLength(4);
   for (const [moduleId, uuid] of Object.entries(bodiesBeforeDuplicate)) expect(bodiesAfterDuplicate[moduleId]).toBe(uuid);
 
-  // Sil: onaylı, kopya grubun bütün parçaları gider.
-  page.once('dialog', (dialog) => {
-    expect(dialog.message()).toContain('grubunun tamamı silinecek (2 parça)');
-    void dialog.accept();
-  });
+  // Sil: onay sormaz, kopya grubun bütün parçaları gider (Geri al ile döner).
+  const deleteDialogs = [];
+  const onDeleteDialog = (dialog) => { deleteDialogs.push(dialog.message()); void dialog.dismiss(); };
+  page.on('dialog', onDeleteDialog);
   await copyRow.locator('summary').click();
   await copyRow.locator('[data-group-action="group-delete"]').click();
   await expect(copyRow).toHaveCount(0);
+  page.off('dialog', onDeleteDialog);
+  expect(deleteDialogs).toEqual([]);
   expect(boxes(await storedModules(page))).toHaveLength(2);
   expect(await bodyUuids(page)).toEqual(bodiesBeforeDuplicate);
 

@@ -32,15 +32,15 @@ test('wall_showcase parents own canonical cluster identity and child roles', () 
 });
 
 test('catalog keeps wall_showcase keys and derives canonical descriptor facts', () => {
-  for (const expected of CASES) {
-    const descriptor = getCatalogItem(expected.itemKey);
-    assert.equal(descriptor.itemKey, expected.itemKey);
-    assert.equal(descriptor.label, getItem(expected.itemKey).name);
-    assert.equal(descriptor.previewId, getItem(expected.itemKey).previewId);
-    assert.equal(Object.hasOwn(descriptor, 'type'), false);
-    assert.equal(Object.hasOwn(descriptor, 'widthCm'), false);
-    assert.equal(Object.hasOwn(descriptor, 'eyeCount'), false);
-  }
+  // 0086: Vitrin tek kart (3 göz); 2 göz Özellikler panelinde seçilir.
+  assert.equal(getCatalogItem('wall_showcase_100_2_350'), null);
+  const descriptor = getCatalogItem('wall_showcase_100_3_350');
+  assert.equal(descriptor.itemKey, 'wall_showcase_100_3_350');
+  assert.equal(descriptor.label, 'Vitrin');
+  assert.equal(descriptor.previewId, getItem('wall_showcase_100_3_350').previewId);
+  assert.equal(Object.hasOwn(descriptor, 'type'), false);
+  assert.equal(Object.hasOwn(descriptor, 'widthCm'), false);
+  assert.equal(Object.hasOwn(descriptor, 'eyeCount'), false);
   assert.equal(getCatalogItem('showcase_2_100'), null);
   assert.equal(getCatalogItem('showcase_3_100'), null);
 });

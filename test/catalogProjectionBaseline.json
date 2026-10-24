@@ -3,20 +3,17 @@
     "wall_100_350",
     "wall_separator_100_350",
     "wall_door_100_350",
+    "wall_showcase_100_3_350",
     "wall_100_short_2",
     "wall_100_short_1",
     "upright_346_5",
     "profile_289",
     "box_block",
-    "wall_showcase_100_3_350",
-    "wall_showcase_100_2_350",
     "shelf_row_1",
-    "shelf_row_2",
-    "shelf_row_3",
-    "floor_showcase_100",
     "desk_banko_100",
     "desk_banko_100_l",
     "base_100",
+    "floor_showcase_100",
     "furniture_sofa_set_classic",
     "furniture_sofa_single_classic",
     "furniture_sofa_double_classic",
@@ -31,16 +28,11 @@
     "plastic_trash_bin",
     "extra_indoor_plant_1",
     "extra_long_planter_100",
-    "extra_long_planter_150",
-    "extra_long_planter_200",
     "tulle_fabric",
     "brochure_stand",
     "glass_bar_table",
     "tv_42",
-    "tv_55",
     "video_wall_2x2",
-    "video_wall_3x3",
-    "tv_65",
     "led_floodlight",
     "illuminated-foam"
   ],
@@ -59,6 +51,11 @@
       "itemKey": "wall_door_100_350",
       "label": "Depo Kapısı 100",
       "previewId": 8
+    },
+    {
+      "itemKey": "wall_showcase_100_3_350",
+      "label": "Vitrin",
+      "previewId": 21
     },
     {
       "itemKey": "wall_100_short_2",
@@ -86,34 +83,9 @@
       "previewId": 9
     },
     {
-      "itemKey": "wall_showcase_100_3_350",
-      "label": "3 Gözlü Vitrin 100",
-      "previewId": 21
-    },
-    {
-      "itemKey": "wall_showcase_100_2_350",
-      "label": "2 Gözlü Vitrin 100",
-      "previewId": 21
-    },
-    {
       "itemKey": "shelf_row_1",
-      "label": "Tekli raf",
+      "label": "Raf",
       "previewId": 20
-    },
-    {
-      "itemKey": "shelf_row_2",
-      "label": "2 sıralı raf",
-      "previewId": 20
-    },
-    {
-      "itemKey": "shelf_row_3",
-      "label": "3 sıralı raf",
-      "previewId": 20
-    },
-    {
-      "itemKey": "floor_showcase_100",
-      "label": "Ayaklı Vitrin 100",
-      "previewId": 29
     },
     {
       "itemKey": "desk_banko_100",
@@ -129,6 +101,11 @@
       "itemKey": "base_100",
       "label": "Baza",
       "previewId": 2
+    },
+    {
+      "itemKey": "floor_showcase_100",
+      "label": "Ayaklı Vitrin 100",
+      "previewId": 29
     },
     {
       "itemKey": "furniture_sofa_set_classic",
@@ -197,17 +174,7 @@
     },
     {
       "itemKey": "extra_long_planter_100",
-      "label": "Uzun Saksı 100",
-      "previewId": 14
-    },
-    {
-      "itemKey": "extra_long_planter_150",
-      "label": "Uzun Saksı 150",
-      "previewId": 14
-    },
-    {
-      "itemKey": "extra_long_planter_200",
-      "label": "Uzun Saksı 200",
+      "label": "Uzun Saksı",
       "previewId": 14
     },
     {
@@ -227,28 +194,13 @@
     },
     {
       "itemKey": "tv_42",
-      "label": "TV 42\"",
-      "previewId": 26
-    },
-    {
-      "itemKey": "tv_55",
-      "label": "TV 55\"",
+      "label": "TV",
       "previewId": 26
     },
     {
       "itemKey": "video_wall_2x2",
-      "label": "Video Wall 2×2",
+      "label": "Video Wall",
       "previewId": 28
-    },
-    {
-      "itemKey": "video_wall_3x3",
-      "label": "Video Wall 3×3",
-      "previewId": 28
-    },
-    {
-      "itemKey": "tv_65",
-      "label": "TV 65\"",
-      "previewId": 26
     },
     {
       "itemKey": "led_floodlight",
@@ -269,7 +221,8 @@
       "keys": [
         "wall_100_350",
         "wall_separator_100_350",
-        "wall_door_100_350"
+        "wall_door_100_350",
+        "wall_showcase_100_3_350"
       ]
     },
     {
@@ -289,12 +242,7 @@
       "catalogName": "Raf & Vitrin",
       "catalogIndex": 3,
       "keys": [
-        "wall_showcase_100_3_350",
-        "wall_showcase_100_2_350",
-        "shelf_row_1",
-        "shelf_row_2",
-        "shelf_row_3",
-        "floor_showcase_100"
+        "shelf_row_1"
       ]
     },
     {
@@ -304,7 +252,8 @@
       "keys": [
         "desk_banko_100",
         "desk_banko_100_l",
-        "base_100"
+        "base_100",
+        "floor_showcase_100"
       ]
     },
     {
@@ -326,8 +275,6 @@
         "plastic_trash_bin",
         "extra_indoor_plant_1",
         "extra_long_planter_100",
-        "extra_long_planter_150",
-        "extra_long_planter_200",
         "tulle_fabric",
         "brochure_stand",
         "glass_bar_table"
@@ -339,10 +286,7 @@
       "catalogIndex": 6,
       "keys": [
         "tv_42",
-        "tv_55",
         "video_wall_2x2",
-        "video_wall_3x3",
-        "tv_65",
         "led_floodlight",
         "illuminated-foam"
       ]

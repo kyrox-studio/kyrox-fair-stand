@@ -36,16 +36,20 @@ test('TV 55 and 65 keep shared depth and use screen width as placement width', (
     const catalogItem = getCatalogItem(itemKey);
     const state = createTvModuleState({ itemKey });
     assert.ok(item);
-    assert.ok(catalogItem);
     assert.ok(state);
     assert.equal(item.defaultScreenFile, 'tv-screen.jpg');
     assert.equal(item.type, base.type);
     assert.equal(item.dimensions.depthCm, base.dimensions.depthCm);
     assert.equal(item.dimensions.widthCm, expected[itemKey][0]);
     assert.equal(item.dimensions.heightCm, expected[itemKey][1]);
-    assert.equal(catalogItem.itemKey, itemKey);
-    assert.equal(Object.hasOwn(catalogItem, 'type'), false);
-    assert.equal(Object.hasOwn(catalogItem, 'widthCm'), false);
+    // 0086: TV tek kart (tv_42); 55" ve 65" Özellikler panelinde seçilir.
+    if (itemKey === 'tv_42') {
+      assert.equal(catalogItem.itemKey, itemKey);
+      assert.equal(Object.hasOwn(catalogItem, 'type'), false);
+      assert.equal(Object.hasOwn(catalogItem, 'widthCm'), false);
+    } else {
+      assert.equal(catalogItem, null);
+    }
     assert.equal(state.type, base.type);
     assert.equal(state.itemKey, itemKey);
     assert.equal(state.widthCm, expected[itemKey][0]);
@@ -54,8 +58,8 @@ test('TV 55 and 65 keep shared depth and use screen width as placement width', (
   }
 
   assert.ok(getCatalogItem('tv_42') != null);
-  assert.ok(getCatalogItem('tv_55') != null);
-  assert.ok(getCatalogItem('tv_65') != null);
+  assert.equal(getCatalogItem('tv_55'), null);
+  assert.equal(getCatalogItem('tv_65'), null);
   assert.equal(createTvModuleState({ itemKey: 'missing_tv' }), null);
 });
 

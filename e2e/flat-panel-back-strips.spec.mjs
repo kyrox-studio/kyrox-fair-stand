@@ -1,4 +1,3 @@
-import { openProductionDetails } from './helpers/productionDetails.mjs';
 import { test, expect } from '@playwright/test';
 
 // Düz duvara sağ tıkla arka yüze panel eklenir ve kaldırılır; üretim listesi iki yüzü sayar.
@@ -142,9 +141,7 @@ test('düz duvara sağ tıkla arka yüze panel eklenir, kaldırılır; üretim l
   // Seçim çubuğu üretim listesi düğmesinin önüne geçer; önce seçimi kaldır.
   const canvasBox = await page.locator('#viewport > canvas').boundingBox();
   await page.mouse.click(canvasBox.x + canvasBox.width * 0.2, canvasBox.y + canvasBox.height * 0.85);
-  await openProductionDetails(page);
   await expect(page.locator('#toggle-production-bom')).toBeVisible();
-  await openProductionDetails(page);
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();

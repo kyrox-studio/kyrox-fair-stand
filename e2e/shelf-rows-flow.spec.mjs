@@ -1,5 +1,5 @@
-import { openProductionDetails } from './helpers/productionDetails.mjs';
 import { test, expect } from '@playwright/test';
+import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
 // Raf kartları (Tekli / 2 / 3 sıralı) gerçek kullanıcı akışında: proje uygulamanın kendi koduyla
 // kayda yazılır ve açılır; üretim listesi, eski proje, 50'lik ve duvar dışı ret, taşımada genişlik,
@@ -194,7 +194,6 @@ test('eski tekli raflar aynen açılır; sıralı raflar her genişlikte reçete
   expect(saved.modules.filter((module) => module.type === 'shelf').map((module) => module.itemKey)).toEqual(shelfKeys);
 
   // Tahta: her genişlikte 1 + 2 + 3 = 6. Ayak: 100'de 2 × 6 = 12, 150 ve 200'de 3 × 6 = 18.
-  await openProductionDetails(page);
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();
@@ -270,15 +269,15 @@ test('katalog rafı 50 cm duvara veya duvar dışına bırakılamaz', async ({ p
   const [wall100, , , wall50] = opened.modules.filter((module) => module.type === 'flat-panel');
 
   // Katalogdan 50'lik duvara ve boş zemine bırakma: raf eklenmez.
-  await page.locator('details', { has: page.locator('#open-module-catalog') }).locator(':scope > summary').click();
-  const card = page.locator('.module-drag-card[data-module-key="shelf_row_3"]').first();
+  await page.locator('details', { has: page.locator('.module-drag-catalog') }).locator(':scope > summary').click();
+  const card = page.locator('.module-drag-card[data-module-key="shelf_row_1"]').first();
   const group = page.locator('.module-drag-group', { has: card });
   if (!(await group.getAttribute('open'))) await group.locator(':scope > summary').click();
   await card.scrollIntoViewIfNeeded();
   const floor = await screenPoint(page, `() => new (window.__sceneCamera.position.constructor)(2.5, 0.06, 3.2)`);
   for (const point of [await wallSeamPoint(page, wall50.id, 2), floor]) {
     const accepted = await page.evaluate(({ x, y }) => {
-      const source = document.querySelector('.module-drag-card[data-module-key="shelf_row_3"]');
+      const source = document.querySelector('.module-drag-card[data-module-key="shelf_row_1"]');
       const viewport = document.querySelector('#viewport');
       const canvas = viewport.querySelector(':scope > canvas');
       const dataTransfer = new DataTransfer();
@@ -316,26 +315,27 @@ test('raf altı aydınlatma açılınca üçlü rafın bütün sıralarında yan
   expect(errors).toEqual([]);
 });
 
-test('tablet boyutunda üç raf kartı görünür ve kart duvara takılır', async ({ page }) => {
+test('tablet boyutunda Raf kartı görünür, duvara takılır ve sıra panelden seçilir', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.setViewportSize({ width: 1024, height: 768 });
   await exposeScene(page);
   await openProjectWithShelves(page, 'E2E Raf Tablet', []);
-  await page.locator('details', { has: page.locator('#open-module-catalog') }).locator(':scope > summary').click();
+  await page.locator('details', { has: page.locator('.module-drag-catalog') }).locator(':scope > summary').click();
   const first = page.locator('.module-drag-card[data-module-key="shelf_row_1"]').first();
   const group = page.locator('.module-drag-group', { has: first });
   if (!(await group.getAttribute('open'))) await group.locator(':scope > summary').click();
-  for (const key of ['shelf_row_1', 'shelf_row_2', 'shelf_row_3']) {
-    const card = page.locator(`.module-drag-card[data-module-key="${key}"]`).first();
-    await card.scrollIntoViewIfNeeded();
-    await expect(card).toBeVisible();
+  // 0086: tek Raf kartı; 2 ve 3 sıralı raf Özellikler panelinde seçilir.
+  await first.scrollIntoViewIfNeeded();
+  await expect(first).toBeVisible();
+  for (const key of ['shelf_row_2', 'shelf_row_3']) {
+    await expect(page.locator(`.module-drag-card[data-module-key="${key}"]`)).toHaveCount(0);
   }
   const opened = await readLatestProject(page);
   const wall150 = opened.modules.find((module) => module.itemKey === 'wall_150_350');
   const target = await wallSeamPoint(page, wall150.id, 2);
   const ghost = await page.evaluate(({ x, y }) => {
-    const source = document.querySelector('.module-drag-card[data-module-key="shelf_row_2"]');
+    const source = document.querySelector('.module-drag-card[data-module-key="shelf_row_1"]');
     const viewport = document.querySelector('#viewport');
     const canvas = viewport.querySelector(':scope > canvas');
     const dataTransfer = new DataTransfer();
@@ -346,6 +346,7 @@ test('tablet boyutunda üç raf kartı görünür ve kart duvara takılır', asy
     return state;
   }, target);
   expect(ghost).toBe('valid');
+  await chooseCatalogWidth(page, 'shelf_row_2');
   const project = await saveAndReadProject(page);
   const shelf = project.modules.find((module) => module.type === 'shelf');
   expect(shelf.itemKey).toBe('shelf_row_2_150');

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { catalogCardKeyFor, chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
 async function createIslandStand(page, projectName) {
   await page.goto('/');
@@ -53,15 +54,17 @@ for (const itemKey of Object.keys(expected)) {
     page.on('pageerror', (error) => errors.push(error.message));
     await createIslandStand(page, itemKey);
 
-    const button = page.locator('#open-module-catalog');
+    const button = page.locator('.module-drag-catalog');
     await page.locator('details', { has: button }).locator(':scope > summary').click();
-    const card = page.locator(`.module-drag-card[data-module-key="${itemKey}"]`);
+    // TV ve Video Wall birer kart (0086): diğer boy / düzen Özellikler panelinde seçilir.
+    const card = page.locator(`.module-drag-card[data-module-key="${catalogCardKeyFor(itemKey)}"]`);
     await page.locator('.module-drag-group', { has: card }).locator(':scope > summary').click();
     await expect(card).toBeVisible();
 
     const viewport = page.locator('#viewport');
     const box = await viewport.boundingBox();
     await card.dragTo(viewport, { targetPosition: { x: Math.round(box.width * 0.52), y: Math.round(box.height * 0.82) } });
+    if (catalogCardKeyFor(itemKey) !== itemKey) await chooseCatalogWidth(page, itemKey);
 
     const project = await saveAndReadProject(page);
     const item = project.modules.find((module) => module.itemKey === itemKey);

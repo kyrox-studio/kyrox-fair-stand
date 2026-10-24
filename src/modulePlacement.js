@@ -731,6 +731,11 @@ function getModuleCollisionSegments(module) {
   return segment ? [{ segment, module }] : [];
 }
 
+/** Öğenin zemindeki çizgi izleri (ince duvar: tek çizgi; L banko: iki kol). */
+export function getModuleGroundSegments(module) {
+  return getModuleCollisionSegments(module).map((entry) => ({ ...entry.segment }));
+}
+
 function pointIsSegmentEndpoint(segment, coordinateCm) {
   return nearlyEqual(coordinateCm, segment.startCm)
     || nearlyEqual(coordinateCm, segment.endCm);

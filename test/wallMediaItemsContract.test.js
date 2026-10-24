@@ -15,20 +15,25 @@ for (const item of listRegisteredItems().filter((entry) => entry.type === 'tv'))
     const scene = resolveSceneDimensions(item);
     const isVideoWall = Boolean(item.videoWall);
 
-    assert.equal(catalog.itemKey, item.itemKey);
-    assert.equal(catalog.label, item.name);
-    assert.equal(catalog.previewId, item.previewId);
-    assert.equal(Object.hasOwn(catalog, 'type'), false);
-    assert.equal(Object.hasOwn(catalog, 'widthCm'), false);
-    assert.equal(Object.hasOwn(catalog, 'depthCm'), false);
-    assert.equal(Object.hasOwn(catalog, 'heightCm'), false);
-    assert.equal(Object.hasOwn(catalog, 'videoWallRows'), false);
-    assert.equal(Object.hasOwn(catalog, 'videoWallCols'), false);
-    assert.equal(Object.hasOwn(catalog, 'sizeInch'), false);
-    assert.equal(Object.hasOwn(catalog, 'screenWidthCm'), false);
-    assert.equal(Object.hasOwn(catalog, 'panelScreenWidthCm'), false);
+    // 0086: TV ve Video Wall katalogda birer kart; diğer boy / düzenler Özellikler panelinde seçilir.
+    if (item.catalogVisible) {
+      assert.equal(catalog.itemKey, item.itemKey);
+      assert.equal(catalog.label, isVideoWall ? 'Video Wall' : 'TV');
+      assert.equal(catalog.previewId, item.previewId);
+      assert.equal(Object.hasOwn(catalog, 'type'), false);
+      assert.equal(Object.hasOwn(catalog, 'widthCm'), false);
+      assert.equal(Object.hasOwn(catalog, 'depthCm'), false);
+      assert.equal(Object.hasOwn(catalog, 'heightCm'), false);
+      assert.equal(Object.hasOwn(catalog, 'videoWallRows'), false);
+      assert.equal(Object.hasOwn(catalog, 'videoWallCols'), false);
+      assert.equal(Object.hasOwn(catalog, 'sizeInch'), false);
+      assert.equal(Object.hasOwn(catalog, 'screenWidthCm'), false);
+      assert.equal(Object.hasOwn(catalog, 'panelScreenWidthCm'), false);
+    } else {
+      assert.equal(catalog, null);
+    }
 
-    const state = createModuleStateFromDescriptor(catalog);
+    const state = createModuleStateFromDescriptor(catalog ?? { itemKey: item.itemKey });
     assert.equal(state.itemKey, item.itemKey);
     assert.equal(state.type, 'tv');
     assert.equal(state.widthCm, scene.widthCm);
@@ -78,7 +83,7 @@ test('video walls read panel size from video_wall_panel and keep rows/cols on th
     assert.equal(Object.hasOwn(item.videoWall, 'panelScreenWidthCm'), false);
     assert.equal(metrics.widthCm, panel.dimensions.widthCm * item.videoWall.cols);
     assert.equal(metrics.heightCm, panel.dimensions.heightCm * item.videoWall.rows);
-    const state = createModuleStateFromDescriptor(getCatalogItem(key));
+    const state = createModuleStateFromDescriptor(getCatalogItem(key) ?? { itemKey: key });
     assert.equal(state.videoWallRows, item.videoWall.rows);
     assert.equal(state.videoWallCols, item.videoWall.cols);
   }
@@ -90,9 +95,10 @@ test('ordinary TV Items use canonical dimensions as catalog and scene height', (
     const item = getItem(key);
     const scene = resolveSceneDimensions(item);
     assert.equal(item.dimensions.heightCm, expectedHeight[key]);
-    assert.equal(getCatalogItem(key).itemKey, key);
+    // TV tek kart (tv_42); 55" ve 65" Özellikler panelinde seçilir.
+    assert.equal(getCatalogItem(key)?.itemKey ?? null, key === 'tv_42' ? key : null);
     assert.equal(scene.heightCm, expectedHeight[key]);
-    const state = createModuleStateFromDescriptor(getCatalogItem(key));
+    const state = createModuleStateFromDescriptor(getCatalogItem(key) ?? { itemKey: key });
     assert.equal(state.heightCm, item.dimensions.heightCm);
     assert.notEqual(state.heightCm, 350);
   }

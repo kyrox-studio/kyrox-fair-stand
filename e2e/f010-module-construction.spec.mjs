@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { catalogCardKeyFor, chooseCatalogWidth } from './helpers/catalogWidth.mjs';
+import { dropCatalogCard } from './helpers/catalogDrop.mjs';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
@@ -107,29 +108,9 @@ test('F-010 catalog construction persists a module created through the real pick
     }));
   }, removedModule.id);
 
-  const openCatalogButton = page.locator('#open-module-catalog');
-  const modulePanel = page.locator('details', { has: openCatalogButton });
-  await expect(modulePanel).toHaveCount(1);
-  await modulePanel.locator(':scope > summary').click();
-
-  await expect(openCatalogButton).toBeVisible();
-  await expect(openCatalogButton).toBeEnabled();
-  await openCatalogButton.click();
-
-  const picker = page.locator('.module-picker-backdrop');
-  await expect(picker).toBeVisible();
-  await picker.locator('.module-picker-tab', { hasText: 'Panel & Duvar' }).click();
-
-  // Panel tek kart (0082): aile kartı seçilir, genişlik pencereden gelir.
-  const replacementCard = picker.locator(`[data-module-key="${catalogCardKeyFor(removedModule.itemKey)}"]`);
-  await expect(replacementCard).toBeVisible();
-  await replacementCard.click();
-
-  const addButton = picker.locator('.module-picker-add');
-  await expect(addButton).toBeEnabled();
-  await addButton.click();
+  // Panel tek kart (0082): aile kartı sahneye bırakılır, genişlik pencereden gelir.
+  await dropCatalogCard(page, catalogCardKeyFor(removedModule.itemKey));
   if (catalogCardKeyFor(removedModule.itemKey) !== removedModule.itemKey) await chooseCatalogWidth(page, removedModule.itemKey);
-  await expect(picker).toBeHidden();
 
   const project = await saveAndReadProject(page);
   expect(project).not.toBeNull();
@@ -161,18 +142,7 @@ test('F-010 door catalog construction persists canonical door_leaf_100 child sta
       window.dispatchEvent(new CustomEvent('fair-stand:delete-selected-module', { detail: { moduleId } }));
     }, moduleState.id);
   }
-  const openCatalogButton = page.locator('#open-module-catalog');
-  const modulePanel = page.locator('details', { has: openCatalogButton });
-  await modulePanel.locator(':scope > summary').click();
-  await openCatalogButton.click();
-  const picker = page.locator('.module-picker-backdrop');
-  await expect(picker).toBeVisible();
-  await picker.locator('.module-picker-tab', { hasText: 'Panel & Duvar' }).click();
-  const doorCard = picker.locator('[data-module-key="wall_door_100_350"]');
-  await expect(doorCard).toBeVisible();
-  await doorCard.click();
-  await picker.locator('.module-picker-add').click();
-  await expect(picker).toBeHidden();
+  await dropCatalogCard(page, 'wall_door_100_350');
   const project = await saveAndReadProject(page);
   const door = project.modules.find((moduleState) => moduleState.itemKey === 'wall_door_100_350');
   expect(door).toBeTruthy();

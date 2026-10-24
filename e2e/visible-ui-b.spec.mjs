@@ -1,4 +1,3 @@
-import { openProductionDetails } from './helpers/productionDetails.mjs';
 import { test, expect } from '@playwright/test';
 import { DEFAULT_SELECTION_HINT } from '../src/selectionFeedback.js';
 
@@ -7,7 +6,7 @@ test('seçim hint, standart listesi ve üretim listesi varsayılan girişte kapa
 
   await expect(page.locator('#selection-info')).toHaveText(DEFAULT_SELECTION_HINT);
   await expect(page.locator('#raw-bom-debug')).toHaveCount(0);
-  // Liste ve ayrıntılar kullanıcı açana kadar kapalıdır.
+  // Liste kullanıcı açana kadar kapalıdır; üst bant sahne kurulana kadar gizlidir.
   await expect(page.locator('#production-bom-panel')).toBeHidden();
   await expect(page.locator('#toggle-production-bom')).toBeHidden();
 
@@ -18,7 +17,7 @@ test('seçim hint, standart listesi ve üretim listesi varsayılan girişte kapa
   await expect(page.locator('#stand-standards-list li')).toHaveCount(9);
 });
 
-test('Ayrıntılar içindeki Üretim Listesi butonu paneli açar', async ({ page }) => {
+test('üst banttaki Üretim Listesi butonu paneli açar', async ({ page }) => {
   await page.goto('/');
 
   const standSetup = page.locator('details.stand-setup-card');
@@ -30,23 +29,17 @@ test('Ayrıntılar içindeki Üretim Listesi butonu paneli açar', async ({ page
   await page.locator('form input[name="projectName"]').fill('BOM toolbar');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
-  await expect(page.locator('#design-details')).not.toHaveAttribute('open');
-  await expect(page.locator('#toggle-production-bom')).toBeHidden();
-  await expect(page.locator('#viewport-toolbar #toggle-production-bom')).toHaveCount(0);
-  await openProductionDetails(page);
-  await expect(page.locator('#toggle-production-bom')).toBeVisible();
+  await expect(page.locator('#design-details')).toHaveCount(0);
+  await expect(page.locator('#viewport-toolbar #toggle-production-bom')).toBeVisible();
+  await expect(page.locator('#toggle-production-bom')).toBeEnabled();
   await expect(page.locator('#production-bom-panel')).toBeHidden();
 
-  await openProductionDetails(page);
   await page.locator('#toggle-production-bom').click();
   await expect(page.locator('#production-bom-panel')).toBeVisible();
   await expect(page.locator('#production-bom-panel .production-bom-panel__title')).toHaveText('Üretim Listesi');
   await expect(page.locator('#production-bom-panel [data-role="bom-download"]')).toHaveText('Metin indir');
   await page.locator('#editor-mode-advanced').click();
   await expect(page.locator('#production-bom-panel')).toBeVisible();
-  await page.locator('#design-details > summary').click();
-  await expect(page.locator('#toggle-production-bom')).toBeHidden();
-  await openProductionDetails(page);
   await expect(page.locator('#toggle-production-bom')).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -63,7 +56,6 @@ test('üretim listesi paneli gerçek girişte düz duvar reçete satırlarını 
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 
-  await openProductionDetails(page);
   await page.locator('#toggle-production-bom').click();
   await expect(page.locator('#production-bom-panel')).toBeVisible();
 

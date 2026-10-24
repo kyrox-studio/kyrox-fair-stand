@@ -43,7 +43,7 @@ export function createModuleCatalogPreview(module) {
 }
 
 export function createModuleDragSidebar({
-  anchorButton,
+  container,
   viewport,
   canDrag = () => false,
   createModuleState,
@@ -53,7 +53,7 @@ export function createModuleDragSidebar({
 } = {}) {
   const document = getFairStandHostDocument();
   const window = getFairStandHostWindow();
-  if (!anchorButton?.parentElement || !viewport) return null;
+  if (!container || !viewport) return null;
   ensureStyles();
 
   const root = document.createElement('div');
@@ -68,7 +68,7 @@ export function createModuleDragSidebar({
   const groupsRoot = document.createElement('div');
   groupsRoot.className = 'module-drag-groups';
   root.append(hint, groupsRoot);
-  anchorButton.parentElement.insertBefore(root, anchorButton);
+  container.append(root);
 
   const groupDefinitions = listCatalogGroups();
 

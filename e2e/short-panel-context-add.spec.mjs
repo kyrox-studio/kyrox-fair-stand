@@ -1,4 +1,6 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
+import { dropCatalogCard } from './helpers/catalogDrop.mjs';
+import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 import { test, expect } from '@playwright/test';
 
 // Kısa panel seçiliyken Ekle → katalogdan Panel: yeni panel kısa panelin üstüne / aynı hizaya binmez.
@@ -51,11 +53,9 @@ async function addFromPanel(page, { tab, card, itemKey }) {
   await picker.locator('.module-picker-tab', { hasText: tab }).click();
   await picker.locator(`[data-module-key="${card}"]`).click();
   await picker.locator('.module-picker-add').click();
-  const dialog = page.locator('.item-size-dialog');
-  await expect(dialog).toBeVisible();
-  await dialog.locator('select[name="itemKey"]').selectOption(itemKey);
-  await dialog.locator('button[type="submit"]').click();
   await expect(picker).toBeHidden();
+  // Kart eklenir, genişlik Özellikler panelinde seçilir.
+  await chooseCatalogWidth(page, itemKey);
 }
 
 // Öğenin dünya kutusu (cm): yeni panel kısa panelin kutusuyla kesişmemeli.
@@ -91,17 +91,7 @@ test('kısa panel seçiliyken Ekle ile eklenen Panel kısa panelin üstüne binm
   await page.locator('#autosave-interval').selectOption('0');
 
   // Kısa paneli sahneye katalogdan ekle (seçim yok → duvar sonuna / müsait yere).
-  const openCatalogButton = page.locator('#open-module-catalog');
-  await page.locator('details', { has: openCatalogButton }).locator(':scope > summary').click();
-  await openCatalogButton.click();
-  const picker = page.locator('.module-picker-backdrop');
-  await picker.locator('.module-picker-tab', { hasText: 'Panel Ek Modül' }).click();
-  await picker.locator('[data-module-key="wall_100_short_1"]').click();
-  await picker.locator('.module-picker-add').click();
-  const dialog = page.locator('.item-size-dialog');
-  await dialog.locator('select[name="itemKey"]').selectOption('wall_100_short_1');
-  await dialog.locator('button[type="submit"]').click();
-  await expect(picker).toBeHidden();
+  await dropCatalogCard(page, 'wall_100_short_1', { points: [[0.52, 0.82]] });
   let modules = await readModules(page);
   const short = modules.find((moduleState) => moduleState.itemKey === 'wall_100_short_1');
   expect(short).toBeTruthy();

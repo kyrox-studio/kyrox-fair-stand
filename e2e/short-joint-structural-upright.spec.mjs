@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { openEditorSettings } from './helpers/editorSettings.mjs';
-import { openProductionDetails } from './helpers/productionDetails.mjs';
 
 // Kaydedilmiş sahne fixture'ı gerçek Item state factory'siyle üretilir; BOM ve
 // proje açma/kaydetme uygulamanın kendi yollarından doğrulanır.
@@ -60,7 +59,6 @@ for (const { level, corner } of [{ level: 1, corner: false }, { level: 2, corner
       await page.locator('#open-project').click();
       await expect(page.locator('#project-status')).toContainText('Açıldı:');
       await expect(page.locator('#project-loading-overlay')).toBeHidden({ timeout: 30_000 });
-      await openProductionDetails(page);
       await page.locator('#toggle-production-bom').click();
       const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
       if (!(await totals.evaluate(element => element.open))) await totals.locator(':scope > summary').click();

@@ -81,7 +81,7 @@ test('trash bin is visible in the catalog, renders its GLB, and persists through
     });
   });
 
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   await modulePanel.locator(':scope > summary').click();
 
@@ -153,30 +153,25 @@ test('trash bin is visible in the catalog, renders its GLB, and persists through
   expect(pageErrors).toEqual([]);
 });
 
-test('trash bin is visible and selectable in the existing Add catalog', async ({ page }) => {
+test('trash bin is visible and selectable in the Modül ekle catalog', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
 
   await createIslandStand(page, 'Trash Bin Add Catalog');
 
-  const openCatalogButton = page.locator('#open-module-catalog');
-  const modulePanel = page.locator('details', { has: openCatalogButton });
+  const modulePanel = page.locator('#module-add-card');
   await modulePanel.locator(':scope > summary').click();
-  await openCatalogButton.click();
-
-  const picker = page.locator('.module-picker-backdrop');
-  await expect(picker).toBeVisible();
-  await picker.locator('.module-picker-tab', { hasText: 'Extra' }).click();
-  const trashCard = picker.locator(`[data-module-key="${TRASH_KEY}"]`);
+  const trashCard = page.locator(`.module-drag-card[data-module-key="${TRASH_KEY}"]`);
+  await page.locator('.module-drag-group', { has: trashCard }).locator(':scope > summary').click();
   await expect(trashCard).toBeVisible();
-  await expect(trashCard).toHaveAttribute('aria-selected', 'false');
+  await expect(trashCard).not.toHaveClass(/is-armed/);
   await expect(trashCard.locator('.module-drag-plant')).toHaveCount(0);
   await expect(trashCard.locator('.module-drag-panel')).toHaveCount(0);
   await expect(trashCard.locator('.module-drag-trash-bin')).toBeVisible();
 
+  // Karta dokunmak onu sahnede yere bırakmak için seçer.
   await trashCard.click();
-  await expect(trashCard).toHaveAttribute('aria-selected', 'true');
-  await expect(picker.locator('.module-picker-add')).toBeEnabled();
+  await expect(trashCard).toHaveClass(/is-armed/);
   await expect(pageErrors).toEqual([]);
 });
 

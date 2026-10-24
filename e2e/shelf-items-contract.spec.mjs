@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
 async function createBackWallStand(page, projectName, widthCm = 500) {
   await page.goto('/');
@@ -37,7 +38,7 @@ async function saveAndReadProject(page) {
 }
 
 async function openSidebarCard(page, itemKey) {
-  const open = page.locator('#open-module-catalog');
+  const open = page.locator('.module-drag-catalog');
   await page.locator('details', { has: open }).locator(':scope > summary').click();
   const card = page.locator(`.module-drag-card[data-module-key="${itemKey}"]`).first();
   const group = page.locator('.module-drag-group', { has: card });
@@ -89,7 +90,7 @@ async function dragShelfOntoValidSeam(page, itemKey) {
   }, itemKey);
 }
 
-test('shelf_100/150/200 Catalog’da Raf & Vitrin altında vitrinlerden sonra görünür', async ({ page }) => {
+test('Raf & Vitrin altında tek Raf kartı görünür', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await createBackWallStand(page, 'Shelf Catalog Order');
@@ -97,15 +98,8 @@ test('shelf_100/150/200 Catalog’da Raf & Vitrin altında vitrinlerden sonra g�
   const keys = await group.locator('.module-drag-card').evaluateAll((cards) => (
     cards.map((card) => card.getAttribute('data-module-key'))
   ));
-  expect(keys).toEqual([
-    'wall_showcase_100_3_350',
-    'wall_showcase_100_2_350',
-    'shelf_row_1',
-    'shelf_row_2',
-    'shelf_row_3',
-    // 0074: ayaklı vitrin rafların ardından gelir.
-    'floor_showcase_100',
-  ]);
+  // 0086: Raf tek kart; vitrinler Panel & Duvar ve Banko & Baza altında.
+  expect(keys).toEqual(['shelf_row_1']);
   for (const itemKey of ['wall_shelf_2_100', 'wall_shelf_3_200']) {
     await expect(page.locator(`.module-drag-card[data-module-key="${itemKey}"]`)).toHaveCount(0);
   }
@@ -122,8 +116,10 @@ for (const itemKey of ['shelf_row_1', 'shelf_row_2', 'shelf_row_3']) {
       .filter((module) => module.placement?.wallId === 'back' && module.type !== 'shelf')
       .reduce((sum, module) => sum + Number(module.widthCm || 0), 0);
 
-    await openSidebarCard(page, itemKey);
-    await dragShelfOntoValidSeam(page, itemKey);
+    // Raf tek kart (0086): tekli raf bırakılır, sıra Özellikler panelinde seçilir.
+    await openSidebarCard(page, 'shelf_row_1');
+    await dragShelfOntoValidSeam(page, 'shelf_row_1');
+    if (itemKey !== 'shelf_row_1') await chooseCatalogWidth(page, itemKey);
 
     const project = await saveAndReadProject(page);
     const shelf = project.modules.find((module) => module.type === 'shelf');

@@ -62,7 +62,7 @@ test('box block side faces meet at every vertical corner', async ({ page }) => {
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   await modulePanel.locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="box_block"]');
@@ -258,7 +258,7 @@ test('kutu blok ölçüsü Özellikler panelinde alan olarak durur ve sahnede ca
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   await page.locator('details', { has: openCatalogButton }).locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="box_block"]');
   const group = page.locator('.module-drag-group', { has: card });

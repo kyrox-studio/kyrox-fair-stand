@@ -22,7 +22,7 @@ test('opening a saved project logs step timings and model loads', async ({ page 
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   await modulePanel.locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="box_block"]');

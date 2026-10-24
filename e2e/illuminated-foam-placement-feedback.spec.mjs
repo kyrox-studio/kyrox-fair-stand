@@ -22,7 +22,7 @@ async function createStand(page, standName, projectName) {
 
 // Işıklı Strafor katalogdan sürüklenir (0084); bırakınca seçilir ve Özellikler paneli açılır.
 async function foamCard(page) {
-  const button = page.locator('#open-module-catalog');
+  const button = page.locator('.module-drag-catalog');
   const details = page.locator('details', { has: button });
   if (!(await details.evaluate((element) => element.open))) await details.locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="illuminated-foam"]');

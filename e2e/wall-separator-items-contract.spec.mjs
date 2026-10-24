@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
+import { dropCatalogCard } from './helpers/catalogDrop.mjs';
+import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
@@ -52,14 +54,6 @@ async function removeModules(page, modules) {
 }
 
 
-// Genişlik ailesi (Panel / Separatör / kısa panel): katalogda tek kart; Ekle genişlik penceresini açar.
-async function chooseCatalogWidth(page, itemKey, { vine = false } = {}) {
-  const dialog = page.locator('.item-size-dialog');
-  await expect(dialog).toBeVisible();
-  await dialog.locator('select[name="itemKey"]').selectOption(itemKey);
-  if (vine) await dialog.locator('input[name="option"]').check();
-  await dialog.locator('button[type="submit"]').click();
-}
 
 const expected = {
   wall_separator_50_350: { modelFile: null },
@@ -79,18 +73,9 @@ for (const itemKey of Object.keys(expected)) {
     expect(initialProject.modules.length).toBeGreaterThan(0);
     await removeModules(page, initialProject.modules);
 
-    const openCatalogButton = page.locator('#open-module-catalog');
-    const modulePanel = page.locator('details', { has: openCatalogButton });
-    await modulePanel.locator(':scope > summary').click();
-    await openCatalogButton.click();
-
-    const picker = page.locator('.module-picker-backdrop');
-    await expect(picker).toBeVisible();
-    await picker.locator('.module-picker-tab', { hasText: 'Panel & Duvar' }).click();
-    await picker.locator('[data-module-key="wall_separator_100_350"]').click();
-    await picker.locator('.module-picker-add').click();
-    await chooseCatalogWidth(page, itemKey.replace(/_sarmasik$/, ''), { vine: itemKey.endsWith('_sarmasik') });
-    await expect(picker).toBeHidden();
+    await dropCatalogCard(page, 'wall_separator_100_350');
+    // Kart bırakılır, genişlik ve Sarmaşıklı Özellikler panelinde seçilir.
+    await chooseCatalogWidth(page, itemKey);
 
     const project = await saveAndReadProject(page);
     const item = project.modules.find((module) => module.itemKey === itemKey);

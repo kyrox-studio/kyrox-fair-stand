@@ -48,7 +48,7 @@ async function fridges(page) {
 }
 
 async function dropFridge(page) {
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   if (!(await modulePanel.evaluate((el) => el.open))) await modulePanel.locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="mini_fridge_avanti"]');

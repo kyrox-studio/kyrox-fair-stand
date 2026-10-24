@@ -9,7 +9,7 @@ import { createModuleStateFromDescriptor } from '../src/designState.js';
 import { getItem } from '../src/items.js';
 
 test('canonical state construction registry instantiates every catalog entry', () => {
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 43);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 35);
 
   for (const itemKey of listCatalogItems().map((item) => item.itemKey)) {
     const descriptor = getCatalogItem(itemKey);

@@ -127,7 +127,7 @@ test('katalog image-capable wall ve non-image TV kartlarını birlikte sunar', a
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await createStand(page, 'Ada Stand', 'E2E Capability Catalog');
 
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   await modulePanel.locator(':scope > summary').click();
 

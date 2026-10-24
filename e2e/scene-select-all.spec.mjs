@@ -108,7 +108,7 @@ test('Ctrl+A ile grup kurulur; grubun tamamının kilidi açılır ve topluca ç
     .toEqual(initial.modules.map(({ id, placement }) => [id, placement.xCm, placement.yCm, placement.zCm, placement.rotationZDeg]));
 });
 
-test('toplu Delete kilitliyken engellenir; iptal hiçbirini silmez; silme tek adımda geri alınır', async ({ page }) => {
+test('toplu Delete kilitliyken engellenir; onay sormadan siler; silme tek adımda geri alınır', async ({ page }) => {
   await createStand(page, 'Toplu seçim silme');
   const initial = await save(page);
   const count = initial.modules.length;
@@ -118,14 +118,15 @@ test('toplu Delete kilitliyken engellenir; iptal hiçbirini silmez; silme tek ad
   expect((await save(page)).modules).toEqual(initial.modules);
   await unlockAll(page, count);
   const unlocked = await save(page);
+  // Silme onay penceresi açmaz; yanlış silme Geri al ile döner.
+  const dialogs = [];
+  const onDialog = (dialog) => { dialogs.push(dialog.message()); void dialog.dismiss(); };
+  page.on('dialog', onDialog);
   await selectAll(page, count);
-  page.once('dialog', (dialog) => dialog.dismiss());
-  await page.keyboard.press('Delete');
-  expect((await save(page)).modules).toEqual(unlocked.modules);
-  await selectAll(page, count);
-  page.once('dialog', (dialog) => dialog.accept());
   await page.keyboard.press('Delete');
   const empty = await save(page);
+  page.off('dialog', onDialog);
+  expect(dialogs).toEqual([]);
   expect(empty.modules).toEqual([]);
   expect(empty.stand).toEqual(initial.stand);
   await page.locator('body').press('Control+z');

@@ -31,9 +31,10 @@ test('catalog-visible Item drag state keeps canonical itemKey from Item master',
 
 test('shelf_100/150/200 catalog card → drag state itemKey is exact and width/type cannot invent identity', () => {
   for (const itemKey of SHELF_KEYS) {
+    // 0086: katalogda tek Raf kartı (shelf_row_1); 2 ve 3 sıralı raf Özellikler panelinde seçilir.
     const catalog = getCatalogItem(itemKey);
     const state = createModuleStateFromCatalogKey(itemKey);
-    assert.equal(catalog.itemKey, itemKey);
+    assert.equal(catalog?.itemKey ?? null, itemKey === 'shelf_row_1' ? itemKey : null);
     assert.equal(state.itemKey, getItem(itemKey).widthVariants[0]);
     assert.equal(state.type, 'shelf');
     assert.equal(hasCanonicalModuleItemKey(state), true);
