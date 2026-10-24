@@ -106,7 +106,8 @@ test('context menu offers group commands and forwards them to main', () => {
   for (const action of ['group-create', 'group-add', 'group-rename', 'group-lock', 'group-duplicate', 'group-remove-member', 'group-dissolve', 'group-delete']) {
     assert.match(menuSource, new RegExp(`data-module-action="${action}"`));
   }
-  assert.match(menuSource, /if \(action\.startsWith\('group-'\)\) \{\n {6}close\(\);\n {6}onGroupAction\?\.\(action, context\);/);
+  // Özellik paneli işlem sonrası açık kalır; grup komutu yine main.js'e iletilir.
+  assert.match(menuSource, /if \(action\.startsWith\('group-'\)\) \{\n {6}onGroupAction\?\.\(action, context\);/);
   assert.match(menuSource, /setDisabled\(lockButton, group\?\.locked === true && context\.ownLocked !== true, GROUP_LOCKED_HINT\);/);
 });
 
@@ -145,7 +146,7 @@ test('grup ve çoklu seçim ortak turuncu sınır kullanır; tek öğe mavi kal�
 test('multi-selection context menu survives a right-click that misses a selected module', () => {
   // ≥2 toplu seçimde sağ tık selectOnly çağırmaz; menü seçimdeki bütün öğelere açılır.
   assert.match(sceneSource, /if \(multiSelectedModuleIds\.size < 2\n {6}&& context\.surfaceId\n {6}&& !multiSelectedModuleIds\.has\(context\.moduleId\)\) \{/);
-  assert.match(mainSource, /\/\/ Toplu seçim varken menü her zaman bütün seçime uygulanır/);
-  assert.match(mainSource, /if \(selectedIds\.length > 1\) \{\n {4}moduleContextMenu\.open\(\{/);
+  assert.match(mainSource, /\/\/ Toplu seçim varken panel her zaman bütün seçime uygulanır/);
+  assert.match(mainSource, /if \(selectedIds\.length > 1\) \{[\s\S]*?multiModuleIds: selectedIds,/);
   assert.doesNotMatch(mainSource, /selectedIds\.length > 1 && selectedIds\.includes\(context\.moduleId\)/);
 });

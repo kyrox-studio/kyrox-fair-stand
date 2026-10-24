@@ -6,7 +6,7 @@
 
 const PLACEMENT_EPSILON_CM = 0.001;
 
-export const MODULE_LOCKED_MESSAGE = 'Bu öğe kilitli. Değiştirmek için önce sağ tık > Kilidi aç.';
+export const MODULE_LOCKED_MESSAGE = 'Bu öğe kilitli. Değiştirmek için önce Özellikler panelinden Kilidi aç.';
 
 // Öğe kendi kilidiyle ya da kilitli bir grubun üyesi olarak kilitli sayılır
 // (grup bilgisi: moduleGroups.js).

@@ -193,7 +193,7 @@ test('catalogVisible yalnız Catalog üyeliği içindir; src runtime domainleri 
 });
 
 test('catalogVisible=false Item runtime’da yok demek değildir', () => {
-  const hiddenKeys = ['panel_197', 'upright_99', 'illuminated-foam', 'video_wall_panel'];
+  const hiddenKeys = ['panel_197', 'upright_99', 'video_wall_panel'];
   for (const itemKey of hiddenKeys) {
     const item = getItem(itemKey);
     assert.ok(item, itemKey);
@@ -203,9 +203,9 @@ test('catalogVisible=false Item runtime’da yok demek değildir', () => {
   }
 
   assert.equal(listRegisteredItems().length, 133);
-  assert.equal(listRegisteredItems().filter((item) => item.catalogVisible === true).length, 42);
-  assert.equal(listCatalogItems().length, 42);
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 42);
+  assert.equal(listRegisteredItems().filter((item) => item.catalogVisible === true).length, 43);
+  assert.equal(listCatalogItems().length, 43);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 43);
 
   const hiddenItem = getItem('panel_197');
   assert.ok(hiddenItem);
@@ -230,7 +230,7 @@ test('gizli Item’ın contract yokluğu Catalog gizliliğinden değil assignmen
   const foam = resolveModuleContract('illuminated-foam');
   assert.ok(foam);
   assert.equal(foam.itemKey, 'illuminated-foam');
-  assert.equal(getCatalogItem('illuminated-foam'), null);
+  assert.ok(getCatalogItem('illuminated-foam'));
 });
 
 test('AutoDepot includeContents çıktısı Item.dimensions regression’ı ile birebir aynıdır', () => {

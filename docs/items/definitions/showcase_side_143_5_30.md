@@ -17,7 +17,7 @@ Leaf board ayrı project entity değildir. Yerleşim, move, rotation, snap/colli
 
 ## Renk / ezme sınırı
 
-Kanonik ürün rengi beyazdır (`0xffffff`). Bu leaf Item tek başına renk-editable yüzey değildir ve bireysel renk ezme'ı taşımaz.
+Kanonik ürün rengi beyazdır (`0xffffff`). DB Item kaydında `accepts_color=true` (migration `0085_showcase_body_color`), görsel/kaplama yetenekleri kapalıdır. Bu yetenek parent vitrinin tek gövde seçicisi tarafından tüketilir; leaf Item ayrı düzenlenebilir proje öğesi veya bireysel renk ezmesi taşımaz.
 
 Showcase gövdesi renklendirildiğinde renk seçimi parent `wall_showcase_100_3` proje örneği'ına ait tek bir gövde renk ezme'ı olarak çözülecek ve iki yan + iki yatay olmak üzere dört sunta parçaya birlikte uygulanacaktır. Bu project ezme kanonik `defaultColor` değerini değiştirmez. `glass_shelf` bu gövde rengi kapsamına girmez.
 
@@ -31,4 +31,4 @@ Ayrı leaf renderer veya persisted entity yoktur. Mevcut showcase prosedürel re
 
 ## Regresyon
 
-`test/showcaseBodyBoardsItemContract.test.js` kanonik identity, dimensions, material, defaultColor, direct BOM ve bireysel surface yetenek olmaması contract'ını kilitler. `test/boardMaterialItemContract.test.js` sunta material sınıflandırmasını kapsar.
+`test/showcaseBodyBoardsItemContract.test.js` kanonik identity, dimensions, material, defaultColor, direct BOM ve yalnız ortak gövde rengine izin veren yetenek sözleşmesini kilitler. `test/boardMaterialItemContract.test.js` sunta material sınıflandırmasını kapsar.

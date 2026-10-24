@@ -80,11 +80,11 @@ test('"Bir daha sorma" tercihi: yazılır, okunur, kaldırılınca yine sorulur;
   assert.doesNotThrow(() => writeUprightHeightPreference('upright_346_5', throwing));
 });
 
-test('dikme bırakılırken boy sorulur; sağ tık "Dikme yüksekliği…" aynı pencereyi açar', () => {
+test('dikme bırakılırken boy sorulur; Özellikler panelinde dikme yüksekliği alanı boyu ve tercihi değiştirir', () => {
   assert.match(main, /if \(moduleState\?\.type === 'upright'\) \{[\s\S]*readUprightHeightPreference\(\)[\s\S]*defaultUprightItemKeyForWallHeight\(getActiveWallLineHeightCm\(\)\)[\s\S]*if \(choice\.remember\) writeUprightHeightPreference\(itemKey\);/);
-  assert.match(main, /writeUprightHeightPreference\(choice\.remember \? choice\.itemKey : null\);/);
-  assert.match(menu, /data-module-action="upright-height" hidden>Dikme yüksekliği…<\/button>/);
-  assert.match(menu, /uprightHeightButton\.hidden = \(getUprightHeightState\?\.\(context\) \?\? null\) == null;/);
+  assert.match(main, /upright: Object\.freeze\(\{\r?\n {4}title: 'Dikme yüksekliği',\r?\n {4}list: \(\) => listUprightHeightItems\(\),/);
+  assert.match(main, /choiceSpec\.writePreference\(values\.remember \? values\.itemKey : null\);/);
+  assert.doesNotMatch(menu, /data-module-action="upright-height"/);
 });
 
 test('ok tuşlarında dikey adaylar yalnız vertical_move açık öğede; profil kısa duvar yolunu kullanır', () => {

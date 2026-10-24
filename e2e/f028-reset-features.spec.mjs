@@ -108,11 +108,10 @@ test('Tüm Özellikleri Kaldır deletes illuminated foam and preserves other mod
   await page.locator('#open-project').click();
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
 
-  const featurePanel = page.locator('details.panel-card').filter({
-    has: page.locator('#reset-module-features'),
-  });
-  await featurePanel.locator('summary').click();
+  // Tüm Özellikleri Kaldır sol menünün en altında, açılır kart dışında durur.
+  await page.locator('#reset-module-features').scrollIntoViewIfNeeded();
   await expect(page.locator('#reset-module-features')).toBeVisible();
+  await expect(page.locator('details.panel-card').filter({ has: page.locator('#reset-module-features') })).toHaveCount(0);
 
   page.once('dialog', async (dialog) => {
     expect(dialog.message()).toContain('1 Işıklı Strafor sahneden silinecek');

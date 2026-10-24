@@ -25,9 +25,11 @@ test('index.html seçim hint kanonik DEFAULT_SELECTION_HINT ile aynıdır', () =
   assert.match(html, new RegExp(`id="selection-info"[^>]*>${DEFAULT_SELECTION_HINT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
 });
 
-test('ışıklı strafor ölçü penceresi dialog semantiği ve Escape taşır', () => {
+test('ölçü pencereleri dialog semantiği ve Escape taşır; strafor ölçüsü panelde, pencere yok', () => {
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
-  assert.match(main, /aria-labelledby', 'foam-size-title'/);
+  // Strafor katalogdan konur; ölçü Özellikler panelindeki alanlardan girilir.
+  assert.doesNotMatch(main, /foam-size-title/);
+  assert.match(main, /aria-labelledby', 'box-block-size-title'/);
   assert.match(main, /setAttribute\('role', 'dialog'\)/);
   assert.match(main, /event\.key !== 'Escape'/);
 });

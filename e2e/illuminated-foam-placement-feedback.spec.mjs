@@ -20,26 +20,30 @@ async function createStand(page, standName, projectName) {
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 }
 
-async function startFoamPlacement(page, { widthCm = '100', heightCm = '25' } = {}) {
-  const panel = page.locator('details', { has: page.locator('#apply-color') });
-  if (!(await panel.getAttribute('open'))) {
-    await panel.locator(':scope > summary').click();
-  }
-  await page.locator('#surface-image').setInputFiles({
-    name: 'e2e-logo.svg',
-    mimeType: 'image/svg+xml',
-    buffer: SVG,
+// Işıklı Strafor katalogdan sürüklenir (0084); bırakınca seçilir ve Özellikler paneli açılır.
+async function foamCard(page) {
+  const button = page.locator('#open-module-catalog');
+  const details = page.locator('details', { has: button });
+  if (!(await details.evaluate((element) => element.open))) await details.locator(':scope > summary').click();
+  const card = page.locator('.module-drag-card[data-module-key="illuminated-foam"]');
+  const group = page.locator('.module-drag-group', { has: card });
+  if (!(await group.evaluate((element) => element.open))) await group.locator(':scope > summary').click();
+  await card.scrollIntoViewIfNeeded();
+  return card;
+}
+
+async function dropFoam(page, ratioX, ratioY) {
+  const card = await foamCard(page);
+  const box = await page.locator('#viewport').boundingBox();
+  await card.dragTo(page.locator('#viewport'), {
+    targetPosition: { x: Math.round(box.width * ratioX), y: Math.round(box.height * ratioY) },
   });
-  const tile = page.locator('button.asset-tile', { hasText: 'e2e-logo.svg' });
-  await expect(tile).toBeVisible();
-  await tile.click({ button: 'right' });
-  await page.getByRole('menuitem', { name: 'Işıklı Strafora Dönüştür' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Işıklı Strafor Ölçüsü' });
-  await expect(dialog).toBeVisible();
-  await dialog.locator('input[name="width"]').fill(widthCm);
-  await dialog.locator('input[name="height"]').fill(heightCm);
-  await dialog.getByRole('button', { name: 'Yerleştir' }).click();
-  await expect(page.locator('#asset-status')).toContainText('Işıklı Strafor hazır');
+  // Bırakınca strafor tıklanmış gibi seçilir; logo paneldeki görsel bölümünden yüklenir (SVG).
+  const panel = page.locator('.selection-property-panel');
+  await expect(panel.locator('.selection-property-heading')).toHaveText('Işıklı Strafor / Logo');
+  await expect(panel.locator('#surface-image-controls')).toBeVisible();
+  await panel.locator('#surface-image').setInputFiles({ name: 'e2e-logo.svg', mimeType: 'image/svg+xml', buffer: SVG });
+  await expect(page.locator('#selection-info')).toContainText('Işıklı Strafor logosu uygulandı');
 }
 
 async function viewportPoint(page, ratioX, ratioY) {
@@ -94,12 +98,13 @@ test('Işıklı Strafor stand dışına götürülünce uyarı TV değil kendi a
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await createStand(page, 'Ada Stand', 'E2E Foam Feedback');
-  await startFoamPlacement(page);
+  const card = await foamCard(page);
 
-  // Görüş alanının üst kenarı zemin dışında kalır; serbest yerleşim için zemin noktası yoktur.
-  const sky = await viewportPoint(page, 0.5, 0.03);
-  await page.mouse.move(sky.x - 40, sky.y);
-  await page.mouse.move(sky.x, sky.y, { steps: 6 });
+  // Sol üst köşe zemin dışında kalır (üst bandın altında); serbest yerleşim için zemin noktası yoktur.
+  const box = await page.locator('#viewport').boundingBox();
+  await card.dragTo(page.locator('#viewport'), {
+    targetPosition: { x: Math.round(box.width * 0.06), y: Math.round(box.height * 0.2) },
+  });
 
   await expect(page.getByText('Işıklı Strafor / Logo: aktif stand alanına bırak.')).toBeVisible();
   await expect(page.getByText(/TV'yi aktif stand alan/)).toHaveCount(0);
@@ -113,14 +118,8 @@ test('sahnedeki Işıklı Strafor stand dışına sürüklenince uyarı TV deği
   await createStand(page, 'Ada Stand', 'E2E Foam Drag Feedback');
   // Ev görünümünde aktif zemin görüş alanının ortasındadır.
   await page.locator('.view-cube-home').click();
-  await startFoamPlacement(page, { widthCm: '200', heightCm: '80' });
-
-  const drop = await viewportPoint(page, 0.5, 0.65);
-  await page.mouse.move(drop.x - 30, drop.y);
-  await page.mouse.move(drop.x, drop.y, { steps: 6 });
-  await page.mouse.down();
-  await page.mouse.up();
-  await expect(page.locator('#asset-status')).toContainText('Işıklı Strafor sahneye eklendi');
+  await dropFoam(page, 0.5, 0.65);
+  await page.locator('body').press('Escape');
 
   // SVG yüzü asenkron yüklenir; kamera oynatılmadan strafor kendiliğinden çizilmelidir.
   let grab = null;
@@ -148,14 +147,8 @@ test('sırt duvarına bırakılan Işıklı Strafor kamera oynatılmadan çizili
   // Ev görünümünde sırt duvarı görüş alanının sağ üst yarısındadır.
   await page.locator('.view-cube-home').click();
   await page.waitForTimeout(1200);
-  await startFoamPlacement(page, { widthCm: '100', heightCm: '40' });
-
-  const drop = await viewportPoint(page, 0.64, 0.42);
-  await page.mouse.move(drop.x - 30, drop.y);
-  await page.mouse.move(drop.x, drop.y, { steps: 6 });
-  await page.mouse.down();
-  await page.mouse.up();
-  await expect(page.locator('#asset-status')).toContainText('Işıklı Strafor sahneye eklendi');
+  await dropFoam(page, 0.64, 0.42);
+  await page.locator('body').press('Escape');
 
   let grab = null;
   await expect.poll(async () => {

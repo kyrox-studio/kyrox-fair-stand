@@ -1,4 +1,14 @@
+import { showSurfaceControls } from './helpers/surfaceControls.mjs';
 import { test, expect } from '@playwright/test';
+
+async function openSavedProject(page, id) {
+  await expect(page.locator(`#project-select option[value="${id}"]`)).toHaveCount(1);
+  await page.locator('#project-select').evaluate((select, projectId) => { select.value = projectId; }, id);
+  await page.locator('#open-project').click();
+  await expect(page.locator('#project-status')).toContainText('Açıldı:');
+  // Durum yazısı sahne hazır olmadan gelir; ham fare tıklaması perdeyi beklemez.
+  await expect(page.locator('#project-loading-overlay')).toBeHidden({ timeout: 30_000 });
+}
 
 async function preparePanels(page, rotation, side) {
   await page.route('**/src/scene3d.js*', async route => {
@@ -58,9 +68,7 @@ async function preparePanels(page, rotation, side) {
     return project.id;
   }, { rotation, side });
   await page.reload();
-  await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, id);
-  await page.locator('#open-project').click();
-  await expect(page.locator('#project-status')).toContainText('Açıldı:');
+  await openSavedProject(page, id);
   return id;
 }
 
@@ -98,6 +106,7 @@ async function selectImagePanels(page, side, single = false, moduleIds = null) {
         });
       }, { side, moduleIds });
       await page.mouse.click(points[0].x, points[0].y);
+      await expect(page.locator('.selection-property-panel')).toBeVisible();
       if (!single) await page.keyboard.down('Control');
       if (!single) await page.mouse.click(points[1].x, points[1].y);
       if (!single) await page.keyboard.up('Control');
@@ -111,8 +120,7 @@ for (const rotation of [0, 90, 180, 270]) {
       page.on('pageerror', error => errors.push(error.message));
       const id = await preparePanels(page, rotation, side);
       await selectImagePanels(page, side);
-      const panel = page.locator('details', { has: page.locator('#apply-color') });
-      if (!(await panel.getAttribute('open'))) await panel.locator(':scope > summary').click();
+      await showSurfaceControls(page);
       const png = await page.evaluate(() => {
         const canvas = document.createElement('canvas');
         canvas.width = 600; canvas.height = 100;
@@ -134,9 +142,7 @@ for (const rotation of [0, 90, 180, 270]) {
       await page.locator('#save-project').click();
       await expect(page.locator('#project-status')).toContainText('Kaydedildi:');
       await page.reload();
-      await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, id);
-      await page.locator('#open-project').click();
-      await expect(page.locator('#project-status')).toContainText('Açıldı:');
+      await openSavedProject(page, id);
       await expect.poll(() => imageState(page, side)).toEqual(state);
       expect(errors).toEqual([]);
     });
@@ -162,11 +168,9 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
     const points = await selectImagePanels(page, 'front', mode === 'single');
     if (mode === 'lightbox' || mode === 'mesh') {
       await page.mouse.click(points[0].x, points[0].y, { button: 'right' });
-      await page.locator('.module-context-advanced-toggle').click();
       await page.locator(`[data-module-action="toggle-${mode === 'mesh' ? 'mesh' : 'fabric'}"]`).click();
     }
-    const panel = page.locator('details', { has: page.locator('#apply-color') });
-    if (!(await panel.getAttribute('open'))) await panel.locator(':scope > summary').click();
+    await showSurfaceControls(page, 'image');
     await page.locator('#surface-image').setInputFiles({ name: 'preview.png', mimeType: 'image/png',
       buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') });
     await expect.poll(async () => {
@@ -175,42 +179,21 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
         : state.states.some(item => Boolean(item.renderer.imageAssetId) && Boolean(item.repeat));
     }).toBe(true);
     const original = await previewState(page);
+    // Görsel ölçüsü pencere açmaz: Özellikler panelinde alan olarak durur.
     const open = async () => {
       await page.mouse.click(points[0].x, points[0].y, { button: 'right' });
-      await page.locator('[data-module-action="resize-image"]').click();
-      return page.getByRole('dialog', { name: 'Görsel ölçüsü' });
+      const fields = page.locator('.selection-property-panel .selection-property-fields');
+      await expect(fields).toContainText('Görsel ölçüsü');
+      return fields;
     };
     const dialog = await open();
-    await expect(dialog).toHaveAttribute('aria-modal', 'false');
-    const initialBox = await dialog.boundingBox();
-    expect(initialBox.width).toBeLessThanOrEqual(281);
-    const handle = dialog.locator('[data-image-size-handle]');
-    const handleBox = await handle.boundingBox();
-    await page.mouse.move(handleBox.x + 30, handleBox.y + 10);
-    await page.mouse.down();
-    await page.mouse.move(handleBox.x - 70, handleBox.y + 60, { steps: 5 });
-    await page.mouse.up();
-    const movedBox = await dialog.boundingBox();
-    expect(movedBox.x).toBeLessThan(initialBox.x - 50);
-    await handle.focus();
-    await page.keyboard.press('ArrowLeft');
-    expect((await dialog.boundingBox()).x).toBeCloseTo(movedBox.x - 10, 0);
-    if (mode === 'group') {
-      const viewport = page.viewportSize();
-      await page.setViewportSize({ width: 390, height: 844 });
-      const mobileBox = await dialog.boundingBox();
-      expect(mobileBox.x).toBeGreaterThanOrEqual(0);
-      expect(mobileBox.x + mobileBox.width).toBeLessThanOrEqual(390);
-      expect(mobileBox.y + mobileBox.height).toBeLessThanOrEqual(844);
-      await page.setViewportSize(viewport);
-    }
+    await expect(page.getByRole('dialog', { name: 'Görsel ölçüsü' })).toHaveCount(0);
     const cameraBefore = await page.evaluate(() => window.__imageControls.object.position.toArray());
     const canvasBox = await page.locator('#viewport > canvas').boundingBox();
     await page.mouse.move(canvasBox.x + canvasBox.width * 0.2, canvasBox.y + canvasBox.height * 0.9);
     await page.mouse.down();
     await page.mouse.move(canvasBox.x + canvasBox.width * 0.35, canvasBox.y + canvasBox.height * 0.9, { steps: 5 });
     await page.mouse.up();
-    await expect(dialog).toBeVisible();
     await expect.poll(() => page.evaluate(before => {
       const after = window.__imageControls.object.position.toArray();
       return Math.hypot(...after.map((value, index) => value - before[index]));
@@ -221,7 +204,8 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
       .toBeLessThan(distanceBefore);
     // Sonraki menü kontrolleri için aynı kamera görünümüne dön.
     await selectImagePanels(page, 'front', mode === 'single');
-    const width = dialog.locator('input[name="width"]');
+    await expect(dialog).toContainText('Görsel ölçüsü');
+    const width = dialog.locator('input[name="widthCm"]');
     await width.fill('150');
     await expect.poll(async () => {
       const state = await previewState(page);
@@ -229,7 +213,7 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
         || item.renderer.fabricImageWidthCm === 150);
     }).toBe(true);
     await width.fill('120');
-    await dialog.locator('input[name="height"]').fill('30');
+    await dialog.locator('input[name="heightCm"]').fill('30');
     await expect.poll(async () => {
       const state = await previewState(page);
       return state.states.some(item => item.renderer.imageTransform?.widthCm === 120
@@ -249,8 +233,7 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
     await width.fill(''); // Geçersiz değer önizlemeyi bozmaz.
     await page.waitForTimeout(120);
     expect((await previewState(page)).states.map(item => item.renderer)).toEqual(temporary.states.map(item => item.renderer));
-    await page.keyboard.press('Escape');
-    await expect(dialog).toHaveCount(0);
+    await width.press('Escape');
     await expect.poll(async () => (await previewState(page)).states.map(item => item.renderer))
       .toEqual(original.states.map(item => item.renderer));
     await expect.poll(async () => {
@@ -258,21 +241,19 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
       return mode === 'lightbox' || mode === 'mesh' ? state.overlays : state.states.map(item => item.repeat);
     }).toEqual(mode === 'lightbox' || mode === 'mesh' ? original.overlays : original.states.map(item => item.repeat));
 
-    for (const cancel of ['button', 'close']) {
-      const cancelled = await open();
-      await cancelled.locator('input[name="width"]').fill('115');
-      await expect.poll(async () => (await previewState(page)).states.some(item => item.renderer.imageTransform?.widthCm === 115
-        || item.renderer.fabricImageWidthCm === 115)).toBe(true);
-      if (cancel === 'button') await cancelled.getByRole('button', { name: 'İptal' }).click();
-      else await cancelled.getByRole('button', { name: 'Ölçülendirmeyi iptal et ve kapat' }).click();
-      await expect(cancelled).toHaveCount(0);
-      await expect.poll(async () => (await previewState(page)).states.map(item => item.renderer))
-        .toEqual(original.states.map(item => item.renderer));
-    }
+    // Esc yazılan değeri bırakır; alan kayıtlı ölçüye döner.
+    const cancelled = await open();
+    await cancelled.locator('input[name="widthCm"]').fill('115');
+    await expect.poll(async () => (await previewState(page)).states.some(item => item.renderer.imageTransform?.widthCm === 115
+      || item.renderer.fabricImageWidthCm === 115)).toBe(true);
+    await cancelled.locator('input[name="widthCm"]').press('Escape');
+    await expect.poll(async () => (await previewState(page)).states.map(item => item.renderer))
+      .toEqual(original.states.map(item => item.renderer));
+    // Enter tek geri alma adımıyla uygular.
     const confirmed = await open();
-    await confirmed.locator('input[name="width"]').fill('140');
-    await confirmed.locator('input[name="height"]').fill('35');
-    await confirmed.getByRole('button', { name: 'Uygula' }).click();
+    await confirmed.locator('input[name="widthCm"]').fill('140');
+    await confirmed.locator('input[name="heightCm"]').fill('35');
+    await confirmed.locator('input[name="heightCm"]').press('Enter');
     await expect.poll(async () => (await previewState(page)).states.some(item => item.persistent.imageTransform?.widthCm === 140
       || item.persistent.fabricImageWidthCm === 140)).toBe(true);
     await page.locator('#design-undo').click();
@@ -284,9 +265,7 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
     await page.locator('#save-project').click();
     await expect(page.locator('#project-status')).toContainText('Kaydedildi:');
     await page.reload();
-    await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, projectId);
-    await page.locator('#open-project').click();
-    await expect(page.locator('#project-status')).toContainText('Açıldı:');
+    await openSavedProject(page, projectId);
     await expect.poll(async () => (await previewState(page)).states.some(item => item.persistent.imageTransform?.widthCm === 140
       || item.persistent.fabricImageWidthCm === 140)).toBe(true);
     expect(errors).toEqual([]);
@@ -309,11 +288,9 @@ for (const kind of ['panel', 'legacy', 'lightbox', 'mesh']) {
     const points = await selectImagePanels(page, 'front');
     if (kind === 'lightbox' || kind === 'mesh') {
       await page.mouse.click(points[0].x, points[0].y, { button: 'right' });
-      await page.locator('.module-context-advanced-toggle').click();
       await page.locator(`[data-module-action="toggle-${kind === 'mesh' ? 'mesh' : 'fabric'}"]`).click();
     }
-    const panel = page.locator('details', { has: page.locator('#apply-color') });
-    if (!(await panel.getAttribute('open'))) await panel.locator(':scope > summary').click();
+    await showSurfaceControls(page, 'image');
     await page.locator('#surface-image').setInputFiles({ name: 'shared-logo.png', mimeType: 'image/png',
       buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') });
     await expect(page.locator('#selection-info')).toContainText('görsel');
@@ -360,29 +337,26 @@ for (const kind of ['panel', 'legacy', 'lightbox', 'mesh']) {
       return { x: box.left + (point.x + 1) * box.width / 2, y: box.top + (1 - point.y) * box.height / 2 };
     }, cloneIds);
     await page.mouse.click(copyPoint.x, copyPoint.y, { button: 'right' });
-    await page.locator('[data-module-action="resize-image"]').click();
-    const dialog = page.getByRole('dialog', { name: 'Görsel ölçüsü' });
-    expect(Number(await dialog.locator('input[name="width"]').inputValue())).toBeLessThan(350);
-    await dialog.locator('input[name="width"]').fill('120');
+    const dialog = page.locator('.selection-property-panel .selection-property-fields');
+    await expect(dialog).toContainText('Görsel ölçüsü');
+    expect(Number(await dialog.locator('input[name="widthCm"]').inputValue())).toBeLessThan(350);
+    await dialog.locator('input[name="widthCm"]').fill('120');
     await expect.poll(async () => (await groupSurfaces(page, cloneIds)).some(item => item.renderer.imageTransform?.widthCm === 120
       || item.renderer.fabricImageWidthCm === 120)).toBe(true);
     expect(await groupSurfaces(page, originalIds)).toEqual(original);
-    await dialog.getByRole('button', { name: 'Uygula' }).click();
+    await dialog.locator('input[name="widthCm"]').press('Enter');
     await expect.poll(async () => (await groupSurfaces(page, cloneIds)).some(item => item.persistent.imageTransform?.widthCm === 120
       || item.persistent.fabricImageWidthCm === 120)).toBe(true);
     expect(await groupSurfaces(page, originalIds)).toEqual(original);
     await page.locator('#save-project').click();
     await expect(page.locator('#project-status')).toContainText('Kaydedildi:');
     await page.reload();
-    await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, projectId);
-    await page.locator('#open-project').click();
-    await expect(page.locator('#project-status')).toContainText('Açıldı:');
+    await openSavedProject(page, projectId);
     await expect.poll(() => groupSurfaces(page, originalIds)).toEqual(original);
     await expect.poll(async () => (await groupSurfaces(page, cloneIds)).some(item => item.persistent.imageTransform?.widthCm === 120
       || item.persistent.fabricImageWidthCm === 120)).toBe(true);
     await selectImagePanels(page, 'front', false, cloneIds);
-    const imagePanel = page.locator('details', { has: page.locator('#apply-color') });
-    if (!(await imagePanel.getAttribute('open'))) await imagePanel.locator(':scope > summary').click();
+    await showSurfaceControls(page, 'image');
     await page.locator('#surface-image').setInputFiles({ name: 'replacement-logo.png', mimeType: 'image/png',
       buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') });
     const sourceAssets = new Set(original.map(item => item.persistent.fabricImageAssetId ?? item.persistent.imageAssetId).filter(Boolean));

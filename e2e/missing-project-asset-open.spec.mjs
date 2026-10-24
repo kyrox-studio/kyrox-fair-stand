@@ -1,3 +1,4 @@
+import { showSurfaceControls } from './helpers/surfaceControls.mjs';
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 
@@ -163,8 +164,7 @@ test('sunucuda dosyası olmayan görsel projeyi açmayı engellemez', async ({ p
   const face = await visibleBoxFace(page);
   expect(face).not.toBeNull();
   await page.mouse.click(face.x, face.y);
-  const panel = page.locator('details', { has: page.locator('#apply-color') });
-  if (!(await panel.getAttribute('open'))) await panel.locator(':scope > summary').click();
+  await showSurfaceControls(page);
   await page.locator('#surface-image').setInputFiles({ name: 'e2e-missing.png', mimeType: 'image/png', buffer: PNG });
   await expect.poll(async () => (await faceState(page, face.slot))?.hasTexture).toBe(true);
   const { imageAssetId } = await faceState(page, face.slot);

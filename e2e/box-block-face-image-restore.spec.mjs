@@ -1,3 +1,4 @@
+import { showSurfaceControls } from './helpers/surfaceControls.mjs';
 import { test, expect } from '@playwright/test';
 
 const PNG = Buffer.from(
@@ -106,8 +107,7 @@ test('box block face image is drawn again after save, reload and open', async ({
   await expect.poll(() => page.evaluate((slot) => window.__sceneSurfaces()
     .find((mesh) => mesh.userData.faceSlot === slot)?.userData.selectionFrame?.visible === true, face.slot)).toBe(true);
 
-  const panel = page.locator('details', { has: page.locator('#apply-color') });
-  if (!(await panel.getAttribute('open'))) await panel.locator(':scope > summary').click();
+  await showSurfaceControls(page);
   await page.locator('#surface-image').setInputFiles({ name: 'e2e-box-face.png', mimeType: 'image/png', buffer: PNG });
   await expect(page.locator('#asset-status')).toContainText('e2e-box-face.png');
   await expect.poll(async () => (await faceImage(page, face.slot))?.hasTexture).toBe(true);

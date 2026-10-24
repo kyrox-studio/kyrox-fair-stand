@@ -150,7 +150,7 @@ Yeni görünen Item için Catalog içine kart satırı yazılmaz.
 | 3 | Raf & Vitrin | 3 | 6 |
 | 4 | Banko & Baza | 4 | 3 |
 | 5 | Extra | 5 | 19 |
-| 6 | Elektronik & Aydınlatma | 6 | 6 |
+| 6 | Elektronik & Aydınlatma | 6 | 7 |
 
 Toplam görünür Item: **63**. Kayıtlı Item: **127**.
 

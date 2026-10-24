@@ -21,7 +21,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /Kullanım Kılavuzu/);
   assert.match(guideSource, /Mouse Kontrolleri/);
   assert.match(guideSource, /Klavye Kısayolları/);
-  assert.match(guideSource, /Sağ Tık Menüsü/);
+  assert.match(guideSource, /Özellikler Paneli/);
   assert.match(guideSource, /Stand Oluşturma ve Sistem Standartları/);
   assert.match(guideSource, /<strong>Kaydet:<\/strong> üst araç çubuğundadır; sahne varken/);
   assert.match(guideSource, /<strong>3, 5, 7 veya 10 dk<\/strong> \(varsayılan 3 dk\)/);
@@ -55,7 +55,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /title: 'Kutu Blok'/);
   assert.match(guideSource, /bütün görselleri ve 3D modelleri gelene kadar kalır/);
   assert.match(guideSource, /Yarım sahne gösterilmez/);
-  assert.match(guideSource, /Tablette parmakla basılı tutmak \(uzun basma\) aynı menüyü açar\./);
+  assert.match(guideSource, /Öğeye veya yüzeye tek tık \(tablette tek dokunuş\) sahnenin sağında <strong>Özellikler<\/strong> panelini açar/);
   assert.match(guideSource, /<th>Seçim çubuğu<\/th>/);
   assert.match(guideSource, /<strong>Çoklu modül<\/strong> açıkken modüle dokunmak aynı işi yapar/);
   assert.match(guideSource, /<strong>Çoklu panel<\/strong>’e basıp parmağı bir panelden diğerine kaydırmak aynı dikdörtgeni seçer/);
@@ -63,7 +63,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /kaydırmadan başka bir panele dokunmak da ilk seçili panelden oraya kadar seçer/);
   assert.match(guideSource, /Tablette: panele dokun, seçim çubuğunda <strong>Çoklu panel<\/strong>’e bas/);
   assert.match(guideSource, /tablette seçim çubuğundaki <strong>Çoklu modül<\/strong> ile\) en az 2 öğe seç/);
-  assert.match(guideSource, /menüde <strong>Gelişmiş ▸<\/strong> altındadır/);
+  assert.match(guideSource, /Cam, Metal Separatör, Lightbox ve Mesh dönüşümleri panelde doğrudan listelenir/);
   assert.match(guideSource, /Tablette karta dokunup sahnede yere dokunmak da modülü oraya ekler/);
   assert.match(guideSource, /<strong>Duvar yüksekliği<\/strong>ni seç \(2,5–5 m, varsayılan 3,5 m;/);
   assert.match(guideSource, /Editörde ışık gölgesi, LED projektör ve raf altı aydınlatmanın panele düşen ışığı kapalıdır/);
@@ -95,7 +95,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /<strong>Kopyala:<\/strong> Modülü hafızaya alır; sahnede tıkladığın veya dokunduğun her yere/);
   assert.match(guideSource, /<th>Ctrl\/Cmd \+ C \/ V<\/th>/);
   assert.doesNotMatch(guideSource, /Çoğalt Sağ \/ Sol/);
-  assert.match(guideSource, /Sağ tık menüsünde Kopyala yoktur\./);
+  assert.match(guideSource, /Özellikler panelinde Kopyala yoktur\./);
   assert.match(guideSource, /<th>İki parmak \(tablet\)<\/th><td>Parmakları açıp kapatmak yakınlaştırır/);
   assert.match(guideSource, /<strong>Yeni proje sihirbazı:<\/strong> Yeni projede boş sahnenin ortasında 3 adım açılır/);
   assert.match(guideSource, /<strong>Depo<\/strong> listesinde <strong>Depo yok<\/strong> yerine 1×1, 1,5×1, 2×1 veya 2×2 m depo ölçüsünü seç\./);

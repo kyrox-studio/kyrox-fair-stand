@@ -25,6 +25,7 @@ const CREATE_STAND_SCENE_PUBLIC_METHODS = Object.freeze([
   'isFloorAreaSelected',
   'getSelectedModuleIds',
   'selectModulesById',
+  'selectModuleSurface',
   'getSelectionContext',
   'rotateModuleById',
   'setMultiSelectMode',

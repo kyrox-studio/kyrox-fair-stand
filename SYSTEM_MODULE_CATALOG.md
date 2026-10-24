@@ -18,12 +18,12 @@ Bu dosya insan/AI için **okunabilir katalog indeksi**dir. Runtime source-of-tru
 
 Bu snapshot `Version2` üzerindeki `MODULE_CATALOG_KEYS` ve `MODULE_CONTRACT_ASSIGNMENTS` ile eşleşmek zorundadır; `test/systemModuleCatalogDoc.test.js` drift olduğunda CI'yi kırar.
 
-- Catalog entries: **42**
+- Catalog entries: **43**
 - BOM mode `recipe`: **10**
 - BOM mode `self`: **12**
-- BOM mode `decision-required`: **20**
-- Katalog dışı explicit runtime module: **1** (`illuminated-foam`)
-- Katalog dışı module BOM mode `decision-required`: **1**
+- BOM mode `decision-required`: **21**
+- Explicit contract runtime module: **1** (`illuminated-foam`; 0084 ile katalog kartı)
+- Explicit contract module BOM mode `decision-required`: **1**
 
 > `decision-required` bir hata etiketi değildir. Recipe, commercial-item veya explicit exclusion ürün/üretim kararı verilmeden Final BOM politikası uydurulmayacağı anlamına gelir.
 
@@ -74,6 +74,7 @@ Aşağıdaki blok test tarafından `MODULE_CATALOG_KEYS` ile **sıra dahil bireb
 - `video_wall_3x3`
 - `tv_65`
 - `led_floodlight`
+- `illuminated-foam`
 <!-- catalog-keys:end -->
 
 ## Güncel aile görünümü
@@ -110,7 +111,7 @@ Banko, Köşe Banko ve Baza kartı aile başına tek (migration `0083_banko_base
 
 ### Medya / Işık
 
-`tv_42`, `tv_55`, `video_wall_2x2`, `video_wall_3x3`, `tv_65`, `led_floodlight`
+`tv_42`, `tv_55`, `video_wall_2x2`, `video_wall_3x3`, `tv_65`, `led_floodlight`, `illuminated-foam`
 
 ## BOM politika özeti
 
@@ -135,9 +136,9 @@ Duvar/panel, separatör, vitrin, depo kapısı, düz/L banko ve baza ailelerinin
 
 Bu kayıtlar için bu doküman **commercial-item / recipe / excluded** kararı uydurmaz. Canonical mevcut durum `src/moduleContracts.js` içindeki `decision-required` politikasıdır.
 
-## Katalog dışı runtime modülü
+## Explicit contract runtime modülü
 
-`illuminated-foam` katalog anahtarı değildir. `src/moduleContracts.js` içindeki `NON_CATALOG_MODULE_CONTRACTS` üzerinden explicit contract taşır ve BOM politikası şu anda `decision-required` durumundadır.
+`illuminated-foam` 0084 ile Elektronik & Aydınlatma kategorisinde katalog kartıdır; logo görseli Özellikler panelinin görsel bölümünden (yalnız SVG) seçilir. Contract'ı tip kaydından değil `src/moduleContracts.js` içindeki `NON_CATALOG_MODULE_CONTRACTS` üzerinden explicit gelir ve BOM politikası şu anda `decision-required` durumundadır.
 
 ## Değişiklik kuralı
 

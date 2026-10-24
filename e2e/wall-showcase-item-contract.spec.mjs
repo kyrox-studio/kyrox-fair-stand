@@ -89,3 +89,91 @@ test('wall showcase catalog Items persist canonical identity and grouped body co
   expect(two.eyeCount).toBe(2); expect(three.eyeCount).toBe(3);
   expect(errors).toEqual([]);
 });
+
+for (const itemKey of ['wall_showcase_100_2_350', 'wall_showcase_100_3_350']) {
+  test(`${itemKey}: gövdeye normal tık renk paletini açar; dört sunta boyanır ve kayıt korunur`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 600 });
+    await page.route('**/src/scene3d.js*', async route => {
+      const response = await route.fetch();
+      const body = (await response.text())
+        .replace('const controls = new OrbitControls(camera, renderer.domElement);',
+          'const controls = new OrbitControls(camera, renderer.domElement); window.__showcaseControls = controls;')
+        .replace('  let surfaceMeshes = [];',
+          '  let surfaceMeshes = []; window.__showcaseSurfaces = () => surfaceMeshes;');
+      await route.fulfill({ response, body });
+    });
+    await createStand(page);
+    const initial = await saveAndReadProject(page);
+    await page.evaluate(async ({ id, itemKey }) => {
+      const { createModuleStateFromCatalogKey } = await import('/src/designState.js');
+      const module = createModuleStateFromCatalogKey(itemKey);
+      module.placement = { xCm: 200, yCm: 200, zCm: 0, wallId: 'free', rotationZDeg: 0 };
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open('fair-stand-configurator', 2);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const project = await new Promise(resolve => {
+        const request = db.transaction('projects').objectStore('projects').get(id);
+        request.onsuccess = () => resolve(request.result);
+      });
+      project.modules = [module];
+      project.enableAutosave = false;
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('projects', 'readwrite');
+        tx.objectStore('projects').put(project);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    }, { id: initial.id, itemKey });
+
+    const reopen = async () => {
+      await page.reload();
+      await expect(page.locator(`#project-select option[value="${initial.id}"]`)).toHaveCount(1);
+      await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, initial.id);
+      await page.locator('#open-project').click();
+      await expect(page.locator('#project-status')).toContainText('Açıldı:');
+      await expect(page.locator('#project-loading-overlay')).toBeHidden({ timeout: 30_000 });
+    };
+    await reopen();
+    const point = await page.evaluate(() => {
+      const mesh = window.__showcaseSurfaces().find(mesh => mesh.userData.surfaceRole === 'showcase-body');
+      mesh.updateWorldMatrix(true, false);
+      const center = mesh.getWorldPosition(mesh.position.clone());
+      const controls = window.__showcaseControls;
+      controls.target.copy(center);
+      controls.object.position.copy(center).addScaledVector(mesh.getWorldDirection(mesh.position.clone()), 6);
+      controls.update();
+      controls.object.updateMatrixWorld(true);
+      const screen = center.project(controls.object);
+      const box = document.querySelector('#viewport > canvas').getBoundingClientRect();
+      return { x: box.left + (screen.x + 1) * box.width / 2, y: box.top + (1 - screen.y) * box.height / 2 };
+    });
+    await page.mouse.click(point.x, point.y);
+    const panel = page.getByRole('complementary', { name: 'Özellikler' });
+    await expect(panel.locator('#selection-info')).toContainText('vitrin gövdesi · 4 sunta birlikte renklendirilir');
+    await expect(panel.locator('#color-hex')).toBeVisible();
+    await expect(panel.locator('#surface-image-controls')).toBeHidden();
+    // Kısa pencerede uzun açıklama ne kırpılır ne de işlem satırına biner.
+    const layout = await panel.evaluate(element => {
+      const info = element.querySelector('#selection-info');
+      const action = element.querySelector('[data-module-action="toggle-lock"]');
+      return { contentHeight: info.scrollHeight, height: info.clientHeight,
+        bottom: info.getBoundingClientRect().bottom, nextTop: action.getBoundingClientRect().top };
+    });
+    expect(layout.contentHeight).toBeLessThanOrEqual(layout.height + 1);
+    expect(layout.bottom).toBeLessThanOrEqual(layout.nextTop);
+    await panel.locator('#color-hex').fill('#336699');
+    await panel.locator('#apply-color').click();
+    const renderedColors = () => page.evaluate(() => window.__showcaseSurfaces()
+      .find(mesh => mesh.userData.surfaceRole === 'showcase-body').userData.colorTargets
+      .map(mesh => mesh.material.color.getHexString()));
+    await expect.poll(renderedColors).toEqual(Array(4).fill('336699'));
+    const saved = await saveAndReadProject(page);
+    expect(saved.modules[0].bodySurface.color).toBe('#336699');
+    await reopen();
+    expect((await saveAndReadProject(page)).modules[0].bodySurface.color).toBe('#336699');
+    await expect.poll(renderedColors).toEqual(Array(4).fill('336699'));
+  });
+}

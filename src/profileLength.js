@@ -1,7 +1,8 @@
 // Profil boyu seçimi: katalogdaki tek profil kartı bırakılırken boy sorulur (dikmedeki gibi).
 // Seçenekler sahnede çizilebilen profil Item'larıdır; etikette gerçek boy (BOM) ve sahne boyu
 // yazar (41,5 → 50 … 289 → 300). "Bir daha sorma" işaretlenirse seçilen boy bu tarayıcıda
-// hatırlanır; sağ tık "Profil boyu…" aynı pencereyi açar, çentik oradan kaldırılınca yeniden sorulur.
+// hatırlanır; Özellikler panelindeki profil boyu alanı boyu değiştirir, çentik oradan kaldırılınca
+// yeniden sorulur.
 import { listRegisteredItems } from './items.js';
 import { readItemSizePreference, requestItemSizeChoice, writeItemSizePreference } from './itemSizeDialog.js';
 

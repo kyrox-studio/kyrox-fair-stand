@@ -10,6 +10,7 @@ const COLOR_TYPES = new Set([
   'separator-panel',
   'base-top',
   'counter-top',
+  'showcase-board',
   'shelf',
   'sofa-set-classic',
   'sofa-single-classic',
@@ -43,6 +44,10 @@ function expectedFlags(item) {
   }
   if (COLOR_TYPES.has(item.type) || item.itemKey === 'furniture_table_chair_set_eames') {
     return { isRender: true, color: true, image: false, lightbox: false, glass: false, mesh: false };
+  }
+  if (item.type === 'illuminated-foam') {
+    // 0084: logo SVG panelin görsel bölümünden seçilir; renk yok (SVG kendi renklerini taşır).
+    return { isRender: true, color: false, image: true, lightbox: false, glass: false, mesh: false };
   }
   if (item.type === 'indoor-plant-1' && item.itemKey.startsWith('extra_long_planter_')) {
     return { isRender: true, color: true, image: false, lightbox: false, glass: false, mesh: false };

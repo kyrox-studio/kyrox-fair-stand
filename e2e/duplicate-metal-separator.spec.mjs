@@ -102,12 +102,8 @@ test('duplicating a panel with a metal separator gives the copy its own metal gr
   // Sabit ilk kamera açısında ilk modülün en üst paneli.
   await page.mouse.click(650, 145, { button: 'right' });
   await expect(menu).toBeVisible();
-  // Panel dönüşümleri sade menüde "Gelişmiş" altında; kapalıysa aç.
-  const advancedToggle = menu.locator('.module-context-advanced-toggle');
-  // Sade menü: dönüşüm kapalı başlar.
-  await expect(advancedToggle).toHaveAttribute('aria-expanded', 'false');
-  await expect(metalToggle).toBeHidden();
-  await advancedToggle.click();
+  // Panel dönüşümleri açılır sekme olmadan doğrudan listede görünür.
+  await expect(metalToggle).toBeVisible();
   await expect(metalToggle).toHaveText('Metal Separatöre Çevir');
   await metalToggle.click();
 
@@ -133,8 +129,6 @@ test('duplicating a panel with a metal separator gives the copy its own metal gr
   const copyTop = await stripScreenPoint(page, copyModule.id, copyModule.strips.length - 1);
   await page.mouse.click(copyTop.x, copyTop.y, { button: 'right' });
   await expect(menu).toBeVisible();
-  // "Gelişmiş" açık kaldı (oturum boyunca hatırlanır).
-  await expect(menu.locator('.module-context-advanced-toggle')).toHaveAttribute('aria-expanded', 'true');
   await expect(metalToggle).toHaveText('Normal Panele Çevir');
   await metalToggle.click();
 

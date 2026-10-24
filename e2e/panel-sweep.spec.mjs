@@ -134,11 +134,9 @@ test('finger sweep selects the middle two rows across three wall modules and con
   await expect(multi).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('.viewport-wrap')).not.toHaveClass(/multi-select-panel/);
 
-  await toolbar.getByRole('button', { name: 'Diğer işlemler' }).click();
+  // Tarama bitince Özellikler paneli açılır.
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
-  const advancedToggle = menu.locator('.module-context-advanced-toggle');
-  if ((await advancedToggle.getAttribute('aria-expanded')) !== 'true') await advancedToggle.click();
   await menu.locator('[data-module-action="toggle-fabric"]').click();
 
   // 6 panel tek Lightbox grubunda; diğer paneller dokunulmadı.

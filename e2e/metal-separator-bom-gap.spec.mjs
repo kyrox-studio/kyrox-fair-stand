@@ -64,8 +64,6 @@ test('one metal group with a gap on the wall is listed as separate sheets', asyn
   await page.mouse.click(905, 205, { button: 'right' });
   await expect(menu).toBeVisible();
   // Panel dönüşümleri sade menüde "Gelişmiş" altında; kapalıysa aç.
-  const advancedToggle = menu.locator('.module-context-advanced-toggle');
-  if ((await advancedToggle.getAttribute('aria-expanded')) !== 'true') await advancedToggle.click();
   await menu.locator('[data-module-action="toggle-metal-separator"]').click();
 
   await unlockModuleForFixture(page, walls[1]);

@@ -32,7 +32,7 @@ test('sürükleme etiketi katalogda görünmeyen item için item adını kullan�
   assert.match(block, /getModuleCatalogItem\(moduleState\)\s*\? getModuleCatalogLabel\(moduleState\)\s*: \(getItem\(moduleState\?\.itemKey\)\?\.name \?\? getModuleCatalogLabel\(moduleState\)\)/);
   const { getItem } = await import('../src/items.js');
   const { getModuleCatalogItem } = await import('../src/catalog.js');
-  const foam = { itemKey: 'illuminated-foam', type: 'illuminated-foam' };
-  assert.equal(getModuleCatalogItem(foam), null);
-  assert.equal(getItem(foam.itemKey).name, 'Işıklı Strafor / Logo');
+  const hidden = { itemKey: 'upright_99', type: 'upright' };
+  assert.equal(getModuleCatalogItem(hidden), null);
+  assert.equal(getItem(hidden.itemKey).name, 'Dikme 99');
 });

@@ -2183,6 +2183,11 @@ export function planFreeSideInsertion({
     if (!nextPlacement) {
       return { ok: false, message: 'Serbest komşu yerleşimi hesaplanamadı.' };
     }
+    // Yükseklik komşudan kopyalanmaz: yeni öğe kendi varsayılan Z'sinden başlar, komşunun kendi
+    // varsayılanından farkı korunur. Kısa panelin yanına kısa panel aynı hizaya, Panel zemine gelir.
+    nextPlacement.zCm = Math.max(0, Number(anchorPlacement.zCm ?? 0)
+      - resolveItemDefaultZCm(anchorModule.itemKey)
+      + resolveItemDefaultZCm(module.itemKey));
 
     const validation = validatePlacementAgainstModules({
       placement: nextPlacement,

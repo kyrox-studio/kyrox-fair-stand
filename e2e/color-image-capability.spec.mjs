@@ -1,3 +1,4 @@
+import { showSurfaceControls } from './helpers/surfaceControls.mjs';
 import { test, expect } from '@playwright/test';
 
 async function createStand(page, standName, projectName) {
@@ -15,32 +16,31 @@ async function createStand(page, standName, projectName) {
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 }
 
+// Renk / görsel kontrolleri yalnız Özellikler panelindedir: önce sırt duvardan bir panel seçilir.
 async function openSurfacePanel(page) {
-  const panel = page.locator('details', { has: page.locator('#apply-color') });
-  if (!(await panel.getAttribute('open'))) {
-    await panel.locator(':scope > summary').click();
-  }
+  const canvas = await page.locator('#viewport > canvas').boundingBox();
+  await page.mouse.click(canvas.x + canvas.width * 0.5, canvas.y + canvas.height * 0.4);
+  await showSurfaceControls(page);
   await expect(page.locator('#apply-color')).toBeVisible();
 }
 
-test('seçim yokken Rengi uygula production mesajı verir ve state bozulmaz', async ({ page }) => {
+test('seçim yokken renk / görsel kontrolleri görünmez; panel seçilince Özellikler panelinde açılır', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await createStand(page, 'Sırt Duvar', 'E2E Color No Selection');
+  // Sol menüde Seçili yüzey kartı yoktur; seçim yokken renk kontrolü erişilemez.
+  await expect(page.locator('#apply-color')).toBeHidden();
+  await expect(page.locator('details.panel-card', { has: page.locator('#apply-color') })).toHaveCount(0);
   await openSurfacePanel(page);
-
-  await page.locator('#apply-color').click();
-  await expect(page.locator('#selection-info')).toHaveText(
-    'Önce 3D sahnede boyamak istediğin panel, panel bloğu, modül veya zemini seç.',
-  );
+  await expect(page.locator('.selection-property-panel #apply-color')).toBeVisible();
   await expect(page.locator('#raw-bom-debug')).toHaveCount(0);
   expect(pageErrors).toEqual([]);
 });
 
-test('görsel arşive yüklenir; seçim yokken Kaldır production mesajı verir', async ({ page }) => {
+test('görsel arşive yüklenir; görselsiz seçili panelde Kaldır mesaj verir', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
-  await createStand(page, 'Ada Stand', 'E2E Image Library');
+  await createStand(page, 'Sırt Duvar', 'E2E Image Library');
   await openSurfacePanel(page);
 
   const png = Buffer.from(
@@ -92,7 +92,7 @@ test('görsel arşive yüklenir; seçim yokken Kaldır production mesajı verir'
   expect(tilesOverlap).toBe(false);
 
   await page.locator('#clear-texture').click();
-  await expect(page.locator('#selection-info')).toHaveText('Önce bir panel veya panel bloğu seç.');
+  await expect(page.locator('#selection-info')).toHaveText('Seçili panel veya panel bloğundaki görsel kaldırıldı.');
   await expect(page.locator('.asset-tile')).toHaveCount(2);
   expect(pageErrors).toEqual([]);
 });
@@ -100,7 +100,7 @@ test('görsel arşive yüklenir; seçim yokken Kaldır production mesajı verir'
 test('5 MB üstü görsel arşive yazılmaz', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
-  await createStand(page, 'Ada Stand', 'E2E Image Size Cap');
+  await createStand(page, 'Sırt Duvar', 'E2E Image Size Cap');
   await openSurfacePanel(page);
 
   // Hata pencere (alert) açmaz; sağ altta bildirim olarak görünür.

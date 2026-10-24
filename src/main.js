@@ -41,6 +41,7 @@ import {
 } from './projectRevisionSession.js';
 import { createModuleContextMenu, allowsModuleSideInsert, resolveModuleSidePlacement } from './moduleContextMenu.js';
 import { createSelectionToolbar } from './selectionToolbar.js';
+import { summarizeSelectedSurfaces } from './selectionSurfaceSummary.js';
 import { createNewProjectWizard } from './newProjectWizard.js';
 import { createOnboardingTips } from './onboardingTips.js';
 import { createModuleDragSidebar } from './moduleDragSidebar.js';
@@ -121,11 +122,15 @@ import { renderStageResult as renderStageResultInto, renderWallResult } from './
 import { reportError, showToast } from './toastNotifications.js';
 import {
   defaultUprightItemKeyForWallHeight,
+  formatUprightLabel,
+  listUprightHeightItems,
   readUprightHeightPreference,
   requestUprightHeight,
   writeUprightHeightPreference,
 } from './uprightHeight.js';
 import {
+  formatProfileLengthLabel,
+  listProfileLengthItems,
   readProfileLengthPreference,
   requestProfileLength,
   writeProfileLengthPreference,
@@ -240,6 +245,9 @@ const designRedoButton = document.querySelector('#design-redo');
 const standTypeButtons = [...document.querySelectorAll('[data-stand-type]')];
 const standSizeXInput = document.querySelector('#stand-size-x');
 const standSizeYInput = document.querySelector('#stand-size-y');
+// Yeni stand için varsayılan ölçü (m): genişlik 5, derinlik 4; kullanıcı değiştirebilir.
+const DEFAULT_STAND_WIDTH_M = '5';
+const DEFAULT_STAND_DEPTH_M = '4';
 const createStageButton = document.querySelector('#create-stage');
 const wallHeightSelect = document.querySelector('#wall-height');
 const floorTypeSelect = document.querySelector('#floor-type');
@@ -298,6 +306,10 @@ const fillImageButton = document.querySelector('#fit-image-cover');
 const fitImageButton = document.querySelector('#fit-image-contain');
 const clearTextureButton = document.querySelector('#clear-texture');
 const resetModuleFeaturesButton = document.querySelector('#reset-module-features');
+const surfaceEditControls = document.querySelector('#surface-edit-controls');
+// Özellik paneli sahneden önce kurulmaz; erken seçim bildirimleri yenileme istemez.
+let propertyPanelReady = false;
+let propertyPanelRefreshQueued = false;
 const assetLibraryElement = document.querySelector('#asset-library');
 const assetStatus = document.querySelector('#asset-status');
 const projectNameInput = document.querySelector('#project-name');
@@ -416,7 +428,6 @@ assetContextMenu.setAttribute('role', 'menu');
 assetContextMenu.setAttribute('aria-label', 'Görsel işlemleri');
 assetContextMenu.innerHTML = `
   <div class="module-context-title">Görsel</div>
-  <button type="button" role="menuitem" data-asset-action="illuminated-foam">Işıklı Strafora Dönüştür</button>
   <button type="button" role="menuitem" data-asset-action="delete" class="danger">Sil</button>
 `;
 document.body.appendChild(assetContextMenu);
@@ -435,6 +446,7 @@ const scene3d = createStandScene(
       foamLightColorInput.value = feedback.foamColor;
     }
     selectionInfo.textContent = describeModuleLockSelection(feedback.message, selectedModuleIds);
+    schedulePropertyPanelRefresh();
   },
   getAssetUrl,
   (context) => openModuleContextMenu(context),
@@ -443,6 +455,7 @@ const scene3d = createStandScene(
       ? describeFloorAreaSelection(floorSelection)
       : describeFloorSelection(floorSelection);
     if (message) selectionInfo.textContent = message;
+    schedulePropertyPanelRefresh();
   },
   (anchor) => selectionToolbar?.update(anchor),
 );
@@ -519,10 +532,6 @@ const selectionToolbar = createSelectionToolbar({
     const context = scene3d.getSelectionContext(point);
     if (context) deleteContextModule(context);
   },
-  onMore: (point) => {
-    const context = scene3d.getSelectionContext(point);
-    if (context) openModuleContextMenu(context);
-  },
   // Panel taraması mavi, modül toplu seçimi turuncu çerçeve; tarama bitince mod kendiliğinden kapanır.
   onMultiSelectChange: (mode, resetButton) => {
     const viewportWrap = viewport.closest('.viewport-wrap');
@@ -535,6 +544,9 @@ const selectionToolbar = createSelectionToolbar({
       onEnd: () => {
         setFrame(false);
         resetButton();
+        // Parmak taraması bitince seçilen paneller Özellikler panelinde açılır.
+        const context = scene3d.getSelectionContext();
+        if (context) openModuleContextMenu(context);
       },
     });
   },
@@ -676,6 +688,7 @@ function rebuildWall({ resetView = true } = {}) {
   renderModuleGroupPanel();
   renderCurrentWallResult();
   if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  schedulePropertyPanelRefresh();
 }
 
 function findContextModuleIndex(context) {
@@ -1051,6 +1064,16 @@ function commitDroppedCatalogModule(moduleState, dropResult, catalogKey = null) 
     };
   }
 
+  // Katalogdan konan Işıklı Strafor tıklanmış gibi seçilir; logo görseli paneldeki görsel
+  // bölümünden seçilir.
+  if (canonical.type === 'illuminated-foam') {
+    window.setTimeout(() => {
+      if (!scene3d.selectModuleSurface(canonical.id)) return;
+      const context = currentPropertyPanelContext();
+      if (context) moduleContextMenu.open(context);
+    }, 0);
+  }
+
   return { ok: true, moduleState: canonical };
 }
 
@@ -1271,30 +1294,6 @@ function applyUprightItemKey(moduleState, itemKey) {
   return true;
 }
 
-// Dikme boyu: null = dikme değil (menü gizli); dikmede mevcut itemKey.
-function getContextUprightHeightState(context) {
-  const index = findContextModuleIndex(context);
-  const moduleState = index >= 0 ? currentModules[index] : null;
-  return moduleState?.type === 'upright' ? moduleState.itemKey : null;
-}
-
-async function changeContextUprightHeight(context) {
-  const index = findContextModuleIndex(context);
-  const moduleState = index >= 0 ? currentModules[index] : null;
-  if (moduleState?.type !== 'upright') return;
-  const choice = await requestUprightHeight({
-    selectedItemKey: moduleState.itemKey,
-    remember: Boolean(readUprightHeightPreference()),
-  });
-  if (!choice) return;
-  // Çentik kalkarsa sonraki dikmede yine sorulur.
-  writeUprightHeightPreference(choice.remember ? choice.itemKey : null);
-  if (choice.itemKey === moduleState.itemKey) return;
-  if (!applyUprightItemKey(moduleState, choice.itemKey)) return;
-  selectionInfo.textContent = `Dikme yüksekliği: ${getItem(choice.itemKey)?.name ?? choice.itemKey}.`;
-  rebuildWall({ resetView: false });
-}
-
 function applyProfileItemKey(moduleState, itemKey) {
   const profile = createProfileModuleState({ itemKey });
   if (!profile) return false;
@@ -1303,30 +1302,6 @@ function applyProfileItemKey(moduleState, itemKey) {
   moduleState.depthCm = profile.depthCm;
   moduleState.heightCm = profile.heightCm;
   return true;
-}
-
-// Profil boyu: null = profil değil (menü gizli); profilde mevcut itemKey.
-function getContextProfileLengthState(context) {
-  const index = findContextModuleIndex(context);
-  const moduleState = index >= 0 ? currentModules[index] : null;
-  return moduleState?.type === 'profile' ? moduleState.itemKey : null;
-}
-
-async function changeContextProfileLength(context) {
-  const index = findContextModuleIndex(context);
-  const moduleState = index >= 0 ? currentModules[index] : null;
-  if (moduleState?.type !== 'profile') return;
-  const choice = await requestProfileLength({
-    selectedItemKey: moduleState.itemKey,
-    remember: Boolean(readProfileLengthPreference()),
-  });
-  if (!choice) return;
-  // Çentik kalkarsa sonraki profilde yine sorulur.
-  writeProfileLengthPreference(choice.remember ? choice.itemKey : null);
-  if (choice.itemKey === moduleState.itemKey) return;
-  if (!applyProfileItemKey(moduleState, choice.itemKey)) return;
-  selectionInfo.textContent = `Profil boyu: ${getItem(choice.itemKey)?.name ?? choice.itemKey}.`;
-  rebuildWall({ resetView: false });
 }
 
 // Arka yüz paneli: null = bu modülde yok (menü gizli), true/false = takılı mı.
@@ -1441,53 +1416,195 @@ function changeContextPanelGlassMode(context, isGlass) {
     : `${panelCount} panel normal panele çevrildi.`;
 }
 
-async function resizeContextIlluminatedFoam(context) {
+// Özellikler paneli ölçü alanları: pencere açılmaz; seçilen öğenin ölçüsü panelde durur ve değer
+// değiştikçe sahne canlı güncellenir. Sınırlar eski ölçü pencereleriyle aynıdır.
+const SIZE_FIELD_SPECS = Object.freeze({
+  'box-block': Object.freeze({
+    title: 'Ölçü',
+    fields: Object.freeze([
+      Object.freeze({ name: 'widthCm', label: 'W · Genişlik (cm)', min: 1, max: 5000 }),
+      Object.freeze({ name: 'depthCm', label: 'D · Derinlik (cm)', min: 1, max: 5000 }),
+      Object.freeze({ name: 'heightCm', label: 'H · Yükseklik (cm)', min: 1, max: 5000 }),
+      Object.freeze({ name: 'opacity', label: 'Opacity (0–1)', min: 0, max: 1, step: 0.05 }),
+    ]),
+  }),
+  'illuminated-foam': Object.freeze({
+    title: 'Ölçü',
+    note: 'Gövde: 3,5 cm · Duvar boşluğu: 1,5 cm',
+    fields: Object.freeze([
+      Object.freeze({ name: 'widthCm', label: 'X · Genişlik (cm)', min: 10, max: 5000 }),
+      Object.freeze({ name: 'heightCm', label: 'Y · Yükseklik (cm)', min: 5, max: 350 }),
+    ]),
+  }),
+  'tulle-fabric': Object.freeze({
+    title: 'Ölçü',
+    fields: Object.freeze([
+      Object.freeze({ name: 'widthCm', label: 'Genişlik (cm)', min: 1, max: 5000 }),
+      Object.freeze({ name: 'heightCm', label: 'Derinlik (cm)', min: 1, max: 5000 }),
+    ]),
+  }),
+});
+
+const ITEM_SIZE_CHOICE_SPECS = Object.freeze({
+  upright: Object.freeze({
+    title: 'Dikme yüksekliği',
+    list: () => listUprightHeightItems(),
+    label: (item) => formatUprightLabel(item),
+    readPreference: () => readUprightHeightPreference(),
+    writePreference: (itemKey) => writeUprightHeightPreference(itemKey),
+    apply: (moduleState, itemKey) => applyUprightItemKey(moduleState, itemKey),
+    message: (item) => `Dikme yüksekliği: ${item?.name ?? ''}.`,
+  }),
+  profile: Object.freeze({
+    title: 'Profil boyu',
+    list: () => listProfileLengthItems(),
+    label: (item) => formatProfileLengthLabel(item),
+    readPreference: () => readProfileLengthPreference(),
+    writePreference: (itemKey) => writeProfileLengthPreference(itemKey),
+    apply: (moduleState, itemKey) => applyProfileItemKey(moduleState, itemKey),
+    message: (item) => `Profil boyu: ${item?.name ?? ''}.`,
+  }),
+});
+
+function describeDimensionFields(context) {
+  if (context?.kind === 'floor') return context.fields;
+  if (context?.multiModuleIds?.length > 1) return null;
   const index = findContextModuleIndex(context);
-  if (index < 0) return;
-  const moduleState = currentModules[index];
+  const moduleState = index >= 0 ? currentModules[index] : null;
+  if (!moduleState) return null;
+  const locked = isModuleLocked(moduleState);
+  const sizeSpec = SIZE_FIELD_SPECS[moduleState.type];
+  if (sizeSpec) {
+    return {
+      key: moduleState.type,
+      title: sizeSpec.title,
+      note: sizeSpec.note,
+      disabled: locked,
+      fields: sizeSpec.fields.map((field) => ({
+        ...field,
+        value: field.name === 'opacity'
+          ? Math.min(1, Math.max(0, Number(moduleState.opacity ?? 1)))
+          : Math.round(Number(moduleState[field.name]) || 0),
+      })),
+    };
+  }
+  const choiceSpec = ITEM_SIZE_CHOICE_SPECS[moduleState.type];
+  if (choiceSpec) {
+    return {
+      key: moduleState.type,
+      title: choiceSpec.title,
+      disabled: locked,
+      fields: [
+        {
+          name: 'itemKey',
+          type: 'select',
+          label: 'Boy',
+          options: choiceSpec.list().map((item) => ({ value: item.itemKey, label: choiceSpec.label(item) })),
+          value: moduleState.itemKey,
+        },
+        { name: 'remember', type: 'checkbox', label: 'Bir daha sorma, aynı ölçüde getir', value: Boolean(choiceSpec.readPreference()) },
+      ],
+    };
+  }
+  if (!context.hasImage) return null;
+  const area = scene3d.describeImageSizeTarget(scene3d.resolveImageBlock(context.surfaceId));
+  if (!area.ok) return null;
+  return {
+    key: 'image',
+    title: 'Görsel ölçüsü',
+    note: `Seçili alan ${formatCm(area.areaWidthCm)} × ${formatCm(area.areaHeightCm)} cm. Yazarken önizlenir; Enter uygular, Esc vazgeçer.`,
+    fields: [
+      { name: 'widthCm', label: 'Genişlik (cm)', min: 1, max: 5000, step: 0.1, value: formatCm(area.currentWidthCm) },
+      { name: 'heightCm', label: 'Yükseklik (cm)', min: 1, max: 5000, step: 0.1, value: formatCm(area.currentHeightCm) },
+    ],
+  };
+}
+
+// Görsel ölçüsü: yazarken önizleme (kayda yazmaz), Enter / alandan çıkış tek geri alma adımıyla
+// uygular, Esc önizlemeyi bırakır.
+let imageSizeSession = null;
+function endImageSizeSession() {
+  imageSizeSession?.preview.cancel();
+  imageSizeSession = null;
+}
+
+function applyImageDimensionInput(context, values, phase) {
+  if (phase === 'cancel') {
+    endImageSizeSession();
+    return;
+  }
+  if (imageSizeSession && imageSizeSession.surfaceId !== context.surfaceId) endImageSizeSession();
+  if (!imageSizeSession) {
+    const block = scene3d.resolveImageBlock(context.surfaceId);
+    const area = scene3d.describeImageSizeTarget(block);
+    if (!area.ok) {
+      selectionInfo.textContent = area.message;
+      return;
+    }
+    designHistory.capture();
+    imageSizeSession = { surfaceId: context.surfaceId, preview: scene3d.beginImageSizePreview(block, area.assetId) };
+  }
+  const dimensions = { widthCm: Number(values.widthCm), heightCm: Number(values.heightCm) };
+  if (phase === 'input') {
+    imageSizeSession.preview.update(dimensions);
+    return;
+  }
+  const result = imageSizeSession.preview.commit(dimensions);
+  endImageSizeSession();
+  if (!result.ok) {
+    selectionInfo.textContent = result.message;
+    return;
+  }
+  designHistory.capture();
+  selectionInfo.textContent = describeSizeResult(result);
+}
+
+function applyDimensionInput(context, key, values, phase) {
+  if (key === 'floor' || key === 'floor-area') {
+    if (phase !== 'change') return;
+    const typeSelect = key === 'floor-area' ? floorAreaTypeSelect : floorTypeSelect;
+    if (!typeSelect || typeSelect.value === values.itemKey) return;
+    typeSelect.value = values.itemKey;
+    typeSelect.dispatchEvent(new Event('change'));
+    schedulePropertyPanelRefresh();
+    return;
+  }
+  if (key === 'image') {
+    applyImageDimensionInput(context, values, phase);
+    return;
+  }
+  if (phase === 'cancel') return;
+  const index = findContextModuleIndex(context);
+  const moduleState = index >= 0 ? currentModules[index] : null;
+  if (!moduleState || moduleState.type !== key) return;
   if (isModuleLocked(moduleState)) {
     renderWallResult(MODULE_LOCKED_MESSAGE, true);
-    scene3d.showPlacementFeedback(MODULE_LOCKED_MESSAGE, { durationMs: 2200 });
     return;
   }
-  if (moduleState?.type === 'tulle-fabric') {
-    const dimensions = await requestTulleFabricDimensions(moduleState.widthCm, moduleState.heightCm);
-    if (!dimensions) return;
-    moduleState.widthCm = dimensions.widthCm;
-    moduleState.heightCm = dimensions.heightCm;
+  const choiceSpec = ITEM_SIZE_CHOICE_SPECS[key];
+  if (choiceSpec) {
+    if (phase !== 'change') return;
+    // Çentik kalkarsa sonraki öğede yine sorulur.
+    choiceSpec.writePreference(values.remember ? values.itemKey : null);
+    if (values.itemKey === moduleState.itemKey) return;
+    if (!choiceSpec.apply(moduleState, values.itemKey)) return;
+    selectionInfo.textContent = choiceSpec.message(getItem(values.itemKey));
     rebuildWall({ resetView: false });
-    selectionInfo.textContent = `Modül ${index + 1} · Tül · ${moduleState.widthCm} × ${moduleState.heightCm} cm · Z ${moduleState.placement?.zCm ?? 0} cm.`;
     return;
   }
-  if (moduleState?.type === 'illuminated-foam') {
-    const dimensions = await requestIlluminatedFoamDimensions(moduleState.widthCm, moduleState.heightCm);
-    if (!dimensions) return;
-    moduleState.widthCm = dimensions.widthCm;
-    moduleState.heightCm = dimensions.heightCm;
-    rebuildWall({ resetView: false });
-    selectionInfo.textContent = `Modül ${index + 1} · Işıklı Strafor · ${moduleState.widthCm} × ${moduleState.heightCm} cm · ${moduleState.depthCm || 3.5} cm kalınlık · ışık ${moduleState.haloColor || '#ffffff'}.`;
-    return;
-  }
-  if (moduleState?.type === 'box-block') {
-    const dimensions = await requestBoxBlockDimensions({
-      widthCm: moduleState.widthCm,
-      depthCm: moduleState.depthCm,
-      heightCm: moduleState.heightCm,
-      opacity: moduleState.opacity,
-    });
-    if (!dimensions) return;
-    moduleState.widthCm = dimensions.widthCm;
-    moduleState.depthCm = dimensions.depthCm;
-    moduleState.heightCm = dimensions.heightCm;
-    moduleState.opacity = dimensions.opacity;
-    rebuildWall({ resetView: false });
-    selectionInfo.textContent = `Modül ${index + 1} · Kutu blok · ${moduleState.widthCm} × ${moduleState.depthCm} × ${moduleState.heightCm} cm · opacity ${moduleState.opacity}`;
-  }
+  const sizeSpec = SIZE_FIELD_SPECS[key];
+  if (!sizeSpec) return;
+  const changed = sizeSpec.fields.some((field) => Number(moduleState[field.name] ?? (field.name === 'opacity' ? 1 : 0)) !== Number(values[field.name]));
+  if (!changed) return;
+  sizeSpec.fields.forEach((field) => { moduleState[field.name] = Number(values[field.name]); });
+  rebuildWall({ resetView: false });
+  selectionInfo.textContent = key === 'box-block'
+    ? `Modül ${index + 1} · Kutu blok · ${moduleState.widthCm} × ${moduleState.depthCm} × ${moduleState.heightCm} cm · opacity ${moduleState.opacity}`
+    : `Modül ${index + 1} · ${key === 'tulle-fabric' ? 'Tül' : 'Işıklı Strafor'} · ${moduleState.widthCm} × ${moduleState.heightCm} cm.`;
 }
+
 const moduleContextMenu = createModuleContextMenu({
   onDelete: deleteContextModule,
-  onResize: resizeContextIlluminatedFoam,
-  onImageResize: resizeContextImage,
   onAdd: addCatalogModule,
   onGlassModeChange: changeContextPanelGlassMode,
   onMetalSeparatorModeChange: changeContextMetalSeparatorMode,
@@ -1498,10 +1615,6 @@ const moduleContextMenu = createModuleContextMenu({
   onShelfLightingChange: changeContextShelfLighting,
   getBackPanelState: getContextBackPanelState,
   onBackPanelChange: changeContextBackPanels,
-  getUprightHeightState: getContextUprightHeightState,
-  onUprightHeight: (context) => { void changeContextUprightHeight(context); },
-  getProfileLengthState: getContextProfileLengthState,
-  onProfileLength: (context) => { void changeContextProfileLength(context); },
   onLockChange: changeModuleLock,
   onRotate: (context) => scene3d.rotateModuleById(context.moduleId),
   onGroupAction: (action, context) => handleGroupAction(action, {
@@ -1510,6 +1623,23 @@ const moduleContextMenu = createModuleContextMenu({
     moduleIds: context?.multiModuleIds ?? null,
     addTarget: context?.groupOptions?.addTarget ?? null,
   }),
+  onAfterAction: () => schedulePropertyPanelRefresh(),
+  getDimensionFields: describeDimensionFields,
+  onDimensionInput: applyDimensionInput,
+  surfaceControls: surfaceEditControls
+    ? {
+      element: surfaceEditControls,
+      colorSection: document.querySelector('#surface-color-controls'),
+      imageSection: document.querySelector('#surface-image-controls'),
+      homeNote: document.querySelector('#surface-controls-moved'),
+    }
+    : null,
+  statusElement: selectionInfo,
+});
+propertyPanelReady = true;
+// Renk / görsel değişince panelin değer özeti güncellenir.
+['input', 'change', 'click'].forEach((type) => {
+  surfaceEditControls?.addEventListener(type, () => schedulePropertyPanelRefresh());
 });
 
 moduleGroupPanel = createModuleGroupPanel({
@@ -1605,7 +1735,7 @@ function describeModuleLockSelection(message, selectedModuleIds = []) {
   const lockedCount = selectedModuleIds.filter((id) => isModuleLocked(byId.get(id))).length;
   if (selectedModuleIds.length > 1) {
     return `${selectedModuleIds.length} öğe seçili${lockedCount ? ` · ${lockedCount} kilitli` : ''}. `
-      + 'Ctrl/Cmd+tık ile ekle/çıkar; Ctrl/Cmd+A ile tümünü seç; sağ tık ile toplu işlemler.';
+      + 'Ctrl/Cmd+tık ile ekle/çıkar; Ctrl/Cmd+A ile tümünü seç; toplu işlemler Özellikler panelinde.';
   }
   return lockedCount ? `${message} · Kilitli` : message;
 }
@@ -1638,35 +1768,119 @@ function changeModuleLock(moduleIds, locked) {
   return changed;
 }
 
-// Sağ tık bağlamına kilit bilgisi eklenir; toplu seçimdeki bir öğeye sağ tıklanırsa
-// menü bütün seçime uygulanır.
-function openModuleContextMenu(context) {
-  if (!context) {
-    moduleContextMenu.open(null);
-    return;
-  }
+// Panel bağlamı: sahnenin seçim bağlamına kilit, grup ve seçili yüzey özeti eklenir;
+// toplu seçimdeki bir öğeye sağ tıklanırsa panel bütün seçime uygulanır.
+function buildPropertyPanelContext(context) {
+  if (!context) return null;
   const byId = new Map(currentModules.map((module) => [module.id, module]));
   const selectedIds = scene3d.getSelectedModuleIds();
-  // Toplu seçim varken menü her zaman bütün seçime uygulanır (sağ tık komşu
+  const surfaceSummary = summarizeSelectedSurfaces(scene3d.getSelectedSurfaces());
+  // Toplu seçim varken panel her zaman bütün seçime uygulanır (sağ tık komşu
   // öğeye kaymış olsa bile); aksi halde "Grup oluştur" görünmüyordu.
   if (selectedIds.length > 1) {
-    moduleContextMenu.open({
+    const groups = new Set(selectedIds.map((id) => getModuleGroup(byId.get(id))?.id ?? null));
+    const [onlyGroupId] = groups;
+    const selectionGroup = groups.size === 1 && onlyGroupId
+      ? getModuleGroup(byId.get(selectedIds[0]))
+      : null;
+    return {
       ...context,
+      surfaceSummary,
       multiModuleIds: selectedIds,
       multiLockedCount: selectedIds.filter((id) => isModuleLocked(byId.get(id))).length,
       groupOptions: describeSelectionGroupOptions(selectedIds, byId),
-    });
-    return;
+      selectionGroupName: selectionGroup?.name ?? null,
+    };
   }
   const moduleState = byId.get(context.moduleId);
   const group = getModuleGroup(moduleState);
-  moduleContextMenu.open({
+  return {
     ...context,
+    surfaceSummary,
     locked: isModuleLocked(moduleState),
     ownLocked: moduleState?.locked === true,
     group: group
       ? { id: group.id, name: group.name, locked: group.locked === true, count: getGroupMembers(currentModules, group.id).length }
       : null,
+  };
+}
+
+function openModuleContextMenu(context) {
+  moduleContextMenu.open(buildPropertyPanelContext(context));
+}
+
+// Zemin seçiliyken panel "Zemin" başlığıyla yalnız renk gösterir (parke boyanmaz).
+function buildFloorPanelContext() {
+  const areaSelected = scene3d.isFloorAreaSelected();
+  if (!areaSelected && !scene3d.isFloorSelected()) return null;
+  const floorItem = getFloorItem(areaSelected ? currentStand?.floorArea?.itemKey : scene3d.getSelectedFloorType());
+  const paintable = !floorItem || floorItem.paintable !== false;
+  // Kaplama seçimi Stand Tipi'ndeki mevcut zemin listesidir (tek kaynak): panel o listeyi sürer.
+  const typeSelect = areaSelected ? floorAreaTypeSelect : floorTypeSelect;
+  return {
+    kind: 'floor',
+    fields: typeSelect
+      ? {
+        key: areaSelected ? 'floor-area' : 'floor',
+        title: 'Zemin kaplaması',
+        fields: [{
+          name: 'itemKey',
+          type: 'select',
+          label: 'Kaplama',
+          options: [...typeSelect.options].map((option) => ({ value: option.value, label: option.textContent })),
+          value: typeSelect.value,
+        }],
+      }
+      : null,
+    title: areaSelected ? 'Zemin alanı' : 'Zemin',
+    subtitle: [floorItem?.name, paintable ? '' : 'boyanmaz'].filter(Boolean).join(' · '),
+    surfaceSummary: {
+      count: 1,
+      moduleCount: 0,
+      support: { color: paintable ? 'all' : 'none', image: 'none', glass: 'none', lightbox: 'none', mesh: 'none' },
+      color: null,
+      imageAssetId: null,
+    },
+  };
+}
+
+// Açık / açılacak panelin güncel bağlamı: öğe / yüzey, yoksa zemin, yoksa seçim yok.
+function currentPropertyPanelContext() {
+  const context = scene3d.getSelectionContext();
+  return context ? buildPropertyPanelContext(context) : buildFloorPanelContext();
+}
+
+// Sahnede öğeye / yüzeye tek tık (veya dokunma) Özellikler panelini açar; boş alana tık
+// paneli kapatır. Sürükleme, kamera hareketi, sağ tık ve kopya yerleştirme paneli açmaz.
+const PANEL_CLICK_MOVE_PX = 6;
+let panelClickStart = null;
+// Kumaş taşıma kilidi ve çoklu seçim tuvalde yayılımı durdursa da tıklamayı yakala.
+viewport.addEventListener('pointerdown', (event) => {
+  panelClickStart = event.button === 0 && event.isPrimary && !moduleDragSidebar?.isPlacementArmed()
+    ? { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY }
+    : null;
+}, { capture: true });
+window.addEventListener('pointerup', (event) => {
+  const start = panelClickStart;
+  panelClickStart = null;
+  if (!start || start.pointerId !== event.pointerId || !currentStand) return;
+  if (Math.hypot(event.clientX - start.clientX, event.clientY - start.clientY) > PANEL_CLICK_MOVE_PX) return;
+  // Sahnenin kendi pointerup seçimi bittikten sonra güncel seçim okunur.
+  queueMicrotask(() => {
+    const context = currentPropertyPanelContext();
+    if (context) moduleContextMenu.open(context);
+    else moduleContextMenu.close();
+  });
+});
+
+// Açık panel seçim, işlem, geri al / ileri al ve sahne kurulumundan sonra güncel seçimle
+// yeniden çizilir. Aynı turdaki çağrılar tek çizimde birleşir; kapalı panel için iş yapılmaz.
+function schedulePropertyPanelRefresh() {
+  if (!propertyPanelReady || propertyPanelRefreshQueued || !moduleContextMenu.isOpen()) return;
+  propertyPanelRefreshQueued = true;
+  queueMicrotask(() => {
+    propertyPanelRefreshQueued = false;
+    moduleContextMenu.refresh(currentPropertyPanelContext());
   });
 }
 
@@ -2823,6 +3037,7 @@ function syncSceneToModules({ rebuiltIds = null } = {}) {
   renderModuleGroupPanel();
   renderCurrentWallResult();
   if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  schedulePropertyPanelRefresh();
 }
 
 // Modülleri yerinde değiştiren işlemler (grup işlemleri, şeride araya ekleme) için: işlemden
@@ -2867,6 +3082,7 @@ function runDesignHistory(direction) {
       ? 'İleri alındı.'
       : 'İleri alınacak adım yok.';
   }
+  schedulePropertyPanelRefresh();
   return done;
 }
 
@@ -3044,8 +3260,8 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     currentModules = [];
     selectedStandType = null;
     standTypeButtons.forEach((button) => button.setAttribute('aria-pressed', 'false'));
-    standSizeXInput.value = '';
-    standSizeYInput.value = '';
+    standSizeXInput.value = DEFAULT_STAND_WIDTH_M;
+    standSizeYInput.value = DEFAULT_STAND_DEPTH_M;
     setStandEditingEnabled(false);
     productionBomPanel.close();
     updateStageCreateState();
@@ -3162,8 +3378,8 @@ function resetToFirstOpenState() {
   selectedStandType = null;
   selectedFoamModuleId = null;
   standTypeButtons.forEach((button) => button.setAttribute('aria-pressed', 'false'));
-  standSizeXInput.value = '';
-  standSizeYInput.value = '';
+  standSizeXInput.value = DEFAULT_STAND_WIDTH_M;
+  standSizeYInput.value = DEFAULT_STAND_DEPTH_M;
   if (autoDepotSizeSelect) autoDepotSizeSelect.value = '';
   syncAutoDepotControls();
   if (autoFasciaRowsSelect) autoFasciaRowsSelect.value = '';
@@ -3210,9 +3426,6 @@ function openAssetContextMenu(assetId, clientX, clientY) {
 
   assetContextAssetId = assetId;
   assetContextMenu.querySelector('.module-context-title').textContent = `Görsel · ${asset.name}`;
-  const foamAction = assetContextMenu.querySelector('[data-asset-action="illuminated-foam"]');
-  const isSvg = asset.type === 'image/svg+xml' || /\.svg$/i.test(asset.name || '');
-  if (foamAction) foamAction.hidden = !isSvg;
   assetContextMenu.hidden = false;
 
   const margin = 8;
@@ -3364,21 +3577,6 @@ function renderAssetLibrary() {
     });
 }
 
-let illuminatedFoamAssetDragCleanup = null;
-
-function getSvgAspectRatioFromText(svgText) {
-  const documentNode = new DOMParser().parseFromString(svgText, 'image/svg+xml');
-  if (documentNode.querySelector('parsererror')) return 4;
-  const svg = documentNode.documentElement;
-  const viewBox = (svg.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
-  if (viewBox.length === 4 && viewBox.every(Number.isFinite) && viewBox[2] > 0 && viewBox[3] > 0) {
-    return viewBox[2] / viewBox[3];
-  }
-  const width = Number.parseFloat(svg.getAttribute('width'));
-  const height = Number.parseFloat(svg.getAttribute('height'));
-  return width > 0 && height > 0 ? width / height : 4;
-}
-
 function formatCm(value) {
   const rounded = Math.round(Number(value) * 10) / 10;
   if (!Number.isFinite(rounded)) return '';
@@ -3402,135 +3600,6 @@ function describeSizeResult(result) {
     return `Görsel ${sizeLabel}. ${areaLabel} alandan taşıyor.`;
   }
   return `Görsel seçili alana ${sizeLabel} olarak oturdu.`;
-}
-
-function requestImageAreaDimensions(area, onPreview = () => {}) {
-  const areaWidth = formatCm(area.areaWidthCm);
-  const areaHeight = formatCm(area.areaHeightCm);
-  const widthValue = formatCm(area.currentWidthCm);
-  const heightValue = formatCm(area.currentHeightCm);
-  return new Promise((resolve) => {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:12000;pointer-events:none';
-    overlay.setAttribute('role', 'presentation');
-    const form = document.createElement('form');
-    form.setAttribute('role', 'dialog');
-    form.setAttribute('aria-modal', 'false');
-    form.setAttribute('aria-labelledby', 'image-area-size-title');
-    form.style.cssText = 'position:absolute;pointer-events:auto;width:min(280px,calc(100vw - 24px));box-sizing:border-box;max-height:calc(100dvh - 24px);overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:12px;box-shadow:0 20px 60px rgba(15,23,42,.28);display:grid;gap:10px;font:500 12px/1.35 Inter,ui-sans-serif,system-ui,sans-serif;color:#16161a';
-    form.innerHTML = [
-      '<div style="display:flex;align-items:center;gap:8px"><div data-image-size-handle tabindex="0" role="button" aria-label="Ölçü panelini taşı" title="Sürükle veya ok tuşlarıyla taşı" style="flex:1;cursor:grab;touch-action:none"><strong id="image-area-size-title" style="font-size:14px">Görsel ölçüsü</strong><span aria-hidden="true" style="margin-left:6px;color:#64748b">⠿</span></div><button type="button" data-cancel aria-label="Ölçülendirmeyi iptal et ve kapat" style="padding:2px 8px">×</button></div>',
-      `<span style="color:#64748b">Seçili alan ${areaWidth} × ${areaHeight} cm. Ölçüleri değiştirerek önizle. Kamerayı kullanabilir, kartı başlığından taşıyabilirsin.</span>`,
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">',
-      `<label style="display:grid;gap:5px">Genişlik (cm)<input name="width" type="number" min="1" max="5000" step="0.1" value="${widthValue}" required style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px"></label>`,
-      `<label style="display:grid;gap:5px">Yükseklik (cm)<input name="height" type="number" min="1" max="5000" step="0.1" value="${heightValue}" required style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px"></label>`,
-      '</div>',
-      '<div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" data-cancel>İptal</button><button type="submit" class="primary">Uygula</button></div>',
-    ].join('');
-    overlay.appendChild(form);
-    document.body.appendChild(overlay);
-    const handle = form.querySelector('[data-image-size-handle]');
-    let position = { x: 0, y: 0 };
-    const place = (x, y) => {
-      position = {
-        x: Math.max(12, Math.min(x, window.innerWidth - form.offsetWidth - 12)),
-        y: Math.max(12, Math.min(y, window.innerHeight - form.offsetHeight - 12)),
-      };
-      form.style.left = `${position.x}px`;
-      form.style.top = `${position.y}px`;
-    };
-    place(window.innerWidth - form.offsetWidth - 16,
-      window.innerWidth <= 600 ? window.innerHeight - form.offsetHeight - 12 : 96);
-    const onResize = () => place(position.x, position.y);
-    window.addEventListener('resize', onResize);
-    let drag = null;
-    handle.addEventListener('pointerdown', event => {
-      if (event.button !== 0) return;
-      drag = { pointerId: event.pointerId, pointerX: event.clientX, pointerY: event.clientY, ...position };
-      handle.setPointerCapture(event.pointerId);
-      event.preventDefault();
-    });
-    handle.addEventListener('pointermove', event => {
-      if (!drag || event.pointerId !== drag.pointerId) return;
-      place(drag.x + event.clientX - drag.pointerX, drag.y + event.clientY - drag.pointerY);
-    });
-    const endDrag = () => { drag = null; };
-    handle.addEventListener('pointerup', endDrag);
-    handle.addEventListener('pointercancel', endDrag);
-    handle.addEventListener('lostpointercapture', endDrag);
-    handle.addEventListener('keydown', event => {
-      const offsets = { ArrowLeft: [-10, 0], ArrowRight: [10, 0], ArrowUp: [0, -10], ArrowDown: [0, 10] };
-      if (!offsets[event.key]) return;
-      event.preventDefault();
-      event.stopPropagation();
-      const [dx, dy] = offsets[event.key];
-      place(position.x + dx, position.y + dy);
-    });
-    let previewTimer = null;
-    form.addEventListener('input', () => {
-      clearTimeout(previewTimer);
-      previewTimer = setTimeout(() => {
-        if (!form.checkValidity()) return;
-        onPreview({ widthCm: Number(form.elements.width.value), heightCm: Number(form.elements.height.value) });
-      }, 80);
-    });
-    const onKeyDown = (event) => {
-      if (event.key !== 'Escape') {
-        if (!form.contains(event.target)) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          if (event.key === 'Tab') form.querySelector('input[name="width"]')?.focus();
-        }
-        return;
-      }
-      event.preventDefault();
-      finish(null);
-    };
-    const finish = (value) => {
-      clearTimeout(previewTimer);
-      document.removeEventListener('keydown', onKeyDown, true);
-      window.removeEventListener('resize', onResize);
-      overlay.remove();
-      resolve(value);
-    };
-    form.querySelectorAll('[data-cancel]').forEach(button => button.addEventListener('click', () => finish(null)));
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const data = new FormData(form);
-      const widthCm = Number(data.get('width'));
-      const heightCm = Number(data.get('height'));
-      if (!(widthCm >= 1 && widthCm <= 5000 && heightCm >= 1 && heightCm <= 5000)) return;
-      finish({ widthCm, heightCm });
-    });
-    document.addEventListener('keydown', onKeyDown, true);
-    form.querySelector('input[name="width"]')?.focus();
-    form.querySelector('input[name="width"]')?.select();
-  });
-}
-
-async function resizeContextImage(context) {
-  const block = scene3d.resolveImageBlock(context?.surfaceId);
-  const area = scene3d.describeImageSizeTarget(block);
-  if (!area.ok) {
-    selectionInfo.textContent = area.message;
-    return;
-  }
-  designHistory.capture();
-  const preview = scene3d.beginImageSizePreview(block, area.assetId);
-  let result;
-  try {
-    const dimensions = await requestImageAreaDimensions(area, values => preview.update(values));
-    if (!dimensions) return;
-    result = preview.commit(dimensions);
-  } finally {
-    preview.cancel();
-  }
-  if (result.ok) designHistory.capture();
-  if (!result.ok) {
-    selectionInfo.textContent = result.message;
-    return;
-  }
-  selectionInfo.textContent = describeSizeResult(result);
 }
 
 function requestTulleFabricDimensions(defaultWidthCm, defaultHeightCm) {
@@ -3566,46 +3635,6 @@ function requestTulleFabricDimensions(defaultWidthCm, defaultHeightCm) {
       const widthCm = Number(data.get('width'));
       const heightCm = Number(data.get('height'));
       if (!(widthCm >= 1 && widthCm <= 5000 && heightCm >= 1 && heightCm <= 5000)) return;
-      finish({ widthCm, heightCm });
-    });
-    document.addEventListener('keydown', onKeyDown, true);
-    form.querySelector('input[name="width"]')?.focus();
-  });
-}
-
-function requestIlluminatedFoamDimensions(defaultWidthCm, defaultHeightCm) {
-  return new Promise((resolve) => {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:12000;background:rgba(15,23,42,.48);display:grid;place-items:center;padding:20px';
-    overlay.setAttribute('role', 'presentation');
-    const form = document.createElement('form');
-    form.setAttribute('role', 'dialog');
-    form.setAttribute('aria-modal', 'true');
-    form.setAttribute('aria-labelledby', 'foam-size-title');
-    form.style.cssText = 'width:min(360px,100%);background:#fff;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(15,23,42,.28);display:grid;gap:12px;font:500 13px/1.35 Inter,ui-sans-serif,system-ui,sans-serif;color:#16161a';
-    form.innerHTML = '<strong id="foam-size-title" style="font-size:16px">Işıklı Strafor Ölçüsü</strong><span style="color:#64748b">Gerçek dış ölçüyü cm olarak gir.</span><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label style="display:grid;gap:5px">X · Genişlik (cm)<input name="width" type="number" min="10" max="5000" step="1" value="'+Math.round(defaultWidthCm)+'" required style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px"></label><label style="display:grid;gap:5px">Y · Yükseklik (cm)<input name="height" type="number" min="5" max="350" step="1" value="'+Math.round(defaultHeightCm)+'" required style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px"></label></div><span style="color:#64748b">Gövde: 3,5 cm · Duvar boşluğu: 1,5 cm</span><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" data-cancel>İptal</button><button type="submit" class="primary">Yerleştir</button></div>';
-    overlay.appendChild(form);
-    document.body.appendChild(overlay);
-    const onKeyDown = (event) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      finish(null);
-    };
-    const finish = (value) => {
-      document.removeEventListener('keydown', onKeyDown, true);
-      overlay.remove();
-      resolve(value);
-    };
-    form.querySelector('[data-cancel]').addEventListener('click', () => finish(null));
-    overlay.addEventListener('pointerdown', (event) => {
-      if (event.target === overlay) finish(null);
-    });
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const data = new FormData(form);
-      const widthCm = Number(data.get('width'));
-      const heightCm = Number(data.get('height'));
-      if (!(widthCm >= 10 && widthCm <= 5000 && heightCm >= 5 && heightCm <= 350)) return;
       finish({ widthCm, heightCm });
     });
     document.addEventListener('keydown', onKeyDown, true);
@@ -3674,67 +3703,6 @@ function requestBoxBlockDimensions({
   });
 }
 
-async function beginIlluminatedFoamAssetDrag(assetId) {
-  const asset = imageAssets.get(assetId);
-  if (!asset) return false;
-  const isSvg = asset.type === 'image/svg+xml' || /\.svg$/i.test(asset.name || '');
-  if (!isSvg) {
-    assetStatus.textContent = 'Işıklı Strafor için SVG görsel kullan.';
-    return false;
-  }
-  if (!currentStand) {
-    assetStatus.textContent = 'Önce stand sahnesini oluştur.';
-    return false;
-  }
-
-  if (illuminatedFoamAssetDragCleanup) illuminatedFoamAssetDragCleanup();
-
-  const svgText = await asset.blob.text();
-  const aspect=Math.max(0.1,getSvgAspectRatioFromText(svgText));
-  const defaultWidthCm=200;
-  const defaultHeightCm=Math.max(10,defaultWidthCm/aspect);
-  const dimensions=await requestIlluminatedFoamDimensions(defaultWidthCm,defaultHeightCm);
-  if(!dimensions){ assetStatus.textContent='Işıklı Strafor oluşturma iptal edildi.'; return false; }
-  const moduleState=createModuleStateFromDescriptor({type:'illuminated-foam',widthCm:dimensions.widthCm,heightCm:dimensions.heightCm,haloColor:'#ffffff'},{imageAssetId:asset.id});
-  let lastPreview = null;
-
-  const onPointerMove = (event) => {
-    lastPreview = scene3d.previewCatalogModuleDrag(moduleState, event.clientX, event.clientY, 0, false);
-  };
-  const cleanup = () => {
-    document.removeEventListener('pointermove', onPointerMove, true);
-    document.removeEventListener('pointerup', onPointerUp, true);
-    document.removeEventListener('keydown', onKeyDown, true);
-    scene3d.clearCatalogModuleDrag();
-    illuminatedFoamAssetDragCleanup = null;
-  };
-  const onPointerUp = (event) => {
-    const result = scene3d.dropCatalogModuleDrag(moduleState, event.clientX, event.clientY, 0, false);
-    if (!result.ok || !result.placement) {
-      assetStatus.textContent = result.message || 'Işıklı Strafor bu konuma bırakılamadı.';
-      return;
-    }
-    moduleState.placement = { ...result.placement };
-    currentModules.push(moduleState);
-    cleanup();
-    appendModuleToScene(moduleState);
-    assetStatus.textContent=`Işıklı Strafor sahneye eklendi · ${moduleState.widthCm} × ${moduleState.heightCm} cm · 3,5 cm kalınlık · 1,5 cm ışık boşluğu.`;
-  };
-  const onKeyDown = (event) => {
-    if (event.key !== 'Escape') return;
-    event.preventDefault();
-    cleanup();
-    assetStatus.textContent = 'Işıklı Strafor yerleştirme iptal edildi.';
-  };
-
-  document.addEventListener('pointermove', onPointerMove, true);
-  document.addEventListener('pointerup', onPointerUp, true);
-  document.addEventListener('keydown', onKeyDown, true);
-  illuminatedFoamAssetDragCleanup = cleanup;
-  assetStatus.textContent = 'Işıklı Strafor hazır · mouse ile duvara götür ve tıkla.';
-  return Boolean(lastPreview) || true;
-}
-
 foamLightColorInput?.addEventListener('input',()=>{
   if(!selectedFoamModuleId) return;
   const moduleState=currentModules.find((module)=>module.id===selectedFoamModuleId);
@@ -3744,12 +3712,6 @@ foamLightColorInput?.addEventListener('input',()=>{
   scene3d.setIlluminatedFoamHaloColor?.(moduleState.id,color);
   const moduleIndex=currentModules.indexOf(moduleState);
   selectionInfo.textContent=`Modül ${moduleIndex+1} · Işıklı Strafor · ${moduleState.widthCm} × ${moduleState.heightCm} cm · ${moduleState.depthCm||3.5} cm kalınlık · ışık ${color}.`;
-});
-
-assetContextMenu.querySelector('[data-asset-action="illuminated-foam"]').addEventListener('click', () => {
-  const assetId = assetContextAssetId;
-  closeAssetContextMenu();
-  if (assetId) void beginIlluminatedFoamAssetDrag(assetId);
 });
 
 assetContextMenu.querySelector('[data-asset-action="delete"]').addEventListener('click', () => {
@@ -3801,13 +3763,16 @@ function onSceneSelectionKeyDown(event) {
   if (event.defaultPrevented || event.repeat || !currentStand || isEditableKeyboardTarget(event.target)) return;
   const target = event.target;
   if (target !== document.body && !viewport.contains(target)
-    && !target?.closest?.('.selection-toolbar, .module-context-menu')) return;
+    && !target?.closest?.('.selection-toolbar, .module-context-menu, .selection-property-panel')) return;
   const shortcut = resolveViewKeyboardShortcut(event);
   if (shortcut?.type === 'select-all') {
     event.preventDefault();
     event.stopImmediatePropagation();
-    moduleContextMenu.close();
     scene3d.selectModulesById(currentModules.map((moduleState) => moduleState.id));
+    // Tümü seçilince toplu işlemler Özellikler panelinde açılır.
+    const context = scene3d.getSelectionContext();
+    if (context) openModuleContextMenu(context);
+    else moduleContextMenu.close();
   } else if (String(event.key).toLowerCase() === 'delete' && !event.ctrlKey && !event.metaKey && !event.altKey) {
     const ids = scene3d.getSelectedModuleIds();
     if (ids.length <= 1) return;
@@ -3845,6 +3810,29 @@ async function initializeAssetLibrary() {
   }
 }
 
+// Işıklı Strafor: panelin görsel bölümünden seçilen SVG straforun logosu olur (yalnız SVG).
+function selectedIlluminatedFoamModules(selected) {
+  if (!selected.length || !selected.every((surface) => surface.userData.moduleType === 'illuminated-foam')) return null;
+  const ids = new Set(selected.map((surface) => surface.userData.moduleId));
+  return currentModules.filter((moduleState) => ids.has(moduleState.id));
+}
+
+function setIlluminatedFoamLogo(modules, assetId) {
+  if (assetId) {
+    const asset = imageAssets.get(assetId);
+    const isSvg = asset?.type === 'image/svg+xml' || /\.svg$/i.test(asset?.name || '');
+    if (!isSvg) {
+      selectionInfo.textContent = 'Işıklı Strafor logosu için SVG görsel kullan.';
+      return false;
+    }
+  }
+  modules.forEach((moduleState) => { moduleState.imageAssetId = assetId ?? null; });
+  syncSceneToModules({ rebuiltIds: new Set(modules.map((moduleState) => moduleState.id)) });
+  modules.forEach((moduleState) => scene3d.selectModuleSurface(moduleState.id));
+  selectionInfo.textContent = assetId ? 'Işıklı Strafor logosu uygulandı.' : 'Işıklı Strafor logosu kaldırıldı.';
+  return true;
+}
+
 function applyActiveImageToSelection(fit = 'cover') {
   const selected = scene3d.getSelectedSurfaces();
   if (!selected.length) {
@@ -3855,6 +3843,8 @@ function applyActiveImageToSelection(fit = 'cover') {
     assetStatus.textContent = 'Önce arşivden bir görsel seç veya yeni görsel yükle.';
     return false;
   }
+  const foamModules = selectedIlluminatedFoamModules(selected);
+  if (foamModules) return setIlluminatedFoamLogo(foamModules, activeAssetId);
 
   const allCounterPanels = selected.every(
     (surface) => surface.userData.moduleType === 'counter',
@@ -4358,6 +4348,11 @@ clearTextureButton.addEventListener('click', () => {
   const selected = scene3d.getSelectedSurfaces();
   if (!selected.length) {
     selectionInfo.textContent = 'Önce bir panel veya panel bloğu seç.';
+    return;
+  }
+  const foamModules = selectedIlluminatedFoamModules(selected);
+  if (foamModules) {
+    setIlluminatedFoamLogo(foamModules, null);
     return;
   }
   scene3d.clearImage(selected);

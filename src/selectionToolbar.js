@@ -1,6 +1,7 @@
 import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument.js';
 
-// Seçili modülün üstünde küçük işlem çubuğu: Döndür / Kopyala / Sil / Çoklu panel|modül / ⋯ (sağ tık menüsü).
+// Seçili modülün üstünde küçük işlem çubuğu: Döndür / Kopyala / Sil / Çoklu panel|modül. Diğer işlemler
+// öğeye tıklayınca açılan Özellikler panelindedir.
 // Sahnede tek öğe mavi, grup/çoklu seçim ortak turuncu kesik sınırla gösterilir.
 // Fare ve dokunmatikte aynı çalışır; tablette sağ tık yerine geçer. Konumu sahne bildirir
 // (seçili modülün tepe ortası, ekran pikseli); seçim yoksa veya sürüklenirken gizlenir.
@@ -13,7 +14,8 @@ function ensureStyles(document) {
   style.id = STYLE_ID;
   style.textContent = `
     .selection-toolbar { position: fixed; z-index: 900; display: flex; gap: 4px; padding: 4px;
-      border: 1px solid rgba(148, 163, 184, 0.62); border-radius: 12px; background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(148, 163, 184, 0.4); border-radius: 12px; background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(6px);
       box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16); user-select: none; touch-action: manipulation; }
     .selection-toolbar[hidden] { display: none; }
     .selection-toolbar button { min-width: 40px; min-height: 40px; padding: 0 10px; border: 0; border-radius: 9px;
@@ -32,7 +34,7 @@ function ensureStyles(document) {
   document.head.appendChild(style);
 }
 
-export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore, onMultiSelectChange } = {}) {
+export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMultiSelectChange } = {}) {
   const document = getFairStandHostDocument();
   const window = getFairStandHostWindow();
   if (!document?.body) return { update() {}, element: null };
@@ -48,7 +50,6 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
     <button type="button" data-selection-action="duplicate" aria-pressed="false" title="Hafızaya al; sahnede dokunduğun her yere bir kopya bırakır (Ctrl+C)">⧉ Kopyala</button>
     <button type="button" data-selection-action="delete" title="Sil">Sil</button>
     <button type="button" data-selection-action="multi" data-kind="module" aria-pressed="false">Çoklu modül</button>
-    <button type="button" data-selection-action="more" title="Diğer işlemler" aria-label="Diğer işlemler">⋯</button>
   `;
   document.body.appendChild(bar);
 
@@ -59,11 +60,10 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
     rotate: onRotate,
     duplicate: onDuplicate,
     delete: onDelete,
-    more: onMore,
     multi: () => setMultiSelect(multiSelect ? false : (anchor?.kind === 'panel' ? 'panel' : 'module')),
   };
   const singleOnly = [...bar.querySelectorAll('[data-selection-action]')]
-    .filter((button) => !['more', 'multi', 'delete'].includes(button.dataset.selectionAction));
+    .filter((button) => !['multi', 'delete'].includes(button.dataset.selectionAction));
   let anchor = null;
   // false | 'panel' (tek seferlik parmak taraması) | 'module' (dokunduğun modülü ekle/çıkar).
   let multiSelect = false;
@@ -121,7 +121,7 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
       if (!anchor) return;
     } else {
       allButtons.forEach((button) => { button.hidden = false; });
-      // Toplu seçimde silme, ⋯ (toplu menü) ve çoklu modül kullanılabilir.
+      // Toplu seçimde silme ve çoklu modül kullanılabilir; toplu işlemler Özellikler panelindedir.
       singleOnly.forEach((button) => { button.hidden = anchor.count > 1; });
       syncMultiButton();
       bar.hidden = false;
@@ -129,7 +129,10 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMore
     const margin = 8;
     const width = bar.offsetWidth || 260;
     const height = bar.offsetHeight || 48;
-    const left = Math.min(Math.max(margin, anchor.clientX - width / 2), (window?.innerWidth ?? 1024) - width - margin);
+    // Açık Özellikler paneli sağ sınırdır; çubuk panelin üstüne binmez.
+    const propertyPanel = document.querySelector('.selection-property-panel:not([hidden])');
+    const rightEdge = propertyPanel ? propertyPanel.getBoundingClientRect().left : (window?.innerWidth ?? 1024);
+    const left = Math.min(Math.max(margin, anchor.clientX - width / 2), rightEdge - width - margin);
     let top = Math.max(margin, anchor.clientY - height - 14);
     // Üst bant daralsa da seçim işlemleri Kaydet ve diğer ana işlemleri örtmesin.
     const viewportToolbar = document.querySelector('#viewport-toolbar');

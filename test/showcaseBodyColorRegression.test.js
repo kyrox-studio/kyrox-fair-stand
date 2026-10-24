@@ -8,6 +8,8 @@ import {
   duplicateModuleState,
 } from '../src/designState.js';
 import { describeSurfaceSelection } from '../src/selectionFeedback.js';
+import { getShowcaseBodyDefinition } from '../src/items.js';
+import { getItemSurfaceCapabilities } from '../src/itemCapabilities.js';
 
 const CASES = [
   { type: 'showcase-2', itemKey: 'wall_showcase_100_2_350', eyeCount: 2 },
@@ -22,6 +24,10 @@ test('wall showcase body stays one grouped user-assignable color surface', () =>
     assert.equal(state.eyeCount, expected.eyeCount);
     assert.equal(state.bodySurface.color, '#ffffff');
     assert.equal(state.bodySurfaces, undefined);
+    const body = getShowcaseBodyDefinition(expected.itemKey);
+    assert.equal(getItemSurfaceCapabilities(body.sideItem).color, true);
+    assert.equal(getItemSurfaceCapabilities(body.horizontalItem).color, true);
+    assert.equal(getItemSurfaceCapabilities(body.sideItem).image, false);
 
     applyColorOverride(state.bodySurface, '#336699');
     assert.equal(state.bodySurface.color, '#336699');

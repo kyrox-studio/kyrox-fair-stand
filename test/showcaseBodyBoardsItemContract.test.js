@@ -11,8 +11,8 @@ const CASES = Object.freeze([
   Object.freeze({ itemKey: 'showcase_horizontal_87_4_30', widthCm: 87.4 }),
 ]);
 
-const NO_INDIVIDUAL_SURFACE_CAPABILITIES = Object.freeze({
-  color: false,
+const GROUPED_BODY_SURFACE_CAPABILITIES = Object.freeze({
+  color: true,
   image: false,
   glass: false,
   lightbox: false,
@@ -49,11 +49,11 @@ test('showcase body boards resolve directly as leaf BOM Items', () => {
   }
 });
 
-test('showcase body boards are not individually surface-editable', () => {
+test('showcase body boards support grouped body color without image or cover capabilities', () => {
   for (const expected of CASES) {
     assert.deepEqual(
       getItemSurfaceCapabilities(expected.itemKey),
-      NO_INDIVIDUAL_SURFACE_CAPABILITIES,
+      GROUPED_BODY_SURFACE_CAPABILITIES,
       expected.itemKey,
     );
   }

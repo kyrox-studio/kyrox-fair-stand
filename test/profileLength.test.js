@@ -88,12 +88,13 @@ test('"Bir daha sorma" tercihi yalnız profil Item’ı kabul eder', () => {
   assert.doesNotThrow(() => writeProfileLengthPreference('profile_91', throwing));
 });
 
-test('profil bırakılırken boy sorulur; sağ tık "Profil boyu…" aynı pencereyi açar', () => {
+test('profil bırakılırken boy sorulur; Özellikler panelinde profil boyu alanı boyu ve tercihi değiştirir', () => {
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   const menu = readFileSync(new URL('../src/moduleContextMenu.js', import.meta.url), 'utf8');
   assert.match(main, /if \(moduleState\?\.type === 'profile'\) \{[\s\S]*readProfileLengthPreference\(\)[\s\S]*requestProfileLength\(\{ selectedItemKey: moduleState\.itemKey \}\)[\s\S]*if \(choice\.remember\) writeProfileLengthPreference\(itemKey\);/);
   assert.match(main, /const commitKey = moduleState\?\.type === 'upright' \|\| moduleState\?\.type === 'profile'\s+\|\| isCatalogWidthFamilyDescriptor\(moduleState\) \? moduleState\.itemKey : catalogKey;/);
-  assert.match(main, /writeProfileLengthPreference\(choice\.remember \? choice\.itemKey : null\);/);
-  assert.match(menu, /data-module-action="profile-length" hidden>Profil boyu…<\/button>/);
-  assert.match(menu, /profileLengthButton\.hidden = \(getProfileLengthState\?\.\(context\) \?\? null\) == null;/);
+  // Panel alanı: boy listesi + "Bir daha sorma"; çentik kalkınca tercih silinir.
+  assert.match(main, /profile: Object\.freeze\(\{\r?\n {4}title: 'Profil boyu',\r?\n {4}list: \(\) => listProfileLengthItems\(\),/);
+  assert.match(main, /choiceSpec\.writePreference\(values\.remember \? values\.itemKey : null\);/);
+  assert.doesNotMatch(menu, /data-module-action="profile-length"/);
 });

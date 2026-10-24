@@ -18,6 +18,13 @@ export const TABLE_GLASS_APPEARANCE = Object.freeze({
 // transmission malzemesi bile sahneyi her karede ikinci kez çizdirir.
 export const TABLE_GLASS_RENDER_TRANSMISSION = 0.32;
 
+// Masa ayağı / tabanı ve orta sehpa gövdesi: açık alüminyum görünümü (siyah değil).
+export const FURNITURE_ALUMINIUM_APPEARANCE = Object.freeze({
+  color: 0xc9cdd2,
+  roughness: 0.32,
+  metalness: 0.85,
+});
+
 export const PANEL_GLASS_BACKING_APPEARANCE = Object.freeze({
   color: 0xc9dce1,
   opacity: 0.18,

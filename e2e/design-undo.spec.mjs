@@ -156,13 +156,13 @@ test('metin kutusundaki Ctrl+Z tasarımı geri almaz', async ({ page }) => {
   const placed = await saveAndReadProject(page);
   const fridge = placed.modules.find((moduleState) => moduleState.itemKey === FRIDGE.key);
 
-  await page.locator('#color-hex').evaluate((input) => {
-    const details = input.closest('details');
-    if (details) details.open = true;
-  });
-  const hex = page.locator('#color-hex');
-  await hex.click();
+  // Yetenek bağımsız metin alanı: buzdolabının renk alanı olmak zorunda değildir.
+  await page.locator('#rename-project').click();
+  const name = page.locator('form input[name="projectName"]');
+  await expect(name).toBeVisible();
+  await name.fill('Metin düzenlemesi');
   await page.keyboard.press('Control+z');
+  await page.getByRole('button', { name: 'İptal', exact: true }).click();
   const after = await saveAndReadProject(page);
   expect(findModule(after, fridge.id)).toBeTruthy();
   expect(pageErrors).toEqual([]);

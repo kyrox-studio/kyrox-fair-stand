@@ -1,7 +1,7 @@
 // Dikme boyu seçimi: katalogdaki tek dikme kartı bırakılırken boy sorulur. Varsayılan seçili
 // duvar yüksekliğinin dikmesidir (gerçek boy = duvar × 0,99). "Bir daha sorma" işaretlenirse
-// seçilen boy bu tarayıcıda hatırlanır ve sonraki dikmeler sormadan o boyda gelir; sağ tık
-// "Dikme yüksekliği…" aynı pencereyi açar, çentik oradan kaldırılınca yeniden sorulur.
+// seçilen boy bu tarayıcıda hatırlanır ve sonraki dikmeler sormadan o boyda gelir; Özellikler
+// panelindeki dikme boyu alanı boyu değiştirir, çentik oradan kaldırılınca yeniden sorulur.
 import { listRegisteredItems } from './items.js';
 import { readItemSizePreference, requestItemSizeChoice, writeItemSizePreference } from './itemSizeDialog.js';
 
@@ -31,7 +31,7 @@ export function writeUprightHeightPreference(itemKey, storage) {
   writeItemSizePreference(UPRIGHT_HEIGHT_PREFERENCE_KEY, itemKey, storage);
 }
 
-function formatUprightLabel(item) {
+export function formatUprightLabel(item) {
   const heightCm = Number(item.dimensions.heightCm);
   const wallCm = Math.round(heightCm / UPRIGHT_REAL_HEIGHT_RATIO);
   return `${String(heightCm).replace('.', ',')} cm (${wallCm} cm duvar)`;

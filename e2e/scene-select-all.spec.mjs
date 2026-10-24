@@ -39,8 +39,8 @@ async function selectAll(page, count) {
   await expect(page.locator('#selection-info')).toContainText(`${count} öğe seçili`);
 }
 
+// Ctrl/Cmd+A sonrası Özellikler paneli açılır; ⋯ düğmesi yoktur.
 async function menu(page) {
-  await page.locator('.selection-toolbar [data-selection-action="more"]').click();
   const result = page.getByRole('menu', { name: 'Modül işlemleri' });
   await expect(result).toBeVisible();
   return result;
@@ -68,13 +68,15 @@ test('Ctrl+A duvar ve lambaları seçer; toplu kilit ve kilit açma çalışır'
 
   // Metin alanında Ctrl+A tarayıcıya aittir; sahne seçimine çevrilmez.
   await page.locator('#viewport').click({ position: { x: 20, y: 200 } });
+  await page.locator('#rename-project').click();
+  const name = page.locator('form input[name="projectName"]');
+  await expect(name).toBeVisible();
+  await name.fill('Metin seçimi');
   const before = await page.locator('#selection-info').textContent();
-  const colors = page.locator('details', { has: page.locator('#color-hex') });
-  if (!(await colors.evaluate((el) => el.open))) await colors.locator(':scope > summary').click();
-  await page.locator('#color-hex').focus();
   await page.keyboard.press('Control+a');
-  expect(await page.locator('#color-hex').evaluate((input) => input.selectionEnd - input.selectionStart)).toBe(7);
+  expect(await name.evaluate((input) => input.selectionEnd - input.selectionStart)).toBe('Metin seçimi'.length);
   await expect(page.locator('#selection-info')).toHaveText(before);
+  await page.getByRole('button', { name: 'İptal', exact: true }).click();
 });
 
 test('Ctrl+A ile grup kurulur; grubun tamamının kilidi açılır ve topluca çözülür', async ({ page }) => {

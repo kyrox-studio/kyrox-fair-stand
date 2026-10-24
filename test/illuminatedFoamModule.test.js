@@ -21,6 +21,9 @@ test('illuminated foam keeps fixed physical offsets and SVG loader', () => {
   assert.equal(behavior.collision, 'none');
   assert.match(scene, /SVGLoader/);
   assert.match(scene, /fillOpacity < 0\.5/);
-  assert.match(main, /Işıklı Strafora Dönüştür/);
-  assert.match(main, /previewCatalogModuleDrag/);
+  // Katalogdan konan strafor seçilir; logo panelin görsel bölümünden (yalnız SVG) uygulanır.
+  assert.doesNotMatch(main, /Işıklı Strafora Dönüştür/);
+  assert.match(main, /if \(canonical\.type === 'illuminated-foam'\) \{/);
+  assert.match(main, /function setIlluminatedFoamLogo\(modules, assetId\)/);
+  assert.match(scene, /surfaceCapabilityUserData\(moduleState\.itemKey \?\? 'illuminated-foam'\)/);
 });

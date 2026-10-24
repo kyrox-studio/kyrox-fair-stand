@@ -170,6 +170,7 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/scene3d.js': frozenDomains('renderer', 'state', 'placement', 'behavior', 'performance'),
   'src/sceneDimensions.js': frozenDomains('architecture', 'renderer', 'placement', 'composition'),
   'src/selectionFeedback.js': frozenDomains('ui'),
+  'src/selectionSurfaceSummary.js': frozenDomains('ui', 'behavior'),
   'src/sidebarController.js': frozenDomains('ui'),
   'src/stageFeedback.js': frozenDomains('ui'),
   'src/standDimensions.js': frozenDomains('architecture', 'placement', 'renderer'),
