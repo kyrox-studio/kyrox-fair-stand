@@ -8,6 +8,7 @@ import {
   getModuleCatalogLabel,
 } from '../src/catalog.js';
 import { getItem, listRegisteredItems } from '../src/items.js';
+import { isCatalogWidthFamilyDescriptor } from '../src/catalogWidthFamily.js';
 
 const BASELINE = JSON.parse(
   readFileSync(new URL('./catalogProjectionBaseline.json', import.meta.url), 'utf8'),
@@ -27,16 +28,16 @@ function pickComparable(descriptor) {
   return picked;
 }
 
-test('listCatalogItems 54 görünür Item’ı Item kaydından üretir; hardcoded key listesi yoktur', () => {
+test('listCatalogItems 42 görünür Item’ı Item kaydından üretir; hardcoded key listesi yoktur', () => {
   const items = listRegisteredItems();
   const visible = items.filter((item) => item.catalogVisible === true);
   const projected = listCatalogItems();
   const catalogSource = readFileSync(new URL('../src/catalog.js', import.meta.url), 'utf8');
 
   assert.equal(items.length, 133);
-  assert.equal(visible.length, 54);
-  assert.equal(projected.length, 54);
-  assert.equal(new Set(projected.map((item) => item.itemKey)).size, 54);
+  assert.equal(visible.length, 42);
+  assert.equal(projected.length, 42);
+  assert.equal(new Set(projected.map((item) => item.itemKey)).size, 42);
   assert.deepEqual(projected.map((item) => item.itemKey), BASELINE.keys);
 
   const projectedKeys = new Set(projected.map((item) => item.itemKey));
@@ -67,7 +68,7 @@ test('yeni catalog projection yalnız itemKey / label / catalogPreview taşır',
     compared += 1;
   }
 
-  assert.equal(compared, 54);
+  assert.equal(compared, 42);
   assert.deepEqual([...listCatalogItems().map((item) => item.itemKey)], BASELINE.keys);
 });
 
@@ -89,11 +90,13 @@ test('ölçü soran kartlar ölçüsüz başlık taşır; sahnedeki parça Item 
   assert.equal(labels.upright_346_5, 'Dikme');
   assert.equal(labels.wall_100_short_1, 'Panel Tek Sıra');
   assert.equal(labels.wall_100_short_2, 'Panel Çift Sıra');
-  for (const itemKey of ['profile_289', 'upright_346_5', 'wall_100_short_1', 'wall_100_short_2']) {
+  assert.equal(labels.wall_100_350, 'Panel');
+  assert.equal(labels.wall_separator_100_350, 'Separatör');
+  for (const itemKey of ['profile_289', 'upright_346_5', 'wall_100_short_1', 'wall_100_short_2', 'wall_100_350', 'wall_separator_100_350']) {
     assert.equal(getModuleCatalogLabel({ itemKey }), getItem(itemKey).name, itemKey);
   }
   // Ölçü sormayan kart Item adını aynen gösterir.
   const other = listCatalogItems().find((item) => !['profile', 'upright'].includes(getItem(item.itemKey).type)
-    && !item.itemKey.includes('_short_'));
+    && !isCatalogWidthFamilyDescriptor({ itemKey: item.itemKey }));
   assert.equal(other.label, getItem(other.itemKey).name);
 });

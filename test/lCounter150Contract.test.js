@@ -12,12 +12,9 @@ import {
 import { getItem } from '../src/items.js';
 
 test('desk_banko_150_l is a 150 x 150 catalog module', () => {
-  assert.deepEqual(getCatalogItem('desk_banko_150_l'), {
-    itemKey: 'desk_banko_150_l',
-    label: 'Köşe Banko 150×150',
-    previewId: 7,
-  });
-  assert.ok(getCatalogItem('desk_banko_150_l') != null);
+  // Köşe banko kartı tek (desk_banko_100_l, 0083); 150×150 ölçü penceresinden gelir.
+  assert.equal(getCatalogItem('desk_banko_150_l'), null);
+  assert.equal(getItem('desk_banko_150_l').name, 'Köşe Banko 150×150');
 });
 
 test('150 L counter state keeps 150 cm physical depth and eight editable faces', () => {

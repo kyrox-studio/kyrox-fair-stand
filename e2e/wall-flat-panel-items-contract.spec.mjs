@@ -53,6 +53,16 @@ async function removeModules(page, modules) {
 
 // Kısa panelde katalog kartı varyant başına tek (migration 0079): Tek Sıra kartı wall_100_short_1;
 // diğer genişlikler bırakırken genişlik penceresinden gelir (e2e/wall-short-width.spec.mjs).
+
+// Genişlik ailesi (Panel / Separatör / kısa panel): katalogda tek kart; Ekle genişlik penceresini açar.
+async function chooseCatalogWidth(page, itemKey, { vine = false } = {}) {
+  const dialog = page.locator('.item-size-dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.locator('select[name="itemKey"]').selectOption(itemKey);
+  if (vine) await dialog.locator('input[name="option"]').check();
+  await dialog.locator('button[type="submit"]').click();
+}
+
 const keys = ['wall_50_350', 'wall_100_350', 'wall_150_350', 'wall_200_350', 'wall_100_short_1'];
 
 for (const itemKey of keys) {
@@ -74,9 +84,11 @@ for (const itemKey of keys) {
 
     const picker = page.locator('.module-picker-backdrop');
     await expect(picker).toBeVisible();
-    await picker.locator('summary', { hasText: itemKey.includes('_short_') ? 'Panel Ek Modül' : 'Panel & Duvar' }).click();
-    await picker.locator(`[data-module-key="${itemKey}"]`).click();
+    await picker.locator('.module-picker-tab', { hasText: itemKey.includes('_short_') ? 'Panel Ek Modül' : 'Panel & Duvar' }).click();
+    const cardKey = itemKey.includes('_short_') ? itemKey : 'wall_100_350';
+    await picker.locator(`[data-module-key="${cardKey}"]`).click();
     await picker.locator('.module-picker-add').click();
+    await chooseCatalogWidth(page, itemKey);
     await expect(picker).toBeHidden();
 
     const project = await saveAndReadProject(page);

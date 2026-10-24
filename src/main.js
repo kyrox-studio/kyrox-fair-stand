@@ -39,7 +39,7 @@ import {
   noteRevisionCreated,
   resolveRevisionWrite,
 } from './projectRevisionSession.js';
-import { createModuleContextMenu, allowsModuleSideInsert } from './moduleContextMenu.js';
+import { createModuleContextMenu, allowsModuleSideInsert, resolveModuleSidePlacement } from './moduleContextMenu.js';
 import { createSelectionToolbar } from './selectionToolbar.js';
 import { createNewProjectWizard } from './newProjectWizard.js';
 import { createOnboardingTips } from './onboardingTips.js';
@@ -56,7 +56,7 @@ import {
   withStandEdgeWallIds,
 } from './modulePlacement.js';
 import { getContinuousWallSegments, planContinuousWallInsertion } from './wallReflow.js';
-import { getModuleDefaultRotationDeg } from './moduleBehavior.js';
+import { getModuleDefaultRotationDeg, isTopPlacementModule, isWallOverlayModule } from './moduleBehavior.js';
 import {
   buildAutomaticProjectNameSuffix,
   createProjectNamingController,
@@ -130,8 +130,8 @@ import {
   requestProfileLength,
   writeProfileLengthPreference,
 } from './profileLength.js';
-import { requestWallShortWidth } from './wallShortWidth.js';
-import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, isWallShortFamilyDescriptor, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
+import { isCatalogWidthFamilyDescriptor, requestCatalogWidth } from './catalogWidthFamily.js';
+import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
 import {
@@ -402,8 +402,6 @@ toggleProductionBomButton?.addEventListener('click', () => {
 });
 let selectedStandType = null;
 let activeAssetId = null;
-let pendingCatalogAdds = [];
-let catalogAddFlushScheduled = false;
 let moduleDragSidebar = null;
 let activeProjectId = createProjectId();
 let activeProjectCreatedAt = Date.now();
@@ -886,6 +884,8 @@ function copyContextModule(context) {
   const index = findContextModuleIndex(context);
   if (index < 0 || index >= currentModules.length) return;
   copiedModule = JSON.parse(JSON.stringify(currentModules[index]));
+  // Sağ altta bildirim: kopyalanan öğe hafızada (Ctrl+V ile yeniden bırakılabilir).
+  showToast(`${getModuleCatalogLabel(copiedModule)} hafızaya alındı`, { kind: 'info' });
   startCopyPlacement();
 }
 
@@ -1120,53 +1120,6 @@ function planCatalogAppendInsertion(moduleStates) {
   return { ...plan, appendMode: 'continuous' };
 }
 
-function validateCatalogAddBatch({
-  entries = [],
-  context = null,
-  placement = 'append',
-} = {}) {
-  if (placement === 'append' || !context) {
-    const moduleStates = entries.map((entry) => createCatalogModuleState(entry.module));
-    if (moduleStates.some((moduleState) => !moduleState)) {
-      return { ok: false, message: 'Seçilen modüller hazırlanamadı.' };
-    }
-
-    const plan = planCatalogAppendInsertion(moduleStates);
-    if (!plan.ok) {
-      renderWallResult(plan.message, true);
-    }
-    return plan;
-  }
-
-  let moduleStates = entries.map((entry) => createCatalogModuleState(entry.module));
-  if (moduleStates.some((moduleState) => !moduleState)) {
-    return { ok: false, message: 'Seçilen modüller hazırlanamadı.' };
-  }
-
-  if ((placement === 'left' || placement === 'right') && isFreeContextInsertion(context)) {
-    // Picker sağ eklemede gönderim sırasını ters çevirir; burada tekrar görsel
-    // seçim sırasına döndürüp serbest komşu planına veriyoruz.
-    const visualOrderedStates = placement === 'right'
-      ? [...moduleStates].reverse()
-      : moduleStates;
-    const plan = planContextFreeInsertion(visualOrderedStates, context, placement);
-    if (!plan.ok) {
-      renderWallResult(plan.message, true);
-    }
-    return plan;
-  }
-
-  if (placement === 'left' || placement === 'right') {
-    moduleStates = [...moduleStates].reverse();
-  }
-
-  const plan = planContextContinuousInsertion(moduleStates, context, placement);
-  if (!plan.ok) {
-    renderWallResult(plan.message, true);
-  }
-  return plan;
-}
-
 function assignPlannedPlacements(moduleStates, { placementMode = 'append', context = null } = {}) {
   if (!currentStand) return { ok: false, message: 'Önce stand alanını oluştur.' };
   if (placementMode !== 'append' || context) {
@@ -1209,87 +1162,83 @@ function assignPlannedPlacements(moduleStates, { placementMode = 'append', conte
   return { ok: true };
 }
 
-function flushCatalogModuleAdds() {
-  catalogAddFlushScheduled = false;
-  const requests = pendingCatalogAdds;
-  pendingCatalogAdds = [];
+const NO_FREE_SPOT_MESSAGE = 'Öğe için sahnede müsait yer bulunamadı.';
 
-  if (!currentStand || !requests.length) return;
-
-  const firstRequest = requests[0];
-  let moduleStates = requests.map((request) => createCatalogModuleState(request.module));
-  if (moduleStates.some((moduleState) => !moduleState)) return;
-
-  const placementMode = firstRequest.placement ?? 'append';
-  const context = firstRequest.context ?? null;
-
-  if (placementMode === 'append' && !context) {
-    const plan = planCatalogAppendInsertion(moduleStates);
-    if (!plan.ok) {
-      renderWallResult(plan.message, true);
-      return;
-    }
-
+// Katalogdan "Ekle" (modül bağlamı yok): duvarın sonuna; sığmazsa sahnede müsait bir yere.
+function placeCatalogModuleAppend(moduleState) {
+  const plan = planCatalogAppendInsertion([moduleState]);
+  if (plan.ok) {
     commitModuleAddition(() => {
-      if (plan.appendMode === 'continuous') {
-        applyContinuousInsertionPlan(plan, moduleStates);
-      } else {
-        currentModules.push(...moduleStates);
-      }
+      if (plan.appendMode === 'continuous') applyContinuousInsertionPlan(plan, [moduleState]);
+      else currentModules.push(moduleState);
     });
-    return;
+    return { ok: true };
   }
-
-  if ((placementMode === 'left' || placementMode === 'right') && context) {
-    if (!allowsModuleSideInsert(context)) {
-      renderWallResult('Bu modülün yanına ekleme yapılamaz.', true);
-      return;
-    }
-    if (isFreeContextInsertion(context)) {
-      const visualOrderedStates = placementMode === 'right'
-        ? [...moduleStates].reverse()
-        : moduleStates;
-      const plan = planContextFreeInsertion(visualOrderedStates, context, placementMode);
-      if (!plan.ok) {
-        renderWallResult(plan.message, true);
-        return;
-      }
-
-      commitModuleAddition(() => applyFreeInsertionPlan(plan, visualOrderedStates, context, placementMode));
-      return;
-    }
-
-    moduleStates = [...moduleStates].reverse();
-    const plan = planContextContinuousInsertion(moduleStates, context, placementMode);
-    if (!plan.ok) {
-      renderWallResult(plan.message, true);
-      return;
-    }
-
-    commitModuleAddition(() => applyContinuousInsertionPlan(plan, moduleStates));
-    return;
-  }
-
-  const placementPlan = assignPlannedPlacements(moduleStates, {
-    placementMode,
-    context,
-  });
-  if (!placementPlan.ok) {
-    renderWallResult(placementPlan.message, true);
-    return;
-  }
-
-  commitModuleAddition(() => currentModules.push(...moduleStates));
+  const free = scene3d.findFreeCatalogPlacement(moduleState);
+  if (free) return commitDroppedCatalogModule(moduleState, free, moduleState.itemKey);
+  return { ok: false, message: plan.message ?? NO_FREE_SPOT_MESSAGE };
 }
 
-function addCatalogModule(request) {
-  if (!currentStand || !request?.module) return;
+// Sağ tıkla seçilen modülün yanına ekleme (görsel taraf: right / left).
+function tryContextSideInsertion(moduleState, context, visualSide) {
+  const side = resolveModuleSidePlacement(context, visualSide);
+  if (isFreeContextInsertion(context)) {
+    const plan = planContextFreeInsertion([moduleState], context, side);
+    if (!plan.ok) return plan;
+    commitModuleAddition(() => applyFreeInsertionPlan(plan, [moduleState], context, side));
+    return { ok: true };
+  }
+  const plan = planContextContinuousInsertion([moduleState], context, side);
+  if (!plan.ok) return plan;
+  commitModuleAddition(() => applyContinuousInsertionPlan(plan, [moduleState]));
+  return { ok: true };
+}
 
-  pendingCatalogAdds.push(request);
-  if (catalogAddFlushScheduled) return;
+// Sağ tık "Ekle": duvar üstü (wall-overlay) ve tepe (top) davranışlı her öğe tıklanan modülün
+// üstüne bırakılır (sürükle-bırak kuralı). Diğerleri sırayla: sağı → solu → hemen önü → sahnede
+// müsait yer. Kural Item'a değil davranış ailesine bağlıdır; yeni öğeler kendiliğinden uyar.
+function placeCatalogModuleNearContext(moduleState, context) {
+  if (isWallOverlayModule(moduleState) || isTopPlacementModule(moduleState)) {
+    const result = scene3d.placeCatalogModuleOnModule(moduleState, context.moduleId, {
+      clientX: context.clientX,
+      clientY: context.clientY,
+    });
+    return result.ok ? commitDroppedCatalogModule(moduleState, result, moduleState.itemKey) : result;
+  }
+  if (allowsModuleSideInsert(context)) {
+    for (const side of ['right', 'left']) {
+      const result = tryContextSideInsertion(moduleState, context, side);
+      if (result.ok) return result;
+    }
+  }
+  const placed = scene3d.planCatalogModuleInFrontOf(moduleState, context.moduleId)
+    ?? scene3d.findFreeCatalogPlacement(moduleState, context.moduleId);
+  if (placed) return commitDroppedCatalogModule(moduleState, placed, moduleState.itemKey);
+  return { ok: false, message: NO_FREE_SPOT_MESSAGE };
+}
 
-  catalogAddFlushScheduled = true;
-  queueMicrotask(flushCatalogModuleAdds);
+// Katalogdan her seferinde tek öğe eklenir. Genişlik ailesinde (Panel, Separatör, kısa panel)
+// genişlik önce sorulur; iptal veya yer bulunamazsa { ok: false } döner ve pencere açık kalır.
+async function addCatalogModule(request) {
+  if (!currentStand || !request?.module) return { ok: false };
+  let moduleState = createCatalogModuleState(request.module);
+  if (!moduleState) return { ok: false, message: 'Seçilen modül hazırlanamadı.' };
+  if (isCatalogWidthFamilyDescriptor(moduleState)) {
+    const choice = await requestCatalogWidth({ selectedItemKey: moduleState.itemKey });
+    if (!choice) return { ok: false, cancelled: true };
+    moduleState = createCatalogModuleState({ itemKey: choice.itemKey }, { itemKey: choice.itemKey });
+    if (!moduleState) return { ok: false, message: 'Seçilen modül hazırlanamadı.' };
+  }
+  const result = request.context
+    ? placeCatalogModuleNearContext(moduleState, request.context)
+    : placeCatalogModuleAppend(moduleState);
+  if (!result.ok) {
+    renderWallResult(result.message ?? NO_FREE_SPOT_MESSAGE, true);
+    return result;
+  }
+  // Eklenen öğe seçili kalır; nereye konduğu görünsün diye ekranda değilse görüş ona kaydırılır.
+  scene3d.revealAddedModule(result.moduleState?.id ?? moduleState.id);
+  return result;
 }
 
 function getContextShelfLightingState(context) {
@@ -1540,7 +1489,6 @@ const moduleContextMenu = createModuleContextMenu({
   onResize: resizeContextIlluminatedFoam,
   onImageResize: resizeContextImage,
   onAdd: addCatalogModule,
-  onValidateAddBatch: validateCatalogAddBatch,
   onGlassModeChange: changeContextPanelGlassMode,
   onMetalSeparatorModeChange: changeContextMetalSeparatorMode,
   onFabricModeChange: changeContextFabricMode,
@@ -1911,10 +1859,10 @@ moduleDragSidebar = createModuleDragSidebar({
   onDrop: (droppedState, clientX, clientY, rotationZDeg, rotationLocked, catalogKey) => {
     void (async () => {
       let moduleState = droppedState;
-      if (isWallShortFamilyDescriptor(moduleState)) {
-        // Kısa panelde kart tek (Tek / Çift Sıra); genişlik konum hesabından önce seçilir,
-        // çünkü profile ve yan panele bağlanma panelin genişliğiyle çözülür.
-        const choice = await requestWallShortWidth({ selectedItemKey: moduleState.itemKey });
+      if (isCatalogWidthFamilyDescriptor(moduleState)) {
+        // Panel, kısa panel ve separatörde kart tek; genişlik (separatörde Sarmaşıklı) konum
+        // hesabından önce seçilir, çünkü profile ve yan panele bağlanma genişlikle çözülür.
+        const choice = await requestCatalogWidth({ selectedItemKey: moduleState.itemKey });
         if (!choice) {
           scene3d.clearCatalogModuleDrag();
           return;
@@ -1994,10 +1942,10 @@ moduleDragSidebar = createModuleDragSidebar({
         moduleState.heightCm = dimensions.heightCm;
         moduleState.opacity = dimensions.opacity;
       }
-      // Dikme, profil ve kısa panelde kart tek (upright_346_5, profile_289, wall_100_short_1/2);
-      // kayıt seçilen ölçünün anahtarıyla yapılır.
+      // Dikme, profil ve genişlik ailelerinde kart tek (upright_346_5, profile_289, wall_100_350,
+      // wall_separator_100_350, wall_100_short_1/2); kayıt seçilen ölçünün anahtarıyla yapılır.
       const commitKey = moduleState?.type === 'upright' || moduleState?.type === 'profile'
-        || isWallShortFamilyDescriptor(moduleState) ? moduleState.itemKey : catalogKey;
+        || isCatalogWidthFamilyDescriptor(moduleState) ? moduleState.itemKey : catalogKey;
       const committed = commitDroppedCatalogModule(moduleState, result, commitKey);
       if (!committed.ok) {
         renderWallResult(committed.message ?? 'Modül bu konuma bırakılamadı.', true);
@@ -2183,7 +2131,12 @@ function createAutomaticFasciaStates(plan) {
   for (const upright of plan.uprights) {
     const state = uprightKey ? createModuleStateFromCatalogKey(uprightKey) : null;
     if (!state) continue;
-    state.placement = { ...upright.placement };
+    // Plan noktası panel hatlarının birleşimidir; sahne yatay modülde xCm'i sol kenar sayar
+    // (gövde xCm + genişlik/2'de). Dikmenin merkezi birleşime otursun diye yarım genişlik geri alınır.
+    state.placement = {
+      ...upright.placement,
+      xCm: Number(upright.placement.xCm) - Number(state.widthCm) / 2,
+    };
     state.locked = true;
     state.autoFascia = true;
     states.push(state);
@@ -2952,6 +2905,21 @@ async function loadAssetsForActiveProject() {
   else renderAssetLibrary();
 }
 
+// CRM'de yeni proje rotası (/stand-projects/new?customerId=…) proje kaydedilince projenin adresine
+// (/stand-projects/{id}) çevrilir; sayfa yenilenince sihirbaz yeniden açılmaz, kayıtlı proje açılır.
+// Açılan / farklı kaydedilen / içe aktarılan projede de adres etkin projeyi gösterir. Editör yeniden
+// kurulmaz (replaceState). Host adresi stand-projects altında değilse (bağımsız editör) dokunulmaz.
+function syncHostProjectUrl(projectId) {
+  if (!projectId || !isProjectRemoteEnabled()) return;
+  const hostWindow = getFairStandHostWindow();
+  const pathname = hostWindow.location?.pathname ?? '';
+  const match = pathname.match(/^(.*\/stand-projects)\/[^/]+\/?$/);
+  if (!match) return;
+  const next = `${match[1]}/${encodeURIComponent(projectId)}`;
+  if (pathname === next && !hostWindow.location.search) return;
+  hostWindow.history.replaceState(hostWindow.history.state, '', next);
+}
+
 async function persistActiveProject({ quiet = false, reason = 'design' } = {}) {
   const decision = resolveRevisionWrite({
     session: revisionSession,
@@ -2971,6 +2939,7 @@ async function persistActiveProject({ quiet = false, reason = 'design' } = {}) {
   revisionSession.baselineDesign = designSignature();
   renderRevisionList();
   await refreshProjectList(stored.id);
+  syncHostProjectUrl(stored.id);
   if (!quiet) projectStatus.textContent = 'Kaydedildi: ' + stored.name;
   if (productionBomPanel.isOpen()) productionBomPanel.refresh();
   return { enableAutosave: revisionSession.mode === 'live', stored };
@@ -2991,6 +2960,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
   if (!project) return;
   autosaveController.disable();
   activeProjectId = project.id;
+  syncHostProjectUrl(project.id);
   if (project.customerId) activeCustomerId = project.customerId;
   void showProjectCustomerName();
   activeProjectCreatedAt = Number(project.createdAt) || Date.now();
@@ -3191,7 +3161,6 @@ function resetToFirstOpenState() {
   syncSaveProjectButton();
   selectedStandType = null;
   selectedFoamModuleId = null;
-  pendingCatalogAdds = [];
   standTypeButtons.forEach((button) => button.setAttribute('aria-pressed', 'false'));
   standSizeXInput.value = '';
   standSizeYInput.value = '';

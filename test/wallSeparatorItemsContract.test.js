@@ -16,6 +16,8 @@ import {
   getModuleRecipe,
 } from './recipeParentItemKey.js';
 
+const CATALOG_CARDS = { wall_separator_100_350: 'Separatör' };
+
 const SEPARATOR_KEYS = [
   'wall_separator_50_350',
   'wall_separator_100_350',
@@ -85,14 +87,20 @@ for (const itemKey of SEPARATOR_KEYS) {
     assert.deepEqual(item.dimensions, { widthCm: expected.widthCm });
     assert.equal(item.modelFile ?? null, expected.modelFile);
 
-    assert.equal(catalog.itemKey, itemKey);
-    assert.equal(catalog.label, item.name);
-    assert.equal(catalog.previewId, item.previewId);
-    assert.equal(Object.hasOwn(catalog, 'type'), false);
-    assert.equal(Object.hasOwn(catalog, 'widthCm'), false);
-    assert.equal(Object.hasOwn(catalog, 'modelFile'), false);
+    // Genişlik ailesi (migration 0082): katalogda aile başına tek kart, başlık ölçüsüz;
+    // diğer genişlikler gizlidir ve genişlik penceresinden Item'ın kendisiyle kurulur.
+    if (CATALOG_CARDS[itemKey]) {
+      assert.equal(catalog.itemKey, itemKey);
+      assert.equal(catalog.label, CATALOG_CARDS[itemKey]);
+      assert.equal(catalog.previewId, item.previewId);
+      assert.equal(Object.hasOwn(catalog, 'type'), false);
+      assert.equal(Object.hasOwn(catalog, 'widthCm'), false);
+      assert.equal(Object.hasOwn(catalog, 'modelFile'), false);
+    } else {
+      assert.equal(catalog, null);
+    }
 
-    const state = createModuleStateFromDescriptor(catalog);
+    const state = createModuleStateFromDescriptor(catalog ?? { itemKey, type: item.type });
     assert.equal(state.itemKey, itemKey);
     assert.equal(state.itemKey, itemKey);
     assert.equal(state.type, 'separator');

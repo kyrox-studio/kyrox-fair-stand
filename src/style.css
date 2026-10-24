@@ -782,15 +782,58 @@ button.asset-tile > span {
   transform: none;
 }
 
+/* Katalog: solda kategori sekmeleri, sağda seçili kategorinin kartları. */
 .module-picker-groups {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+  /* Sabit yükseklik: sekme değişince pencere hoplamaz; kartlar ve sekmeler kendi içinde kayar. */
+  height: min(400px, calc(100dvh - 260px));
+  min-height: 220px;
+}
+
+.module-picker-tabs {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  margin-top: 18px;
+  gap: 4px;
+  padding-right: 12px;
+  border-right: 1px solid #e5e9ef;
+  overflow-y: auto;
+}
+
+.module-picker-tab {
+  justify-content: flex-start;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.module-picker-tab:hover {
+  transform: none;
+  background: #f3f5f8;
+}
+
+.module-picker-tab[aria-selected="true"] {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.module-picker-panel {
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .module-picker .module-drag-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .module-picker .module-catalog-card {
@@ -927,6 +970,16 @@ button.asset-tile > span {
 
   .module-picker .module-drag-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Dar ekranda da sekmeler solda kalır; yalnız sütun daralır. */
+  .module-picker-groups {
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .module-picker-tabs {
+    padding-right: 8px;
   }
 }
 
@@ -1523,6 +1576,9 @@ button[aria-busy="true"]::after {
 
   .module-picker-groups {
     margin-top: 12px;
+    /* Alt panel 82dvh: başlık ve düğmeler sığsın, kartlar kendi içinde kaysın. */
+    height: calc(82dvh - 230px);
+    min-height: 160px;
   }
 
   .module-picker .module-drag-grid {

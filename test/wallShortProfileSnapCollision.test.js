@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { getCatalogItem } from '../src/catalog.js';
+import { isCatalogWidthFamilyDescriptor } from '../src/catalogWidthFamily.js';
 import { createModuleStateFromDescriptor } from '../src/designState.js';
 import { resolveItemBom } from '../src/itemBom.js';
 import { resolveProjectBom } from '../src/projectBom.js';
-import { applyItemPlacementZCm, getItem, isWallShortFamilyDescriptor, resolveItemDefaultZCm } from '../src/items.js';
+import { applyItemPlacementZCm, getItem, resolveItemDefaultZCm } from '../src/items.js';
 import { getModuleCollisionHeightRangeCm, requiresShortUpJointSnap } from '../src/moduleBehavior.js';
 import {
   getWallOverlayZBoundsCm,
@@ -24,9 +25,9 @@ const STAND = Object.freeze({
 });
 
 function moduleFrom(itemKey, id, placement) {
-  // Profil (profile_289) ve kısa panel (wall_100_short_1/2) kartı tek; diğer ölçüler Item'dan
+  // Profil (profile_289), kısa panel, panel ve separatör kartı tek; diğer ölçüler Item'dan
   // kurulur (boy / genişlik penceresinin yolu).
-  const descriptor = itemKey.startsWith('profile_') || isWallShortFamilyDescriptor({ itemKey })
+  const descriptor = itemKey.startsWith('profile_') || isCatalogWidthFamilyDescriptor({ itemKey })
     ? { itemKey, type: getItem(itemKey).type }
     : getCatalogItem(itemKey);
   const module = createModuleStateFromDescriptor(descriptor);

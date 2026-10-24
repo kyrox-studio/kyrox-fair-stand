@@ -51,6 +51,16 @@ async function removeModules(page, modules) {
   }
 }
 
+
+// Genişlik ailesi (Panel / Separatör / kısa panel): katalogda tek kart; Ekle genişlik penceresini açar.
+async function chooseCatalogWidth(page, itemKey, { vine = false } = {}) {
+  const dialog = page.locator('.item-size-dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.locator('select[name="itemKey"]').selectOption(itemKey);
+  if (vine) await dialog.locator('input[name="option"]').check();
+  await dialog.locator('button[type="submit"]').click();
+}
+
 const expected = {
   wall_separator_50_350: { modelFile: null },
   wall_separator_100_350: { modelFile: null },
@@ -76,9 +86,10 @@ for (const itemKey of Object.keys(expected)) {
 
     const picker = page.locator('.module-picker-backdrop');
     await expect(picker).toBeVisible();
-    await picker.locator('summary', { hasText: 'Panel & Duvar' }).click();
-    await picker.locator(`[data-module-key="${itemKey}"]`).click();
+    await picker.locator('.module-picker-tab', { hasText: 'Panel & Duvar' }).click();
+    await picker.locator('[data-module-key="wall_separator_100_350"]').click();
     await picker.locator('.module-picker-add').click();
+    await chooseCatalogWidth(page, itemKey.replace(/_sarmasik$/, ''), { vine: itemKey.endsWith('_sarmasik') });
     await expect(picker).toBeHidden();
 
     const project = await saveAndReadProject(page);

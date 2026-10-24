@@ -70,11 +70,14 @@ test('wall showcase catalog Items persist canonical identity and grouped body co
   await open.click();
   const picker=page.locator('.module-picker-backdrop');
   await expect(picker).toBeVisible();
-  await picker.locator('summary', { hasText: 'Raf & Vitrin' }).click();
-  await picker.locator('[data-module-key="wall_showcase_100_2_350"]').click();
-  await picker.locator('[data-module-key="wall_showcase_100_3_350"]').click();
-  await picker.locator('.module-picker-add').click();
-  await expect(picker).toBeHidden();
+  // Katalogdan her seferinde tek öğe eklenir.
+  for (const itemKey of ['wall_showcase_100_2_350', 'wall_showcase_100_3_350']) {
+    if (!(await picker.isVisible())) await open.click();
+    await picker.locator('.module-picker-tab', { hasText: 'Raf & Vitrin' }).click();
+    await picker.locator(`[data-module-key="${itemKey}"]`).click();
+    await picker.locator('.module-picker-add').click();
+    await expect(picker).toBeHidden();
+  }
   const project=await saveAndReadProject(page);
   const two=project.modules.find((m)=>m.itemKey==='wall_showcase_100_2_350');
   const three=project.modules.find((m)=>m.itemKey==='wall_showcase_100_3_350');

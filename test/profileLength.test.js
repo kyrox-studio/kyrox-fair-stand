@@ -92,7 +92,7 @@ test('profil bırakılırken boy sorulur; sağ tık "Profil boyu…" aynı pence
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   const menu = readFileSync(new URL('../src/moduleContextMenu.js', import.meta.url), 'utf8');
   assert.match(main, /if \(moduleState\?\.type === 'profile'\) \{[\s\S]*readProfileLengthPreference\(\)[\s\S]*requestProfileLength\(\{ selectedItemKey: moduleState\.itemKey \}\)[\s\S]*if \(choice\.remember\) writeProfileLengthPreference\(itemKey\);/);
-  assert.match(main, /const commitKey = moduleState\?\.type === 'upright' \|\| moduleState\?\.type === 'profile'\s+\|\| isWallShortFamilyDescriptor\(moduleState\) \? moduleState\.itemKey : catalogKey;/);
+  assert.match(main, /const commitKey = moduleState\?\.type === 'upright' \|\| moduleState\?\.type === 'profile'\s+\|\| isCatalogWidthFamilyDescriptor\(moduleState\) \? moduleState\.itemKey : catalogKey;/);
   assert.match(main, /writeProfileLengthPreference\(choice\.remember \? choice\.itemKey : null\);/);
   assert.match(menu, /data-module-action="profile-length" hidden>Profil boyu…<\/button>/);
   assert.match(menu, /profileLengthButton\.hidden = \(getProfileLengthState\?\.\(context\) \?\? null\) == null;/);

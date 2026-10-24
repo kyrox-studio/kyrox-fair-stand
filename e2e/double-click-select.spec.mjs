@@ -1,5 +1,6 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
+import { catalogCardKeyFor, chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
 // Çift tık / çift dokunuş modülün tamamını seçer (turuncu); Ctrl+tık seçilenin çoğulu:
 // modül seçiliyse modül ekler/çıkarır, yüzey (panel, banko yüzü) seçiliyse yüzey çoğulu.
@@ -137,7 +138,7 @@ test('banko: Ctrl+click on a face still adds faces of the same counter', async (
   const openCatalogButton = page.locator('#open-module-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   if (!(await modulePanel.evaluate((el) => el.open))) await modulePanel.locator(':scope > summary').click();
-  const card = page.locator('.module-drag-card[data-module-key="desk_banko_200"]');
+  const card = page.locator(`.module-drag-card[data-module-key="${catalogCardKeyFor('desk_banko_200')}"]`);
   const group = page.locator('.module-drag-group', { has: card });
   if (!(await group.evaluate((el) => el.open))) await group.locator(':scope > summary').click();
   await card.scrollIntoViewIfNeeded();
@@ -145,6 +146,7 @@ test('banko: Ctrl+click on a face still adds faces of the same counter', async (
   await card.dragTo(page.locator('#viewport'), {
     targetPosition: { x: Math.round(box.width * 0.62), y: Math.round(box.height * 0.92) },
   });
+  await chooseCatalogWidth(page, 'desk_banko_200');
   await expect.poll(async () => (await surfaces(page)).filter((s) => s.moduleType === 'counter').length).toBeGreaterThan(1);
 
   const faces = (await surfaces(page)).filter((s) => s.moduleType === 'counter'

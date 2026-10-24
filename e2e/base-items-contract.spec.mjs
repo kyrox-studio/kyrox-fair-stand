@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { catalogCardKeyFor, chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
 async function createIslandStand(page, projectName) {
   await page.goto('/');
@@ -46,7 +47,8 @@ for (const itemKey of keys) {
 
     const button = page.locator('#open-module-catalog');
     await page.locator('details', { has: button }).locator(':scope > summary').click();
-    const card = page.locator(`.module-drag-card[data-module-key="${itemKey}"]`);
+    // Ölçü ailesi: tek kart sürüklenir, ölçü pencereden seçilir (0083).
+    const card = page.locator(`.module-drag-card[data-module-key="${catalogCardKeyFor(itemKey)}"]`);
     await page.locator('.module-drag-group', { has: card }).locator(':scope > summary').click();
     await expect(card).toBeVisible();
 
@@ -55,6 +57,7 @@ for (const itemKey of keys) {
     await card.dragTo(viewport, {
       targetPosition: { x: Math.round(box.width * 0.52), y: Math.round(box.height * 0.82) },
     });
+    await chooseCatalogWidth(page, itemKey);
 
     const project = await saveAndReadProject(page);
     const item = project.modules.find((module) => module.itemKey === itemKey);
