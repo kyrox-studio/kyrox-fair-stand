@@ -22,6 +22,9 @@ async function exposeScene(page) {
 }
 
 async function wallContextMenu(page, moduleId) {
+  // "Açıldı" durumu restoreProject içinde yazılır; yükleme perdesi ise sahnenin
+  // çizimi tamamlanınca kapanır. Ham mouse tıklaması perdeyi beklemez.
+  await expect(page.locator('#project-loading-overlay')).toBeHidden({ timeout: 30_000 });
   const point = await page.evaluate((id) => {
     const mesh = window.__sceneSurfaces().find((surface) => surface.userData.moduleId === id && surface.userData.stripIndex === 3);
     mesh.updateMatrixWorld(true);
