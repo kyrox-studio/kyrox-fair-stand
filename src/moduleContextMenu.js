@@ -23,7 +23,6 @@ export function createModuleContextMenu({
   onResize,
   onImageResize,
   onAdd,
-  onValidateAddBatch,
   onGlassModeChange,
   onMetalSeparatorModeChange,
   onFabricModeChange,
@@ -45,9 +44,10 @@ export function createModuleContextMenu({
   const window = getFairStandHostWindow();
   let activeContext = null;
   let pickerRequest = null;
-  let selectedModuleKeys = [];
-  let draggedSelectionIndex = null;
-  let suppressChipClick = false;
+  // Katalogdan her seferinde tek öğe eklenir.
+  let selectedModuleKey = null;
+  let activeCategoryId = null;
+  let pickerBusy = false;
 
   const menu = document.createElement('div');
   menu.className = 'module-context-menu';
@@ -78,8 +78,7 @@ export function createModuleContextMenu({
     <button type="button" role="menuitem" data-module-action="toggle-back-panels" hidden>Arka yüze panel ekle</button>
     <button type="button" role="menuitem" data-module-action="upright-height" hidden>Dikme yüksekliği…</button>
     <button type="button" role="menuitem" data-module-action="profile-length" hidden>Profil boyu…</button>
-    <button type="button" role="menuitem" data-module-action="add-right">Ekle Sağ Tarafa…</button>
-    <button type="button" role="menuitem" data-module-action="add-left">Ekle Sol Tarafa…</button>
+    <button type="button" role="menuitem" data-module-action="add">Ekle…</button>
     <button type="button" role="menuitem" class="module-context-advanced-toggle" aria-expanded="false" hidden>Gelişmiş ▸</button>
     <div class="module-context-advanced" hidden>
       <button type="button" role="menuitem" data-module-action="toggle-glass" hidden>Cam Panele Çevir</button>
@@ -104,14 +103,11 @@ export function createModuleContextMenu({
         </div>
         <button type="button" class="module-picker-close" aria-label="Kapat">×</button>
       </div>
-      <div class="module-picker-groups module-drag-groups" role="listbox" aria-label="Modül kataloğu"></div>
-      <div class="module-picker-selection" style="margin-top:12px;padding:10px 12px;border:1px solid #e2e7ed;border-radius:12px;background:#f8fafc;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-          <strong style="font-size:12px;color:#374151;">Seçim sırası</strong>
-          <button type="button" class="module-picker-selection-clear" style="min-width:0;padding:5px 8px;border:0;background:transparent;color:#667085;font-size:11px;">Temizle</button>
+      <div class="module-picker-groups">
+        <div class="module-picker-tabs" role="tablist" aria-label="Modül kataloğu" aria-orientation="vertical"></div>
+        <div class="module-picker-panel" role="tabpanel">
+          <div class="module-drag-grid" role="listbox" aria-label="Modüller"></div>
         </div>
-        <p class="module-picker-selection-empty" style="margin:6px 0 0;color:#8a94a3;font-size:11px;">Kartlara tıklayarak modülleri sıraya ekle.</p>
-        <div class="module-picker-selection-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;"></div>
       </div>
       <div class="module-picker-footer">
         <button type="button" class="module-picker-cancel ghost">Vazgeç</button>
@@ -133,8 +129,7 @@ export function createModuleContextMenu({
   const profileLengthButton = menu.querySelector('[data-module-action="profile-length"]');
   const foamResizeButton = menu.querySelector('[data-module-action="resize-foam"]');
   const imageResizeButton = menu.querySelector('[data-module-action="resize-image"]');
-  const addRightButton = menu.querySelector('[data-module-action="add-right"]');
-  const addLeftButton = menu.querySelector('[data-module-action="add-left"]');
+  const addButton = menu.querySelector('[data-module-action="add"]');
   const lockButton = menu.querySelector('[data-module-action="toggle-lock"]');
   const lockSelectionButton = menu.querySelector('[data-module-action="lock-selection"]');
   const unlockSelectionButton = menu.querySelector('[data-module-action="unlock-selection"]');
@@ -225,176 +220,49 @@ export function createModuleContextMenu({
   }
   const pickerTitle = pickerBackdrop.querySelector('#module-picker-title');
   const pickerContext = pickerBackdrop.querySelector('.module-picker-context');
-  const pickerGroups = pickerBackdrop.querySelector('.module-picker-groups');
+  const pickerTabs = pickerBackdrop.querySelector('.module-picker-tabs');
+  const pickerPanel = pickerBackdrop.querySelector('.module-picker-panel');
+  const pickerGrid = pickerBackdrop.querySelector('.module-picker-panel .module-drag-grid');
   const pickerAddButton = pickerBackdrop.querySelector('.module-picker-add');
-  const pickerSelectionList = pickerBackdrop.querySelector('.module-picker-selection-list');
-  const pickerSelectionEmpty = pickerBackdrop.querySelector('.module-picker-selection-empty');
-  const pickerSelectionClear = pickerBackdrop.querySelector('.module-picker-selection-clear');
 
   function describeModule(context) {
     return getModuleCatalogLabel(context);
   }
 
-  function getSelectionCounts() {
-    const counts = new Map();
-    selectedModuleKeys.forEach((moduleKey) => {
-      counts.set(moduleKey, (counts.get(moduleKey) ?? 0) + 1);
+  function syncPickerSelection() {
+    pickerGrid.querySelectorAll('[data-module-key]').forEach((card) => {
+      const selected = card.dataset.moduleKey === selectedModuleKey;
+      card.classList.toggle('selected', selected);
+      card.setAttribute('aria-selected', String(selected));
     });
-    return counts;
+    pickerAddButton.disabled = !selectedModuleKey || pickerBusy;
   }
 
-  function reorderSelection(fromIndex, toIndex) {
-    if (
-      !Number.isInteger(fromIndex)
-      || !Number.isInteger(toIndex)
-      || fromIndex < 0
-      || toIndex < 0
-      || fromIndex >= selectedModuleKeys.length
-      || toIndex >= selectedModuleKeys.length
-      || fromIndex === toIndex
-    ) {
+  function selectModule(moduleKey) {
+    if (!getCatalogItem(moduleKey)) return;
+    selectedModuleKey = moduleKey;
+    syncPickerSelection();
+  }
+
+  // Ekle: main.js yerleşimi yapar (genişlik penceresi dahil). { ok: false } dönerse (iptal ya da
+  // yer bulunamadı) pencere açık kalır, başka öğe seçilebilir.
+  async function submitPickerSelection() {
+    if (!selectedModuleKey || !pickerRequest || pickerBusy) return;
+    const module = getCatalogItem(selectedModuleKey);
+    if (!module) return;
+    pickerBusy = true;
+    syncPickerSelection();
+    let result;
+    try {
+      result = await onAdd?.({ ...pickerRequest, moduleKey: selectedModuleKey, module });
+    } finally {
+      pickerBusy = false;
+    }
+    if (result?.ok === false) {
+      syncPickerSelection();
       return;
     }
-
-    const [movedModuleKey] = selectedModuleKeys.splice(fromIndex, 1);
-    selectedModuleKeys.splice(toIndex, 0, movedModuleKey);
-    syncPickerSelection();
-  }
-
-  function renderSelectionQueue() {
-    pickerSelectionList.innerHTML = '';
-    pickerSelectionEmpty.hidden = selectedModuleKeys.length > 0;
-    pickerSelectionClear.disabled = selectedModuleKeys.length === 0;
-
-    selectedModuleKeys.forEach((moduleKey, index) => {
-      const module = getCatalogItem(moduleKey);
-      if (!module) return;
-
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.draggable = true;
-      chip.dataset.selectionIndex = String(index);
-      chip.title = 'Sürükleyerek sırala · tıklayarak çıkar';
-      chip.textContent = `${index + 1}. ${module.label} ×`;
-      chip.style.minWidth = '0';
-      chip.style.maxWidth = '210px';
-      chip.style.overflow = 'hidden';
-      chip.style.padding = '6px 8px';
-      chip.style.border = '1px solid #d7dee7';
-      chip.style.borderRadius = '8px';
-      chip.style.background = '#ffffff';
-      chip.style.color = '#374151';
-      chip.style.fontSize = '11px';
-      chip.style.textOverflow = 'ellipsis';
-      chip.style.whiteSpace = 'nowrap';
-      chip.style.cursor = 'grab';
-      chip.style.userSelect = 'none';
-
-      chip.addEventListener('dragstart', (event) => {
-        draggedSelectionIndex = index;
-        suppressChipClick = true;
-        chip.style.opacity = '0.45';
-        chip.style.cursor = 'grabbing';
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('text/plain', String(index));
-      });
-
-      chip.addEventListener('dragover', (event) => {
-        if (draggedSelectionIndex === null) return;
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-        chip.style.borderColor = '#f97316';
-        chip.style.boxShadow = '0 0 0 2px rgba(249, 115, 22, 0.16)';
-      });
-
-      chip.addEventListener('dragleave', () => {
-        chip.style.borderColor = '#d7dee7';
-        chip.style.boxShadow = 'none';
-      });
-
-      chip.addEventListener('drop', (event) => {
-        event.preventDefault();
-        const targetIndex = Number(chip.dataset.selectionIndex);
-        const fromIndex = draggedSelectionIndex;
-        draggedSelectionIndex = null;
-        reorderSelection(fromIndex, targetIndex);
-      });
-
-      chip.addEventListener('dragend', () => {
-        draggedSelectionIndex = null;
-        chip.style.opacity = '1';
-        chip.style.cursor = 'grab';
-        chip.style.borderColor = '#d7dee7';
-        chip.style.boxShadow = 'none';
-        window.setTimeout(() => {
-          suppressChipClick = false;
-        }, 0);
-      });
-
-      chip.addEventListener('click', () => {
-        if (suppressChipClick) return;
-        selectedModuleKeys.splice(index, 1);
-        syncPickerSelection();
-      });
-      pickerSelectionList.appendChild(chip);
-    });
-  }
-
-  function syncPickerSelection() {
-    const counts = getSelectionCounts();
-
-    pickerGroups.querySelectorAll('[data-module-key]').forEach((card) => {
-      const count = counts.get(card.dataset.moduleKey) ?? 0;
-      card.classList.toggle('selected', count > 0);
-      card.setAttribute('aria-selected', String(count > 0));
-
-      const badge = card.querySelector('.module-catalog-card-count');
-      if (badge) {
-        badge.hidden = count === 0;
-        badge.textContent = `×${count}`;
-      }
-    });
-
-    pickerAddButton.disabled = selectedModuleKeys.length === 0;
-    pickerAddButton.textContent = selectedModuleKeys.length
-      ? `Ekle (${selectedModuleKeys.length})`
-      : 'Ekle';
-    renderSelectionQueue();
-  }
-
-  function addModuleToSelection(moduleKey) {
-    if (!getCatalogItem(moduleKey)) return;
-    selectedModuleKeys.push(moduleKey);
-    syncPickerSelection();
-  }
-
-  function submitPickerSelection() {
-    if (!selectedModuleKeys.length || !pickerRequest) return;
-
-    const entries = selectedModuleKeys
-      .map((moduleKey) => ({ moduleKey, module: getCatalogItem(moduleKey) }))
-      .filter((entry) => entry.module);
-    if (!entries.length) return;
-
-    const request = { ...pickerRequest };
-    const insertionEntries = request.placement === 'right'
-      ? [...entries].reverse()
-      : entries;
-
-    const validation = onValidateAddBatch?.({
-      ...request,
-      entries: insertionEntries,
-    });
-    if (validation === false || validation?.ok === false) return;
-
     closePicker();
-    insertionEntries.forEach((entry) => {
-      onAdd?.({
-        ...request,
-        moduleKey: entry.moduleKey,
-        module: entry.module,
-      });
-    });
   }
 
   function createPickerCard(moduleKey, module) {
@@ -405,61 +273,56 @@ export function createModuleContextMenu({
     card.setAttribute('role', 'option');
     card.setAttribute('aria-selected', 'false');
 
-    const titleRow = document.createElement('span');
-    titleRow.style.display = 'flex';
-    titleRow.style.alignItems = 'center';
-    titleRow.style.justifyContent = 'space-between';
-    titleRow.style.gap = '8px';
-
     const cardTitle = document.createElement('strong');
     cardTitle.className = 'module-catalog-card-title';
     cardTitle.textContent = module.label;
 
-    const countBadge = document.createElement('span');
-    countBadge.className = 'module-catalog-card-count';
-    countBadge.hidden = true;
-    countBadge.style.flex = '0 0 auto';
-    countBadge.style.padding = '2px 6px';
-    countBadge.style.borderRadius = '999px';
-    countBadge.style.background = '#f97316';
-    countBadge.style.color = '#ffffff';
-    countBadge.style.fontSize = '10px';
-    countBadge.style.fontWeight = '800';
-
-    titleRow.append(cardTitle, countBadge);
-    card.append(titleRow, createModuleCatalogPreview(module));
-    card.addEventListener('click', () => addModuleToSelection(moduleKey));
+    card.append(cardTitle, createModuleCatalogPreview(module));
+    card.addEventListener('click', () => selectModule(moduleKey));
+    card.addEventListener('dblclick', () => {
+      selectModule(moduleKey);
+      void submitPickerSelection();
+    });
     return card;
   }
 
-  function collapsePickerGroups() {
-    pickerGroups.querySelectorAll('.module-drag-group').forEach((details) => {
-      details.open = false;
+  function renderPickerPanel() {
+    const group = listCatalogGroups().find((entry) => entry.id === activeCategoryId);
+    pickerGrid.innerHTML = '';
+    pickerTabs.querySelectorAll('[data-category-id]').forEach((tab) => {
+      const active = Number(tab.dataset.categoryId) === activeCategoryId;
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
     });
+    pickerPanel.setAttribute('aria-label', group?.catalogName ?? 'Modüller');
+    (group?.keys ?? []).forEach((moduleKey) => {
+      const module = getCatalogItem(moduleKey);
+      if (module) pickerGrid.appendChild(createPickerCard(moduleKey, module));
+    });
+    syncPickerSelection();
   }
 
+  function selectCategory(categoryId) {
+    activeCategoryId = categoryId;
+    renderPickerPanel();
+  }
+
+  // Solda kategori sekmeleri; sağda yalnız seçili kategorinin kartları (ilk açılışta ilk kategori).
   function renderPickerCatalog() {
-    pickerGroups.innerHTML = '';
-
-    listCatalogGroups().forEach((group) => {
-      const details = document.createElement('details');
-      details.className = 'module-drag-group';
-      details.open = false;
-
-      const summary = document.createElement('summary');
-      summary.textContent = group.catalogName;
-
-      const grid = document.createElement('div');
-      grid.className = 'module-drag-grid';
-      group.keys.forEach((moduleKey) => {
-        const module = getCatalogItem(moduleKey);
-        if (!module) return;
-        grid.appendChild(createPickerCard(moduleKey, module));
-      });
-
-      details.append(summary, grid);
-      pickerGroups.appendChild(details);
+    pickerTabs.innerHTML = '';
+    const groups = listCatalogGroups().filter((group) => group.keys.some((key) => getCatalogItem(key)));
+    groups.forEach((group) => {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'module-picker-tab';
+      tab.dataset.categoryId = String(group.id);
+      tab.setAttribute('role', 'tab');
+      tab.textContent = group.catalogName;
+      tab.addEventListener('click', () => selectCategory(group.id));
+      pickerTabs.appendChild(tab);
     });
+    if (!groups.some((group) => group.id === activeCategoryId)) activeCategoryId = groups[0]?.id ?? null;
+    renderPickerPanel();
   }
 
   function close() {
@@ -470,9 +333,7 @@ export function createModuleContextMenu({
   function closePicker() {
     pickerBackdrop.hidden = true;
     pickerRequest = null;
-    selectedModuleKeys = [];
-    draggedSelectionIndex = null;
-    suppressChipClick = false;
+    selectedModuleKey = null;
     syncPickerSelection();
   }
 
@@ -482,26 +343,16 @@ export function createModuleContextMenu({
     displayPlacement = placement,
   } = {}) {
     pickerRequest = { placement, context, displayPlacement };
-    selectedModuleKeys = [];
-    draggedSelectionIndex = null;
-    suppressChipClick = false;
-
-    if (displayPlacement === 'left') {
-      pickerTitle.textContent = 'Sol Tarafa Modül Ekle';
-    } else if (displayPlacement === 'right') {
-      pickerTitle.textContent = 'Sağ Tarafa Modül Ekle';
-    } else {
-      pickerTitle.textContent = 'Modül Ekle';
-    }
+    selectedModuleKey = null;
+    pickerTitle.textContent = 'Modül Ekle';
 
     pickerContext.textContent = context
       ? `Hedef: Modül ${context.moduleIndex + 1} · ${describeModule(context)}`
-      : 'Seçilen modüller sırayla duvarın sonuna eklenecek.';
+      : 'Seçilen modül duvarın sonuna eklenecek.';
 
     menu.hidden = true;
     pickerBackdrop.hidden = false;
-    collapsePickerGroups();
-    syncPickerSelection();
+    renderPickerCatalog();
   }
 
   function open(context) {
@@ -589,9 +440,7 @@ export function createModuleContextMenu({
     // Profil boyu yalnız profilde (getProfileLengthState null değilse).
     profileLengthButton.hidden = (getProfileLengthState?.(context) ?? null) == null;
     setDisabled(profileLengthButton, locked);
-    const showSideInsert = allowsModuleSideInsert(context);
-    addRightButton.hidden = !showSideInsert;
-    addLeftButton.hidden = !showSideInsert;
+    addButton.hidden = !allowsModuleSideInsert(context);
     syncAdvancedSection();
     positionMenu(context);
   }
@@ -726,31 +575,14 @@ export function createModuleContextMenu({
       return;
     }
 
-    if (action === 'add-right') {
+    if (action === 'add') {
       if (!allowsModuleSideInsert(context)) return;
-      openPicker({
-        placement: resolveModuleSidePlacement(context, 'right'),
-        displayPlacement: 'right',
-        context,
-      });
-      return;
-    }
-
-    if (action === 'add-left') {
-      if (!allowsModuleSideInsert(context)) return;
-      openPicker({
-        placement: resolveModuleSidePlacement(context, 'left'),
-        displayPlacement: 'left',
-        context,
-      });
+      // Yer main.js'de seçilir: duvar üstü öğe modülün üstüne; diğerleri sağ → sol → önü → müsait yer.
+      openPicker({ placement: 'auto', context });
     }
   });
 
-  pickerAddButton.addEventListener('click', submitPickerSelection);
-  pickerSelectionClear.addEventListener('click', () => {
-    selectedModuleKeys = [];
-    syncPickerSelection();
-  });
+  pickerAddButton.addEventListener('click', () => { void submitPickerSelection(); });
 
   pickerBackdrop.querySelector('.module-picker-close').addEventListener('click', closePicker);
   pickerBackdrop.querySelector('.module-picker-cancel').addEventListener('click', closePicker);
@@ -765,7 +597,8 @@ export function createModuleContextMenu({
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     close();
-    closePicker();
+    // Genişlik penceresi açıkken Esc yalnız onu kapatır.
+    if (!pickerBusy) closePicker();
   });
 
   window.addEventListener('blur', close);

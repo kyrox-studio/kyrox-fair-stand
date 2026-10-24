@@ -49,6 +49,8 @@ export function formatWallOverlayFeedback(kind, item) {
       return `${name} bu duvar konumuna yerleştirilemedi.`;
     case 'wall-move-failed':
       return `${name} bu duvar konumuna taşınamadı.`;
+    case 'host-unsupported':
+      return `${name} bu modüle takılamaz; bir duvara ya da panele sağ tıklayıp ekle.`;
     case 'stand-limit':
       return `${name} bu yönde stand sınırına ulaştı.`;
     default:

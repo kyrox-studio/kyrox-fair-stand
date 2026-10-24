@@ -11,19 +11,17 @@ import {
 import { getItem, listRegisteredItems } from '../src/items.js';
 
 const EXPECTED_CATEGORIES = Object.freeze([
-  Object.freeze({ id: 1, catalogName: 'Panel & Duvar', catalogIndex: 1, itemCount: 9 }),
+  Object.freeze({ id: 1, catalogName: 'Panel & Duvar', catalogIndex: 1, itemCount: 3 }),
   Object.freeze({ id: 2, catalogName: 'Panel Ek Modül', catalogIndex: 2, itemCount: 5 }),
   Object.freeze({ id: 3, catalogName: 'Raf & Vitrin', catalogIndex: 3, itemCount: 6 }),
-  Object.freeze({ id: 4, catalogName: 'Banko & Baza', catalogIndex: 4, itemCount: 9 }),
+  Object.freeze({ id: 4, catalogName: 'Banko & Baza', catalogIndex: 4, itemCount: 3 }),
   Object.freeze({ id: 5, catalogName: 'Extra', catalogIndex: 5, itemCount: 19 }),
   Object.freeze({ id: 6, catalogName: 'Elektronik & Aydınlatma', catalogIndex: 6, itemCount: 6 }),
 ]);
 
 const EXPECTED_GROUP_KEYS = Object.freeze({
   1: Object.freeze([
-    'wall_200_350', 'wall_150_350', 'wall_100_350', 'wall_50_350',
-    'wall_separator_100_350', 'wall_separator_50_350',
-    'wall_separator_100_350_sarmasik', 'wall_separator_50_350_sarmasik',
+    'wall_100_350', 'wall_separator_100_350',
     'wall_door_100_350',
   ]),
   2: Object.freeze([
@@ -35,9 +33,7 @@ const EXPECTED_GROUP_KEYS = Object.freeze({
     'shelf_row_1', 'shelf_row_2', 'shelf_row_3', 'floor_showcase_100',
   ]),
   4: Object.freeze([
-    'desk_banko_200', 'desk_banko_150', 'desk_banko_100',
-    'desk_banko_200_l', 'desk_banko_150_l', 'desk_banko_100_l',
-    'base_200', 'base_150', 'base_100',
+    'desk_banko_100', 'desk_banko_100_l', 'base_100',
   ]),
   5: Object.freeze([
     'furniture_sofa_set_classic', 'furniture_sofa_single_classic', 'furniture_sofa_double_classic',
@@ -93,7 +89,7 @@ test('görünür Item categoryId değerleri geçerli category id ile eşleşir',
   assert.equal(visibleCount, listCatalogItems().map((item) => item.itemKey).length);
   assert.equal(invalidVisible, 0);
   assert.equal(invalidHidden, 0);
-  assert.equal(getItem('wall_200_350').categoryId, 1);
+  assert.equal(getItem('wall_100_350').categoryId, 1);
   assert.equal(getItem('panel_197').categoryId, null);
 });
 
@@ -134,7 +130,7 @@ test('listCatalogGroups kategori sırası, adı ve Item sırasını korur', () =
     });
   });
 
-  assert.equal(visibleTotal, 54);
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 54);
+  assert.equal(visibleTotal, 42);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 42);
   assert.deepEqual([...listCatalogItems().map((item) => item.itemKey)], groups.flatMap((group) => group.keys));
 });

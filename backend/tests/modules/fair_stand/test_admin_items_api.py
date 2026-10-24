@@ -76,7 +76,8 @@ def test_admin_item_records_list_search_filter_and_page(client, db_session, auth
         params={
             "page": 1,
             "pageSize": 10,
-            "search": "wall_200_350",
+            # 0082: wall_200_350 katalogda gizli; görünür Panel kartı wall_100_350.
+            "search": "wall_100_350",
             "status": "active",
             "catalog": "visible",
             "render": "yes",
@@ -89,7 +90,7 @@ def test_admin_item_records_list_search_filter_and_page(client, db_session, auth
     body = response.json()
     assert body["pagination"]["pageSize"] == 10
     assert body["pagination"]["totalItems"] >= 1
-    assert any(item["itemKey"] == "wall_200_350" for item in body["items"])
+    assert any(item["itemKey"] == "wall_100_350" for item in body["items"])
     assert body["filters"]["status"] == "active"
     assert body["filters"]["catalog"] == "visible"
     assert body["filters"]["render"] == "yes"
@@ -459,8 +460,9 @@ def test_admin_clone_item_copies_satellites_and_appends_catalog_index(
     db_session.flush()
     _allow(client, {PERMISSION_ITEMS_CREATE, PERMISSION_ITEMS_READ})
 
+    # 0082: kaynak görünür Panel kartı (wall_200_350 katalogda gizli).
     source = client.get(
-        "/api/v1/fair-stand/admin/item-records/wall_200_350",
+        "/api/v1/fair-stand/admin/item-records/wall_100_350",
         headers=auth_headers,
     )
     assert source.status_code == 200, source.text
@@ -476,14 +478,14 @@ def test_admin_clone_item_copies_satellites_and_appends_catalog_index(
     assert max_index is not None
 
     cloned = client.post(
-        "/api/v1/fair-stand/admin/item-records/wall_200_350/clone",
+        "/api/v1/fair-stand/admin/item-records/wall_100_350/clone",
         headers=auth_headers,
-        json={"item_key": "wall_200_350_copy", "name": "Wall 200 350 Kopya"},
+        json={"item_key": "wall_100_350_copy", "name": "Wall 100 350 Kopya"},
     )
     assert cloned.status_code == 201, cloned.text
     body = cloned.json()
-    assert body["itemKey"] == "wall_200_350_copy"
-    assert body["name"] == "Wall 200 350 Kopya"
+    assert body["itemKey"] == "wall_100_350_copy"
+    assert body["name"] == "Wall 100 350 Kopya"
     assert body["type"] == source_body["type"]
     assert body["catalogVisible"] is True
     assert body["categoryId"] == category_id
@@ -498,22 +500,22 @@ def test_admin_clone_item_copies_satellites_and_appends_catalog_index(
         assert body["assets"][0]["relativePath"] == source_body["assets"][0]["relativePath"]
 
     db_session.expire_all()
-    assert db_session.get(FairStandItemModel, "wall_200_350_copy") is not None
+    assert db_session.get(FairStandItemModel, "wall_100_350_copy") is not None
     source_comp_count = db_session.scalar(
         select(func.count()).select_from(FairStandItemComponentModel).where(
-            FairStandItemComponentModel.parent_item_key == "wall_200_350"
+            FairStandItemComponentModel.parent_item_key == "wall_100_350"
         )
     )
     clone_comp_count = db_session.scalar(
         select(func.count()).select_from(FairStandItemComponentModel).where(
-            FairStandItemComponentModel.parent_item_key == "wall_200_350_copy"
+            FairStandItemComponentModel.parent_item_key == "wall_100_350_copy"
         )
     )
     assert clone_comp_count == source_comp_count
 
     conflict = client.post(
-        "/api/v1/fair-stand/admin/item-records/wall_200_350/clone",
+        "/api/v1/fair-stand/admin/item-records/wall_100_350/clone",
         headers=auth_headers,
-        json={"item_key": "wall_200_350_copy", "name": "Again"},
+        json={"item_key": "wall_100_350_copy", "name": "Again"},
     )
     assert conflict.status_code == 409

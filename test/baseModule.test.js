@@ -22,9 +22,11 @@ test('baza catalog exposes 100 150 200 cm sizes at 50 x 50 cm depth and height',
   );
   assert.equal(base100.dimensions.depthCm, 50);
   assert.equal(base100.dimensions.heightCm, 50);
-  assert.equal(getCatalogItem('base_100').label, 'Baza 100');
-  assert.equal(getCatalogItem('base_150').label, 'Baza 150');
-  assert.equal(getCatalogItem('base_200').label, 'Baza 200');
+  // Baza kartı tek (0083, kart 100): başlık ölçüsüz, 150 / 200 ölçü penceresinden gelir.
+  assert.equal(getCatalogItem('base_100').label, 'Baza');
+  assert.equal(getCatalogItem('base_150'), null);
+  assert.equal(getCatalogItem('base_200'), null);
+  assert.equal(base150.name, 'Baza 150');
 });
 
 test('baza state has independent front left and right editable panels', () => {

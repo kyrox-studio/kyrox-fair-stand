@@ -39,7 +39,7 @@ test('Panel Ek Modül holds wall-short family and field upright_346_5', () => {
     assert.equal(panelWall.keys.includes(key), false);
     assert.equal(getCatalogItem(key) != null, WALL_SHORT_CARD_KEYS.includes(key), key);
   }
-  assert.equal(panelWall.keys.includes('wall_200_350'), true);
+  assert.equal(panelWall.keys.includes('wall_100_350'), true);
   assert.equal(panelWall.keys.includes('upright_346_5'), false);
 });
 
@@ -163,7 +163,8 @@ test('upright snaps to short-up, profile and banko joints, not to düz wall_200'
   assert.equal(hitProfile.snapKind, 'short-up-joint');
   assert.equal(hitProfile.placement.wallId, 'free');
 
-  const banko = createModuleStateFromDescriptor(getCatalogItem('desk_banko_200'));
+  // 200'lük banko katalogda gizli (0083, kart 100); ölçü penceresinin yolu gibi Item'dan kurulur.
+  const banko = createModuleStateFromDescriptor({ itemKey: 'desk_banko_200', type: 'counter' });
   banko.id = 'banko-1';
   banko.placement = { xCm: 0, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'free' };
   const hitBanko = snapPlacementToModules({

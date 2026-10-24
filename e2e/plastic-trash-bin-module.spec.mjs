@@ -166,7 +166,7 @@ test('trash bin is visible and selectable in the existing Add catalog', async ({
 
   const picker = page.locator('.module-picker-backdrop');
   await expect(picker).toBeVisible();
-  await picker.locator('summary', { hasText: 'Extra' }).click();
+  await picker.locator('.module-picker-tab', { hasText: 'Extra' }).click();
   const trashCard = picker.locator(`[data-module-key="${TRASH_KEY}"]`);
   await expect(trashCard).toBeVisible();
   await expect(trashCard).toHaveAttribute('aria-selected', 'false');
@@ -176,7 +176,7 @@ test('trash bin is visible and selectable in the existing Add catalog', async ({
 
   await trashCard.click();
   await expect(trashCard).toHaveAttribute('aria-selected', 'true');
-  await expect(picker.locator('.module-picker-selection-list')).toContainText('Çöp Kutusu');
+  await expect(picker.locator('.module-picker-add')).toBeEnabled();
   await expect(pageErrors).toEqual([]);
 });
 

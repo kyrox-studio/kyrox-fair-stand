@@ -17,6 +17,8 @@ import {
   getModuleRecipe,
 } from './recipeParentItemKey.js';
 
+const CATALOG_CARDS = { base_100: 'Baza' };
+
 const BASE_KEYS = ['base_100', 'base_150', 'base_200'];
 
 const EXPECTED_RECIPE = {
@@ -58,13 +60,19 @@ for (const itemKey of BASE_KEYS) {
       heightCm: 50,
     });
 
-    assert.equal(catalog.itemKey, itemKey);
-    assert.equal(catalog.label, item.name);
-    assert.equal(catalog.previewId, item.previewId);
-    assert.equal(Object.hasOwn(catalog, 'type'), false);
-    assert.equal(Object.hasOwn(catalog, 'widthCm'), false);
+    // Ölçü ailesi (migration 0083): katalogda aile başına tek kart, başlık ölçüsüz;
+    // diğer ölçüler gizlidir ve ölçü penceresinden Item'ın kendisiyle kurulur.
+    if (CATALOG_CARDS[itemKey]) {
+      assert.equal(catalog.itemKey, itemKey);
+      assert.equal(catalog.label, CATALOG_CARDS[itemKey]);
+      assert.equal(catalog.previewId, item.previewId);
+      assert.equal(Object.hasOwn(catalog, 'type'), false);
+      assert.equal(Object.hasOwn(catalog, 'widthCm'), false);
+    } else {
+      assert.equal(catalog, null);
+    }
 
-    const state = createModuleStateFromDescriptor(catalog);
+    const state = createModuleStateFromDescriptor(catalog ?? { itemKey, type: item.type });
     assert.equal(state.itemKey, itemKey);
     assert.equal(state.itemKey, itemKey);
     assert.equal(state.type, 'base');

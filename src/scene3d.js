@@ -110,7 +110,7 @@ import {
   planGroupRotate,
   planGroupTranslate,
 } from './moduleGroups.js';
-import { getModuleBehavior, getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
+import { getModuleBehavior, getModuleDefaultRotationDeg, getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
 import { noteSceneRender, trackSceneModel, trackSceneTextureLoader } from './sceneAssetLoading.js';
 
@@ -668,7 +668,26 @@ export function createStandScene(
     projectionControl.appendChild(button);
     projectionButtons.set(mode, button);
   });
-  container.appendChild(projectionControl);
+  // Persp / Ortho küp kutusunun içinde, ev düğmesinin altında durur; küp hangi ekran boyunda
+  // nereye giderse onunla gider (sağ altta tek başına kalmaz).
+  const viewCubeRoot = container.querySelector('.view-cube');
+  if (viewCubeRoot) {
+    projectionControl.style.position = 'static';
+    projectionControl.style.boxShadow = 'none';
+    projectionControl.style.backdropFilter = 'none';
+    projectionControl.style.padding = '2px';
+    projectionControl.style.width = '100%';
+    projectionControl.style.boxSizing = 'border-box';
+    // Küp kutusu dar ekranda 82–92 px: iki düğme kutuya sığar, taşmaz.
+    projectionButtons.forEach((button) => {
+      button.style.flex = '1 1 0';
+      button.style.minWidth = '0';
+      button.style.padding = '0 4px';
+    });
+    viewCubeRoot.appendChild(projectionControl);
+  } else {
+    container.appendChild(projectionControl);
+  }
 
   function styleProjectionButtons() {
     projectionButtons.forEach((button, mode) => {
@@ -3706,6 +3725,45 @@ export function createStandScene(
     };
   }
 
+  // Duvar üstü öğeyi (TV, ışıklı strafor) ekran noktasındaki duvar ya da serbest panel yüzeyine
+  // takar; hayalet ve geri bildirim çizmez. Sürükle-bırak ve katalogdan "Ekle" aynı kuralı kullanır.
+  function planWallOverlayMount(moduleState, clientX, clientY, preferredWallId = null) {
+    const item = getItem(moduleState.itemKey);
+    const wallPoint = getWallOverlayDragPoint(clientX, clientY, preferredWallId, moduleState);
+    if (!wallPoint) return { ok: false, message: formatWallOverlayFeedback('surface-failed', item) };
+    const snapped = snapPlacementToStand({
+      standType: stageLayout.standType,
+      moduleType: moduleState.type,
+      shape: moduleState.shape,
+      widthCm: moduleState.widthCm,
+      depthCm: moduleState.depthCm,
+      forceFree: wallPoint.freePanelSupport === true,
+      pointerXCm: wallPoint.pointerXCm,
+      pointerYCm: wallPoint.pointerYCm,
+      standXCm: stageLayout.widthCm,
+      standYCm: stageLayout.depthCm,
+      preferredRotationZDeg: wallPoint.rotationZDeg,
+      rotationLocked: true,
+    });
+    if (!snapped.ok || !snapped.placement) {
+      return { ok: false, message: snapped.message ?? formatWallOverlayFeedback('wall-place-failed', item) };
+    }
+    const placement = withItemZ(moduleState, { ...snapped.placement }, wallPoint.zCm);
+    return {
+      ok: true,
+      placement: { ...placement },
+      message: null,
+      plan: {
+        ok: true,
+        message: null,
+        movingPlacement: { ...placement },
+        placements: new Map([[moduleState.id, { ...placement }]]),
+      },
+      snap: { mode: 'wall-overlay', wallId: wallPoint.wallId },
+      wallPoint,
+    };
+  }
+
   function previewCatalogModuleDrag(
     moduleState,
     clientX,
@@ -3748,49 +3806,13 @@ export function createStandScene(
           snap: { mode: 'free' },
         };
       }
-      const wallPoint = getWallOverlayDragPoint(clientX, clientY, pointedModule.placement.wallId, moduleState);
-      if (!wallPoint) {
-        disposePlacementGhost();
-        const message = formatWallOverlayFeedback('surface-failed', getItem(moduleState.itemKey));
-        showPlacementFeedback(message, { clientX, clientY });
-        return { ok: false, message };
-      }
-      const snapped = snapPlacementToStand({
-        standType: stageLayout.standType,
-        moduleType: moduleState.type,
-        shape: moduleState.shape,
-        widthCm: moduleState.widthCm,
-        depthCm: moduleState.depthCm,
-        forceFree: wallPoint.freePanelSupport === true,
-        pointerXCm: wallPoint.pointerXCm,
-        pointerYCm: wallPoint.pointerYCm,
-        standXCm: stageLayout.widthCm,
-        standYCm: stageLayout.depthCm,
-        preferredRotationZDeg: wallPoint.rotationZDeg,
-        rotationLocked: true,
-      });
-      if (!snapped.ok || !snapped.placement) {
-        disposePlacementGhost();
-        const message = snapped.message ?? formatWallOverlayFeedback('wall-place-failed', getItem(moduleState.itemKey));
-        showPlacementFeedback(message, { clientX, clientY });
-        return { ok: false, message };
-      }
-      const placement = withItemZ(moduleState, { ...snapped.placement }, wallPoint.zCm);
-      const plan = {
-        ok: true,
-        message: null,
-        movingPlacement: { ...placement },
-        placements: new Map([[moduleState.id, { ...placement }]]),
-      };
-      showPlacementGhost(moduleState, placement, true);
-      clearPlacementFeedback();
-      return {
-        ok: true,
-        placement: { ...placement },
-        message: null,
-        plan,
-        snap: { mode: 'wall-overlay', wallId: wallPoint.wallId },
-      };
+      const mount = planWallOverlayMount(moduleState, clientX, clientY, pointedModule.placement.wallId);
+      if (mount.placement) showPlacementGhost(moduleState, mount.placement, true);
+      else disposePlacementGhost();
+      if (mount.ok) clearPlacementFeedback();
+      else showPlacementFeedback(mount.message, { clientX, clientY });
+      const { wallPoint: _wallPoint, ...mountResult } = mount;
+      return mountResult;
     }
     if (!stageLayout || !moduleState) {
       disposePlacementGhost();
@@ -3807,6 +3829,18 @@ export function createStandScene(
       return { ok: false, message };
     }
 
+    const result = planCatalogModuleAtGround(moduleState, ground, preferredRotationZDeg, rotationLocked);
+    if (result.ghostPlacement) showPlacementGhost(moduleState, result.ghostPlacement, result.ok);
+    else disposePlacementGhost();
+    if (result.ok) clearPlacementFeedback();
+    else showPlacementFeedback(result.message ?? 'Bu konuma modül yerleştirilemez.', { clientX, clientY });
+    return withoutGhost(result);
+  }
+
+  // Katalog bırakma kuralı, zemin noktası (cm) verilerek: hayalet ve geri bildirim çizmez.
+  // Sürükle-bırak (previewCatalogModuleDrag) ve katalogdan "Ekle" (önüne / müsait yer) bunu kullanır.
+  function planCatalogModuleAtGround(moduleState, ground, preferredRotationZDeg = 0, rotationLocked = false) {
+    if (!stageLayout || !moduleState) return { ok: false, message: 'Önce stand alanını oluştur.' };
     const snapped = snapPlacementToStand({
       standType: stageLayout.standType,
       moduleType: moduleState.type,
@@ -3823,9 +3857,7 @@ export function createStandScene(
     });
 
     if (!snapped.ok || !snapped.placement) {
-      disposePlacementGhost();
       const message = snapped.message ?? 'Bu konuma modül yerleştirilemedi.';
-      showPlacementFeedback(message, { clientX, clientY });
       return {
         ok: false,
         message,
@@ -3834,10 +3866,9 @@ export function createStandScene(
 
     if (isWallOverlayModule(moduleState.type)) {
       const placement = withItemZ(moduleState, { ...snapped.placement });
-      showPlacementGhost(moduleState, placement, true);
-      clearPlacementFeedback();
       return {
         ok: true,
+        ghostPlacement: placement,
         placement,
         message: null,
         plan: {
@@ -3860,10 +3891,9 @@ export function createStandScene(
         moduleState,
         ),
       );
-      showPlacementGhost(moduleState, placement, true);
-      clearPlacementFeedback();
       return {
         ok: true,
+        ghostPlacement: placement,
         placement: { ...placement },
         message: null,
         plan: {
@@ -3938,11 +3968,9 @@ export function createStandScene(
     const previewPlacement = plan.ok && plan.movingPlacement
       ? plan.movingPlacement
       : desiredPlacement;
-    showPlacementGhost(moduleState, previewPlacement, plan.ok);
-    if (plan.ok) clearPlacementFeedback();
-    else showPlacementFeedback(plan.message ?? 'Bu konuma modül yerleştirilemez.', { clientX, clientY });
     return {
       ok: plan.ok,
+      ghostPlacement: previewPlacement,
       placement: { ...previewPlacement },
       message: plan.message ?? null,
       plan,
@@ -3982,6 +4010,150 @@ export function createStandScene(
   function clearCatalogModuleDrag() {
     disposePlacementGhost();
     clearPlacementFeedback();
+  }
+
+  // Katalogdan "Ekle" yardımcıları. Sonuç dropCatalogModuleDrag ile aynı biçimdedir
+  // ({ ok, placement, plan, message }); main.js commitDroppedCatalogModule ile kaydeder.
+
+  function withoutGhost(result) {
+    const { ghostPlacement, ...publicResult } = result;
+    return ghostPlacement === undefined ? result : publicResult;
+  }
+
+  function getModuleWorldBounds(moduleId) {
+    const group = findModuleGroupById(moduleId);
+    if (!group) return null;
+    group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(group);
+    return box.isEmpty() ? null : box;
+  }
+
+  function projectWorldToClient(point) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const ndc = point.clone().project(camera);
+    if (ndc.z < -1 || ndc.z > 1 || Math.abs(ndc.x) > 1 || Math.abs(ndc.y) > 1) return null;
+    return {
+      clientX: rect.left + ((ndc.x + 1) / 2) * rect.width,
+      clientY: rect.top + ((1 - ndc.y) / 2) * rect.height,
+    };
+  }
+
+  // Duvar üstü (wall-overlay) ve tepe (top) öğeler tıklanan modülün üstüne konur: sürükle-bırak
+  // kuralı modülün ortasına bırakılmış gibi çalışır (orta nokta görünmüyorsa sağ tıkın noktası).
+  // Modül bu öğeyi taşımıyorsa ya da yüzeye sığmıyorsa öğe başka yere konmaz; sebep döner.
+  function placeCatalogModuleOnModule(moduleState, moduleId, fallbackClient = null) {
+    const target = getRenderedModuleStates().find((state) => state.id === moduleId);
+    const box = getModuleWorldBounds(moduleId);
+    if (!stageLayout || !moduleState || !target || !box) return { ok: false, message: 'Hedef modül bulunamadı.' };
+    const item = getItem(moduleState.itemKey);
+    if (!supportsWallOverlayMount(target)) {
+      return { ok: false, message: formatWallOverlayFeedback('host-unsupported', item) };
+    }
+    const center = box.getCenter(new THREE.Vector3());
+    if (isTopPlacementModule(moduleState.type)) {
+      const result = withoutGhost(planCatalogModuleAtGround(moduleState, { xCm: center.x * 100, yCm: center.z * 100 }));
+      if (result.ok && result.snap?.mode !== 'top-wall') {
+        return { ok: false, message: formatWallOverlayFeedback('host-unsupported', item) };
+      }
+      return result;
+    }
+    const pointsOnTarget = [projectWorldToClient(center), fallbackClient]
+      .filter((point) => Number.isFinite(point?.clientX) && Number.isFinite(point?.clientY))
+      .filter((point) => pickModuleAt(point.clientX, point.clientY)?.moduleGroup?.userData?.moduleId === moduleId);
+    if (!pointsOnTarget.length) return { ok: false, message: formatWallOverlayFeedback('surface-failed', item) };
+    const targetWallId = ['back', 'left', 'right'].includes(target.placement?.wallId) ? target.placement.wallId : null;
+    let result = { ok: false, message: formatWallOverlayFeedback('surface-failed', item) };
+    for (const point of pointsOnTarget) {
+      if (usesPanelSeamOverlaySnap(moduleState)) {
+        // Raf: panel birleşimine oturur; birleşim yoksa reddedilir (başka yere düşmez).
+        result = dropCatalogModuleDrag(moduleState, point.clientX, point.clientY, 0, false);
+      } else {
+        const mount = planWallOverlayMount(moduleState, point.clientX, point.clientY, targetWallId);
+        const onTarget = targetWallId != null || mount.wallPoint?.supportModuleId === moduleId;
+        const { wallPoint: _wallPoint, ...mountResult } = mount;
+        result = mount.ok && !onTarget
+          ? { ok: false, message: formatWallOverlayFeedback('surface-failed', item) }
+          : mountResult;
+      }
+      if (result.ok) return result;
+    }
+    return result;
+  }
+
+  // Katalogdan eklenen öğe seçilir; ekranda değilse kamera döndürülmeden yalnız kaydırılır
+  // (hedef ve kamera aynı vektörle taşınır) ve öğe görüş merkezine gelir.
+  function revealAddedModule(moduleId) {
+    if (!selectModulesById([moduleId])) return false;
+    const box = getModuleWorldBounds(moduleId);
+    if (!box) return true;
+    const center = box.getCenter(new THREE.Vector3());
+    const ndc = center.clone().project(camera);
+    const inView = ndc.z >= -1 && ndc.z <= 1 && Math.abs(ndc.x) <= 0.85 && Math.abs(ndc.y) <= 0.85;
+    if (inView) return true;
+    const delta = center.clone().sub(controls.target);
+    controls.target.add(delta);
+    camera.position.add(delta);
+    controls.update();
+    requestEditorRender();
+    return true;
+  }
+
+  function planMovesOtherModules(plan, moduleId) {
+    if (!(plan?.placements instanceof Map)) return false;
+    const current = new Map(getRenderedModuleStates().map((state) => [state.id, state.placement]));
+    for (const [id, placement] of plan.placements) {
+      if (id === moduleId || !current.has(id)) continue;
+      if (JSON.stringify(current.get(id) ?? null) !== JSON.stringify(placement ?? null)) return true;
+    }
+    return false;
+  }
+
+  function acceptGroundPlan(moduleState, ground, rotationZDeg) {
+    const result = withoutGhost(planCatalogModuleAtGround(moduleState, ground, rotationZDeg, false));
+    if (!result.ok || !result.placement || planMovesOtherModules(result.plan, moduleState.id)) return null;
+    return result;
+  }
+
+  // Modülün hemen önü: modülün baktığı yönde, gövdesinin önüne (10 cm boşlukla) bırakılmış gibi.
+  function planCatalogModuleInFrontOf(moduleState, moduleId) {
+    const target = getRenderedModuleStates().find((state) => state.id === moduleId);
+    const box = getModuleWorldBounds(moduleId);
+    if (!stageLayout || !moduleState || !target || !box) return null;
+    const rotationZDeg = normalizeModuleRotationZDeg(target.placement?.rotationZDeg ?? 0);
+    const front = new THREE.Vector3(0, 0, 1)
+      .applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(rotationZDeg));
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const halfExtentM = (Math.abs(front.x) * size.x + Math.abs(front.z) * size.z) / 2;
+    const offsetM = halfExtentM + 0.1 + Math.max(0, Number(moduleState.depthCm) || 0) / 200;
+    return acceptGroundPlan(moduleState, {
+      xCm: (center.x + front.x * offsetM) * 100,
+      yCm: (center.z + front.z * offsetM) * 100,
+    }, rotationZDeg);
+  }
+
+  // Sahnede müsait yer: stand zemininde 25 cm aralıklı noktalar, hedefe (yoksa stand ortasına)
+  // yakından uzağa denenir; diğer modülleri kaydırmayan ilk geçerli bırakma seçilir.
+  function findFreeCatalogPlacement(moduleState, nearModuleId = null) {
+    if (!stageLayout || !moduleState) return null;
+    const box = nearModuleId ? getModuleWorldBounds(nearModuleId) : null;
+    const origin = box
+      ? box.getCenter(new THREE.Vector3()).multiplyScalar(100)
+      : new THREE.Vector3(stageLayout.widthCm / 2, 0, stageLayout.depthCm / 2);
+    const stepCm = 25;
+    const points = [];
+    for (let xCm = stepCm / 2; xCm < stageLayout.widthCm; xCm += stepCm) {
+      for (let yCm = stepCm / 2; yCm < stageLayout.depthCm; yCm += stepCm) {
+        points.push({ xCm, yCm, distance: Math.hypot(xCm - origin.x, yCm - origin.z) });
+      }
+    }
+    points.sort((a, b) => a.distance - b.distance);
+    for (const point of points) {
+      const result = acceptGroundPlan(moduleState, point, getModuleDefaultRotationDeg(moduleState));
+      if (result) return result;
+    }
+    return null;
   }
 
   function updatePlacementDrag(event) {
@@ -7497,6 +7669,10 @@ export function createStandScene(
     previewCatalogModuleDrag,
     dropCatalogModuleDrag,
     clearCatalogModuleDrag,
+    placeCatalogModuleOnModule,
+    planCatalogModuleInFrontOf,
+    findFreeCatalogPlacement,
+    revealAddedModule,
     getStageLayout: () => (stageLayout ? { ...stageLayout } : null),
     getSelectedSurface: () => [...selectedSurfaces][0] ?? null,
     getSelectedSurfaces: () => [...selectedSurfaces],

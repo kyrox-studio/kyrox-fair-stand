@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { catalogCardKeyFor, chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
@@ -21,6 +22,9 @@ async function exposeScene(page) {
 }
 
 async function wallContextMenu(page, moduleId) {
+  // "Açıldı" durumu restoreProject içinde yazılır; yükleme perdesi ise sahnenin
+  // çizimi tamamlanınca kapanır. Ham mouse tıklaması perdeyi beklemez.
+  await expect(page.locator('#project-loading-overlay')).toBeHidden({ timeout: 30_000 });
   const point = await page.evaluate((id) => {
     const mesh = window.__sceneSurfaces().find((surface) => surface.userData.moduleId === id && surface.userData.stripIndex === 3);
     mesh.updateMatrixWorld(true);
@@ -160,13 +164,18 @@ test('250 cm stand: door and showcases from the catalog take the stand height', 
   await page.locator('details', { has: open }).locator(':scope > summary').click();
   await open.click();
   const picker = page.locator('.module-picker-backdrop');
-  await picker.locator('summary', { hasText: 'Raf & Vitrin' }).click();
-  await picker.locator('[data-module-key="wall_showcase_100_2_350"]').click();
-  await picker.locator('[data-module-key="wall_showcase_100_3_350"]').click();
-  await picker.locator('summary', { hasText: 'Panel & Duvar' }).click();
-  await picker.locator('[data-module-key="wall_door_100_350"]').click();
-  await picker.locator('.module-picker-add').click();
-  await expect(picker).toBeHidden();
+  // Katalogdan her seferinde tek öğe eklenir.
+  for (const [tab, itemKey] of [
+    ['Raf & Vitrin', 'wall_showcase_100_2_350'],
+    ['Raf & Vitrin', 'wall_showcase_100_3_350'],
+    ['Panel & Duvar', 'wall_door_100_350'],
+  ]) {
+    if (!(await picker.isVisible())) await open.click();
+    await picker.locator('.module-picker-tab', { hasText: tab }).click();
+    await picker.locator(`[data-module-key="${itemKey}"]`).click();
+    await picker.locator('.module-picker-add').click();
+    await expect(picker).toBeHidden();
+  }
 
   const project = await savedProject(page);
   const byKey = Object.fromEntries(project.modules.filter((m) => Array.isArray(m.strips)).map((m) => [m.itemKey, m]));
@@ -208,6 +217,9 @@ for (const wallHeight of [250, 300, 350, 400, 450, 500]) {
       await card.dragTo(page.locator('#viewport'), {
         targetPosition: { x: Math.round(viewport.width * x), y: Math.round(viewport.height * y) },
       });
+      // Panel tek kart: bırakınca genişlik penceresi açılır (0082); 100 seçili gelir.
+      const widthDialog = page.locator('.item-size-dialog');
+      if (await widthDialog.isVisible().catch(() => false)) await chooseCatalogWidth(page, 'wall_100_350');
       project = await savedProject(page);
       if (project.modules.some((module) => module.itemKey === expected)) break;
     }
@@ -235,7 +247,7 @@ for (const wallHeight of [250, 300, 350, 400, 450, 500]) {
     await page.locator('details', { has: open }).locator(':scope > summary').click();
     await open.click();
     const picker = page.locator('.module-picker-backdrop');
-    await picker.locator('summary', { hasText: 'Panel & Duvar' }).click();
+    await picker.locator('.module-picker-tab', { hasText: 'Panel & Duvar' }).click();
     await picker.locator('[data-module-key="wall_door_100_350"]').click();
     await picker.locator('.module-picker-add').click();
     await expect(picker).toBeHidden();

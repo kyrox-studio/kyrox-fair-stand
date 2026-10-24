@@ -20,6 +20,8 @@ import {
   getExpandedModuleRecipe,
 } from './recipeParentItemKey.js';
 
+const CATALOG_CARDS = { desk_banko_100: 'Banko', desk_banko_100_l: 'Köşe Banko' };
+
 const BANKO_KEYS = [
   'desk_banko_100',
   'desk_banko_150',
@@ -99,14 +101,20 @@ for (const itemKey of BANKO_KEYS) {
       assert.equal(item.shape, undefined);
     }
 
-    assert.equal(catalog.itemKey, itemKey);
-    assert.equal(catalog.label, item.name);
-    assert.equal(catalog.previewId, item.previewId);
-    assert.equal(Object.hasOwn(catalog, 'type'), false);
-    assert.equal(Object.hasOwn(catalog, 'widthCm'), false);
-    assert.equal(Object.hasOwn(catalog, 'shape'), false);
+    // Ölçü ailesi (migration 0083, kart 100): katalogda aile başına tek kart, başlık ölçüsüz;
+    // diğer ölçüler gizlidir ve ölçü penceresinden Item'ın kendisiyle kurulur.
+    if (CATALOG_CARDS[itemKey]) {
+      assert.equal(catalog.itemKey, itemKey);
+      assert.equal(catalog.label, CATALOG_CARDS[itemKey]);
+      assert.equal(catalog.previewId, item.previewId);
+      assert.equal(Object.hasOwn(catalog, 'type'), false);
+      assert.equal(Object.hasOwn(catalog, 'widthCm'), false);
+      assert.equal(Object.hasOwn(catalog, 'shape'), false);
+    } else {
+      assert.equal(catalog, null);
+    }
 
-    const state = createModuleStateFromDescriptor(catalog);
+    const state = createModuleStateFromDescriptor(catalog ?? { itemKey, type: item.type });
     assert.equal(state.itemKey, itemKey);
     assert.equal(state.itemKey, itemKey);
     assert.equal(state.type, 'counter');

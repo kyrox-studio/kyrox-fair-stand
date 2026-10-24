@@ -118,7 +118,7 @@ function listGuideSections() {
         <li><strong>Lightbox aydınlatmayı aç / kapat:</strong> Bez yüzeyinin aydınlatmasını kontrol eder.</li>
         <li><strong>Raf altı aydınlatmayı aç / kapat:</strong> Raf modülündeki LED görünümünü kontrol eder.</li>
         <li><strong>Arka yüze panel ekle / Arka yüz panellerini kaldır:</strong> Düz duvarın (50, 100, 150, 200 cm ve kısa duvarlar) arka yüzüne de panel takar; arka paneller ön yüz gibi seçilir, görsel, cam, Lightbox ve metal alır. Üretim listesinde tek çerçeve, iki yüz panel sayılır; köşede içe bakan yüz köşe paneline döner.</li>
-        <li><strong>Ekle Sağ / Sol Tarafa…:</strong> Hedef modülün yanına katalogdan yeni modül ekler.</li>
+        <li><strong>Ekle…:</strong> Katalogdan tek modül ekler: sağına, sığmazsa soluna, sonra önüne, olmazsa sahnede müsait yere. Duvara takılan öğeler (TV, raf, ışıklı strafor, projektör) tıklanan modülün üstüne konur.</li>
       </ul>
     `,
   },
@@ -162,6 +162,7 @@ function listGuideSections() {
       <p>Modüller serbestçe görünse de bırakıldıkları konum sistem kurallarıyla doğrulanır. Stand sınırı, çarpışma ve modülün kendi snap adımı kontrol edilir.</p>
       <ul>
         <li>Bütün modüller 10 cm adımla hareket eder (duvar, banko, mobilya, projektör dahil).</li>
+        <li><strong>Kopyala:</strong> Kopyalayınca sağ altta “… hafızaya alındı” bildirimi çıkar; Ctrl+V son kopyayla yeniden bırakmaya başlar.</li>
         <li><strong>Kopya bağımsızlığı:</strong> Kopyalanan öğe veya grup o anki panel, renk, görsel ölçüsü ve kaplamasını alır. Sonraki görsel, ölçü, renk veya kaplama değişiklikleri kaynağı değiştirmez. Aynı görsel dosyası başka grupta kullanılsa da ölçülendirme yalnız seçilen görsel bloğuna uygulanır.</li>
         <li><strong>Profil bağlantısı:</strong> Profil başka bir profilin her noktasına dik bağlanır (iki profilin arasına, ortasına); yaklaşınca 10 cm adımla yapışır. Profiller uç uca da eklenir. Duvar panelinde dik bağlantı yalnız dikme olan noktadadır.</li>
         <li><strong>Dikey taşıma:</strong> TV, strafor, tül, raf, küp blok, LED projektör, kısa duvar ve profil seçiliyken <strong>↑ / ↓</strong> ile 10 cm iner/çıkar; zemini ve duvar tepesini geçmez. Bu öğelerde ölçülerin yanında zemine ve tavana (duvar tepesine) uzaklık da yazar. Hangi öğenin dikey taşındığı öğe kaydındaki ayardır.</li>
@@ -303,10 +304,11 @@ function listGuideSections() {
         <li>Sahne oluşturulduktan sonra Modül Ekle aktif olur.</li>
         <li>Modül Ekle’nin üstündeki katalog kartı sahneye sürüklenebilir. Sürüklerken <strong>Shift+R</strong> saat yönünde döndürür ve açıyı kilitler. Tablette karta dokunup sahnede yere dokunmak da modülü oraya ekler; aynı karta tekrar dokunmak veya Esc iptal eder.</li>
         <li><strong>Sahneyi Sıfırla:</strong> stand tipi, ölçü ve Zemin Kaplaması seçimi kalır; sahnedeki modüller ve zemin alanı silinir.</li>
-        <li>Katalogdan bir veya birden fazla modül seçilebilir.</li>
-        <li>Aynı modül birden fazla kez seçim sırasına eklenebilir.</li>
-        <li>Seçim sırasındaki modüller sürüklenerek yeniden sıralanabilir.</li>
-        <li>Modüller duvarın sonuna veya seçili modülün sağ/sol tarafına eklenebilir.</li>
+        <li>Katalog penceresinde kategoriler solda sekme olarak durur; bir başlığa tıklayınca o kategorinin modülleri sağda görünür.</li>
+        <li>Her seferinde tek modül eklenir: karta tıklayıp <strong>Ekle</strong>’ye bas (ya da karta çift tıkla).</li>
+        <li><strong>Panel</strong> ve <strong>Separatör</strong> katalogda tek karttır; bırakınca ya da eklerken genişlik sorulur (Panel 50 / 100 / 150 / 200, Separatör 50 / 100). Separatörde <strong>Sarmaşıklı</strong> çentiği seçilirse sarmaşıklı separatör konur.</li>
+        <li>Sağ tık <strong>Ekle…</strong>: modül tıklanan modülün sağına, sığmazsa soluna, o da olmazsa hemen önüne, yine olmazsa sahnede müsait bir yere konur. TV, raf, ışıklı strafor, projektör gibi duvara takılan öğeler doğrudan tıklanan modülün üstüne yerleşir.</li>
+        <li>Üstteki Modül Ekle ile açılan katalogda modül duvarın sonuna, sığmazsa sahnede müsait bir yere eklenir.</li>
         <li>Yerleşim bırakılmadan önce sistem tarafından doğrulanır.</li>
       </ul>
     `,
@@ -437,7 +439,21 @@ export function initHelpGuide() {
   const content = backdrop.querySelector('.help-guide-content');
   listGuideSections().forEach((section) => content.appendChild(createGuideSection(section)));
 
-  document.body.append(button, backdrop);
+  // Kılavuz düğmesi üst bant görünürken bantta ("Ekranı paylaş"ın yanında) durur. Bant gizliyken
+  // (sahne kurulmadan) sağ altta yüzer; kılavuz her zaman açılabilir.
+  document.body.append(backdrop);
+  const toolbar = document.querySelector('#viewport-toolbar');
+  const placeButton = () => {
+    const inToolbar = Boolean(toolbar) && !toolbar.hidden;
+    button.classList.toggle('viewport-render-button', inToolbar);
+    button.classList.toggle('help-guide-button--toolbar', inToolbar);
+    const parent = inToolbar ? toolbar : document.body;
+    if (button.parentElement !== parent) parent.appendChild(button);
+  };
+  placeButton();
+  if (toolbar && typeof MutationObserver === 'function') {
+    new MutationObserver(placeButton).observe(toolbar, { attributes: true, attributeFilter: ['hidden'] });
+  }
 
   const closeButton = backdrop.querySelector('.help-guide-close');
   let previousFocus = null;

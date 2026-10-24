@@ -232,7 +232,8 @@ for (const [rows, label, variant] of [['1', 'Tek sıra', 'short_1'], ['2', 'Çif
     expect(panels.map((module) => module.itemKey).sort()).toEqual(
       [`wall_100_${variant}`, `wall_100_${variant}`, `wall_200_${variant}`, `wall_200_${variant}`],
     );
-    expect(uprights.map((module) => [module.placement.xCm, module.placement.yCm])).toEqual([[300, 300]]);
+    // Dikmenin merkezi panel hatlarının birleşiminde (yatay modülde xCm sol kenar).
+    expect(uprights.map((module) => [module.placement.xCm + module.widthCm / 2, module.placement.yCm])).toEqual([[300, 300]]);
     expect(fasciaModules).toHaveLength(5);
     expect(errors).toEqual([]);
   });
@@ -254,7 +255,7 @@ test('wizard fascia 800 × 800: each open 8 m edge gets a middle upright (max 5 
   const fasciaModules = project.modules.filter((module) => module.autoFascia === true);
   const uprights = fasciaModules
     .filter((module) => module.type === 'upright')
-    .map((module) => [module.placement.xCm, module.placement.yCm]);
+    .map((module) => [module.placement.xCm + module.widthCm / 2, module.placement.yCm]);
   expect(uprights).toEqual([[800, 400], [400, 800], [800, 800]]);
   const panels = fasciaModules.filter((module) => module.type !== 'upright');
   expect(panels.map((module) => module.itemKey)).toEqual(Array(8).fill('wall_200_short_1'));

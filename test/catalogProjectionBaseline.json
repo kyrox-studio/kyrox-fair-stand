@@ -1,13 +1,7 @@
 {
   "keys": [
-    "wall_200_350",
-    "wall_150_350",
     "wall_100_350",
-    "wall_50_350",
     "wall_separator_100_350",
-    "wall_separator_50_350",
-    "wall_separator_100_350_sarmasik",
-    "wall_separator_50_350_sarmasik",
     "wall_door_100_350",
     "wall_100_short_2",
     "wall_100_short_1",
@@ -20,14 +14,8 @@
     "shelf_row_2",
     "shelf_row_3",
     "floor_showcase_100",
-    "desk_banko_200",
-    "desk_banko_150",
     "desk_banko_100",
-    "desk_banko_200_l",
-    "desk_banko_150_l",
     "desk_banko_100_l",
-    "base_200",
-    "base_150",
     "base_100",
     "furniture_sofa_set_classic",
     "furniture_sofa_single_classic",
@@ -57,44 +45,14 @@
   ],
   "descriptors": [
     {
-      "itemKey": "wall_200_350",
-      "label": "Panel 200",
-      "previewId": 9
-    },
-    {
-      "itemKey": "wall_150_350",
-      "label": "Panel 150",
-      "previewId": 9
-    },
-    {
       "itemKey": "wall_100_350",
-      "label": "Panel 100",
-      "previewId": 9
-    },
-    {
-      "itemKey": "wall_50_350",
-      "label": "Panel 50",
+      "label": "Panel",
       "previewId": 9
     },
     {
       "itemKey": "wall_separator_100_350",
-      "label": "Separatör 100",
+      "label": "Separatör",
       "previewId": 18
-    },
-    {
-      "itemKey": "wall_separator_50_350",
-      "label": "Separatör 50",
-      "previewId": 18
-    },
-    {
-      "itemKey": "wall_separator_100_350_sarmasik",
-      "label": "Separatör 100 Sarmaşık",
-      "previewId": 19
-    },
-    {
-      "itemKey": "wall_separator_50_350_sarmasik",
-      "label": "Separatör 50 Sarmaşık",
-      "previewId": 19
     },
     {
       "itemKey": "wall_door_100_350",
@@ -157,48 +115,18 @@
       "previewId": 29
     },
     {
-      "itemKey": "desk_banko_200",
-      "label": "Banko 200",
-      "previewId": 7
-    },
-    {
-      "itemKey": "desk_banko_150",
-      "label": "Banko 150",
-      "previewId": 7
-    },
-    {
       "itemKey": "desk_banko_100",
-      "label": "Banko 100",
-      "previewId": 7
-    },
-    {
-      "itemKey": "desk_banko_200_l",
-      "label": "Köşe Banko 200×200",
-      "previewId": 7
-    },
-    {
-      "itemKey": "desk_banko_150_l",
-      "label": "Köşe Banko 150×150",
+      "label": "Banko",
       "previewId": 7
     },
     {
       "itemKey": "desk_banko_100_l",
-      "label": "Köşe Banko 100×100",
+      "label": "Köşe Banko",
       "previewId": 7
     },
     {
-      "itemKey": "base_200",
-      "label": "Baza 200",
-      "previewId": 2
-    },
-    {
-      "itemKey": "base_150",
-      "label": "Baza 150",
-      "previewId": 2
-    },
-    {
       "itemKey": "base_100",
-      "label": "Baza 100",
+      "label": "Baza",
       "previewId": 2
     },
     {
@@ -333,14 +261,8 @@
       "catalogName": "Panel & Duvar",
       "catalogIndex": 1,
       "keys": [
-        "wall_200_350",
-        "wall_150_350",
         "wall_100_350",
-        "wall_50_350",
         "wall_separator_100_350",
-        "wall_separator_50_350",
-        "wall_separator_100_350_sarmasik",
-        "wall_separator_50_350_sarmasik",
         "wall_door_100_350"
       ]
     },
@@ -374,14 +296,8 @@
       "catalogName": "Banko & Baza",
       "catalogIndex": 4,
       "keys": [
-        "desk_banko_200",
-        "desk_banko_150",
         "desk_banko_100",
-        "desk_banko_200_l",
-        "desk_banko_150_l",
         "desk_banko_100_l",
-        "base_200",
-        "base_150",
         "base_100"
       ]
     },

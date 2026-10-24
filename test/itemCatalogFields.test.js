@@ -21,14 +21,8 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
   Object.freeze({
     label: 'Panel & Duvar',
     keys: Object.freeze([
-      'wall_200_350',
-      'wall_150_350',
       'wall_100_350',
-      'wall_50_350',
       'wall_separator_100_350',
-      'wall_separator_50_350',
-      'wall_separator_100_350_sarmasik',
-      'wall_separator_50_350_sarmasik',
       'wall_door_100_350',
     ]),
   }),
@@ -56,14 +50,8 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
   Object.freeze({
     label: 'Banko & Baza',
     keys: Object.freeze([
-      'desk_banko_200',
-      'desk_banko_150',
       'desk_banko_100',
-      'desk_banko_200_l',
-      'desk_banko_150_l',
       'desk_banko_100_l',
-      'base_200',
-      'base_150',
       'base_100',
     ]),
   }),
@@ -209,10 +197,13 @@ test('106 Item katalog metadata alanlarını taşır ve canlı katalog üyeliği
   assert.equal(duplicateIndex, 0);
   assert.equal(gapIndex, 0);
 
-  assert.equal(getItem('wall_200_350').catalogVisible, true);
-  assert.equal(getItem('wall_200_350').categoryId, 1);
-  assert.equal(getItem('wall_200_350').catalogItemIndex, 1);
-  assert.equal(getItem('wall_200_350').previewId, 9);
+  assert.equal(getItem('wall_100_350').catalogVisible, true);
+  assert.equal(getItem('wall_100_350').categoryId, 1);
+  assert.equal(getItem('wall_100_350').catalogItemIndex, 1);
+  assert.equal(getItem('wall_100_350').previewId, 9);
+  // Panel ailesinin gizli genişlikleri (0082) katalog alanı taşımaz.
+  assert.equal(getItem('wall_200_350').catalogVisible, false);
+  assert.equal(getItem('wall_200_350').previewId ?? null, null);
   assert.equal(getItem('panel_197').catalogVisible, false);
   assert.equal(getItem('panel_197').categoryId, null);
   assert.equal(getItem('panel_197').catalogItemIndex, null);

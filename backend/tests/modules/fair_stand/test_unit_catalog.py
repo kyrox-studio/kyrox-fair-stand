@@ -35,7 +35,11 @@ def test_unit_catalog_revision_is_single_head():
     from alembic.script import ScriptDirectory
 
     script = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert script.get_heads() == ["0081_profile_346_5"]
+    assert script.get_heads() == ["0083_banko_base_cards"]
+    revision = script.get_revision("0083_banko_base_cards")
+    assert revision.down_revision == "0082_panel_separator_cards"
+    revision = script.get_revision("0082_panel_separator_cards")
+    assert revision.down_revision == "0081_profile_346_5"
     revision = script.get_revision("0081_profile_346_5")
     assert revision.down_revision == "0080_item_length_parts"
     revision = script.get_revision("0080_item_length_parts")

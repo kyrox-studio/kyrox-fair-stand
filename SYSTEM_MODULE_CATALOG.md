@@ -18,8 +18,8 @@ Bu dosya insan/AI için **okunabilir katalog indeksi**dir. Runtime source-of-tru
 
 Bu snapshot `Version2` üzerindeki `MODULE_CATALOG_KEYS` ve `MODULE_CONTRACT_ASSIGNMENTS` ile eşleşmek zorundadır; `test/systemModuleCatalogDoc.test.js` drift olduğunda CI'yi kırar.
 
-- Catalog entries: **54**
-- BOM mode `recipe`: **22**
+- Catalog entries: **42**
+- BOM mode `recipe`: **10**
 - BOM mode `self`: **12**
 - BOM mode `decision-required`: **20**
 - Katalog dışı explicit runtime module: **1** (`illuminated-foam`)
@@ -32,14 +32,8 @@ Bu snapshot `Version2` üzerindeki `MODULE_CATALOG_KEYS` ve `MODULE_CONTRACT_ASS
 Aşağıdaki blok test tarafından `MODULE_CATALOG_KEYS` ile **sıra dahil birebir** karşılaştırılır.
 
 <!-- catalog-keys:start -->
-- `wall_200_350`
-- `wall_150_350`
 - `wall_100_350`
-- `wall_50_350`
 - `wall_separator_100_350`
-- `wall_separator_50_350`
-- `wall_separator_100_350_sarmasik`
-- `wall_separator_50_350_sarmasik`
 - `wall_door_100_350`
 - `wall_100_short_2`
 - `wall_100_short_1`
@@ -52,14 +46,8 @@ Aşağıdaki blok test tarafından `MODULE_CATALOG_KEYS` ile **sıra dahil bireb
 - `shelf_row_2`
 - `shelf_row_3`
 - `floor_showcase_100`
-- `desk_banko_200`
-- `desk_banko_150`
 - `desk_banko_100`
-- `desk_banko_200_l`
-- `desk_banko_150_l`
 - `desk_banko_100_l`
-- `base_200`
-- `base_150`
 - `base_100`
 - `furniture_sofa_set_classic`
 - `furniture_sofa_single_classic`
@@ -94,7 +82,9 @@ Bu bölüm navigasyon içindir; ölçü/recipe source-of-truth değildir.
 
 ### Panel & Duvar
 
-`wall_200_350`, `wall_150_350`, `wall_100_350`, `wall_50_350`, `wall_separator_100_350`, `wall_separator_50_350`, `wall_separator_100_350_sarmasik`, `wall_separator_50_350_sarmasik`, `wall_door_100_350`
+`wall_100_350`, `wall_separator_100_350`, `wall_door_100_350`
+
+Panel ve Separatör kartı aile başına tek (migration `0082_panel_separator_cards`): `wall_100_350` (kart başlığı "Panel") ve `wall_separator_100_350` ("Separatör"). Bırakılırken ya da katalogdan eklenirken genişlik sorulur: Panel 50 / 100 / 150 / 200 (`variant` `wall-panel`), Separatör 50 / 100 (`wall-separator`); Separatör penceresindeki "Sarmaşıklı" çentiği aynı genişliğin sarmaşıklı Item'ını (`wall-separator-sarmasik`) bırakır. Diğer genişlikler ve iki sarmaşıklı separatör katalogda gizli Item'dır; ad, `itemKey`, reçete ve kayıtlı projeler değişmez (`src/catalogWidthFamily.js`).
 
 ### Panel Ek Modül
 
@@ -110,7 +100,9 @@ Kısa panel kartı varyant başına tek: `wall_100_short_1` (Tek Sıra), `wall_1
 
 ### Banko & Baza
 
-`desk_banko_200`, `desk_banko_150`, `desk_banko_100`, `desk_banko_200_l`, `desk_banko_150_l`, `desk_banko_100_l`, `base_200`, `base_150`, `base_100`
+`desk_banko_100`, `desk_banko_100_l`, `base_100`
+
+Banko, Köşe Banko ve Baza kartı aile başına tek (migration `0083_banko_base_cards`): `desk_banko_100` ("Banko"), `desk_banko_100_l` ("Köşe Banko"), `base_100` ("Baza"); sürükleme önizlemesi ve varsayılan ölçü 100. Sahneye konurken ölçü (100 / 150 / 200) sorulur (`variant` `desk-banko`, `desk-banko-l`, `base`); 150 ve 200 katalogda gizli Item'dır, ad/reçete/kayıtlı projeler değişmez (`src/catalogWidthFamily.js`).
 
 ### Mobilya / Depo / Bitki
 

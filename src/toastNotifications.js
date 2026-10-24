@@ -3,7 +3,8 @@
 // Aynı metin kısa süre içinde tekrar gelirse yeni kutu açılmaz, mevcut kutunun süresi yenilenir.
 
 export const TOAST_KINDS = Object.freeze(['error', 'info', 'success']);
-export const TOAST_MAX_VISIBLE = 4;
+// Alt alta en fazla 2 uyarı: yeni gelen en altta çıkar, eskisini yukarı iter; üçüncüde en eskisi kapanır.
+export const TOAST_MAX_VISIBLE = 2;
 export const TOAST_DEFAULT_DURATION_MS = Object.freeze({ error: 6000, info: 4000, success: 4000 });
 
 let stack = null;

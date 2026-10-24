@@ -13,6 +13,9 @@ import { getItem } from './items.js';
  * @param {boolean} [options.remember]
  * @param {string} [options.fieldLabel] Seçim kutusunun etiketi.
  * @param {boolean} [options.allowRemember] false: "Bir daha sorma" çentiği gösterilmez.
+ * @param {{label: string, checked?: boolean, isAvailable?: (itemKey: string) => boolean}|null} [options.option]
+ *   Ek çentik (ör. Sarmaşıklı); sonuç `option`. isAvailable seçili ölçüde çentiğin geçerli olup olmadığını
+ *   söyler: geçersizse çentik kapanır ve işaretlenemez (desteklenmeyen birleşim seçilemez).
  */
 export function requestItemSizeChoice({
   title,
@@ -23,6 +26,7 @@ export function requestItemSizeChoice({
   remember = false,
   fieldLabel = 'Boy',
   allowRemember = true,
+  option = null,
 }) {
   return new Promise((resolve) => {
     const titleId = `${itemType}-size-title`;
@@ -41,6 +45,9 @@ export function requestItemSizeChoice({
     form.innerHTML = [
       `<strong id="${titleId}" style="font-size:16px">${title}</strong>`,
       `<label style="display:grid;gap:5px">${fieldLabel}<select name="itemKey" style="height:38px;padding:0 9px;border:1px solid #cbd5e1;border-radius:8px">${options}</select></label>`,
+      option
+        ? `<label style="display:flex;gap:8px;align-items:center"><input name="option" type="checkbox"${option.checked ? ' checked' : ''}> ${option.label}</label>`
+        : '',
       allowRemember
         ? `<label style="display:flex;gap:8px;align-items:center"><input name="remember" type="checkbox"${remember ? ' checked' : ''}> Bir daha sorma, aynı ölçüde getir</label>`
         : '',
@@ -68,10 +75,23 @@ export function requestItemSizeChoice({
       const itemKey = String(data.get('itemKey') ?? '');
       if (getItem(itemKey)?.type !== itemType) return;
       if (!items.some((item) => item.itemKey === itemKey)) return;
-      finish({ itemKey, remember: data.get('remember') === 'on' });
+      const optionOn = data.get('option') === 'on';
+      if (optionOn && typeof option?.isAvailable === 'function' && option.isAvailable(itemKey) !== true) return;
+      finish({ itemKey, remember: data.get('remember') === 'on', option: optionOn });
     });
+    const select = form.querySelector('select');
+    const optionInput = form.querySelector('input[name="option"]');
+    const syncOptionAvailability = () => {
+      if (!optionInput || typeof option?.isAvailable !== 'function') return;
+      const available = option.isAvailable(select.value) === true;
+      optionInput.disabled = !available;
+      if (!available) optionInput.checked = false;
+      optionInput.closest('label')?.style.setProperty('opacity', available ? '1' : '0.5');
+    };
+    select?.addEventListener('change', syncOptionAvailability);
+    syncOptionAvailability();
     document.addEventListener('keydown', onKeyDown, true);
-    form.querySelector('select')?.focus();
+    select?.focus();
   });
 }
 

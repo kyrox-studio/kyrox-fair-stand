@@ -299,3 +299,22 @@ body.help-guide-open {
 .help-guide-steps li {
   line-height: 1.45;
 }
+
+/* Üst bantta: diğer bant düğmeleriyle aynı yükseklikte, yuvarlak "?" (yüzen konum kalkar). */
+.viewport-toolbar .help-guide-button--toolbar {
+  position: static;
+  width: auto;
+  min-width: 38px;
+  height: auto;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 15px;
+  box-shadow: none;
+  transform: none;
+}
+
+.viewport-toolbar .help-guide-button--toolbar:hover,
+.viewport-toolbar .help-guide-button--toolbar:focus-visible {
+  transform: none;
+  box-shadow: none;
+}

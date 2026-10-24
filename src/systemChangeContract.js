@@ -184,6 +184,7 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/profileLength.js': frozenDomains('ui', 'catalog', 'state'),
   'src/itemSizeDialog.js': frozenDomains('ui', 'catalog', 'accessibility'),
   'src/wallShortWidth.js': frozenDomains('ui', 'catalog', 'state'),
+  'src/catalogWidthFamily.js': frozenDomains('ui', 'catalog', 'state'),
   'src/style.css': frozenDomains('ui'),
   'src/systemChangeContract.js': frozenDomains('architecture'),
   'src/theme.js': frozenDomains('ui', 'renderer'),

@@ -12,12 +12,8 @@ import {
 import { getItem } from '../src/items.js';
 
 test('desk_banko_200_l is a 200 x 200 catalog module', () => {
-  assert.deepEqual(getCatalogItem('desk_banko_200_l'), {
-    itemKey: 'desk_banko_200_l',
-    label: 'Köşe Banko 200×200',
-    previewId: 7,
-  });
-  assert.ok(getCatalogItem('desk_banko_200_l') != null);
+  // Köşe banko kartı tek (desk_banko_100_l, 0083); 200×200 ölçü penceresinden gelir.
+  assert.equal(getCatalogItem('desk_banko_200_l'), null);
 });
 
 test('200 L counter state keeps 200 cm physical depth and eight editable faces', () => {

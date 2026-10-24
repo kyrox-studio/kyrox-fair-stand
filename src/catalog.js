@@ -1,4 +1,5 @@
-import { getItem, isWallShortFamilyDescriptor, listRegisteredItems, resolveItemKey } from './items.js';
+import { getItem, listRegisteredItems, resolveItemKey } from './items.js';
+import { isCatalogWidthFamilyDescriptor } from './catalogWidthFamily.js';
 
 let catalogCategories = Object.freeze([]);
 let catalogPreviews = Object.freeze([]);
@@ -90,13 +91,14 @@ function projectCatalogItem(item) {
   });
 }
 
-// Bırakılırken ölçü soran kartlar (profil boyu, dikme boyu, kısa panel genişliği) tek bir ölçünün
-// kartı gibi görünmez: başlık Item adının sonundaki ölçüyü yazmaz ("Profil 289" → "Profil",
-// "Panel Tek Sıra 100" → "Panel Tek Sıra"). Sahnedeki parça, sağ tık ve BOM Item adını kullanır.
+// Bırakılırken ölçü soran kartlar (profil boyu, dikme boyu, panel / kısa panel / separatör genişliği)
+// tek bir ölçünün kartı gibi görünmez: başlık Item adının sonundaki ölçüyü yazmaz ("Profil 289" →
+// "Profil", "Panel 100" → "Panel", "Panel Tek Sıra 100" → "Panel Tek Sıra"). Sahnedeki parça, sağ tık ve BOM Item adını kullanır.
 function catalogCardLabel(item) {
-  const asksSize = item.type === 'profile' || item.type === 'upright' || isWallShortFamilyDescriptor(item);
+  const asksSize = item.type === 'profile' || item.type === 'upright' || isCatalogWidthFamilyDescriptor(item);
   if (!asksSize) return item.name;
-  return String(item.name).replace(/\s+\d+(?:[.,]\d+)?$/, '') || item.name;
+  // "Köşe Banko 200×200" gibi iki ölçülü ad da ölçüsüz başlığa iner ("Köşe Banko").
+  return String(item.name).replace(/\s+\d+(?:[.,]\d+)?(?:\s*[×x]\s*\d+(?:[.,]\d+)?)?$/, '') || item.name;
 }
 
 export function getCatalogItem(itemKey) {

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { catalogCardKeyFor, chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
@@ -117,15 +118,17 @@ test('F-010 catalog construction persists a module created through the real pick
 
   const picker = page.locator('.module-picker-backdrop');
   await expect(picker).toBeVisible();
-  await picker.locator('summary', { hasText: 'Panel & Duvar' }).click();
+  await picker.locator('.module-picker-tab', { hasText: 'Panel & Duvar' }).click();
 
-  const replacementCard = picker.locator(`[data-module-key="${removedModule.itemKey}"]`);
+  // Panel tek kart (0082): aile kartı seçilir, genişlik pencereden gelir.
+  const replacementCard = picker.locator(`[data-module-key="${catalogCardKeyFor(removedModule.itemKey)}"]`);
   await expect(replacementCard).toBeVisible();
   await replacementCard.click();
 
   const addButton = picker.locator('.module-picker-add');
   await expect(addButton).toBeEnabled();
   await addButton.click();
+  if (catalogCardKeyFor(removedModule.itemKey) !== removedModule.itemKey) await chooseCatalogWidth(page, removedModule.itemKey);
   await expect(picker).toBeHidden();
 
   const project = await saveAndReadProject(page);
@@ -164,7 +167,7 @@ test('F-010 door catalog construction persists canonical door_leaf_100 child sta
   await openCatalogButton.click();
   const picker = page.locator('.module-picker-backdrop');
   await expect(picker).toBeVisible();
-  await picker.locator('summary', { hasText: 'Panel & Duvar' }).click();
+  await picker.locator('.module-picker-tab', { hasText: 'Panel & Duvar' }).click();
   const doorCard = picker.locator('[data-module-key="wall_door_100_350"]');
   await expect(doorCard).toBeVisible();
   await doorCard.click();
