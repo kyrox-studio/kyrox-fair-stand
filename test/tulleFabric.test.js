@@ -56,7 +56,7 @@ test('bootstrap item tulle_fabric is the visible square-metre plate', () => {
 test('drop dialog asks width and depth only', () => {
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   const start = source.indexOf('function requestTulleFabricDimensions');
-  const end = source.indexOf('function requestIlluminatedFoamDimensions');
+  const end = source.indexOf('function requestBoxBlockDimensions');
   const dialog = source.slice(start, end);
   assert.match(dialog, /Genişlik/);
   assert.match(dialog, /Derinlik/);

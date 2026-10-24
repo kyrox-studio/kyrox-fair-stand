@@ -94,3 +94,15 @@ test('classic sofa pieces reuse the shared beige sofa GLB and coffee table helpe
   assert.match(source, /getItem\('furniture_coffee_table_classic'\)/);
   assert.match(source, /moduleState\.visualRotationYDeg \?\? item\.visualRotationYDeg/);
 });
+
+test('masa ayağı ve orta sehpa alüminyum; koltuk ayağı boyamadan bağımsız sabit ahşap', async () => {
+  const { FURNITURE_ALUMINIUM_APPEARANCE } = await import('../src/theme.js');
+  const scene = fs.readFileSync(new URL('../src/scene3d.js', import.meta.url), 'utf8');
+  assert.ok(FURNITURE_ALUMINIUM_APPEARANCE.metalness >= 0.8);
+  assert.doesNotMatch(scene, /color: 0x30343a/);
+  const coffeeTable = scene.slice(scene.indexOf('function addClassicCoffeeTable'), scene.indexOf('function attachBeigeSofaMesh'));
+  assert.equal((coffeeTable.match(/FURNITURE_ALUMINIUM_APPEARANCE/g) ?? []).length, 2);
+  assert.match(scene, /originalLegMaterial\.color\?\.set\(itemDefaultColorCss\('furniture_coffee_table_classic'\)\);/);
+  // Boyama yalnız döşemeye yazar; ahşap ayak malzemesi atlanır.
+  assert.match(scene, /if \(!material\?\.userData\?\.sofaUpholstery\) return;/);
+});

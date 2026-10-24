@@ -123,8 +123,8 @@
           </div>
 
           <div class="stand-size-grid">
-            <label class="stand-size-field" for="stand-size-x"><span>Genişlik (m)</span><input id="stand-size-x" type="text" min="0.5" max="50" step="0.5" placeholder="10" inputmode="decimal" /></label>
-            <label class="stand-size-field" for="stand-size-y"><span>Derinlik (m)</span><input id="stand-size-y" type="text" min="0.5" max="50" step="0.5" placeholder="5" inputmode="decimal" /></label>
+            <label class="stand-size-field" for="stand-size-x"><span>Genişlik (m)</span><input id="stand-size-x" type="text" value="5" min="0.5" max="50" step="0.5" placeholder="10" inputmode="decimal" /></label>
+            <label class="stand-size-field" for="stand-size-y"><span>Derinlik (m)</span><input id="stand-size-y" type="text" value="4" min="0.5" max="50" step="0.5" placeholder="5" inputmode="decimal" /></label>
           </div>
           <p class="stand-limit-note">0,5 m adımlarla (ör. 4,5 veya 6,5) · Maksimum: 50 × 50 m</p>
           <label class="stand-size-field" for="wall-height"><span>Duvar yüksekliği</span><select id="wall-height"><option value="250">2,5 m</option><option value="300">3 m</option><option value="350" selected>3,5 m</option><option value="400">4 m</option><option value="450">4,5 m</option><option value="500">5 m</option></select></label>
@@ -164,7 +164,7 @@
 
         <details class="panel-card collapsible-panel" id="module-groups-card">
           <summary class="panel-summary"><span>Gruplar</span><span class="panel-chevron" aria-hidden="true"></span></summary>
-          <div class="panel-card-content"><p id="module-groups-empty" class="status">Grup yok. Shift+tık ile öğeleri seçip sağ tık &gt; Grup oluştur.</p><div id="module-groups-list" class="module-groups-list" role="list" aria-label="Gruplar"></div></div>
+          <div class="panel-card-content"><p id="module-groups-empty" class="status">Grup yok. Shift+tık ile öğeleri seçip Özellikler panelinden Grup oluştur.</p><div id="module-groups-list" class="module-groups-list" role="list" aria-label="Gruplar"></div></div>
         </details>
 
         <details class="panel-card collapsible-panel" id="module-templates-card">
@@ -172,11 +172,9 @@
           <div class="panel-card-content"><p id="module-templates-empty" class="status">Şablon yok.</p><div id="module-templates-list" class="module-groups-list" role="list" aria-label="Şablonlarım"></div></div>
         </details>
 
-        <details class="panel-card collapsible-panel">
-          <summary class="panel-summary"><span>Seçili yüzey</span><span class="panel-chevron" aria-hidden="true"></span></summary>
-          <div class="panel-card-content">
+        <div id="surface-controls-home" hidden>
           <p id="selection-info" class="status selection-status">Bir panel seç; Ctrl/Cmd + tık ile panelleri çoklu seç.</p>
-          <label for="surface-color">Aktif renk</label>
+          <p id="surface-controls-moved" class="muted" hidden>Renk ve görsel ayarları açık Özellikler panelinde.</p><div id="surface-edit-controls"><div id="surface-color-controls"><label for="surface-color">Aktif renk</label>
           <div class="row"><input id="surface-color" type="color" value="#ffffff" /><button id="apply-color">Rengi uygula</button></div>
           <div class="color-editor" aria-label="Renk değerleri">
             <div class="color-editor-row hex"><label class="color-editor-field" for="color-hex"><span>HEX</span><input id="color-hex" type="text" value="#FFFFFF" maxlength="7" spellcheck="false" autocomplete="off" /></label></div>
@@ -184,26 +182,24 @@
             <div class="color-editor-row cmyk"><label class="color-editor-field" for="color-c"><span>C</span><input id="color-c" type="number" min="0" max="100" step="1" value="0" /></label><label class="color-editor-field" for="color-m"><span>M</span><input id="color-m" type="number" min="0" max="100" step="1" value="0" /></label><label class="color-editor-field" for="color-y"><span>Y</span><input id="color-y" type="number" min="0" max="100" step="1" value="0" /></label><label class="color-editor-field" for="color-k"><span>K</span><input id="color-k" type="number" min="0" max="100" step="1" value="0" /></label></div>
             <p class="color-editor-caption">RGB: 0–255 · CMYK: %0–100</p>
           </div>
-          <div id="foam-light-controls" hidden>
+          <div class="section-divider"></div>
+          </div><div id="foam-light-controls" hidden>
             <div class="section-divider"></div>
             <label for="foam-light-color">Işıklı Strafor · Işık rengi</label>
             <div class="row"><input id="foam-light-color" type="color" value="#ffffff" /><span class="muted">Sadece arka halo</span></div>
-          </div>
-          <div class="section-divider"></div>
-          <label for="surface-image">Görsel arşivine ekle</label>
+          </div><div id="surface-image-controls"><label for="surface-image">Görsel arşivine ekle</label>
           <input id="surface-image" type="file" accept="image/*" />
           <p id="asset-status" class="status">Görsel seçilmedi.</p>
           <div id="asset-library" class="asset-library"></div>
-          <div class="image-actions" aria-label="Görsel yerleşimi"><button id="fit-image-cover" type="button">Doldur</button><button id="fit-image-contain" type="button">Sığdır</button><button id="clear-texture" type="button" class="ghost">Kaldır</button></div>
-          <div class="section-divider"></div>
-          <button id="reset-module-features" type="button" class="danger ghost">Tüm Özellikleri Kaldır</button>
-          </div>
-        </details>
+          <div class="image-actions" aria-label="Görsel yerleşimi"><button id="fit-image-cover" type="button">Doldur</button><button id="fit-image-contain" type="button">Sığdır</button><button id="clear-texture" type="button" class="ghost">Kaldır</button></div></div></div>
+        </div>
 
         <details class="panel-card compact collapsible-panel" id="stand-standards-card">
           <summary class="panel-summary"><span>Standartlar</span><span class="panel-chevron" aria-hidden="true"></span></summary>
           <div class="panel-card-content"><ul id="stand-standards-list"></ul></div>
         </details>
+
+        <button id="reset-module-features" type="button" class="danger ghost sidebar-reset-features">Tüm Özellikleri Kaldır</button>
       </aside>
 
       <main class="viewport-wrap">

@@ -88,6 +88,7 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
       'video_wall_3x3',
       'tv_65',
       'led_floodlight',
+      'illuminated-foam',
     ]),
   }),
 ]);

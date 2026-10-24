@@ -28,23 +28,24 @@ function pickComparable(descriptor) {
   return picked;
 }
 
-test('listCatalogItems 42 görünür Item’ı Item kaydından üretir; hardcoded key listesi yoktur', () => {
+test('listCatalogItems 43 görünür Item’ı Item kaydından üretir; hardcoded key listesi yoktur', () => {
   const items = listRegisteredItems();
   const visible = items.filter((item) => item.catalogVisible === true);
   const projected = listCatalogItems();
   const catalogSource = readFileSync(new URL('../src/catalog.js', import.meta.url), 'utf8');
 
   assert.equal(items.length, 133);
-  assert.equal(visible.length, 42);
-  assert.equal(projected.length, 42);
-  assert.equal(new Set(projected.map((item) => item.itemKey)).size, 42);
+  assert.equal(visible.length, 43);
+  assert.equal(projected.length, 43);
+  assert.equal(new Set(projected.map((item) => item.itemKey)).size, 43);
   assert.deepEqual(projected.map((item) => item.itemKey), BASELINE.keys);
 
   const projectedKeys = new Set(projected.map((item) => item.itemKey));
   assert.equal(visible.filter((item) => !projectedKeys.has(item.itemKey)).length, 0);
   assert.equal(projected.filter((item) => getCatalogItem(item.itemKey) == null).length, 0);
   assert.equal(getCatalogItem('panel_197'), null);
-  assert.equal(getCatalogItem('illuminated-foam'), null);
+  // Işıklı Strafor katalogdan konur (0084); logo görseli panelden seçilir.
+  assert.equal(getCatalogItem('illuminated-foam')?.previewId, 9);
 
   assert.doesNotMatch(catalogSource, /createFlatPanelCatalogItem/);
   assert.doesNotMatch(catalogSource, /createCommercialCatalogItem/);
@@ -68,7 +69,7 @@ test('yeni catalog projection yalnız itemKey / label / catalogPreview taşır',
     compared += 1;
   }
 
-  assert.equal(compared, 42);
+  assert.equal(compared, 43);
   assert.deepEqual([...listCatalogItems().map((item) => item.itemKey)], BASELINE.keys);
 });
 

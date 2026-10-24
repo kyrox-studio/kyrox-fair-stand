@@ -72,6 +72,7 @@ const EMBEDDED_RENDER_TYPES = new Set([
 ]);
 
 const EMBEDDED_COLOR_TYPES = new Set([
+  'showcase-board',
   'panel',
   'separator-panel',
   'base-top',

@@ -33,7 +33,7 @@ test('help guide explains metal separator splitting, duplicate groups and placem
   await expect(metal).toContainText('1 x 197 × 47 + 1 x 98 × 47');
   await expect(metal).toContainText('Toplam m² değişmez.');
 
-  // Kopyala sağ tık menüsünde değil, seçim çubuğundadır (Mouse Kontrolleri).
+  // Kopyala Özellikler panelinde değil, seçim çubuğundadır (Mouse Kontrolleri).
   const mouse = guideSection(page, 'Mouse Kontrolleri');
   await mouse.locator('summary').click();
   await expect(mouse).toContainText('Kopyadaki metal separatör kendi grubunu alır');
@@ -47,7 +47,7 @@ test('help guide explains metal separator splitting, duplicate groups and placem
   await expect(move).toContainText('köşeye çekilmez');
 
   await expect(guideSection(page, 'Ayaklı Vitrin ve Broşürlük')).toHaveCount(0);
-  const context = guideSection(page, 'Sağ Tık Menüsü');
+  const context = guideSection(page, 'Özellikler Paneli');
   await context.locator('summary').click();
   await expect(context).toContainText('otomatik kurulan duvarlar kilitli gelir');
   await expect(context).toContainText('Kilidi aç');

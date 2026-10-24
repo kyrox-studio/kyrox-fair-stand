@@ -50,7 +50,7 @@ export function formatWallOverlayFeedback(kind, item) {
     case 'wall-move-failed':
       return `${name} bu duvar konumuna taşınamadı.`;
     case 'host-unsupported':
-      return `${name} bu modüle takılamaz; bir duvara ya da panele sağ tıklayıp ekle.`;
+      return `${name} bu modüle takılamaz; bir duvara ya da panele tıklayıp Özellikler panelinden Ekle… ile ekle.`;
     case 'stand-limit':
       return `${name} bu yönde stand sınırına ulaştı.`;
     default:

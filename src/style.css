@@ -697,15 +697,322 @@ button.asset-tile > span {
   background: #fff1f0;
 }
 
-.module-context-menu button.module-context-advanced-toggle {
-  color: #667085;
-  font-weight: 600;
-}
-
 .module-context-advanced {
   margin-left: 8px;
   padding-left: 4px;
   border-left: 2px solid #e5e9ef;
+}
+
+/* Seçime göre özellik paneli: sahnenin sağında, görünüm küpünün altında yüzen kart. Sahne
+   daralmaz; üst bant ve küp yerinde kalır. */
+.selection-property-panel {
+  position: absolute;
+  z-index: 20;
+  top: 220px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  width: 300px;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+  overscroll-behavior: contain;
+}
+
+.selection-property-panel[hidden],
+.selection-property-panel [hidden] {
+  display: none;
+}
+
+/* Uzun açıklama ve işlem listesi sıkışmaz; panel kendi içinde kayar. */
+.selection-property-panel > * {
+  flex-shrink: 0;
+}
+
+.selection-property-header {
+  position: sticky;
+  z-index: 1;
+  top: -12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -12px -12px 0;
+  padding: 12px 8px 10px 14px;
+  border-bottom: 1px solid #e5e9ef;
+  background: #ffffff;
+  color: #16161a;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.selection-property-header .selection-property-close {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #475569;
+  font-size: 18px;
+}
+
+.selection-property-empty,
+.selection-property-surface-note,
+.module-context-scope {
+  margin: 0;
+  color: #667085;
+  font-size: 12px;
+}
+
+.module-context-scope {
+  padding: 0 9px 6px;
+}
+
+.selection-property-panel .module-context-menu {
+  position: static;
+  z-index: auto;
+  width: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+/* Başlık panel üst satırında gösterilir; liste içindeki kopya yalnız erişilebilirlik içindir. */
+.selection-property-panel .module-context-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.selection-property-headings {
+  display: grid;
+  gap: 2px;
+  padding-top: 6px;
+  min-width: 0;
+}
+
+.selection-property-heading {
+  overflow-wrap: anywhere;
+}
+
+.selection-property-subheading {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.selection-property-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+}
+
+/* Başlıkta gösterilen kapsam satırı listede tekrar etmez. */
+.selection-property-panel .module-context-scope {
+  display: none;
+}
+
+/* Pasif işlem satır olarak gösterilmez; nedeni üstteki notta yazar. */
+.selection-property-panel .module-context-menu button:disabled {
+  display: none;
+}
+
+.selection-property-panel .module-context-advanced {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: 0;
+}
+
+.selection-property-panel .module-context-menu button[data-module-action]::before {
+  display: inline-block;
+  width: 20px;
+  color: #64748b;
+  text-align: center;
+}
+
+.selection-property-panel [data-module-action="toggle-lock"]::before,
+.selection-property-panel [data-module-action="lock-selection"]::before,
+.selection-property-panel [data-module-action="unlock-selection"]::before,
+.selection-property-panel [data-module-action="group-lock"]::before { content: "⚿"; }
+.selection-property-panel [data-module-action="rotate"]::before { content: "⟳"; }
+.selection-property-panel [data-module-action="delete"]::before,
+.selection-property-panel [data-module-action="group-delete"]::before { content: "✕"; color: #b42318; }
+.selection-property-panel [data-module-action="add"]::before { content: "+"; }
+.selection-property-panel [data-module-action="resize-foam"]::before,
+.selection-property-panel [data-module-action="profile-length"]::before { content: "↔"; }
+.selection-property-panel [data-module-action="upright-height"]::before { content: "↕"; }
+.selection-property-panel [data-module-action="resize-image"]::before { content: "▣"; }
+.selection-property-panel [data-module-action="toggle-shelf-light"]::before,
+.selection-property-panel [data-module-action="toggle-fabric-light"]::before { content: "☀"; }
+.selection-property-panel [data-module-action="toggle-back-panels"]::before { content: "▤"; }
+.selection-property-panel [data-module-action="toggle-glass"]::before,
+.selection-property-panel [data-module-action="toggle-metal-separator"]::before,
+.selection-property-panel [data-module-action="toggle-fabric"]::before,
+.selection-property-panel [data-module-action="toggle-mesh"]::before { content: "◇"; }
+.selection-property-panel [data-module-action^="group-"]:not([data-module-action="group-lock"]):not([data-module-action="group-delete"])::before { content: "⧉"; }
+
+/* Liste: referanstaki gibi sade satırlar; pasif satır yalnız soluk yazı, zemin rengi yok. */
+.selection-property-panel .module-context-menu button {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.selection-property-panel .module-context-menu button:disabled,
+.selection-property-panel .module-context-menu button:disabled:hover {
+  background: transparent;
+  color: #a3acb9;
+  cursor: not-allowed;
+}
+
+/* Panelde renk yalnız renk kutusu + HEX; RGB / CMYK sol menüdeki tam düzenleyicide kalır. */
+.selection-property-panel .color-editor-row.rgb,
+.selection-property-panel .color-editor-row.cmyk,
+.selection-property-panel .color-editor-caption {
+  display: none;
+}
+
+.selection-property-panel .color-editor {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.selection-property-panel #surface-edit-controls label[for="surface-color"] {
+  display: block;
+  margin: 4px 0 6px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Ölçü alanları: referanstaki gibi bölüm başlığı + etiketli alanlar; değişiklik sahnede canlı görünür. */
+.selection-property-fields {
+  display: grid;
+  gap: 8px;
+  padding: 10px 2px 0;
+  border-top: 1px solid #e5e9ef;
+}
+
+.selection-property-section-title {
+  margin: 0;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.selection-property-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.selection-property-field {
+  display: grid;
+  gap: 4px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.selection-property-field input[type="number"],
+.selection-property-field select {
+  width: 100%;
+  min-height: 34px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #16161a;
+  font-size: 13px;
+}
+
+.selection-property-field:has(select),
+.selection-property-field.is-checkbox {
+  grid-column: 1 / -1;
+}
+
+.selection-property-field.is-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selection-property-field-note {
+  margin: 0;
+  color: #667085;
+  font-size: 12px;
+}
+
+/* Görsel: ham dosya kutusu yerine etiket düğme olarak çalışır; durum satırı nötr. */
+.selection-property-panel #surface-image {
+  display: none;
+}
+
+.selection-property-panel #surface-edit-controls label[for="surface-image"] {
+  display: block;
+  margin: 8px 0;
+  padding: 9px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #273142;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.selection-property-panel #surface-edit-controls label[for="surface-image"]:hover {
+  background: #f1f5f9;
+}
+
+.selection-property-panel #asset-status {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #667085;
+  font-size: 12px;
+}
+
+.selection-property-panel #surface-edit-controls .section-divider {
+  margin: 10px 0 4px;
+}
+
+.selection-property-surface {
+  display: grid;
+  gap: 8px;
+  padding: 10px 2px 0;
+  border-top: 1px solid #e5e9ef;
+  font-size: 13px;
+}
+
+@media (max-width: 680px) {
+  .selection-property-panel {
+    top: auto;
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: auto;
+    max-height: 55%;
+  }
 }
 
 .module-context-advanced[hidden] {

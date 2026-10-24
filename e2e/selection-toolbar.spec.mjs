@@ -1,9 +1,42 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 
-// Tablet kullanımı: seçili modülün üstündeki işlem çubuğu (Döndür / Kopyala / Sil / ⋯) ve
-// parmakla uzun basma ile sağ tık menüsü.
+// Tablet kullanımı: seçim çubuğu ve ortak Özellikler paneli.
 test.use({ viewport: { width: 1180, height: 820 }, hasTouch: true });
+
+test('editör kapanınca çubuk temizlenir; yeniden oluşturma tek etkin çubuk bırakır', async ({ page }) => {
+  await page.route('**/src/main.js*', async route => {
+    const response = await route.fetch();
+    const source = await response.text();
+    expect(source).toContain('  startFairStandConfigurator();');
+    await route.fulfill({ response, body: source.replace('  startFairStandConfigurator();',
+      '  window.__stopToolbarRuntime = startFairStandConfigurator();') });
+  });
+  await createIslandStand(page);
+  await expect(page.locator('.selection-toolbar')).toHaveCount(1);
+  await page.evaluate(() => window.__stopToolbarRuntime());
+  await expect(page.locator('.selection-toolbar')).toHaveCount(0);
+  await page.evaluate(async () => {
+    const { createSelectionToolbar } = await import('/src/selectionToolbar.js');
+    window.__toolbarClicks = { old: 0, current: 0 };
+    const old = createSelectionToolbar({ onRotate: () => window.__toolbarClicks.old++ });
+    const anchor = { clientX: 300, clientY: 350, count: 1, kind: 'panel' };
+    old.update(anchor);
+    const current = createSelectionToolbar({ onRotate: () => window.__toolbarClicks.current++ });
+    current.update(anchor);
+    // Eski sahne callbacks'i ve geciken kapanış yeni çubuğu etkilememeli.
+    old.update(anchor);
+    old.setCopyActive(true);
+    old.destroy();
+    window.__currentToolbar = current;
+  });
+  await expect(page.locator('.selection-toolbar')).toHaveCount(1);
+  const toolbar = page.getByRole('toolbar', { name: 'Seçim işlemleri' });
+  await toolbar.getByRole('button', { name: /Döndür/ }).click();
+  expect(await page.evaluate(() => window.__toolbarClicks)).toEqual({ old: 0, current: 1 });
+  await page.evaluate(() => window.__currentToolbar.destroy());
+  await expect(page.locator('.selection-toolbar')).toHaveCount(0);
+});
 
 async function createIslandStand(page) {
   await page.goto('/');
@@ -88,9 +121,9 @@ test('selection toolbar rotates, duplicates, deletes and opens the menu', async 
   await finish.click();
   await expect(page.locator('.viewport-wrap')).not.toHaveClass(/catalog-place-armed/);
 
-  // ⋯: sağ tık menüsü, Döndür dahil.
+  // Tek tık Özellikler panelini açar (⋯ düğmesi yok), Döndür dahil.
   await page.mouse.click(point.x, point.y);
-  await toolbar.getByRole('button', { name: 'Diğer işlemler' }).click();
+  await expect(toolbar.getByRole('button', { name: 'Diğer işlemler' })).toHaveCount(0);
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Döndür' })).toBeVisible();
@@ -127,7 +160,8 @@ test('touch long-press on a module opens the module menu', async ({ page }) => {
   await expect(menu.getByRole('menuitem', { name: 'Döndür' })).toBeVisible();
 });
 
-test('a short touch tap does not open the menu', async ({ page }) => {
+// Kısa dokunma öğeyi seçer ve Özellikler panelini açar (tek tık kararı); uzun basma ile aynı panel.
+test('a short touch tap opens the property panel', async ({ page }) => {
   await createIslandStand(page);
   const point = await dropFridge(page, 0.6, 0.8);
   await page.evaluate(async ({ x, y }) => {
@@ -138,7 +172,9 @@ test('a short touch tap does not open the menu', async ({ page }) => {
     window.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }));
     await new Promise((resolve) => setTimeout(resolve, 700));
   }, point);
-  await expect(page.getByRole('menu', { name: 'Modül işlemleri' })).toBeHidden();
+  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: 'Döndür' })).toBeVisible();
 });
 
 async function openFridgeCard(page) {
@@ -200,7 +236,6 @@ test('multi-select toggle on the toolbar adds tapped modules to the selection', 
 
   await page.touchscreen.tap(second.x, second.y);
   await expect(toolbar.getByRole('button', { name: /Döndür/ })).toBeHidden();
-  await toolbar.getByRole('button', { name: 'Diğer işlemler' }).click();
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
   await expect(menu).toContainText('2 öğe seçili');
   await page.keyboard.press('Escape');
@@ -212,14 +247,14 @@ test('multi-select toggle on the toolbar adds tapped modules to the selection', 
   await expect(multi).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('module menu keeps advanced panel actions under Gelişmiş', async ({ page }) => {
+test('module without panel surfaces shows no panel transforms', async ({ page }) => {
   await createIslandStand(page);
   const point = await dropFridge(page, 0.6, 0.8);
   await page.mouse.click(point.x, point.y, { button: 'right' });
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
-  // Buzdolabında panel dönüşümü yok: Gelişmiş başlığı da çıkmaz.
-  await expect(menu.locator('.module-context-advanced-toggle')).toBeHidden();
+  // Buzdolabında panel dönüşümü yok: Cam / Metal / Lightbox / Mesh bölümü çıkmaz.
+  await expect(menu.locator('.module-context-advanced')).toBeHidden();
   await expect(menu.getByRole('menuitem', { name: 'Döndür' })).toBeVisible();
 });
 

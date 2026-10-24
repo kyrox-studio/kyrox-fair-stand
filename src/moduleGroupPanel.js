@@ -4,7 +4,7 @@
 
 import { listGroups } from './moduleGroups.js';
 
-export const MODULE_GROUP_PANEL_EMPTY_TEXT = 'Grup yok. Shift+tık ile öğeleri seçip sağ tık > Grup oluştur.';
+export const MODULE_GROUP_PANEL_EMPTY_TEXT = 'Grup yok. Shift+tık ile öğeleri seçip Özellikler panelinden Grup oluştur.';
 
 function createButton(document, label, action, { danger = false, disabled = false, title = '' } = {}) {
   const button = document.createElement('button');

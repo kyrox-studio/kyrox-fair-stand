@@ -58,6 +58,7 @@ _EMBEDDED_RENDER_TYPES = frozenset(
 )
 _EMBEDDED_COLOR_TYPES = frozenset(
     {
+        "showcase-board",
         "panel",
         "separator-panel",
         "base-top",

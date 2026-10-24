@@ -46,7 +46,8 @@ test('led_floodlight catalog drag creates a canonical top-light Item', async ({ 
   const card = page.locator('.module-drag-card[data-module-key="led_floodlight"]');
   await page.locator('.module-drag-group', { has: card }).locator(':scope > summary').click();
   await expect(card).toBeVisible();
-  await expect(page.locator('.module-drag-card[data-module-key="illuminated-foam"]')).toHaveCount(0);
+  // 0084: Işıklı Strafor aynı kategoride katalog kartıdır.
+  await expect(page.locator('.module-drag-card[data-module-key="illuminated-foam"]')).toHaveCount(1);
   await expect(page.locator('.module-drag-card[data-module-key="LED_FLOODLIGHT"]')).toHaveCount(0);
 
   const viewport = page.locator('#viewport');

@@ -90,6 +90,9 @@ async function contextAction(page, at, action) {
   const button = menu.locator(`[data-module-action="${action}"]`);
   await expect(button).toBeVisible();
   await button.click();
+  // Özellikler paneli işlemden sonra açık kalır; sahneye dönmek için kapatılır.
+  await expect(menu).toBeVisible();
+  await page.getByRole('button', { name: 'Özellikler panelini kapat' }).click();
   await expect(menu).toBeHidden();
 }
 

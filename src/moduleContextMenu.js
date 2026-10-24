@@ -1,7 +1,8 @@
 import { getCatalogItem, getModuleCatalogLabel, listCatalogGroups } from './catalog.js';
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
 import { getModuleBehavior } from './moduleBehavior.js';
-import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument.js';
+import { getFairStandHostDocument } from './hostDocument.js';
+import { MIXED, describePartialSupport } from './selectionSurfaceSummary.js';
 
 export function allowsModuleSideInsert(context) {
   const type = typeof context === 'string'
@@ -20,8 +21,6 @@ export function resolveModuleSidePlacement(context, visualSide) {
 
 export function createModuleContextMenu({
   onDelete,
-  onResize,
-  onImageResize,
   onAdd,
   onGlassModeChange,
   onMetalSeparatorModeChange,
@@ -32,16 +31,18 @@ export function createModuleContextMenu({
   onShelfLightingChange,
   getBackPanelState,
   onBackPanelChange,
-  getUprightHeightState,
-  onUprightHeight,
-  getProfileLengthState,
-  onProfileLength,
   onLockChange,
   onGroupAction,
   onRotate,
+  onAfterAction,
+  // Ölçü alanları: seçime göre { key, title, fields[] } ya da null; değer değişince onDimensionInput.
+  getDimensionFields,
+  onDimensionInput,
+  surfaceControls = null,
+  // İşlem sonuç / seçim mesajları satırı (#selection-info) panel başlığının altında durur.
+  statusElement = null,
 }) {
   const document = getFairStandHostDocument();
-  const window = getFairStandHostWindow();
   let activeContext = null;
   let pickerRequest = null;
   // Katalogdan her seferinde tek öğe eklenir.
@@ -49,13 +50,35 @@ export function createModuleContextMenu({
   let activeCategoryId = null;
   let pickerBusy = false;
 
+  // Seçime göre özellik paneli: sağ tık, ⋯ ve uzun basma aynı paneli açar. Panel açıkken
+  // seçim değişince yeniden çizilir; işlemler mevcut handler'lara gider.
+  const panel = document.createElement('aside');
+  panel.className = 'selection-property-panel';
+  panel.hidden = true;
+  panel.setAttribute('aria-label', 'Özellikler');
+  panel.innerHTML = `
+    <div class="selection-property-header">
+      <div class="selection-property-headings">
+        <strong class="selection-property-heading">Özellikler</strong>
+        <span class="selection-property-subheading" hidden></span>
+      </div>
+      <button type="button" class="selection-property-close" aria-label="Özellikler panelini kapat" title="Kapat (Esc)">×</button>
+    </div>
+    <p class="selection-property-note" hidden></p>
+    <p class="selection-property-empty" hidden>Seçim yok. Sahnede bir yüzey veya öğe seçin.</p>
+    <div class="selection-property-fields" hidden></div>
+    <div class="selection-property-surface" hidden>
+      <p class="selection-property-surface-note" aria-live="polite"></p>
+      <div class="selection-property-surface-slot"></div>
+    </div>
+  `;
   const menu = document.createElement('div');
   menu.className = 'module-context-menu';
-  menu.hidden = true;
   menu.setAttribute('role', 'menu');
   menu.setAttribute('aria-label', 'Modül işlemleri');
   menu.innerHTML = `
     <div class="module-context-title"></div>
+    <div class="module-context-scope" hidden></div>
     <button type="button" role="menuitem" data-module-action="group-create" hidden>Grup oluştur…</button>
     <button type="button" role="menuitem" data-module-action="group-add" hidden>Gruba ekle</button>
     <button type="button" role="menuitem" data-module-action="group-rename" hidden>Grubu yeniden adlandır…</button>
@@ -71,15 +94,10 @@ export function createModuleContextMenu({
     <button type="button" role="menuitem" data-module-action="unlock-selection" hidden>Seçilenlerin kilidini aç</button>
     <button type="button" role="menuitem" data-module-action="rotate">Döndür</button>
     <button type="button" role="menuitem" data-module-action="delete" class="danger">Sil</button>
-    <button type="button" role="menuitem" data-module-action="resize-foam" hidden>Boyutlandır…</button>
-    <button type="button" role="menuitem" data-module-action="resize-image" hidden>Görseli ölçülendir…</button>
     <div class="module-context-separator"></div>
     <button type="button" role="menuitem" data-module-action="toggle-shelf-light" hidden>Raf altı aydınlatmayı aç</button>
     <button type="button" role="menuitem" data-module-action="toggle-back-panels" hidden>Arka yüze panel ekle</button>
-    <button type="button" role="menuitem" data-module-action="upright-height" hidden>Dikme yüksekliği…</button>
-    <button type="button" role="menuitem" data-module-action="profile-length" hidden>Profil boyu…</button>
     <button type="button" role="menuitem" data-module-action="add">Ekle…</button>
-    <button type="button" role="menuitem" class="module-context-advanced-toggle" aria-expanded="false" hidden>Gelişmiş ▸</button>
     <div class="module-context-advanced" hidden>
       <button type="button" role="menuitem" data-module-action="toggle-glass" hidden>Cam Panele Çevir</button>
       <button type="button" role="menuitem" data-module-action="toggle-metal-separator" hidden>Metal Separatöre Çevir</button>
@@ -88,7 +106,24 @@ export function createModuleContextMenu({
       <button type="button" role="menuitem" data-module-action="toggle-fabric-light" hidden>Lightbox aydınlatmayı aç</button>
     </div>
   `;
-  document.body.appendChild(menu);
+  panel.insertBefore(menu, panel.querySelector('.selection-property-surface'));
+  (document.querySelector('.viewport-wrap') ?? document.body).appendChild(panel);
+  // Panel etkileşimi sahne / kamera dinleyicilerine geçmez.
+  ['pointerdown', 'wheel', 'touchstart'].forEach((type) => {
+    panel.addEventListener(type, (event) => event.stopPropagation(), { passive: true });
+  });
+  if (statusElement) panel.querySelector('.selection-property-header').after(statusElement);
+  const heading = panel.querySelector('.selection-property-heading');
+  const subheading = panel.querySelector('.selection-property-subheading');
+  const lockNote = panel.querySelector('.selection-property-note');
+  const emptyHint = panel.querySelector('.selection-property-empty');
+  const surfaceSection = panel.querySelector('.selection-property-surface');
+  const surfaceNote = panel.querySelector('.selection-property-surface-note');
+  const surfaceSlot = panel.querySelector('.selection-property-surface-slot');
+  const fieldsSection = panel.querySelector('.selection-property-fields');
+  let fieldsKey = null;
+  let fieldsSpec = null;
+  let fieldsContext = null;
 
   const pickerBackdrop = document.createElement('div');
   pickerBackdrop.className = 'module-picker-backdrop';
@@ -118,6 +153,7 @@ export function createModuleContextMenu({
   document.body.appendChild(pickerBackdrop);
 
   const title = menu.querySelector('.module-context-title');
+  const scopeLine = menu.querySelector('.module-context-scope');
   const glassModeButton = menu.querySelector('[data-module-action="toggle-glass"]');
   const metalSeparatorButton = menu.querySelector('[data-module-action="toggle-metal-separator"]');
   const fabricModeButton = menu.querySelector('[data-module-action="toggle-fabric"]');
@@ -125,10 +161,6 @@ export function createModuleContextMenu({
   const fabricLightingButton = menu.querySelector('[data-module-action="toggle-fabric-light"]');
   const shelfLightingButton = menu.querySelector('[data-module-action="toggle-shelf-light"]');
   const backPanelButton = menu.querySelector('[data-module-action="toggle-back-panels"]');
-  const uprightHeightButton = menu.querySelector('[data-module-action="upright-height"]');
-  const profileLengthButton = menu.querySelector('[data-module-action="profile-length"]');
-  const foamResizeButton = menu.querySelector('[data-module-action="resize-foam"]');
-  const imageResizeButton = menu.querySelector('[data-module-action="resize-image"]');
   const addButton = menu.querySelector('[data-module-action="add"]');
   const lockButton = menu.querySelector('[data-module-action="toggle-lock"]');
   const lockSelectionButton = menu.querySelector('[data-module-action="lock-selection"]');
@@ -137,19 +169,13 @@ export function createModuleContextMenu({
   const rotateButton = menu.querySelector('[data-module-action="rotate"]');
   const separator = menu.querySelector('.module-context-separator:not(.module-context-group-separator)');
   const groupSeparator = menu.querySelector('.module-context-group-separator');
-  // Sade menü: sık kullanılanlar görünür; panel dönüşümleri (Cam, Metal Separatör, Lightbox, Mesh)
-  // "Gelişmiş" altında. Açık/kapalı tercihi oturum boyunca hatırlanır.
-  const advancedToggle = menu.querySelector('.module-context-advanced-toggle');
+  // Panel dönüşümleri (Cam, Metal Separatör, Lightbox, Mesh) ayrı bir açılır sekme olmadan
+  // listede doğrudan görünür; desteklenen dönüşüm yoksa bölüm gizlenir.
   const advancedSection = menu.querySelector('.module-context-advanced');
   const advancedButtons = [...advancedSection.querySelectorAll('[data-module-action]')];
-  let advancedExpanded = false;
 
   function syncAdvancedSection() {
-    const hasAdvanced = advancedButtons.some((button) => !button.hidden);
-    advancedToggle.hidden = !hasAdvanced;
-    advancedToggle.setAttribute('aria-expanded', String(advancedExpanded));
-    advancedToggle.textContent = advancedExpanded ? 'Gelişmiş ▾' : 'Gelişmiş ▸';
-    advancedSection.hidden = !hasAdvanced || !advancedExpanded;
+    advancedSection.hidden = !advancedButtons.some((button) => !button.hidden);
   }
   const groupButtons = Object.fromEntries(
     [...menu.querySelectorAll('[data-module-action^="group-"]')].map((button) => [button.dataset.moduleAction, button]),
@@ -205,7 +231,9 @@ export function createModuleContextMenu({
   function openMultiSelection(context) {
     const ids = context.multiModuleIds;
     const lockedCount = Number(context.multiLockedCount) || 0;
-    title.textContent = `${ids.length} öğe seçili${lockedCount ? ` · ${lockedCount} kilitli` : ''}`;
+    const groupSuffix = context.selectionGroupName ? ` · Grup: ${context.selectionGroupName}` : '';
+    title.textContent = `${ids.length} öğe seçili${groupSuffix}${lockedCount ? ` · ${lockedCount} kilitli` : ''}`;
+    scopeLine.hidden = true;
     [...menu.querySelectorAll('[data-module-action]')].forEach((button) => {
       button.hidden = true;
     });
@@ -326,8 +354,10 @@ export function createModuleContextMenu({
   }
 
   function close() {
-    menu.hidden = true;
+    if (panel.hidden) return;
+    panel.hidden = true;
     activeContext = null;
+    restoreSurfaceControls();
   }
 
   function closePicker() {
@@ -350,21 +380,93 @@ export function createModuleContextMenu({
       ? `Hedef: Modül ${context.moduleIndex + 1} · ${describeModule(context)}`
       : 'Seçilen modül duvarın sonuna eklenecek.';
 
-    menu.hidden = true;
     pickerBackdrop.hidden = false;
     renderPickerCatalog();
   }
 
+  // Sağ tık / ⋯ / uzun basma: paneli açar. Hedef yoksa (boş alana sağ tık) panel kapanır.
   function open(context) {
     if (!context) {
       close();
       return;
     }
+    panel.hidden = false;
+    render(context);
+  }
 
+  // Seçim değişimi: panel açıksa güncel bağlamla yeniden çizilir; kapalı paneli açmaz.
+  function refresh(context) {
+    if (panel.hidden) return;
+    render(context ?? null);
+  }
+
+  function isOpen() {
+    return !panel.hidden;
+  }
+
+  // Başlık seçilen öğenin adı, alt satır yeri ve durumu (referanstaki "ad / gri alt satır" düzeni).
+  function describeHeading(context) {
+    if (!context) return ['Özellikler', ''];
+    const ids = context.multiModuleIds;
+    if (Array.isArray(ids) && ids.length > 1) {
+      const lockedCount = Number(context.multiLockedCount) || 0;
+      return [`${ids.length} öğe seçili`, [
+        context.selectionGroupName ? `Grup: ${context.selectionGroupName}` : '',
+        lockedCount ? `${lockedCount} kilitli` : '',
+      ].filter(Boolean).join(' · ')];
+    }
+    const summary = context.surfaceSummary ?? null;
+    if ((summary?.count ?? 0) > 1) return [title.textContent, scopeLine.textContent];
+    return [describeModule(context), [
+      `Modül ${context.moduleIndex + 1}`,
+      context.supportsGlass && Number.isInteger(context.stripNumber) ? `Panel ${context.stripNumber}` : '',
+      context.group ? `Grup: ${context.group.name}` : '',
+      context.locked ? 'Kilitli' : '',
+    ].filter(Boolean).join(' · ')];
+  }
+
+  // Zemin: öğe işlemi yoktur; yalnız zeminin desteklediği renk gösterilir.
+  function renderFloor(context) {
+    activeContext = null;
+    emptyHint.hidden = true;
+    menu.hidden = true;
+    lockNote.hidden = true;
+    renderDimensionFields(context);
+    renderSurfaceSection(context.surfaceSummary);
+    heading.textContent = context.title;
+    subheading.textContent = context.subtitle ?? '';
+    subheading.hidden = !context.subtitle;
+  }
+
+  function render(context) {
+    if (context?.kind === 'floor') {
+      renderFloor(context);
+      return;
+    }
+    renderContext(context);
+    const [headText, subText] = describeHeading(context);
+    heading.textContent = headText;
+    subheading.textContent = subText;
+    subheading.hidden = !subText;
+    // Pasif işlemler panelde satır olarak durmaz; nedenleri tek notta toplanır.
+    const reasons = context
+      ? [...new Set([...menu.querySelectorAll('[data-module-action]')]
+        .filter((button) => !button.hidden && button.disabled && button.title)
+        .map((button) => button.title))]
+      : [];
+    lockNote.textContent = reasons.join(' ');
+    lockNote.hidden = !reasons.length;
+  }
+
+  function renderContext(context) {
     activeContext = context;
+    emptyHint.hidden = Boolean(context);
+    menu.hidden = !context;
+    renderSurfaceSection(context?.surfaceSummary ?? null);
+    renderDimensionFields(context);
+    if (!context) return;
     if (Array.isArray(context.multiModuleIds) && context.multiModuleIds.length > 1) {
       openMultiSelection(context);
-      positionMenu(context);
       return;
     }
 
@@ -383,19 +485,31 @@ export function createModuleContextMenu({
     rotateButton.hidden = false;
     setDisabled(rotateButton, locked);
     separator.hidden = false;
+    const summary = context.surfaceSummary ?? null;
+    const multiSurface = (summary?.count ?? 0) > 1;
     const panelSuffix = context.supportsGlass && Number.isInteger(context.stripNumber)
       ? ` · Panel ${context.stripNumber}`
       : '';
     const groupSuffix = group ? ` · Grup: ${group.name}` : '';
-    title.textContent = `Modül ${context.moduleIndex + 1} · ${describeModule(context)}${panelSuffix}${groupSuffix}${locked ? ' · Kilitli' : ''}`;
+    const moduleLabel = `Modül ${context.moduleIndex + 1} · ${describeModule(context)}`;
+    if (multiSurface) {
+      // Çoklu panel: başlık yüzey seçimidir; öğe işlemlerinin hedefi ayrıca yazılır.
+      title.textContent = `${summary.count} panel seçili${summary.moduleCount > 1 ? ` · ${summary.moduleCount} öğe` : ''}`;
+      scopeLine.textContent = `Öğe işlemleri: ${moduleLabel}${groupSuffix}${locked ? ' · Kilitli' : ''}`;
+      scopeLine.hidden = false;
+    } else {
+      title.textContent = `${moduleLabel}${panelSuffix}${groupSuffix}${locked ? ' · Kilitli' : ''}`;
+      scopeLine.hidden = true;
+    }
+    const mixedSuffix = (value) => (value === MIXED ? ' (karışık)' : '');
     glassModeButton.hidden = !context.supportsGlass;
     glassModeButton.textContent = context.isGlass
       ? 'Normal Panele Çevir'
-      : 'Cam Panele Çevir';
+      : `Cam Panele Çevir${mixedSuffix(summary?.isGlass)}`;
     metalSeparatorButton.hidden = !context.supportsMetalSeparator;
     metalSeparatorButton.textContent = context.isMetalSeparator
       ? 'Normal Panele Çevir'
-      : 'Metal Separatöre Çevir';
+      : `Metal Separatöre Çevir${mixedSuffix(summary?.isMetalSeparator)}`;
 
     const isLightboxFabric = Boolean(context.isFabric && context.fabricType !== 'mesh');
     const isMeshFabric = Boolean(context.isFabric && context.fabricType === 'mesh');
@@ -416,13 +530,6 @@ export function createModuleContextMenu({
       : 'Lightbox aydınlatmayı aç';
 
     const moduleType = context.moduleType ?? context.type;
-    const isFoam = moduleType === 'illuminated-foam';
-    const isBoxBlock = moduleType === 'box-block';
-    const isTulle = moduleType === 'tulle-fabric';
-    foamResizeButton.hidden = !(isFoam || isBoxBlock || isTulle);
-    foamResizeButton.textContent = isBoxBlock ? 'Ölçü / opacity…' : 'Boyutlandır…';
-    setDisabled(foamResizeButton, locked);
-    imageResizeButton.hidden = !context.hasImage;
     const isShelf = moduleType === 'shelf';
     const shelfLightingOn = isShelf ? Boolean(getShelfLightingState?.(context)) : false;
     shelfLightingButton.hidden = !isShelf;
@@ -434,36 +541,205 @@ export function createModuleContextMenu({
     backPanelButton.hidden = backPanelState == null;
     backPanelButton.textContent = backPanelState ? 'Arka yüz panellerini kaldır' : 'Arka yüze panel ekle';
     setDisabled(backPanelButton, locked);
-    // Dikme boyu yalnız dikmede (getUprightHeightState null değilse).
-    uprightHeightButton.hidden = (getUprightHeightState?.(context) ?? null) == null;
-    setDisabled(uprightHeightButton, locked);
-    // Profil boyu yalnız profilde (getProfileLengthState null değilse).
-    profileLengthButton.hidden = (getProfileLengthState?.(context) ?? null) == null;
-    setDisabled(profileLengthButton, locked);
     addButton.hidden = !allowsModuleSideInsert(context);
+    // Toplu yüzey işlemi yalnız seçimin tamamı destekliyorsa açılır; kısmi destekte gerekçeli pasif.
+    [
+      [glassModeButton, 'glass', 'cam'],
+      [metalSeparatorButton, 'glass', 'metal separatör'],
+      [fabricModeButton, 'lightbox', 'Lightbox'],
+      [meshModeButton, 'mesh', 'Mesh'],
+      [fabricLightingButton, 'lightbox', 'Lightbox'],
+    ].forEach(([button, key, label]) => {
+      const reason = describePartialSupport(summary, key, label);
+      setDisabled(button, Boolean(reason), reason ?? undefined);
+    });
     syncAdvancedSection();
-    positionMenu(context);
   }
 
-  function positionMenu(context) {
-    menu.hidden = false;
-
-    const margin = 8;
-    const width = menu.offsetWidth || 220;
-    const height = menu.offsetHeight || 250;
-    const left = Math.min(context.clientX, window.innerWidth - width - margin);
-    const top = Math.min(context.clientY, window.innerHeight - height - margin);
-    menu.style.left = `${Math.max(margin, left)}px`;
-    menu.style.top = `${Math.max(margin, top)}px`;
+  // Ölçü alanları panelde durur, pencere açılmaz; değer değiştikçe sahne canlı güncellenir.
+  // Aynı hedef yeniden çizilirken odaktaki alana dokunulmaz (yazarken imleç kaybolmaz).
+  function readDimensionValues() {
+    return Object.fromEntries([...fieldsSection.querySelectorAll('[data-field]')].map((control) => [
+      control.dataset.field,
+      control.type === 'checkbox' ? control.checked : (control.type === 'number' ? Number(control.value) : control.value),
+    ]));
   }
 
-  menu.addEventListener('click', (event) => {
-    if (event.target.closest('.module-context-advanced-toggle') && activeContext) {
-      advancedExpanded = !advancedExpanded;
-      syncAdvancedSection();
-      positionMenu(activeContext);
+  function dimensionValuesValid() {
+    return [...fieldsSection.querySelectorAll('[data-field]')].every((control) => control.checkValidity());
+  }
+
+  function createDimensionControl(field) {
+    const label = document.createElement('label');
+    label.className = field.type === 'checkbox' ? 'selection-property-field is-checkbox' : 'selection-property-field';
+    const caption = document.createElement('span');
+    caption.textContent = field.label;
+    let control;
+    if (field.type === 'select') {
+      control = document.createElement('select');
+      field.options.forEach((option) => {
+        const element = document.createElement('option');
+        element.value = option.value;
+        element.textContent = option.label;
+        control.appendChild(element);
+      });
+    } else {
+      control = document.createElement('input');
+      control.type = field.type === 'checkbox' ? 'checkbox' : 'number';
+      if (control.type === 'number') {
+        control.min = String(field.min);
+        control.max = String(field.max);
+        control.step = String(field.step ?? 1);
+        control.required = true;
+        control.inputMode = 'decimal';
+      }
+    }
+    control.dataset.field = field.name;
+    control.name = field.name;
+    if (field.type === 'checkbox') label.append(control, caption);
+    else label.append(caption, control);
+    return label;
+  }
+
+  function syncDimensionValues(spec, { force = false } = {}) {
+    spec.fields.forEach((field) => {
+      const control = fieldsSection.querySelector('[data-field="' + field.name + '"]');
+      if (!control) return;
+      control.disabled = Boolean(spec.disabled);
+      if (!force && control === document.activeElement) return;
+      if (control.type === 'checkbox') control.checked = Boolean(field.value);
+      else control.value = String(field.value);
+    });
+  }
+
+  function renderDimensionFields(context) {
+    const spec = context ? (getDimensionFields?.(context) ?? null) : null;
+    fieldsContext = context;
+    if (!spec) {
+      fieldsSection.hidden = true;
+      fieldsSection.replaceChildren();
+      fieldsKey = null;
+      fieldsSpec = null;
       return;
     }
+    const key = [spec.key, context.moduleId, context.surfaceId ?? ''].join('|');
+    fieldsSpec = spec;
+    fieldsSection.hidden = false;
+    if (key === fieldsKey) {
+      syncDimensionValues(spec);
+      return;
+    }
+    fieldsKey = key;
+    const heading = document.createElement('p');
+    heading.className = 'selection-property-section-title';
+    heading.textContent = spec.title;
+    const grid = document.createElement('div');
+    grid.className = 'selection-property-field-grid';
+    spec.fields.forEach((field) => grid.appendChild(createDimensionControl(field)));
+    fieldsSection.replaceChildren(heading, grid);
+    if (spec.note) {
+      const note = document.createElement('p');
+      note.className = 'selection-property-field-note';
+      note.textContent = spec.note;
+      fieldsSection.appendChild(note);
+    }
+    syncDimensionValues(spec, { force: true });
+  }
+
+  let dimensionTimer = null;
+  function emitDimension(phase) {
+    if (!fieldsSpec || !fieldsContext) return;
+    clearTimeout(dimensionTimer);
+    if (phase !== 'cancel' && !dimensionValuesValid()) return;
+    onDimensionInput?.(fieldsContext, fieldsSpec.key, readDimensionValues(), phase);
+  }
+  fieldsSection.addEventListener('input', (event) => {
+    if (event.target.type === 'checkbox' || event.target.tagName === 'SELECT') return;
+    clearTimeout(dimensionTimer);
+    dimensionTimer = setTimeout(() => emitDimension('input'), 120);
+  });
+  // Sayı alanları bölümden çıkınca (veya Enter) tek adımda uygulanır; W → H geçişi uygulamaz.
+  // Liste ve onay kutusu seçildiği anda uygulanır.
+  let skipNextFocusOut = false;
+  fieldsSection.addEventListener('change', (event) => {
+    if (event.target.type === 'checkbox' || event.target.tagName === 'SELECT') emitDimension('change');
+  });
+  fieldsSection.addEventListener('focusout', (event) => {
+    if (event.target.type !== 'number' || fieldsSection.contains(event.relatedTarget)) return;
+    if (skipNextFocusOut) {
+      skipNextFocusOut = false;
+      return;
+    }
+    emitDimension('change');
+  });
+  fieldsSection.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      emitDimension('change');
+      skipNextFocusOut = true;
+      event.target.blur?.();
+    } else if (event.key === 'Escape') {
+      // Esc yazılan değeri bırakır: önizleme geri alınır, alan kayıtlı değere döner.
+      event.preventDefault();
+      event.stopPropagation();
+      emitDimension('cancel');
+      if (fieldsSpec) syncDimensionValues(fieldsSpec, { force: true });
+      skipNextFocusOut = true;
+      event.target.blur?.();
+    }
+  });
+
+  // Renk / görsel: soldaki mevcut kontroller (tek kaynak) panel açıkken buraya taşınır.
+  // Yüzey seçimi yoksa veya panel kapanınca yerlerine döner.
+  function setSectionDisabled(section, disabled) {
+    section.querySelectorAll('input, button, select').forEach((control) => {
+      if (disabled && !control.disabled) {
+        control.disabled = true;
+        control.dataset.panelDisabled = 'true';
+      } else if (!disabled && control.dataset.panelDisabled) {
+        control.disabled = false;
+        delete control.dataset.panelDisabled;
+      }
+    });
+  }
+
+  function restoreSurfaceControls() {
+    if (!surfaceControls?.element) return;
+    const { element, colorSection, imageSection, homeNote } = surfaceControls;
+    [colorSection, imageSection].forEach((section) => {
+      section.hidden = false;
+      setSectionDisabled(section, false);
+    });
+    if (homeNote.nextElementSibling !== element) homeNote.after(element);
+    homeNote.hidden = true;
+  }
+
+  function renderSurfaceSection(summary) {
+    if (!surfaceControls?.element || !summary?.count) {
+      surfaceSection.hidden = true;
+      restoreSurfaceControls();
+      return;
+    }
+    const { element, colorSection, imageSection, homeNote } = surfaceControls;
+    if (element.parentNode !== surfaceSlot) surfaceSlot.appendChild(element);
+    homeNote.hidden = false;
+    surfaceSection.hidden = false;
+    const { color, image } = summary.support;
+    colorSection.hidden = color === 'none';
+    imageSection.hidden = image === 'none';
+    setSectionDisabled(colorSection, color === 'some');
+    setSectionDisabled(imageSection, image === 'some');
+    // Not yalnız farklı değer (Karışık) veya kısmi destek varsa görünür; tek değer zaten kontrollerde.
+    const notes = [];
+    if (color !== 'none' && summary.color === MIXED) notes.push('Renk: Karışık');
+    if (image !== 'none' && summary.imageAssetId === MIXED) notes.push('Görsel: Karışık');
+    const partial = [describePartialSupport(summary, 'color', 'renk'), describePartialSupport(summary, 'image', 'görsel')]
+      .filter(Boolean);
+    surfaceNote.textContent = [notes.join(' · '), ...partial].filter(Boolean).join(' ');
+    surfaceNote.hidden = !surfaceNote.textContent;
+  }
+
+  function handleMenuClick(event) {
     const button = event.target.closest('[data-module-action]');
     if (!button || !activeContext) return;
 
@@ -472,105 +748,64 @@ export function createModuleContextMenu({
     if (button.disabled) return;
 
     if (action.startsWith('group-')) {
-      close();
       onGroupAction?.(action, context);
       return;
     }
 
     if (action === 'toggle-lock') {
-      close();
       onLockChange?.([context.moduleId], !context.locked, context);
       return;
     }
 
     if (action === 'lock-selection' || action === 'unlock-selection') {
-      close();
       onLockChange?.([...(context.multiModuleIds ?? [])], action === 'lock-selection', context);
       return;
     }
 
     if (action === 'delete') {
-      close();
       onDelete?.(context);
       return;
     }
 
     if (action === 'rotate') {
-      close();
       onRotate?.(context);
       return;
     }
 
-    if (action === 'resize-foam') {
-      const type = context.moduleType ?? context.type;
-      if (type === 'illuminated-foam' || type === 'box-block' || type === 'tulle-fabric') {
-        close();
-        onResize?.(context);
-      }
-      return;
-    }
-
-    if (action === 'resize-image' && context.hasImage) {
-      close();
-      onImageResize?.(context);
-      return;
-    }
-
     if (action === 'toggle-glass' && context.supportsGlass) {
-      close();
       onGlassModeChange?.(context, !context.isGlass);
       return;
     }
 
     if (action === 'toggle-metal-separator' && context.supportsMetalSeparator) {
-      close();
       onMetalSeparatorModeChange?.(context, !context.isMetalSeparator);
       return;
     }
 
     if (action === 'toggle-fabric' && (context.supportsLightbox ?? context.supportsFabric) && context.fabricType !== 'mesh') {
-      close();
       onFabricModeChange?.(context, !(context.isFabric && context.fabricType !== 'mesh'));
       return;
     }
 
     if (action === 'toggle-mesh' && (context.supportsMesh ?? context.supportsFabric) && context.fabricType !== 'lightbox') {
-      close();
       onMeshModeChange?.(context, !(context.isFabric && context.fabricType === 'mesh'));
       return;
     }
 
     if (action === 'toggle-fabric-light' && context.isLightboxFabric) {
-      close();
       onFabricLightingChange?.(context, !context.fabricLightingOn);
       return;
     }
 
     if (action === 'toggle-shelf-light' && (context.moduleType ?? context.type) === 'shelf') {
       const nextState = !Boolean(getShelfLightingState?.(context));
-      close();
       onShelfLightingChange?.(context, nextState);
-      return;
-    }
-
-    if (action === 'upright-height') {
-      if ((getUprightHeightState?.(context) ?? null) == null) return;
-      close();
-      onUprightHeight?.(context);
-      return;
-    }
-
-    if (action === 'profile-length') {
-      if ((getProfileLengthState?.(context) ?? null) == null) return;
-      close();
-      onProfileLength?.(context);
       return;
     }
 
     if (action === 'toggle-back-panels') {
       const current = getBackPanelState?.(context);
       if (current == null) return;
-      close();
       onBackPanelChange?.(context, !current);
       return;
     }
@@ -580,7 +815,16 @@ export function createModuleContextMenu({
       // Yer main.js'de seçilir: duvar üstü öğe modülün üstüne; diğerleri sağ → sol → önü → müsait yer.
       openPicker({ placement: 'auto', context });
     }
+  }
+
+  // Panel işlem sonrası açık kalır; main.js güncel seçimle yeniden çizer.
+  menu.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-module-action]');
+    const actionable = Boolean(button && activeContext && !button.disabled);
+    handleMenuClick(event);
+    if (actionable) onAfterAction?.();
   });
+  panel.querySelector('.selection-property-close').addEventListener('click', () => close());
 
   pickerAddButton.addEventListener('click', () => { void submitPickerSelection(); });
 
@@ -590,10 +834,6 @@ export function createModuleContextMenu({
     if (event.target === pickerBackdrop) closePicker();
   });
 
-  document.addEventListener('pointerdown', (event) => {
-    if (!menu.hidden && !menu.contains(event.target)) close();
-  });
-
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     close();
@@ -601,13 +841,13 @@ export function createModuleContextMenu({
     if (!pickerBusy) closePicker();
   });
 
-  window.addEventListener('blur', close);
-
   renderPickerCatalog();
   syncPickerSelection();
 
   return {
     open,
+    refresh,
+    isOpen,
     close,
     openPicker,
     closePicker,

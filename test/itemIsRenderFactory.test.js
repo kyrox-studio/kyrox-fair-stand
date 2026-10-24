@@ -43,7 +43,8 @@ test('factory gates on item.isRender, not catalogVisible or type lists', () => {
   assert.equal(createModuleStateFromCatalogKey('connector_start'), null);
 
   assert.ok(catalogHiddenButRenderable.includes('upright_99'));
-  assert.ok(catalogHiddenButRenderable.includes('illuminated-foam'));
+  // Işıklı Strafor 0084 ile katalog kartıdır; fabrika yine isRender ile çalışır.
+  assert.equal(catalogHiddenButRenderable.includes('illuminated-foam'), false);
   const upright = createModuleStateFromCatalogKey('upright_99');
   assert.ok(upright);
   assert.equal(upright.itemKey, 'upright_99');

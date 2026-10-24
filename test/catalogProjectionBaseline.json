@@ -41,7 +41,8 @@
     "video_wall_2x2",
     "video_wall_3x3",
     "tv_65",
-    "led_floodlight"
+    "led_floodlight",
+    "illuminated-foam"
   ],
   "descriptors": [
     {
@@ -253,6 +254,11 @@
       "itemKey": "led_floodlight",
       "label": "LED Projektör",
       "previewId": 10
+    },
+    {
+      "itemKey": "illuminated-foam",
+      "label": "Işıklı Strafor / Logo",
+      "previewId": 9
     }
   ],
   "groups": [
@@ -337,7 +343,8 @@
         "video_wall_2x2",
         "video_wall_3x3",
         "tv_65",
-        "led_floodlight"
+        "led_floodlight",
+        "illuminated-foam"
       ]
     }
   ]

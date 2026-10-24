@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 // Profil ↑/↓ ile dikey taşınır ve zemin/tavan uzaklığı gösterilir; dikme bırakılırken boy
-// sorulur, "Bir daha sorma" işaretlenince sorulmaz, sağ tık "Dikme yüksekliği…" çentiği kaldırır.
+// sorulur, "Bir daha sorma" işaretlenince sorulmaz, Özellikler panelindeki dikme boyu alanı çentiği kaldırır.
 
 async function exposeScene(page) {
   await page.route('**/src/scene3d.js*', async (route) => {
@@ -204,17 +204,18 @@ test('dikme boyu sorulur; "Bir daha sorma" hatırlanır; sağ tık çentiği kal
   project = await readLatestProject(page);
   expect(project.modules.map((module) => module.itemKey)).toEqual(['upright_297', 'upright_297']);
 
-  // Sağ tık: pencere çentikli açılır; çentik kaldırılıp 346,5 seçilir.
+  // Tık: Özellikler panelinde boy alanı çentikli gelir; çentik kaldırılıp 346,5 seçilir (pencere yok).
   const first = await moduleScreenPoint(page, project.modules[0].id);
-  await page.mouse.click(first.x, first.y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
-  await menu.locator('[data-module-action="upright-height"]').click();
-  await expect(dialog).toBeVisible();
-  await expect(dialog.locator('select')).toHaveValue('upright_297');
-  await expect(dialog.getByRole('checkbox')).toBeChecked();
-  await dialog.locator('select').selectOption('upright_346_5');
-  await dialog.getByRole('checkbox').uncheck();
-  await dialog.getByRole('button', { name: 'Uygula' }).click();
+  await page.mouse.click(first.x, first.y);
+  const fields = page.locator('.selection-property-panel .selection-property-fields');
+  await expect(fields).toContainText('Dikme yüksekliği');
+  await expect(fields.locator('select')).toHaveValue('upright_297');
+  await expect(fields.getByRole('checkbox')).toBeChecked();
+  await fields.getByRole('checkbox').uncheck();
+  await fields.locator('select').selectOption('upright_346_5');
+  await expect(dialog).toBeHidden();
+  await expect.poll(async () => (await saveAndReadProject(page)).modules.map((module) => module.itemKey).sort())
+    .toEqual(['upright_297', 'upright_346_5']);
   project = await saveAndReadProject(page);
   expect(project.modules.map((module) => module.itemKey).sort()).toEqual(['upright_297', 'upright_346_5']);
   expect(await page.evaluate(() => localStorage.getItem('fairStand.uprightHeightItemKey'))).toBeNull();
@@ -226,7 +227,7 @@ test('dikme boyu sorulur; "Bir daha sorma" hatırlanır; sağ tık çentiği kal
   expect(errors).toEqual([]);
 });
 
-test('profil kartı tek; bırakırken boy sorulur, seçilen boyun Item’ıyla kaydedilir; sağ tık "Profil boyu…"', async ({ page }) => {
+test('profil kartı tek; bırakırken boy sorulur, seçilen boyun Item’ıyla kaydedilir; panelde profil boyu', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await exposeScene(page);
@@ -259,17 +260,16 @@ test('profil kartı tek; bırakırken boy sorulur, seçilen boyun Item’ıyla k
   // Sahnede 400 cm çizilir (sceneDimensions); BOM gerçek boyun Item'ı.
   expect(project.modules[0].widthCm).toBe(400);
 
-  // Sağ tık: boy değişir.
+  // Tık: Özellikler panelinde profil boyu alanı; seçim sahneye hemen uygulanır (pencere yok).
   const first = await moduleScreenPoint(page, project.modules[0].id);
-  await page.mouse.click(first.x, first.y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
-  await expect(menu.locator('[data-module-action="upright-height"]')).toBeHidden();
-  await menu.locator('[data-module-action="profile-length"]').click();
-  await expect(dialog).toBeVisible();
-  await expect(dialog.locator('select')).toHaveValue('profile_388');
-  await dialog.locator('select').selectOption('profile_91');
-  await dialog.getByRole('button', { name: 'Uygula' }).click();
-  project = await saveAndReadProject(page);
-  expect(project.modules.map((module) => [module.itemKey, module.widthCm])).toEqual([['profile_91', 100]]);
+  await page.mouse.click(first.x, first.y);
+  const fields = page.locator('.selection-property-panel .selection-property-fields');
+  await expect(fields).toContainText('Profil boyu');
+  await expect(fields).not.toContainText('Dikme yüksekliği');
+  await expect(fields.locator('select')).toHaveValue('profile_388');
+  await fields.locator('select').selectOption('profile_91');
+  await expect(dialog).toBeHidden();
+  await expect.poll(async () => (await saveAndReadProject(page)).modules.map((module) => [module.itemKey, module.widthCm]))
+    .toEqual([['profile_91', 100]]);
   expect(errors).toEqual([]);
 });

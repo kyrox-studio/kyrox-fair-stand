@@ -33,7 +33,7 @@ test('led_floodlight: canonical identity, catalog and hydrate', () => {
   assert.equal(getCatalogItem('LED_FLOODLIGHT'), null);
   assert.equal(getCatalogItem('led_floodlight') != null, true);
   assert.equal(getCatalogItem('LED_FLOODLIGHT') != null, false);
-  assert.equal(getCatalogItem('illuminated-foam') != null, false);
+  assert.equal(getCatalogItem('illuminated-foam') != null, true);
 
   const state = createLedFloodlightModuleState();
   assert.equal(state.itemKey, 'led_floodlight');
@@ -76,7 +76,7 @@ test('led_floodlight: canonical identity, catalog and hydrate', () => {
   assert.equal(duplicate.itemKey, 'led_floodlight');
 });
 
-test('illuminated-foam: canonical identity stays off catalog', () => {
+test('illuminated-foam: canonical identity, catalog card (0084) and state', () => {
   const item = getItem('illuminated-foam');
   assert.equal(getItem('illuminated-foam'), item);
   assert.equal(item.name, 'Işıklı Strafor / Logo');
@@ -85,7 +85,9 @@ test('illuminated-foam: canonical identity stays off catalog', () => {
   assert.equal(item.dimensions.depthCm, 3.5);
   assert.equal(item.dimensions.wallGapCm, 1.5);
   assert.equal(item.unit, 'metre_kare');
-  assert.equal(getCatalogItem('illuminated-foam'), null);
+  // Katalogdan konur; logo görseli panelin görsel bölümünden seçilir.
+  assert.equal(getCatalogItem('illuminated-foam').previewId, 9);
+  assert.equal(item.acceptsImage, true);
 
   const state = createIlluminatedFoamModuleState('asset-1');
   assert.equal(state.itemKey, 'illuminated-foam');

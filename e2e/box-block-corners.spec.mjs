@@ -1,3 +1,4 @@
+import { showSurfaceControls } from './helpers/surfaceControls.mjs';
 import { test, expect } from '@playwright/test';
 
 // Kutu blok yüz plakaları kutunun dış sınırına oturur ve her kenarda sıfır açıklıkla kavuşur:
@@ -43,9 +44,6 @@ async function applyLightboxToFace(page, slot, viewKey) {
   await expect.poll(() => page.evaluate((faceSlot) => window.__sceneSurfaces()
     .find((mesh) => mesh.userData.faceSlot === faceSlot)?.userData.selectionFrame?.visible === true, slot)).toBe(true);
   await page.mouse.click(point.x, point.y, { button: 'right' });
-  // Panel dönüşümleri sade menüde "Gelişmiş" altında; kapalıysa aç.
-  const advancedToggle = page.getByRole('menu', { name: 'Modül işlemleri' }).locator('.module-context-advanced-toggle');
-  if ((await advancedToggle.getAttribute('aria-expanded')) !== 'true') await advancedToggle.click();
   await page.locator('[data-module-action="toggle-fabric"]').click();
   await expect.poll(() => page.evaluate((faceSlot) => Boolean(window.__sceneSurfaces()
     .find((mesh) => mesh.userData.faceSlot === faceSlot)?.userData.surfaceState?.fabricGroupId), slot)).toBe(true);
@@ -181,8 +179,7 @@ test('box block side faces meet at every vertical corner', async ({ page }) => {
   const selectedSlot = await page.evaluate(() => window.__sceneSurfaces()
     .find((mesh) => mesh.userData.faceSlot === 'top')?.userData.selectionFrame?.visible === true);
   expect(selectedSlot).toBe(true);
-  const panel = page.locator('details', { has: page.locator('#apply-color') });
-  if (!(await panel.evaluate((el) => el.open))) await panel.locator(':scope > summary').click();
+  await showSurfaceControls(page);
   await page.locator('#color-hex').fill('#1E40AF');
   await page.locator('#color-hex').press('Enter');
   await page.locator('#apply-color').click();
@@ -248,4 +245,41 @@ test('box block side faces meet at every vertical corner', async ({ page }) => {
   const frontTopEdge = frontOverlay.filter(([, y]) => Math.abs(y - h) < 1e-6);
   expect(topFrontEdge.length).toBe(2);
   expect(frontTopEdge.length).toBe(2);
+});
+
+test('kutu blok ölçüsü Özellikler panelinde alan olarak durur ve sahnede canlı değişir', async ({ page }) => {
+  await exposeScene(page);
+  await page.goto('/');
+  const standSetup = page.locator('details.stand-setup-card');
+  await standSetup.locator('summary').click();
+  await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
+  await page.locator('#create-stage').click();
+  await page.locator('form input[name="projectName"]').fill('E2E Kutu Olcu');
+  await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await expect(page.locator('#viewport-toolbar')).toBeVisible();
+
+  const openCatalogButton = page.locator('#open-module-catalog');
+  await page.locator('details', { has: openCatalogButton }).locator(':scope > summary').click();
+  const card = page.locator('.module-drag-card[data-module-key="box_block"]');
+  const group = page.locator('.module-drag-group', { has: card });
+  if (!(await group.evaluate((el) => el.open))) await group.locator(':scope > summary').click();
+  await card.scrollIntoViewIfNeeded();
+  const viewport = await page.locator('#viewport').boundingBox();
+  await card.dragTo(page.locator('#viewport'), {
+    targetPosition: { x: Math.round(viewport.width * 0.55), y: Math.round(viewport.height * 0.85) },
+  });
+  await page.getByRole('button', { name: 'Uygula' }).click();
+  await expect(page.locator('#box-block-size-title')).toHaveCount(0);
+
+  const frontWidthM = () => page.evaluate(() => window.__sceneSurfaces()
+    .find((mesh) => mesh.userData.moduleType === 'box-block' && mesh.userData.faceSlot === 'front')?.geometry.parameters.width);
+  const point = await faceScreenPoint(page, 'front');
+  await page.mouse.click(point.x, point.y);
+  const fields = page.locator('.selection-property-panel .selection-property-fields');
+  await expect(fields).toContainText('Ölçü');
+  // Pencere yok; W değişince kutu sahnede hemen büyür.
+  await expect(page.locator('[data-module-action="resize-foam"]')).toHaveCount(0);
+  await fields.locator('input[name="widthCm"]').fill('140');
+  await expect.poll(async () => Math.round((await frontWidthM()) * 100)).toBe(140);
+  await expect(page.locator('#box-block-size-title')).toHaveCount(0);
 });

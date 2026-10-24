@@ -16,7 +16,7 @@ const EXPECTED_CATEGORIES = Object.freeze([
   Object.freeze({ id: 3, catalogName: 'Raf & Vitrin', catalogIndex: 3, itemCount: 6 }),
   Object.freeze({ id: 4, catalogName: 'Banko & Baza', catalogIndex: 4, itemCount: 3 }),
   Object.freeze({ id: 5, catalogName: 'Extra', catalogIndex: 5, itemCount: 19 }),
-  Object.freeze({ id: 6, catalogName: 'Elektronik & Aydınlatma', catalogIndex: 6, itemCount: 6 }),
+  Object.freeze({ id: 6, catalogName: 'Elektronik & Aydınlatma', catalogIndex: 6, itemCount: 7 }),
 ]);
 
 const EXPECTED_GROUP_KEYS = Object.freeze({
@@ -43,7 +43,7 @@ const EXPECTED_GROUP_KEYS = Object.freeze({
     'extra_long_planter_100', 'extra_long_planter_150', 'extra_long_planter_200', 'tulle_fabric', 'brochure_stand', 'glass_bar_table',
   ]),
   6: Object.freeze([
-    'tv_42', 'tv_55', 'video_wall_2x2', 'video_wall_3x3', 'tv_65', 'led_floodlight',
+    'tv_42', 'tv_55', 'video_wall_2x2', 'video_wall_3x3', 'tv_65', 'led_floodlight', 'illuminated-foam',
   ]),
 });
 
@@ -130,7 +130,7 @@ test('listCatalogGroups kategori sırası, adı ve Item sırasını korur', () =
     });
   });
 
-  assert.equal(visibleTotal, 42);
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 42);
+  assert.equal(visibleTotal, 43);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 43);
   assert.deepEqual([...listCatalogItems().map((item) => item.itemKey)], groups.flatMap((group) => group.keys));
 });

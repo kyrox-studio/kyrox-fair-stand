@@ -15,6 +15,7 @@ import {
   TABLE_GLASS_RENDER_TRANSMISSION,
   PANEL_GLASS_BACKING_APPEARANCE,
   getMaterialAppearance,
+  FURNITURE_ALUMINIUM_APPEARANCE,
 } from './theme.js';
 import { surfaceCapabilityUserData } from './itemCapabilities.js';
 import {
@@ -1956,6 +1957,15 @@ export function createStandScene(
   function notifySelection() {
     refreshGroupHighlight();
     onSurfaceSelected?.([...selectedSurfaces], getSelectedModuleIds());
+  }
+
+  /** Tek parça (module modlu) yüzeyi olan öğeyi tıklanmış gibi seçer; yoksa öğeyi seçer. */
+  function selectModuleSurface(moduleId) {
+    const surface = surfaceMeshes.find((mesh) => mesh.userData.moduleId === moduleId
+      && mesh.userData.selectionMode === 'module');
+    if (!surface) return selectModulesById([moduleId]) > 0;
+    selectOnly(surface);
+    return true;
   }
 
   /** Panelden: verilen öğeleri seçer (bir tane ise tek seçim, fazlası toplu seçim). */
@@ -6532,6 +6542,8 @@ export function createStandScene(
       const areaHit = raycaster.intersectObject(floorAreaMesh, false)[0];
       if (areaHit) {
         clearSelection({ notify: false });
+        // Zemin seçilince grup / çoklu seçim çerçeveleri de kalkar (aksi halde ekranda kalıyordu).
+        refreshGroupHighlight();
         selectedModuleId = null;
         floorAreaSelected = true;
         setFloorAreaHighlight(true);
@@ -6544,6 +6556,7 @@ export function createStandScene(
       const floorHit = raycaster.intersectObject(activeFloor, false)[0];
       if (floorHit) {
         clearSelection({ notify: false });
+        refreshGroupHighlight();
         selectedModuleId = null;
         floorSelected = true;
         notifyFloorSelection();
@@ -7639,6 +7652,7 @@ export function createStandScene(
     isFloorAreaSelected: () => floorAreaSelected,
     getSelectedModuleIds,
     selectModulesById,
+    selectModuleSurface,
     getSelectionContext,
     rotateModuleById,
     setMultiSelectMode,
@@ -7924,13 +7938,25 @@ function createIlluminatedFoamModule(moduleState, moduleIndex, assetUrl) {
   hitbox.userData.moduleType = 'illuminated-foam';
   hitbox.userData.moduleIndex = moduleIndex;
   hitbox.userData.widthCm = Number(moduleState.widthCm) || 200;
-  hitbox.userData.acceptsImage = false;
+  // Yetenek Item verisinden: görsel = logo SVG (panelin görsel bölümünden seçilir), renk yok.
+  Object.assign(hitbox.userData, surfaceCapabilityUserData(moduleState.itemKey ?? 'illuminated-foam'));
   hitbox.userData.selectionMode = 'module';
   group.add(hitbox);
 
   const visualRoot = new THREE.Group();
   visualRoot.position.set(0, centerYM, bodyBackZM);
   group.add(visualRoot);
+
+  // Logo seçilmeden (katalogdan yeni konmuş) strafor düz beyaz gövde olarak görünür.
+  if (!assetUrl) {
+    const blank = new THREE.Mesh(
+      new THREE.BoxGeometry(widthM, heightM, depthM),
+      new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.72, metalness: 0 }),
+    );
+    blank.position.set(0, 0, depthM / 2);
+    blank.castShadow = true;
+    visualRoot.add(blank);
+  }
 
   if (assetUrl) {
     const loader = new SVGLoader();
@@ -9234,7 +9260,7 @@ function addProceduralGlassTable(group, tableItem) {
   const radiusM = diameterCm / 200;
   const heightM = heightCm / 100;
 
-  const metalMaterial = new THREE.MeshStandardMaterial({ color: 0x30343a, roughness: 0.32, metalness: 0.74 });
+  const metalMaterial = new THREE.MeshStandardMaterial({ ...FURNITURE_ALUMINIUM_APPEARANCE });
   const tabletopMaterial = new THREE.MeshPhysicalMaterial({
     ...TABLE_GLASS_APPEARANCE,
     clearcoatRoughness: 0.08,
@@ -9500,9 +9526,14 @@ function makeBeigeSofaBodyWhite(object, upholsteryColor) {
   whiteMaterial.userData = { ...(whiteMaterial.userData || {}), sofaUpholstery: true };
   whiteMaterial.needsUpdate = true;
 
-  // Leg material is a plain clone of the original GLB material. No property is altered.
+  // Koltuk ayakları Eames sandalye ayaklarıyla aynı sabit ahşap görünümdedir; boyama değiştirmez.
   const originalLegMaterial = sourceMaterial.clone();
+  originalLegMaterial.map = null;
+  originalLegMaterial.color?.set(itemDefaultColorCss('furniture_coffee_table_classic'));
+  if ('metalness' in originalLegMaterial) originalLegMaterial.metalness = 0;
+  if ('roughness' in originalLegMaterial) originalLegMaterial.roughness = 0.58;
   originalLegMaterial.userData = { ...(originalLegMaterial.userData || {}), sofaFixedWood: true };
+  originalLegMaterial.needsUpdate = true;
 
   geometry.clearGroups();
   if (triangleCount > 0) {
@@ -9557,7 +9588,7 @@ function addClassicCoffeeTable(group, item, { x = 0, z = 0 } = {}) {
 
   const tableStem = new THREE.Mesh(
     new THREE.CylinderGeometry(0.035, 0.035, 0.35, 20),
-    new THREE.MeshStandardMaterial({ color: itemDefaultColorCss(item), metalness: 0.72, roughness: 0.28 }),
+    new THREE.MeshStandardMaterial({ ...FURNITURE_ALUMINIUM_APPEARANCE }),
   );
   tableStem.position.set(x, 0.19, z);
   tableStem.castShadow = true;
@@ -9565,7 +9596,7 @@ function addClassicCoffeeTable(group, item, { x = 0, z = 0 } = {}) {
 
   const tableBase = new THREE.Mesh(
     new THREE.CylinderGeometry(0.22, 0.24, 0.035, 32),
-    new THREE.MeshStandardMaterial({ color: itemDefaultColorCss(item), metalness: 0.72, roughness: 0.30 }),
+    new THREE.MeshStandardMaterial({ ...FURNITURE_ALUMINIUM_APPEARANCE }),
   );
   tableBase.position.set(x, 0.018, z);
   tableBase.castShadow = true;

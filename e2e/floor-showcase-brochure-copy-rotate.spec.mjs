@@ -142,8 +142,6 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
   const front = await faceScreenPoint(page, showcaseId, 'front');
   await page.mouse.click(front.x, front.y, { button: 'right' });
   await expect(menu).toBeVisible();
-  const advanced = menu.locator('.module-context-advanced-toggle');
-  if (await advanced.isVisible() && (await advanced.getAttribute('aria-expanded')) === 'false') await advanced.click();
   const lightbox = menu.locator('[data-module-action="toggle-fabric"]');
   await expect(lightbox).toHaveText('Lightbox Kumaşa Çevir');
   await lightbox.click();

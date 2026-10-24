@@ -41,6 +41,6 @@ test('SYSTEM_MODULE_CATALOG summary counts match module contracts', async () => 
   const illuminatedFoam = resolveModuleContract('illuminated-foam');
   assert.ok(illuminatedFoam);
   assert.equal(illuminatedFoam.bom.mode, 'decision-required');
-  assert.equal(readBoldCount(source, 'Katalog dışı explicit runtime module'), 1);
-  assert.equal(readBoldCount(source, 'Katalog dışı module BOM mode `decision-required`'), 1);
+  assert.equal(readBoldCount(source, 'Explicit contract runtime module'), 1);
+  assert.equal(readBoldCount(source, 'Explicit contract module BOM mode `decision-required`'), 1);
 });
