@@ -437,7 +437,7 @@ test('field upright consumes one free short endpoint and keeps its own line', ()
   assertBom('short-2 left', [shortOf('a', 'wall_100_short_2'), post('post', { xCm: -4 })], bump(alone('wall_100_short_2'), 'upright_99', -1));
   const pair = [shortOf('a', 'wall_200_short_2'), shortOf('b', 'wall_200_short_2', { xCm: 200 })];
   const shared = expectShortJoint('wall_200_short_2', 'wall_200_short_2', 'end');
-  assertBom('shared endpoint does not double consume', [...pair, post('post', { xCm: 196 })], add(shared, RECIPE.upright_346_5));
+  assertBom('structural post replaces the remaining shared short upright', [...pair, post('post', { xCm: 196 })], bump(add(shared, RECIPE.upright_346_5), 'upright_99', -1));
   assertBom('free endpoint after a shared joint', [...pair, post('post', { xCm: 396 })], shortRun(bump(add(shared, RECIPE.upright_346_5), 'upright_99', -1), { drop: ['profile_190', 'profile_190'], add: ['profile_388'], rails: 2 }));
   assertBom('body middle', [shortOf('a', 'wall_200_short_2'), post('post', { xCm: 96 })], alone('wall_200_short_2'));
   assertBom('z outside', [shortOf('a', 'wall_200_short_2'), post('post', { xCm: 196, zCm: 400 })], alone('wall_200_short_2'));

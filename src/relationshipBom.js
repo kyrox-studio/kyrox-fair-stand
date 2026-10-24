@@ -1485,6 +1485,25 @@ function uprightFootprintContains(upright, point) {
     && Math.abs(point.xCm - upright.fixedCm) <= halfDepthCm + EPSILON_CM;
 }
 
+// Uç uca / köşe kısa panel birleşimi iki dikmeyi tek dikmeye indirir (kalan: tutulan panelin dikmesi).
+// O noktada tam boy dikme durursa kalan bu tek kısa dikme de düşer; aksi halde iki panelin uç
+// slotu birleşimde dolduğu için tam boy dikme kontrolü onu göremez ve fazladan 49,5 / 99 kalırdı.
+function noteSharedJointUpright(book, point, kept) {
+  if (!point || kept?.kind !== 'short' || !kept.uprightKey) return;
+  book.sharedJointUprights.push({ point, frame: kept, consumed: false });
+}
+
+function applyStructuralUprightToSharedJoints(book, upright) {
+  for (const shared of book.sharedJointUprights) {
+    if (shared.consumed) continue;
+    if (!uprightCoversShortBand(upright, shared.frame)) continue;
+    if (!uprightFootprintContains(upright, shared.point)) continue;
+    shared.consumed = true;
+    book.add(shared.frame.uprightKey, -1);
+    book.noteJoint();
+  }
+}
+
 function applyStructuralUprightPost(book, wall, upright) {
   if (!uprightCoversShortBand(upright, wall) || !wall.uprightKey) return;
   const ends = segmentEndpoints(wall);
@@ -1611,6 +1630,7 @@ function createDeltaBook() {
   const panelSwaps = [];
   const backSwapModuleIds = [];
   const backPanelSwaps = [];
+  const sharedJointUprights = [];
   const moduleCharges = new Map();
   let jointCount = 0;
   let railCount = 0;
@@ -1646,6 +1666,7 @@ function createDeltaBook() {
     panelSwaps,
     backSwapModuleIds,
     backPanelSwaps,
+    sharedJointUprights,
     moduleCharges,
     add,
     charge,
@@ -1670,6 +1691,7 @@ function applyEndToEndShortJoint(book, a, b, geometry) {
   takeSlot(a, geometry.sideA, 'upright');
   takeSlot(b, geometry.sideB, 'upright');
   book.add(dropped.uprightKey, -1);
+  noteSharedJointUpright(book, segmentEndpoints(a)[geometry.sideA], dropped === a ? b : a);
   if (bothPay) {
     takeSlot(a, geometry.sideA, 'single');
     takeSlot(b, geometry.sideB, 'single');
@@ -1704,6 +1726,7 @@ function applyCornerShortJoint(book, a, b, geometry) {
   if (payA) takeSlot(a, geometry.sideA, 'single');
   if (payB) takeSlot(b, geometry.sideB, 'single');
   book.add(dropped.uprightKey, -1);
+  noteSharedJointUpright(book, geometry.point ?? segmentEndpoints(a)[geometry.sideA], dropped === a ? b : a);
   const unitsA = payA ? shortCornerUnits(a, b) : 0;
   const unitsB = payB ? shortCornerUnits(b, a) : 0;
   book.add('connector_single', -(unitsA + unitsB));
@@ -1867,6 +1890,7 @@ export function planWallShortRelationshipBom(modules = []) {
   for (const candidate of postCandidates) {
     applyStructuralUprightPost(book, candidate.wall, candidate.upright);
   }
+  for (const upright of uprights) applyStructuralUprightToSharedJoints(book, upright);
 
   applySameWidthShortColumns(book, structural);
   applyShortRunProfiles(book, shorts, partners, uprights);
