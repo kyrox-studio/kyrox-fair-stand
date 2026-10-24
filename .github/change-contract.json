@@ -1,41 +1,13 @@
 {
   "schemaVersion": 2,
-  "id": "catalog-single-add-width-families",
-  "kind": "ui-control",
-  "summary": "Panel (50/100/150/200) ve Separatör (50/100) katalogda kısa panel gibi tek kartla gelir (\"Panel\", \"Separatör\"); bırakırken ve katalogdan eklerken genişlik sorulur, Separatör penceresindeki \"Sarmaşıklı\" çentiği aynı genişliğin sarmaşıklı Item'ını bırakır (migration 0082_panel_separator_cards: variant wall-panel / wall-separator / wall-separator-sarmasik, altı Item katalogda gizlenir; itemKey, ad, reçete ve kayıtlı projeler değişmez). Katalog penceresi solda kategori sekmeleri, sağda kartlarla açılır; çoklu seçim kuyruğu kalktı, her seferinde tek öğe eklenir. Sağ tıkta \"Ekle Sağ/Sol\" yerine tek \"Ekle…\": wall-overlay ve top davranışlı öğeler tıklanan modülün üstüne (sürükle-bırak kuralı, modülün ortasına bırakılmış gibi), diğerleri sağ → sol → hemen önü → sahnede müsait yer. Kopyalamada sağ altta \"… hafızaya alındı\" bildirimi çıkar. Banko, Köşe Banko ve Baza da tek kartla gelir (migration 0083_banko_base_cards: variant desk-banko / desk-banko-l / base, kart 100'lük, ölçü penceresi 100 seçili açılır). Bildirimler alt alta en fazla 2 tanedir; yeni gelen en altta çıkar, en eskisi kapanır. Katalog penceresi sabit yüksekliktedir (sekme değişince hoplamaz, mobilde ekrana sığar). CRM'de yeni proje kaydedilince adres /stand-projects/{id} olur (yenileyince sihirbaz açılmaz). Kılavuz \"?\" düğmesi üst banda, Persp/Ortho seçicisi küp kutusuna taşındı. Otomatik alınlık dikmesi panel birleşimine ortalanır (yarım genişlik kayması giderildi; yalnız yeni standlar). Katalogdan Ekle ile konan öğe seçili kalır; ekranda değilse kamera döndürülmeden kaydırılır. Duvar üstü / tepe öğe tıklanan modüle uygun değilse başka yere konmaz, sebep yazılır (serbest panele takılabilir). Ölçü penceresindeki ek çentik (Sarmaşıklı) seçili ölçüde karşılığı yoksa seçilemez. Kılavuz düğmesi bant gizliyken sağ altta kalır. CI duvar kilidi E2E testinde sağ tık, Açıldı yazısına ek olarak proje yükleme perdesinin kapanmasını bekler; test gerçek hazır olma akışına uyar.",
+  "id": "shared-short-upright-replacement",
+  "kind": "bugfix",
+  "summary": "Uç uca veya köşe kısa panel birleşiminde kalan ortak 49,5 / 99 dikme, aynı noktayı ve yükseklik bandını karşılayan bağımsız taşıyıcıyla ikame edilir. Tekrarlı düşüm engellenir; eski iki 99 beklentisi ve sınır/kayıt-açma regresyonları güncellendi.",
   "owners": [
-    "src/moduleContextMenu.js",
-    "src/main.js",
-    "src/scene3d.js",
-    "src/catalogWidthFamily.js",
-    "src/itemSizeDialog.js",
-    "src/catalog.js",
-    "src/wallShortWidth.js",
-    "src/style.css",
-    "src/helpGuide.js",
-    "backend/alembic/versions/0082_panel_separator_cards.py",
-    "backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py",
-    "backend/alembic/versions/0083_banko_base_cards.py",
-    "src/toastNotifications.css",
-    "src/helpGuide.css",
-    "src/toastNotifications.js"
+    "src/relationshipBom.js"
   ],
   "sourceOfTruth": [
-    "src/moduleContextMenu.js",
-    "src/main.js",
-    "src/scene3d.js",
-    "src/catalogWidthFamily.js",
-    "src/itemSizeDialog.js",
-    "src/catalog.js",
-    "src/wallShortWidth.js",
-    "src/style.css",
-    "src/helpGuide.js",
-    "backend/alembic/versions/0082_panel_separator_cards.py",
-    "backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py",
-    "backend/alembic/versions/0083_banko_base_cards.py",
-    "src/toastNotifications.css",
-    "src/helpGuide.css",
-    "src/toastNotifications.js"
+    "src/relationshipBom.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -136,7 +108,8 @@
       "src/wallShortWidth.js",
       "vite.config.js",
       "src/projectActionSaveGuard.js",
-      "src/stageFeedback.js"
+      "src/stageFeedback.js",
+      "src/systemChangeContract.js"
     ],
     "affectedTests": [
       "e2e/box-block-corners.spec.mjs",
@@ -462,7 +435,9 @@
       "e2e/wall-media-items-contract.spec.mjs",
       "test/hostProjectUrl.test.js",
       "test/placementFeedback.test.js",
-      "e2e/help-guide-recent-rules.spec.mjs"
+      "e2e/help-guide-recent-rules.spec.mjs",
+      "test/shortJointStructuralUpright.test.js",
+      "e2e/short-joint-structural-upright.spec.mjs"
     ],
     "affectedDocs": [
       "ARCHITECTURE_RULES.md",
@@ -866,7 +841,8 @@
       "docs/refactor/PENDING_ITEM_DECISIONS.md",
       "docs/refactor/REFACTOR.md",
       "docs/refactor/SCENE_POSE.md",
-      "scripts/archive/README.md"
+      "scripts/archive/README.md",
+      "README.md"
     ],
     "relatedFindings": {
       "affected": [],
@@ -887,58 +863,31 @@
         "F-033"
       ]
     },
-    "notes": "Genişlik ailesi Item.variant (DB) ile belirlenir; isWallShortFamilyDescriptor yalnız kısa panelde kalır, böylece profil/yan panel snap ve kısa panel BOM kuralları panel/separatöre karışmaz. Duvar yüksekliği seçimden sonra resolveWallItemKeyForHeight ile çözülür; türetilmiş yükseklik Item'ları variant'ı taşır. Gizlenen Item'lar sahnede, otomatik duvar/alınlıkta ve BOM'da kullanılmaya devam eder. Sahnede yeni planCatalogModuleAtGround sürükle-bırakın zemin dalını hayalet/geri bildirimsiz çıkarır; previewCatalogModuleDrag aynı sonucu çizer, davranış değişmez. Müsait yer taraması diğer modülleri kaydıran planı kabul etmez. Duvar üstü kural Item'a değil davranış ailesine (placement wall-overlay / top) bağlıdır. Tetiklenen catalog/preview anlık görüntüleri 54 → 48 görünür karta güncellendi; gevşetme yok. CI run 40095341324 içinde wall-height kilit/kayıt-açma senaryosu ikinci sağ tıkta başarısızdı. restoreProject Açıldı durumunu waitForSceneToFill tamamlanmadan yazar; project-open-wait-scene E2E bunu açıkça doğrular. wallContextMenu ekran koordinatını hesaplamadan ve ham mouse tıklamasından önce project-loading-overlay gizlenmesini bekler. Kilit/silme/kayıt beklentileri değiştirilmez; runtime ve BOM değişmez. Yereldeki relationshipBom/shortJointStructuralUpright çalışması bu CI düzeltmesine dahil değildir."
+    "notes": "Genişlik ailesi Item.variant (DB) ile belirlenir; isWallShortFamilyDescriptor yalnız kısa panelde kalır, böylece profil/yan panel snap ve kısa panel BOM kuralları panel/separatöre karışmaz. Duvar yüksekliği seçimden sonra resolveWallItemKeyForHeight ile çözülür; türetilmiş yükseklik Item'ları variant'ı taşır. Gizlenen Item'lar sahnede, otomatik duvar/alınlıkta ve BOM'da kullanılmaya devam eder. Sahnede yeni planCatalogModuleAtGround sürükle-bırakın zemin dalını hayalet/geri bildirimsiz çıkarır; previewCatalogModuleDrag aynı sonucu çizer, davranış değişmez. Müsait yer taraması diğer modülleri kaydıran planı kabul etmez. Duvar üstü kural Item'a değil davranış ailesine (placement wall-overlay / top) bağlıdır. Tetiklenen catalog/preview anlık görüntüleri 54 → 48 görünür karta güncellendi; gevşetme yok. CI run 40095341324 içinde wall-height kilit/kayıt-açma senaryosu ikinci sağ tıkta başarısızdı. restoreProject Açıldı durumunu waitForSceneToFill tamamlanmadan yazar; project-open-wait-scene E2E bunu açıkça doğrular. wallContextMenu ekran koordinatını hesaplamadan ve ham mouse tıklamasından önce project-loading-overlay gizlenmesini bekler. Kilit/silme/kayıt beklentileri değiştirilmez; runtime ve BOM değişmez. Yereldeki relationshipBom/shortJointStructuralUpright çalışması bu CI düzeltmesine dahil değildir. Kısa dikme ikamesi birleşimde kalan Item uprightKey üzerinden 49,5 ve 99 için ortaktır. Mevcut yatay footprint ve bandı kapsama/3,5 cm üst boşluk kontrolleri yeniden kullanılır; consumed kaydı ortak dikmenin ikinci kez düşmesini önler. Karma yükseklik/genişlik, dört yön, mükerrer taşıyıcı, yükseklik dışı ve konum dışı kontroller ile JSON normalizasyonu doğrulanır. Mevcut iki 99 beklentisi ortak taşıyıcının kısa dikmeyi de karşıladığı kurala güncellendi; profil/panel/aparat beklentileri korunur. Tarayıcı fixture gerçek Item state oluşturucusuyla hazırlanır; gerçek üretim listesi ve kayıt/açma 49,5 ve 99 miktarlarını doğrular. Yeni Item, migration veya proje şeması yoktur."
   },
   "tests": {
     "targeted": [
-      "test/catalogWidthFamily.test.js",
-      "test/wallShortWidth.test.js",
-      "test/wallFlatPanelItemsContract.test.js",
-      "test/wallSeparatorItemsContract.test.js",
-      "test/catalogCategories.test.js",
-      "test/catalogItemProjection.test.js",
-      "test/catalogPreviewConfig.test.js",
-      "test/scene3dPublicContract.test.js",
-      "test/profileLength.test.js",
-      "test/helpGuide.test.js",
-      "test/deskBankoItemsContract.test.js",
-      "test/baseItemsContract.test.js",
-      "test/baseModule.test.js",
-      "test/uprightFieldPlacement.test.js",
-      "test/hostProjectUrl.test.js",
-      "test/toastNotifications.test.js"
+      "test/shortJointStructuralUpright.test.js",
+      "test/wallShortRelationshipBom.test.js",
+      "test/sceneBomAcceptance.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/wall-short-width.spec.mjs",
-        "e2e/wall-flat-panel-items-contract.spec.mjs",
-        "e2e/module-group.spec.mjs",
-        "e2e/wall-separator-items-contract.spec.mjs",
-        "e2e/wall-height.spec.mjs",
-        "e2e/wall-showcase-item-contract.spec.mjs",
-        "e2e/f010-module-construction.spec.mjs",
-        "e2e/plastic-trash-bin-module.spec.mjs",
-        "e2e/toast-notifications.spec.mjs",
-        "e2e/base-items-contract.spec.mjs",
-        "e2e/desk-banko-items-contract.spec.mjs",
-        "e2e/double-click-select.spec.mjs",
-        "e2e/help-guide-recent-rules.spec.mjs",
-        "e2e/new-project-wizard.spec.mjs",
-        "e2e/project-open-wait-scene.spec.mjs"
+        "e2e/short-joint-structural-upright.spec.mjs"
       ],
-      "reason": "Duvar kilidi, gerçek sağ tık ve kayıt-açma senaryosu tam yükleme perdesinin kapanmasını bekleyerek doğrulanır. Gecikmeli model testi Açıldı yazısı ile etkileşime hazır sahnenin farklı aşamalar olduğunu korur."
+      "reason": "Gerçek üretim listesinde uç uca 49,5 ve köşe 99 ortak dikme ikamesi ile tekrar kayıt/açma sonucu doğrulanır."
     }
   },
   "risk": {
     "level": "medium",
-    "notes": "Katalog üyeliği değişir (DB migration 0082/0083). Ekle yerleşimi yeni sıra izler; duvar üstü yerleşim ortak planlayıcıya taşındı. Birim, backend, build ve tam E2E (kırılanlar düzeltildi, yeniden koşuldu) yeşil."
+    "notes": "BOM toplamındaki kısa dikme ikamesi etkilenir. Bağımsız taşıyıcı, panel/profil/aparat kuralları ve proje şeması korunur; kapsamlı unit ve E2E kontrolleri geçti."
   },
   "migration": {
-    "required": true,
-    "notes": "0082_panel_separator_cards ve 0083_banko_base_cards: variant işaretlenir, aile dışı ölçüler katalogda gizlenir, kategori sırası sıkıştırılır. Downgrade geri alır. Proje şeması değişmez."
+    "required": false,
+    "notes": "Yeni Item, DB migration veya proje şeması değişikliği yoktur."
   },
-  "rollback": "Alembic downgrade 0081_profile_346_5 ve bu değişiklik setini geri al; kayıtlı projeler etkilenmez."
+  "rollback": "Ortak kısa dikme ikamesi değişiklik setini geri al; DB downgrade veya proje migration gerektirmez."
 }

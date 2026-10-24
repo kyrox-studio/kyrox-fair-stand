@@ -572,7 +572,8 @@ test('a field upright on the free endpoint drops the second short upright once',
     ...pair,
     frame('post', 'upright_346_5', { xCm: 196, widthCm: 8, heightCm: 346.5 }),
   ]);
-  assert.equal(qty(onSharedPoint, 'upright_99'), 3);
+  // Ortak uçtaki tek kısa dikmeyi de tam boy taşıyıcı karşılar; iki dış uç kalır.
+  assert.equal(qty(onSharedPoint, 'upright_99'), 2);
   assert.equal(qty(onSharedPoint, 'upright_346_5'), 1);
   const throughBody = resolveProjectBom([
     ...pair,
