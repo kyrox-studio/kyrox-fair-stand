@@ -4454,6 +4454,7 @@ const historicalEditWatch = setInterval(() => {
     void autosaveController?.saveNowIfDirty?.().catch(() => {});
     autosaveController?.disable?.();
     productionBomPanel?.destroy?.();
+    selectionToolbar?.destroy?.();
     window.removeEventListener('fair-stand:delete-selected-module', onDeleteSelectedModule);
     scene3d?.dispose?.();
     unbindProjectActionSaveGuard?.();

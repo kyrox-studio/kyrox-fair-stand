@@ -7,6 +7,7 @@ import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument
 // (seçili modülün tepe ortası, ekran pikseli); seçim yoksa veya sürüklenirken gizlenir.
 
 const STYLE_ID = 'selection-toolbar-styles';
+const activeToolbars = new WeakMap();
 
 function ensureStyles(document) {
   if (document.getElementById(STYLE_ID)) return;
@@ -38,7 +39,11 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMult
   const document = getFairStandHostDocument();
   const window = getFairStandHostWindow();
   if (!document?.body) return { update() {}, element: null };
+  activeToolbars.get(document)?.destroy();
+  // Önceki editör veya yenilenen modülden body içinde kalan sahipsiz çubukları temizle.
+  document.querySelectorAll('.selection-toolbar').forEach((element) => element.remove());
   ensureStyles(document);
+  let destroyed = false;
 
   const bar = document.createElement('div');
   bar.className = 'selection-toolbar';
@@ -82,6 +87,7 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMult
   }
 
   function setMultiSelect(next, { notify = true } = {}) {
+    if (destroyed) return;
     multiSelect = next === 'panel' || next === 'module' ? next : false;
     syncMultiButton();
     if (notify) onMultiSelectChange?.(multiSelect, () => setMultiSelect(false, { notify: false }));
@@ -101,6 +107,7 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMult
   });
 
   function setCopyActive(active) {
+    if (destroyed) return;
     copyActive = Boolean(active);
     duplicateButton.setAttribute('aria-pressed', String(copyActive));
     duplicateButton.textContent = copyActive ? '✕ Kopyalamayı bitir' : '⧉ Kopyala';
@@ -108,6 +115,7 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMult
   }
 
   function update(next) {
+    if (destroyed) return;
     anchor = next ?? null;
     if (!anchor && !copyActive) {
       bar.hidden = true;
@@ -147,5 +155,14 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMult
     bar.style.top = `${Math.round(top)}px`;
   }
 
-  return { update, setCopyActive, element: bar };
+  function destroy() {
+    if (destroyed) return;
+    destroyed = true;
+    bar.remove();
+    if (activeToolbars.get(document) === controller) activeToolbars.delete(document);
+  }
+
+  const controller = { update, setCopyActive, destroy, element: bar };
+  activeToolbars.set(document, controller);
+  return controller;
 }

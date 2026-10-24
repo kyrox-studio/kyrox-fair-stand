@@ -2,6 +2,26 @@ import { test, expect } from '@playwright/test';
 
 // Hata ve uyarılar sağ altta bildirimdir (src/toastNotifications.js); sürükleme uyarısı da dahil.
 
+for (const viewport of [{ width: 1280, height: 820 }, { width: 390, height: 844 }]) {
+  test(`bildirimler ekranın altına yakın dizilir: ${viewport.width}×${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await expect(page.locator('#help-guide-button')).toBeAttached();
+    await page.evaluate(async () => {
+      const { showToast } = await import('/src/toastNotifications.js');
+      showToast('Birinci yerleşim uyarısı', { durationMs: 0 });
+      showToast('İkinci yerleşim uyarısı', { durationMs: 0 });
+    });
+    const stack = page.locator('.toast-stack');
+    await expect(stack.locator('.toast')).toHaveCount(2);
+    const box = await stack.boundingBox();
+    expect(viewport.height - box.y - box.height).toBeGreaterThanOrEqual(8);
+    expect(viewport.height - box.y - box.height).toBeLessThanOrEqual(24);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+  });
+}
+
 async function createIslandStand(page, projectName) {
   await page.goto('/');
   const standSetup = page.locator('details.stand-setup-card');

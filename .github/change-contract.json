@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "selection-property-panel",
   "kind": "ui-control",
-  "summary": "Tek tık, sağ tık ve dokunmatik uzun basma seçime göre Özellikler panelini açar; seçim çubuğu korunur, ⋯ kaldırılır. Renk/görsel ve desteklenen ölçüler panelde düzenlenir. Işıklı Strafor 0084 migration ile katalog kartı olur. E2E hedefleri yeni panel ve yeteneklere uyarlanır; kilit, geri alma ve kayıt kontrolleri korunur. Kumaş taşıma kilidinin durdurduğu pointerdown, panel dinleyicisinde capture aşamasında izlenir; Lightbox/Mesh normal tıkla panel açar. Vitrin gövdesinin renk paleti için sunta Item renk kabulü DB/seed/fixture içinde 0085 ile açılır; açıklama korunur ve panel satırları flex ile ezilmez.",
+  "summary": "Tek tık, sağ tık ve dokunmatik uzun basma seçime göre Özellikler panelini açar; seçim çubuğu korunur, ⋯ kaldırılır. Renk/görsel ve desteklenen ölçüler panelde düzenlenir. Işıklı Strafor 0084 migration ile katalog kartı olur. E2E hedefleri yeni panel ve yeteneklere uyarlanır; kilit, geri alma ve kayıt kontrolleri korunur. Kumaş taşıma kilidinin durdurduğu pointerdown, panel dinleyicisinde capture aşamasında izlenir; Lightbox/Mesh normal tıkla panel açar. Vitrin gövdesinin renk paleti için sunta Item renk kabulü DB/seed/fixture içinde 0085 ile açılır; açıklama korunur ve panel satırları flex ile ezilmez. Yerel takip: editör kapanışı/yeniden açılışında tek seçim çubuğu korunur, eski controller callbacks etkisizdir. Bildirimler alt güvenli alan +12 px konumuna indirilir.",
   "owners": [
     "src/moduleContextMenu.js",
     "src/main.js"
@@ -994,7 +994,7 @@
         "F-041"
       ]
     },
-    "notes": "Yetenek kaynağı accepts* bayraklarıdır; Item adı / GLB adı kullanılmaz. Panel açma/kapama proje verisini ve BOM hesabını değiştirmez. Backend katalog tohumu ve 0084 migration Işıklı Strafor kartının görünürlük/görsel yeteneğini günceller; organization/yetki sınırları korunur. F-015: allowSideInsert:false öğede Ekle panelde de gizli kalır. Etki taramasında katalog tohumu üzerinden API/seed ve Item belge bağımlılıkları, main üzerinden kayıt/yerleşim/BOM tüketicileri incelendi. F-001 katalog referansı, F-028 strafor sıfırlama ve F-039 panel erişilebilirliği regresyon kapsamındadır; bu kayıt bulgu kapatma iddiası değildir. F-016 köşe yönü, F-022 kalıcılık, F-032 DB sahipliği, F-033 varlık temizliği ve F-041 dal koruması kuralları değiştirilmez. Kısayol E2E metin alanı hedefleri görünür proje adı alanına taşınır; grup testinde kayıtlı seçenek ve yükleme perdesi beklenir. Lightbox/Mesh taşıma kilidi tuval pointerdown yayılımını durdurduğu için panel tıklaması üst kapsayıcıda capture ile gözlenir. Normal tık ve Ctrl ile çoklu yüzey seçimi E2E içinde panel görünürlüğüyle doğrulanır; sağ tıkla alternatif açma eklenmez. Vitrin renk E2E artık paleti normal tıkla açar; 2/3 gözlü vitrinde dört sunta mesh rengi ile kayıt/açma doğrulanır. 600 px pencerede açıklama kutusu yüksekliği ve işlemle çakışmaması ölçülür. DB’deki false bayraklar migration ile düzeltilir; renderer/UI yeteneği hard-code edilmez. A07/F-017 kapanış kaydı incelendi: panel özeti renderer yüzey kopyasını okur; düzenlemeler mevcut persistentSurfaceState yazma yolundadır. Vitrin renk kayıt/açma ve grup görseli E2E bu sınırı korur."
+    "notes": "Yetenek kaynağı accepts* bayraklarıdır; Item adı / GLB adı kullanılmaz. Panel açma/kapama proje verisini ve BOM hesabını değiştirmez. Backend katalog tohumu ve 0084 migration Işıklı Strafor kartının görünürlük/görsel yeteneğini günceller; organization/yetki sınırları korunur. F-015: allowSideInsert:false öğede Ekle panelde de gizli kalır. Etki taramasında katalog tohumu üzerinden API/seed ve Item belge bağımlılıkları, main üzerinden kayıt/yerleşim/BOM tüketicileri incelendi. F-001 katalog referansı, F-028 strafor sıfırlama ve F-039 panel erişilebilirliği regresyon kapsamındadır; bu kayıt bulgu kapatma iddiası değildir. F-016 köşe yönü, F-022 kalıcılık, F-032 DB sahipliği, F-033 varlık temizliği ve F-041 dal koruması kuralları değiştirilmez. Kısayol E2E metin alanı hedefleri görünür proje adı alanına taşınır; grup testinde kayıtlı seçenek ve yükleme perdesi beklenir. Lightbox/Mesh taşıma kilidi tuval pointerdown yayılımını durdurduğu için panel tıklaması üst kapsayıcıda capture ile gözlenir. Normal tık ve Ctrl ile çoklu yüzey seçimi E2E içinde panel görünürlüğüyle doğrulanır; sağ tıkla alternatif açma eklenmez. Vitrin renk E2E artık paleti normal tıkla açar; 2/3 gözlü vitrinde dört sunta mesh rengi ile kayıt/açma doğrulanır. 600 px pencerede açıklama kutusu yüksekliği ve işlemle çakışmaması ölçülür. DB’deki false bayraklar migration ile düzeltilir; renderer/UI yeteneği hard-code edilmez. A07/F-017 kapanış kaydı incelendi: panel özeti renderer yüzey kopyasını okur; düzenlemeler mevcut persistentSurfaceState yazma yolundadır. Vitrin renk kayıt/açma ve grup görseli E2E bu sınırı korur. Seçim çubuğu body içinde kaldığından editor stop sırasında destroy edilir; aynı document için önceki controller kapatılır ve sahipsiz çubuklar temizlenir. Yeni çubuğun eski cleanup/callback tarafından silinmemesi E2E ile doğrulanır. Bildirimler masaüstü/mobilde alt kenardan 8–24 px aralıkla doğrulanır; bildirim sayısı ve süreleri korunur."
   },
   "tests": {
     "targeted": [
@@ -1003,7 +1003,8 @@
       "test/helpGuide.test.js",
       "test/systemChangeGate.test.js",
       "test/showcaseBodyColorRegression.test.js",
-      "test/showcaseBodyBoardsItemContract.test.js"
+      "test/showcaseBodyBoardsItemContract.test.js",
+      "test/toastNotifications.test.js"
     ],
     "fullSuite": true,
     "build": true,
@@ -1020,7 +1021,8 @@
         "e2e/grouped-image-direction.spec.mjs",
         "e2e/panel-sweep.spec.mjs",
         "e2e/design-undo.spec.mjs",
-        "e2e/wall-showcase-item-contract.spec.mjs"
+        "e2e/wall-showcase-item-contract.spec.mjs",
+        "e2e/toast-notifications.spec.mjs"
       ],
       "reason": "Gerçek Chromium’da tek tık / sağ tık / uzun basma, çoklu seçim, kilit, renk-görsel, kısayollar ve kayıt/geri alma doğrulanır; normal tıkta kumaş taşıma kilidinin paneli engellemediği doğrulanır; görsel işleminde renk düğmesi yerine görsel kontrolü beklenir."
     }

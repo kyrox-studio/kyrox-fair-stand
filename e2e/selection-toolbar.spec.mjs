@@ -1,9 +1,42 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 
-// Tablet kullanımı: seçili modülün üstündeki işlem çubuğu (Döndür / Kopyala / Sil / ⋯) ve
-// parmakla uzun basma ile sağ tık menüsü.
+// Tablet kullanımı: seçim çubuğu ve ortak Özellikler paneli.
 test.use({ viewport: { width: 1180, height: 820 }, hasTouch: true });
+
+test('editör kapanınca çubuk temizlenir; yeniden oluşturma tek etkin çubuk bırakır', async ({ page }) => {
+  await page.route('**/src/main.js*', async route => {
+    const response = await route.fetch();
+    const source = await response.text();
+    expect(source).toContain('  startFairStandConfigurator();');
+    await route.fulfill({ response, body: source.replace('  startFairStandConfigurator();',
+      '  window.__stopToolbarRuntime = startFairStandConfigurator();') });
+  });
+  await createIslandStand(page);
+  await expect(page.locator('.selection-toolbar')).toHaveCount(1);
+  await page.evaluate(() => window.__stopToolbarRuntime());
+  await expect(page.locator('.selection-toolbar')).toHaveCount(0);
+  await page.evaluate(async () => {
+    const { createSelectionToolbar } = await import('/src/selectionToolbar.js');
+    window.__toolbarClicks = { old: 0, current: 0 };
+    const old = createSelectionToolbar({ onRotate: () => window.__toolbarClicks.old++ });
+    const anchor = { clientX: 300, clientY: 350, count: 1, kind: 'panel' };
+    old.update(anchor);
+    const current = createSelectionToolbar({ onRotate: () => window.__toolbarClicks.current++ });
+    current.update(anchor);
+    // Eski sahne callbacks'i ve geciken kapanış yeni çubuğu etkilememeli.
+    old.update(anchor);
+    old.setCopyActive(true);
+    old.destroy();
+    window.__currentToolbar = current;
+  });
+  await expect(page.locator('.selection-toolbar')).toHaveCount(1);
+  const toolbar = page.getByRole('toolbar', { name: 'Seçim işlemleri' });
+  await toolbar.getByRole('button', { name: /Döndür/ }).click();
+  expect(await page.evaluate(() => window.__toolbarClicks)).toEqual({ old: 0, current: 1 });
+  await page.evaluate(() => window.__currentToolbar.destroy());
+  await expect(page.locator('.selection-toolbar')).toHaveCount(0);
+});
 
 async function createIslandStand(page) {
   await page.goto('/');
