@@ -1,4 +1,3 @@
-import { openProductionDetails } from './helpers/productionDetails.mjs';
 import { test, expect } from '@playwright/test';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
 
@@ -84,7 +83,6 @@ test('one metal group with a gap on the wall is listed as separate sheets', asyn
   expect(left.metalSeparatorGroupId).toMatch(/^metal-/);
   expect(right.metalSeparatorGroupId).toBe(left.metalSeparatorGroupId);
 
-  await openProductionDetails(page);
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();

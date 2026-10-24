@@ -1,5 +1,5 @@
-// Boy seçimi penceresi: katalogda tek kartı olan ölçü ailelerinde (dikme, profil, kısa panel)
-// bırakılırken ve sağ tık menüsünden ölçü sorulur. Sonuç: { itemKey, remember } ya da iptalde null.
+// Boy seçimi penceresi: dikme ve profil bırakılırken boy sorulur (varyant aileleri pencere açmaz;
+// varyant Özellikler panelinde seçilir, 0086). Sonuç: { itemKey, remember } ya da iptalde null.
 // remember true: tercih yazılır; false: tercih silinir (yeniden sorulur).
 import { getItem } from './items.js';
 

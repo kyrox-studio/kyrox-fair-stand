@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
-// Kısa panel katalogda Tek Sıra / Çift Sıra için birer kartla gelir; bırakırken genişlik sorulur,
-// panel seçilen genişliğin Item'ıyla kaydedilir, iptalde eklenmez (migration 0079). Sağ tık başlığı
+// Kısa panel katalogda Tek Sıra / Çift Sıra için birer kartla gelir (migration 0079); kart 100 cm
+// bırakılır, genişlik Özellikler panelinden seçilir ve seçilen genişliğin Item'ıyla kaydedilir (0086). Sağ tık başlığı
 // sahnedeki öğenin kendi adını yazar (gizli genişlik / dikme boyu "Modül" görünmez).
 
 async function exposeScene(page) {
@@ -136,18 +137,18 @@ async function dropCatalogCard(page, itemKey) {
   }, itemKey);
 }
 
-test('kısa panel kartı tek; bırakırken genişlik sorulur, seçilen genişliğin Item’ıyla kaydedilir', async ({ page }) => {
+test('kısa panel kartı tek; genişlik panelden seçilir, seçilen genişliğin Item’ıyla kaydedilir', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await exposeScene(page);
   await createIslandProject(page, 'E2E Kısa Panel Genişliği', []);
 
-  const open = page.locator('#open-module-catalog');
+  const open = page.locator('.module-drag-catalog');
   await page.locator('details', { has: open }).locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="wall_100_short_1"]').first();
   const group = page.locator('.module-drag-group', { has: card });
   if (!(await group.getAttribute('open'))) await group.locator(':scope > summary').click();
-  // Kart genişlik sorar; başlık ölçüsüzdür.
+  // Kart başlığı ölçüsüzdür.
   await expect(card.locator('strong')).toHaveText('Panel Tek Sıra');
   await expect(page.locator('.module-drag-card[data-module-key="wall_100_short_2"] strong')).toHaveText('Panel Çift Sıra');
   // Diğer genişliklerin kartı yoktur.
@@ -155,16 +156,13 @@ test('kısa panel kartı tek; bırakırken genişlik sorulur, seçilen genişli�
     await expect(page.locator(`.module-drag-card[data-module-key="${itemKey}"]`)).toHaveCount(0);
   }
 
-  const dialog = page.getByRole('dialog', { name: 'Panel genişliği' });
+  // Bırakınca pencere açılmaz; öğe seçilir ve panelde yalnız Tek Sıra'nın 4 genişliği görünür.
   await dropCatalogCard(page, 'wall_100_short_1');
-  await expect(dialog).toBeVisible();
-  // Kartın genişliği seçili; yalnız Tek Sıra'nın 4 genişliği; "Bir daha sorma" yok.
-  await expect(dialog.locator('select')).toHaveValue('wall_100_short_1');
-  await expect(dialog.locator('option')).toHaveText(['50 cm', '100 cm', '150 cm', '200 cm']);
-  await expect(dialog.locator('input[name="remember"]')).toHaveCount(0);
-  await dialog.locator('select').selectOption('wall_200_short_1');
-  await dialog.getByRole('button', { name: 'Uygula' }).click();
-  await expect(dialog).toBeHidden();
+  await expect(page.locator('.item-size-dialog')).toHaveCount(0);
+  const variants = page.locator('.selection-property-variants');
+  await expect(variants.locator('.selection-property-variant')).toHaveText(['50 cm', '100 cm', '150 cm', '200 cm']);
+  await expect(variants.locator('[data-variant-key="wall_100_short_1"]')).toHaveAttribute('aria-pressed', 'true');
+  await chooseCatalogWidth(page, 'wall_200_short_1');
   let project = await saveAndReadProject(page);
   expect(project.modules.map((module) => [module.itemKey, module.widthCm])).toEqual([['wall_200_short_1', 200]]);
 
@@ -175,14 +173,12 @@ test('kısa panel kartı tek; bırakırken genişlik sorulur, seçilen genişli�
   await expect(menu.locator('.module-context-title')).toContainText('Panel Tek Sıra 200');
   await page.keyboard.press('Escape');
 
-  // İptal: modül eklenmez.
+  // Çift Sıra kartı da varsayılan 100 ile konur; panelde Çift Sıra genişlikleri görünür.
   await dropCatalogCard(page, 'wall_100_short_2');
-  await expect(dialog).toBeVisible();
-  await expect(dialog.locator('option')).toHaveCount(4);
-  await dialog.getByRole('button', { name: 'İptal' }).click();
-  await expect(dialog).toBeHidden();
+  await expect(variants.locator('.selection-property-variant')).toHaveCount(4);
+  await expect(variants.locator('[data-variant-key="wall_100_short_2"]')).toHaveAttribute('aria-pressed', 'true');
   project = await saveAndReadProject(page);
-  expect(project.modules.map((module) => module.itemKey)).toEqual(['wall_200_short_1']);
+  expect(project.modules.map((module) => module.itemKey).sort()).toEqual(['wall_100_short_2', 'wall_200_short_1']);
   expect(errors).toEqual([]);
 });
 
@@ -193,7 +189,7 @@ test('boy penceresinden gelen dikmede sağ tık başlığı dikmenin kendi adın
   await createIslandProject(page, 'E2E Dikme Başlığı', []);
   await page.evaluate(() => localStorage.removeItem('fairStand.uprightHeightItemKey'));
 
-  const open = page.locator('#open-module-catalog');
+  const open = page.locator('.module-drag-catalog');
   await page.locator('details', { has: open }).locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="upright_346_5"]').first();
   const group = page.locator('.module-drag-group', { has: card });

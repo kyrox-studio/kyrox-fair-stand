@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
+import { dropCatalogCard } from './helpers/catalogDrop.mjs';
+import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
@@ -64,20 +66,11 @@ test('wall showcase catalog Items persist canonical identity and grouped body co
   for (const moduleState of initialProject.modules) await unlockModuleForFixture(page, moduleState);
   await removeModules(page, initialProject.modules.slice(0, 2));
 
-  const open = page.locator('#open-module-catalog');
-  const panel = page.locator('details', { has: open });
-  await panel.locator(':scope > summary').click();
-  await open.click();
-  const picker=page.locator('.module-picker-backdrop');
-  await expect(picker).toBeVisible();
-  // Katalogdan her seferinde tek öğe eklenir.
-  for (const itemKey of ['wall_showcase_100_2_350', 'wall_showcase_100_3_350']) {
-    if (!(await picker.isVisible())) await open.click();
-    await picker.locator('.module-picker-tab', { hasText: 'Raf & Vitrin' }).click();
-    await picker.locator(`[data-module-key="${itemKey}"]`).click();
-    await picker.locator('.module-picker-add').click();
-    await expect(picker).toBeHidden();
-  }
+  // Vitrin tek kart (0086, Panel & Duvar): kart 3 gözlü bırakılır, 2 göz Özellikler panelinde seçilir.
+  await dropCatalogCard(page, 'wall_showcase_100_3_350');
+  await chooseCatalogWidth(page, 'wall_showcase_100_2_350');
+  await page.keyboard.press('Escape');
+  await dropCatalogCard(page, 'wall_showcase_100_3_350');
   const project=await saveAndReadProject(page);
   const two=project.modules.find((m)=>m.itemKey==='wall_showcase_100_2_350');
   const three=project.modules.find((m)=>m.itemKey==='wall_showcase_100_3_350');

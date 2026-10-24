@@ -1,4 +1,3 @@
-import { openProductionDetails } from './helpers/productionDetails.mjs';
 import { test, expect } from '@playwright/test';
 
 // Yeni proje sihirbazı: boş sahnede 3 adım (stand tipi, ölçü, özet + Oluştur). Mevcut kurulum
@@ -261,7 +260,6 @@ test('wizard fascia 800 × 800: each open 8 m edge gets a middle upright (max 5 
   expect(panels.map((module) => module.itemKey)).toEqual(Array(8).fill('wall_200_short_1'));
 
   // Profil dikmeden dikmeye tek parça: 4 açıklık × 400 cm, üst ve alt ray → 8 × profile_388.
-  await openProductionDetails(page);
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();

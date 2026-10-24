@@ -507,3 +507,60 @@ export function planContinuousWallInsertion({
     placements: insertionPlan.placements,
   };
 }
+
+/**
+ * Varyant değişimi: zincirdeki modül yeni genişlikle aynı başlangıçta kalır, çakışan sonraki
+ * modüller ileri itilir. Sonda yer yoksa modül eski bitişine hizalanır ve önceki zincir geri
+ * itilir. Modül zincirde değilse { ok: false, notInChain: true }.
+ */
+export function planContinuousWallReplacement({
+  modules = [],
+  replacement,
+  standType,
+  standXCm,
+  standYCm,
+} = {}) {
+  const segments = getSegments(standType, standXCm, standYCm);
+  if (!segments.length || !replacement?.id) return { ok: false, notInChain: true };
+
+  const activeWallIds = new Set(segments.map((segment) => segment.wallId));
+  const activeModules = modules
+    .filter((module) => (
+      getModuleBehavior(module).placement === 'wall'
+      && activeWallIds.has(module?.placement?.wallId)
+    ))
+    .map((module, originalIndex) => ({
+      module,
+      originalIndex,
+      pathStartCm: placementToPathStart(module, segments, standYCm),
+    }));
+  if (activeModules.some((entry) => entry.pathStartCm === null)) {
+    return { ok: false, message: 'Mevcut modüllerden birinin duvar yerleşimi okunamadı.' };
+  }
+  activeModules.sort((a, b) => (
+    a.pathStartCm - b.pathStartCm || a.originalIndex - b.originalIndex
+  ));
+
+  const targetIndex = activeModules.findIndex((entry) => entry.module.id === replacement.id);
+  if (targetIndex < 0) return { ok: false, notInChain: true };
+  const target = activeModules[targetIndex];
+  const others = activeModules.filter((_entry, index) => index !== targetIndex);
+  const options = { insertedModules: [replacement], activeModules: others, segments, standXCm, standYCm };
+
+  let plan = planForwardInsertion({
+    ...options,
+    firstExistingIndex: targetIndex,
+    cursorCm: target.pathStartCm,
+  });
+  if (!plan.ok) {
+    plan = tryPlanBackwardInsertion({
+      ...options,
+      targetIndex,
+      cursorEndCm: target.pathStartCm + Number(target.module.widthCm),
+    });
+  }
+  if (!plan.ok) {
+    return { ok: false, message: 'Bu varyant için duvar zincirinde yeterli yer yok.' };
+  }
+  return { ok: true, placements: plan.placements };
+}

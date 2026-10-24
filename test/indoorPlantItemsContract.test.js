@@ -86,14 +86,19 @@ for (const itemKey of PLANT_KEYS) {
     assert.equal(item.modelRotationYDeg, expected.modelRotationYDeg);
     assert.equal(item.preserveModelScale, expected.preserveModelScale);
 
-    assert.equal(catalog.itemKey, itemKey);
-    assert.equal(catalog.label, item.name);
-    assert.equal(catalog.previewId, item.previewId);
-    assert.equal(Object.hasOwn(catalog, 'type'), false);
-    assert.equal(Object.hasOwn(catalog, 'widthCm'), false);
-    assert.equal(Object.hasOwn(catalog, 'modelFile'), false);
+    // 0086: Uzun Saksı tek kart (100); 150 ve 200 Özellikler panelinde seçilir.
+    if (item.catalogVisible) {
+      assert.equal(catalog.itemKey, itemKey);
+      assert.equal(catalog.label, item.variant === 'long-planter' ? 'Uzun Saksı' : item.name);
+      assert.equal(catalog.previewId, item.previewId);
+      assert.equal(Object.hasOwn(catalog, 'type'), false);
+      assert.equal(Object.hasOwn(catalog, 'widthCm'), false);
+      assert.equal(Object.hasOwn(catalog, 'modelFile'), false);
+    } else {
+      assert.equal(catalog, null);
+    }
 
-    const state = createModuleStateFromDescriptor(catalog);
+    const state = createModuleStateFromDescriptor(catalog ?? { itemKey });
     assert.equal(state.itemKey, itemKey);
     assert.equal(state.itemKey, itemKey);
     assert.equal(state.type, 'indoor-plant-1');

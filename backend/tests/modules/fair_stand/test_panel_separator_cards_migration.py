@@ -45,6 +45,10 @@ def _category(connection):
     ).scalar_one()
 
 
+# 0086 duvar vitrinini bu kategorinin sonuna taşıdı; 0082 kartlarının sırası ayrıca denetlenir.
+_LATER_CARDS = ("wall_showcase_100_3_350",)
+
+
 def _visible_order(connection, category_id):
     return connection.execute(
         text(
@@ -89,7 +93,7 @@ def _pre_0082_catalog(connection):
 def _assert_final_state(connection, category):
     variants = _variants(connection)
     assert {key: variants.get(key) for key in _VARIANTS} == _VARIANTS
-    assert _visible_order(connection, category) == [
+    assert [row for row in _visible_order(connection, category) if row[0] not in _LATER_CARDS] == [
         ("wall_100_350", 1),
         ("wall_separator_100_350", 2),
         ("wall_door_100_350", 3),

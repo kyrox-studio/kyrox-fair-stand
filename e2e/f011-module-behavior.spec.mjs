@@ -45,7 +45,7 @@ test('F-011 free-placement behavior survives the real catalog drag flow in Chrom
 
   await createIslandStand(page, 'F011 Free Placement');
 
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   await modulePanel.locator(':scope > summary').click();
 

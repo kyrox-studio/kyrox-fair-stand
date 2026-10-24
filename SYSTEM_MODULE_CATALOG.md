@@ -18,10 +18,10 @@ Bu dosya insan/AI için **okunabilir katalog indeksi**dir. Runtime source-of-tru
 
 Bu snapshot `Version2` üzerindeki `MODULE_CATALOG_KEYS` ve `MODULE_CONTRACT_ASSIGNMENTS` ile eşleşmek zorundadır; `test/systemModuleCatalogDoc.test.js` drift olduğunda CI'yi kırar.
 
-- Catalog entries: **43**
-- BOM mode `recipe`: **10**
-- BOM mode `self`: **12**
-- BOM mode `decision-required`: **21**
+- Catalog entries: **35**
+- BOM mode `recipe`: **9**
+- BOM mode `self`: **10**
+- BOM mode `decision-required`: **16**
 - Explicit contract runtime module: **1** (`illuminated-foam`; 0084 ile katalog kartı)
 - Explicit contract module BOM mode `decision-required`: **1**
 
@@ -35,20 +35,17 @@ Aşağıdaki blok test tarafından `MODULE_CATALOG_KEYS` ile **sıra dahil bireb
 - `wall_100_350`
 - `wall_separator_100_350`
 - `wall_door_100_350`
+- `wall_showcase_100_3_350`
 - `wall_100_short_2`
 - `wall_100_short_1`
 - `upright_346_5`
 - `profile_289`
 - `box_block`
-- `wall_showcase_100_3_350`
-- `wall_showcase_100_2_350`
 - `shelf_row_1`
-- `shelf_row_2`
-- `shelf_row_3`
-- `floor_showcase_100`
 - `desk_banko_100`
 - `desk_banko_100_l`
 - `base_100`
+- `floor_showcase_100`
 - `furniture_sofa_set_classic`
 - `furniture_sofa_single_classic`
 - `furniture_sofa_double_classic`
@@ -63,16 +60,11 @@ Aşağıdaki blok test tarafından `MODULE_CATALOG_KEYS` ile **sıra dahil bireb
 - `plastic_trash_bin`
 - `extra_indoor_plant_1`
 - `extra_long_planter_100`
-- `extra_long_planter_150`
-- `extra_long_planter_200`
 - `tulle_fabric`
 - `brochure_stand`
 - `glass_bar_table`
 - `tv_42`
-- `tv_55`
 - `video_wall_2x2`
-- `video_wall_3x3`
-- `tv_65`
 - `led_floodlight`
 - `illuminated-foam`
 <!-- catalog-keys:end -->
@@ -85,7 +77,7 @@ Bu bölüm navigasyon içindir; ölçü/recipe source-of-truth değildir.
 
 `wall_100_350`, `wall_separator_100_350`, `wall_door_100_350`
 
-Panel ve Separatör kartı aile başına tek (migration `0082_panel_separator_cards`): `wall_100_350` (kart başlığı "Panel") ve `wall_separator_100_350` ("Separatör"). Bırakılırken ya da katalogdan eklenirken genişlik sorulur: Panel 50 / 100 / 150 / 200 (`variant` `wall-panel`), Separatör 50 / 100 (`wall-separator`); Separatör penceresindeki "Sarmaşıklı" çentiği aynı genişliğin sarmaşıklı Item'ını (`wall-separator-sarmasik`) bırakır. Diğer genişlikler ve iki sarmaşıklı separatör katalogda gizli Item'dır; ad, `itemKey`, reçete ve kayıtlı projeler değişmez (`src/catalogWidthFamily.js`).
+Panel ve Separatör kartı aile başına tek (migration `0082_panel_separator_cards`): `wall_100_350` (kart başlığı "Panel") ve `wall_separator_100_350` ("Separatör"). Kart bırakılınca 100'lük konur; genişlik Özellikler panelindeki varyant düğmelerinden seçilir: Panel 50 / 100 / 150 / 200 (`variant` `wall-panel`), Separatör 50 / 100 (`wall-separator`); paneldeki "Sarmaşıklı" çentiği aynı genişliğin sarmaşıklı Item'ını (`wall-separator-sarmasik`) seçer. 0086 ile aynı düzen Vitrin (`wall-showcase`, kart 3 göz, Panel & Duvar altında), Raf (`shelf-row`, kart tekli), TV (`tv`, kart 42"), Video Wall (`video-wall`, kart 2×2) ve Uzun Saksı (`long-planter`, kart 100) için geçerlidir; Ayaklı Vitrin Banko & Baza altındadır. Diğer genişlikler ve iki sarmaşıklı separatör katalogda gizli Item'dır; ad, `itemKey`, reçete ve kayıtlı projeler değişmez (`src/catalogWidthFamily.js`).
 
 ### Panel Ek Modül
 

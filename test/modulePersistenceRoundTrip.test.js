@@ -8,7 +8,7 @@ import {
   createModuleStateFromDescriptor,
   normalizeModuleItemState,
 } from '../src/designState.js';
-import { getItem } from '../src/items.js';
+import { getItem, listRegisteredItems } from '../src/items.js';
 import { applyGlassOverride } from '../src/surfaceStateBinding.js';
 
 const PLACEMENT = Object.freeze({
@@ -48,7 +48,8 @@ function catalogItemForType(type) {
     const item = getItem(entry.itemKey);
     if (item?.type === type) return item;
   }
-  return null;
+  // 0086: varyant ailesinin gizli üyesi (ör. 2 gözlü vitrin) Özellikler panelinden sahneye gelir.
+  return listRegisteredItems().find((item) => item.type === type && item.variant && item.isRender !== false) ?? null;
 }
 
 function buildPlain(type) {

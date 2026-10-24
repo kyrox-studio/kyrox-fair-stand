@@ -106,11 +106,6 @@
           </div>
         </details>
 
-        <details id="design-details" class="panel-card collapsible-panel">
-          <summary class="panel-summary"><span>Ayrıntılar</span><span class="panel-chevron" aria-hidden="true"></span></summary>
-          <div class="panel-card-content"><button id="toggle-production-bom" type="button" aria-pressed="false" disabled>Üretim Listesi</button></div>
-        </details>
-
         <details class="panel-card stand-setup-card collapsible-panel">
           <summary class="panel-summary"><span>Stand Tipi</span><span class="panel-chevron" aria-hidden="true"></span></summary>
           <div class="panel-card-content">
@@ -157,9 +152,9 @@
           </div>
         </details>
 
-        <details class="panel-card collapsible-panel">
+        <details id="module-add-card" class="panel-card collapsible-panel">
           <summary class="panel-summary"><span>Modül ekle</span><span class="panel-chevron" aria-hidden="true"></span></summary>
-          <div class="panel-card-content"><button id="open-module-catalog" disabled>Modül Ekle</button><button id="clear-wall" class="danger ghost" disabled>Sahneyi Sıfırla</button></div>
+          <div id="module-add-content" class="panel-card-content"></div>
         </details>
 
         <details class="panel-card collapsible-panel" id="module-groups-card">
@@ -199,11 +194,13 @@
           <div class="panel-card-content"><ul id="stand-standards-list"></ul></div>
         </details>
 
+        <button id="clear-wall" type="button" class="danger ghost sidebar-reset-features" disabled>Sahneyi Sıfırla</button>
+
         <button id="reset-module-features" type="button" class="danger ghost sidebar-reset-features">Tüm Özellikleri Kaldır</button>
       </aside>
 
       <main class="viewport-wrap">
-        <div id="viewport-toolbar" class="viewport-toolbar" hidden><button id="viewport-toolbar-toggle" class="viewport-toolbar-toggle" type="button" aria-label="Üst bandı kapat" aria-expanded="true" title="Üst bandı kapat">›</button><button id="save-project" type="button" class="primary viewport-render-button" disabled>Kaydet</button><button id="design-undo" type="button" class="viewport-render-button" title="Geri al (Ctrl+Z)" aria-keyshortcuts="Control+Z" disabled>Geri al</button><button id="design-redo" type="button" class="viewport-render-button" title="İleri al (Ctrl+Y)" aria-keyshortcuts="Control+Y Control+Shift+Z" disabled>İleri al</button><button id="render-current-view" type="button" class="viewport-render-button">Render Al</button><button id="toggle-stage-light" type="button" class="viewport-render-button is-active" aria-pressed="true" title="Sahne ışığı: tepe spotunu yakar, ortam ışığını kısar">Sahne Işığı</button><div id="live-share" class="live-share"><button id="live-share-start" type="button" class="viewport-render-button" aria-expanded="false" aria-controls="live-share-popover">Ekranı paylaş</button><div id="live-share-popover" class="live-share-popover" hidden role="dialog" aria-label="Canlı Paylaşım"><p class="live-share-popover-title">Canlı Paylaşım</p><p id="live-share-status">Durum: Hazır</p><p id="live-share-viewers" hidden>İzleyici: 0 / 1</p><p id="live-share-link" class="live-share-link" hidden></p><div class="live-share-popover-actions"><button id="live-share-copy" type="button" class="viewport-render-button" hidden>Linki Kopyala</button><button id="live-share-stop" type="button" class="viewport-render-button" hidden>Paylaşımı Durdur</button></div><p id="live-share-error" class="live-share-error" hidden></p></div></div></div>
+        <div id="viewport-toolbar" class="viewport-toolbar" hidden><button id="viewport-toolbar-toggle" class="viewport-toolbar-toggle" type="button" aria-label="Üst bandı kapat" aria-expanded="true" title="Üst bandı kapat">›</button><button id="save-project" type="button" class="primary viewport-render-button" disabled>Kaydet</button><button id="design-undo" type="button" class="viewport-render-button" title="Geri al (Ctrl+Z)" aria-keyshortcuts="Control+Z" disabled>Geri al</button><button id="design-redo" type="button" class="viewport-render-button" title="İleri al (Ctrl+Y)" aria-keyshortcuts="Control+Y Control+Shift+Z" disabled>İleri al</button><button id="toggle-production-bom" type="button" class="viewport-render-button" aria-pressed="false" title="Üretim listesi" disabled>Üretim Listesi</button><button id="render-current-view" type="button" class="viewport-render-button">Render Al</button><button id="toggle-stage-light" type="button" class="viewport-render-button is-active" aria-pressed="true" title="Sahne ışığı: tepe spotunu yakar, ortam ışığını kısar">Sahne Işığı</button><div id="live-share" class="live-share"><button id="live-share-start" type="button" class="viewport-render-button" aria-expanded="false" aria-controls="live-share-popover">Ekranı paylaş</button><div id="live-share-popover" class="live-share-popover" hidden role="dialog" aria-label="Canlı Paylaşım"><p class="live-share-popover-title">Canlı Paylaşım</p><p id="live-share-status">Durum: Hazır</p><p id="live-share-viewers" hidden>İzleyici: 0 / 1</p><p id="live-share-link" class="live-share-link" hidden></p><div class="live-share-popover-actions"><button id="live-share-copy" type="button" class="viewport-render-button" hidden>Linki Kopyala</button><button id="live-share-stop" type="button" class="viewport-render-button" hidden>Paylaşımı Durdur</button></div><p id="live-share-error" class="live-share-error" hidden></p></div></div></div>
         <div id="viewport"></div><div id="stand-summary-chip" class="stand-summary-chip" hidden aria-live="polite"></div>
         <div id="viewport-empty" class="viewport-empty"><div class="viewport-empty-card"><strong>Sahne hazır değil</strong><span>Stand tipini ve ölçülerini belirle ve “Sahneyi Oluştur” butonuna bas.</span></div></div>
       </main>

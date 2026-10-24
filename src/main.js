@@ -49,6 +49,8 @@ import { createColorEditorController } from './colorEditorController.js';
 import { STAND_TYPE_LABELS, validateStandSetup } from './standSetup.js';
 import {
   createModulePlacement,
+  getModuleGroundSegments,
+  getPlacementInterval,
   getWallExtentCm,
   getWallUsedCm,
   inferStandEdgeWallId,
@@ -56,7 +58,11 @@ import {
   validatePlacementAgainstModules,
   withStandEdgeWallIds,
 } from './modulePlacement.js';
-import { getContinuousWallSegments, planContinuousWallInsertion } from './wallReflow.js';
+import {
+  getContinuousWallSegments,
+  planContinuousWallInsertion,
+  planContinuousWallReplacement,
+} from './wallReflow.js';
 import { getModuleDefaultRotationDeg, isTopPlacementModule, isWallOverlayModule } from './moduleBehavior.js';
 import {
   buildAutomaticProjectNameSuffix,
@@ -135,7 +141,7 @@ import {
   requestProfileLength,
   writeProfileLengthPreference,
 } from './profileLength.js';
-import { isCatalogWidthFamilyDescriptor, requestCatalogWidth } from './catalogWidthFamily.js';
+import { describeModuleVariants, resolveModuleVariantItemKey } from './catalogWidthFamily.js';
 import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
@@ -157,7 +163,6 @@ import { createProductionBomPanel } from './productionBomPanel.js';
 import { waitForNextRender, waitForSceneAssets } from './sceneAssetLoading.js';
 import { beginEditorBootStep, beginProjectOpenStep, discardEditorBootTiming, timeSceneRefresh, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
 
-let moduleDeleteConfirmOpen = false;
 
 export function startFairStandConfigurator(options = {}) {
   let cancelled = false;
@@ -282,7 +287,6 @@ const autoDepotContentsHint = document.querySelector('#auto-depot-contents-hint'
 const autoFasciaRowsSelect = document.querySelector('#auto-fascia-rows');
 const stageResult = document.querySelector('#stage-result');
 const standSummaryChip = document.querySelector('#stand-summary-chip');
-const openModuleCatalogButton = document.querySelector('#open-module-catalog');
 const clearWallButton = document.querySelector('#clear-wall');
 const selectionInfo = document.querySelector('#selection-info');
 const colorInput = document.querySelector('#surface-color');
@@ -575,7 +579,6 @@ function renderStageResult(message, isError = false) {
 
 function setStandEditingEnabled(enabled) {
   if (toggleProductionBomButton) toggleProductionBomButton.disabled = !enabled;
-  openModuleCatalogButton.disabled = !enabled;
   clearWallButton.disabled = !enabled;
   moduleDragSidebar?.setEnabled(Boolean(enabled && currentStand));
   if (!enabled) {
@@ -698,9 +701,9 @@ function findContextModuleIndex(context) {
   return Number.isInteger(context.moduleIndex) ? context.moduleIndex : -1;
 }
 
+// Sahnedeki öğe silme onay sormaz; yanlış silme Geri al (Ctrl+Z) ile döner.
 function deleteContextModule(context) {
   if (context?.multiModuleIds?.length > 1) return deleteSelectedModules(context.multiModuleIds);
-  if (moduleDeleteConfirmOpen) return;
   const index = findContextModuleIndex(context);
   if (index < 0 || index >= currentModules.length) return;
 
@@ -710,37 +713,15 @@ function deleteContextModule(context) {
     scene3d.showPlacementFeedback(MODULE_LOCKED_MESSAGE, { durationMs: 2200 });
     return;
   }
-  moduleDeleteConfirmOpen = true;
-  let confirmed = false;
-  try {
-    confirmed = window.confirm(
-      `Modül ${index + 1} · ${module.widthCm} cm silinecek. Bu modüldeki renk ve görsel düzenlemeleri de kaybolacak. Devam edilsin mi?`,
-    );
-  } finally {
-    queueMicrotask(() => {
-      moduleDeleteConfirmOpen = false;
-    });
-  }
-  if (!confirmed) return;
-
   commitModuleRemoval(index);
 }
 
 function deleteSelectedModules(moduleIds) {
-  if (moduleDeleteConfirmOpen) return;
   const plan = planSelectionRemoval(currentModules, moduleIds);
   if (!plan.ok) {
     if (plan.blockedIds.length) reportGroupResult('Seçimde kilitli öğeler var. Silmek için önce kilitlerini açın.', true);
     return;
   }
-  moduleDeleteConfirmOpen = true;
-  let confirmed;
-  try {
-    confirmed = window.confirm(`Seçilen ${plan.moduleIds.length} öğe silinecek. Renk ve görsel düzenlemeleri de kaybolacak. Devam edilsin mi?`);
-  } finally {
-    queueMicrotask(() => { moduleDeleteConfirmOpen = false; });
-  }
-  if (!confirmed) return;
   const ids = new Set(plan.moduleIds);
   currentModules = currentModules.filter((moduleState) => !ids.has(moduleState.id));
   scene3d.clearSelection();
@@ -1064,9 +1045,9 @@ function commitDroppedCatalogModule(moduleState, dropResult, catalogKey = null) 
     };
   }
 
-  // Katalogdan konan Işıklı Strafor tıklanmış gibi seçilir; logo görseli paneldeki görsel
-  // bölümünden seçilir.
-  if (canonical.type === 'illuminated-foam') {
+  // Katalogdan konan Işıklı Strafor ve varyantı olan öğe tıklanmış gibi seçilir; Özellikler paneli
+  // açılır (logo görseli / varyant düğmeleri oradan seçilir).
+  if (canonical.type === 'illuminated-foam' || describeModuleVariants(canonical)) {
     window.setTimeout(() => {
       if (!scene3d.selectModuleSurface(canonical.id)) return;
       const context = currentPropertyPanelContext();
@@ -1240,18 +1221,12 @@ function placeCatalogModuleNearContext(moduleState, context) {
   return { ok: false, message: NO_FREE_SPOT_MESSAGE };
 }
 
-// Katalogdan her seferinde tek öğe eklenir. Genişlik ailesinde (Panel, Separatör, kısa panel)
-// genişlik önce sorulur; iptal veya yer bulunamazsa { ok: false } döner ve pencere açık kalır.
+// Katalogdan her seferinde tek öğe eklenir. Varyant ailesinde kartın kendisi (varsayılan varyant)
+// konur; varyant Özellikler panelinde seçilir. Yer bulunamazsa { ok: false } döner, pencere açık kalır.
 async function addCatalogModule(request) {
   if (!currentStand || !request?.module) return { ok: false };
-  let moduleState = createCatalogModuleState(request.module);
+  const moduleState = createCatalogModuleState(request.module);
   if (!moduleState) return { ok: false, message: 'Seçilen modül hazırlanamadı.' };
-  if (isCatalogWidthFamilyDescriptor(moduleState)) {
-    const choice = await requestCatalogWidth({ selectedItemKey: moduleState.itemKey });
-    if (!choice) return { ok: false, cancelled: true };
-    moduleState = createCatalogModuleState({ itemKey: choice.itemKey }, { itemKey: choice.itemKey });
-    if (!moduleState) return { ok: false, message: 'Seçilen modül hazırlanamadı.' };
-  }
   const result = request.context
     ? placeCatalogModuleNearContext(moduleState, request.context)
     : placeCatalogModuleAppend(moduleState);
@@ -1603,6 +1578,301 @@ function applyDimensionInput(context, key, values, phase) {
     : `Modül ${index + 1} · ${key === 'tulle-fabric' ? 'Tül' : 'Işıklı Strafor'} · ${moduleState.widthCm} × ${moduleState.heightCm} cm.`;
 }
 
+// Varyant: ailesi olan öğede üyeler Özellikler panelinde düğme olarak her zaman görünür.
+function describeVariantChoices(context) {
+  if (context?.kind === 'floor' || context?.multiModuleIds?.length > 1) return null;
+  const index = findContextModuleIndex(context);
+  const moduleState = index >= 0 ? currentModules[index] : null;
+  const variants = moduleState ? describeModuleVariants(moduleState) : null;
+  return variants ? { ...variants, disabled: isModuleLocked(moduleState) } : null;
+}
+
+// Varyant değişince öğenin kimliği, yeri, grubu ve kilidi kalır; yapısı aynı kalan renk, görsel
+// ve cam / Lightbox ayarları yeni varyanta taşınır. Ölçü ve tür yeni Item'dan gelir.
+const VARIANT_ITEM_KEYS = new Set([
+  'id', 'itemKey', 'type', 'widthCm', 'depthCm', 'heightCm', 'variant', 'eyeCount', 'videoWallRows',
+  'videoWallCols', 'stripOccupancy', 'modelFile', 'modelRotationYDeg', 'preserveModelScale', 'shape',
+  'renderParts', 'unit', 'visualRotationYDeg', 'placement',
+]);
+const VARIANT_PART_KEYS = ['id', 'itemKey', 'widthCm', 'heightCm', 'depthCm'];
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function carryVariantValue(previous, next) {
+  if (Array.isArray(previous) && Array.isArray(next)) {
+    return previous.length === next.length
+      ? next.map((entry, index) => carryVariantValue(previous[index], entry))
+      : next;
+  }
+  if (!isPlainObject(previous) || !isPlainObject(next)) return next;
+  const nextKeys = Object.keys(next);
+  // Yüz haritası (faces): aynı yüzler varsa her yüz kendi ayarını taşır.
+  if (nextKeys.length && nextKeys.every((key) => isPlainObject(next[key]))) {
+    return Object.fromEntries(nextKeys.map((key) => [key, carryVariantValue(previous[key], next[key])]));
+  }
+  const identity = Object.fromEntries(VARIANT_PART_KEYS.filter((key) => key in next).map((key) => [key, next[key]]));
+  return { ...next, ...structuredClone(previous), ...identity };
+}
+
+function carryVariantCustomizations(previous, next) {
+  const sameStrips = (previous.strips?.length ?? 0) === (next.strips?.length ?? 0);
+  for (const [key, value] of Object.entries(previous)) {
+    if (VARIANT_ITEM_KEYS.has(key)) continue;
+    if (key in next) next[key] = carryVariantValue(value, next[key]);
+    else if (!Array.isArray(value) || sameStrips) next[key] = structuredClone(value);
+  }
+  next.id = previous.id;
+  next.placement = { ...previous.placement };
+}
+
+// Öğe yerinden oynamaz. Duvar zincirinde yeni genişlik için sonraki (gerekirse önceki) modüller
+// itilir. Zincir dışında (ör. ada standı) öğe bitiştiği (snap) kenara göre büyür: solunda bitişik
+// öğe varsa sol kenarı sabit kalır, sağdaki bitişik sıra itilir; yalnız sağı bitişikse sağ kenarı
+// sabit kalır, soldaki sıra itilir; hiçbir yere bitişik değilse ortası sabit kalır. Sığmıyorsa
+// değişiklik reddedilir, öğe başka yere taşınmaz.
+const VARIANT_SNAP_TOLERANCE_CM = 1;
+// Köşe snap'i: dik duran ince duvar uca duvar kalınlığı kadar uzakta durabilir.
+const VARIANT_CORNER_TOLERANCE_CM = 12;
+const VARIANT_THIN_DEPTH_CM = 12;
+
+function segmentPointDistanceCm(point, segment) {
+  const along = segment.axis === 'x' ? point.xCm : point.yCm;
+  const across = segment.axis === 'x' ? point.yCm : point.xCm;
+  const outside = Math.max(segment.startCm - along, 0, along - segment.endCm);
+  return Math.hypot(outside, across - segment.fixedCm);
+}
+
+function standExtentCm(axis) {
+  return Number(axis === 'y' ? currentStand.yCm : currentStand.xCm);
+}
+
+// Ucun bir yere bitişik (snap'li) olup olmadığı: stand kenarı, aynı hattaki komşu ya da köşedeki
+// dik ince duvar.
+function variantEdgeIsSnapped(previous, interval, edgeCm) {
+  if (edgeCm <= VARIANT_SNAP_TOLERANCE_CM || edgeCm >= standExtentCm(interval.axis) - VARIANT_SNAP_TOLERANCE_CM) {
+    return true;
+  }
+  const cross = Number(previous.placement[crossFieldOf(interval.axis)]);
+  const point = interval.axis === 'y' ? { xCm: cross, yCm: edgeCm } : { xCm: edgeCm, yCm: cross };
+  return currentModules.some((moduleState) => moduleState.id !== previous.id
+    && !isWallOverlayModule(moduleState) && !isTopPlacementModule(moduleState)
+    && Number(moduleState.depthCm) <= VARIANT_THIN_DEPTH_CM
+    && getModuleGroundSegments(moduleState).some((segment) => (
+      segmentPointDistanceCm(point, segment) <= (segment.axis === interval.axis
+        ? VARIANT_SNAP_TOLERANCE_CM
+        : VARIANT_CORNER_TOLERANCE_CM)
+    )));
+}
+
+function placementFieldOf(axis) {
+  return axis === 'y' ? 'yCm' : 'xCm';
+}
+
+function crossFieldOf(axis) {
+  return axis === 'y' ? 'xCm' : 'yCm';
+}
+
+// Aynı hatta (aynı eksen, aynı derinlik çizgisi) duran, duvar üstü / tepe olmayan öğeler.
+function listVariantRowModules(previous, interval) {
+  const cross = crossFieldOf(interval.axis);
+  return currentModules
+    .filter((moduleState) => moduleState.id !== previous.id
+      && !isWallOverlayModule(moduleState) && !isTopPlacementModule(moduleState))
+    .map((moduleState) => ({ moduleState, interval: getPlacementInterval(moduleState.placement, moduleState.widthCm) }))
+    .filter((entry) => entry.interval?.axis === interval.axis
+      && Math.abs(Number(entry.moduleState.placement[cross]) - Number(previous.placement[cross])) <= VARIANT_SNAP_TOLERANCE_CM);
+}
+
+// Yeni varyantın aday yerleri (sırayla denenir). Her aday: öğenin yeni yeri + itilen öğelerin yerleri.
+function planFreeVariantCandidates(previous, next) {
+  const interval = getPlacementInterval(previous.placement, previous.widthCm);
+  const widthCm = Number(next.widthCm);
+  if (!interval) return [{ placement: next.placement, placements: new Map() }];
+  const field = placementFieldOf(interval.axis);
+  const at = (startCm) => ({ ...next.placement, [field]: startCm });
+  // Ortası sabit; stand kenarını aşacaksa stand içine yaslanır.
+  const centeredCm = Math.max(0, Math.min(
+    interval.startCm - (widthCm - Number(previous.widthCm)) / 2,
+    standExtentCm(interval.axis) - widthCm,
+  ));
+  if (isWallOverlayModule(next) || isTopPlacementModule(next)) {
+    // Duvar üstü öğe (TV, raf…) takılı olduğu yerde ortası sabit büyür.
+    return [{ placement: at(centeredCm), placements: new Map() }];
+  }
+  const row = listVariantRowModules(previous, interval);
+  // Sol kenar sabit; sağdaki bitişik sıra gerektiği kadar itilir.
+  const anchorStart = () => {
+    const placements = new Map();
+    let cursorCm = interval.startCm + widthCm;
+    const ahead = row
+      .filter((entry) => entry.interval.startCm >= interval.endCm - VARIANT_SNAP_TOLERANCE_CM)
+      .sort((a, b) => a.interval.startCm - b.interval.startCm);
+    for (const entry of ahead) {
+      if (entry.interval.startCm >= cursorCm - 0.001) break;
+      placements.set(entry.moduleState.id, { ...entry.moduleState.placement, [field]: cursorCm });
+      cursorCm += Number(entry.moduleState.widthCm);
+    }
+    return { placement: at(interval.startCm), placements };
+  };
+  // Sağ kenar sabit; soldaki bitişik sıra gerektiği kadar itilir.
+  const anchorEnd = () => {
+    const placements = new Map();
+    let cursorCm = interval.endCm - widthCm;
+    const behind = row
+      .filter((entry) => entry.interval.endCm <= interval.startCm + VARIANT_SNAP_TOLERANCE_CM)
+      .sort((a, b) => b.interval.endCm - a.interval.endCm);
+    for (const entry of behind) {
+      if (entry.interval.endCm <= cursorCm + 0.001) break;
+      const startCm = cursorCm - Number(entry.moduleState.widthCm);
+      placements.set(entry.moduleState.id, { ...entry.moduleState.placement, [field]: startCm });
+      cursorCm = startCm;
+    }
+    return { placement: at(interval.endCm - widthCm), placements };
+  };
+  const touchesStart = variantEdgeIsSnapped(previous, interval, interval.startCm);
+  const touchesEnd = variantEdgeIsSnapped(previous, interval, interval.endCm);
+  if (!touchesStart && !touchesEnd) return [{ placement: at(centeredCm), placements: new Map() }];
+  // Snaplı kenar önce sabit tutulur; o yöne sığmazsa karşı kenar denenir.
+  return touchesStart || !touchesEnd ? [anchorStart(), anchorEnd()] : [anchorEnd(), anchorStart()];
+}
+
+function validateVariantModule(moduleState, placement, modules) {
+  return validatePlacementAgainstModules({
+    placement,
+    widthCm: moduleState.widthCm,
+    depthCm: moduleState.depthCm,
+    moduleId: moduleState.id,
+    moduleType: moduleState.type,
+    itemKey: moduleState.itemKey,
+    heightCm: moduleState.heightCm,
+    shape: moduleState.shape,
+    modules,
+    standType: currentStand.standType,
+    standXCm: currentStand.xCm,
+    standYCm: currentStand.yCm,
+  });
+}
+
+// Aday sahneye uygulanmış gibi denetlenir: yeni varyant ve itilen öğeler, değişiklik sonrası sahneye göre.
+function checkVariantCandidate(previous, next, candidate) {
+  const guarded = guardPlanAgainstLocks({ ok: true, placements: candidate.placements }, currentModules);
+  if (!guarded.ok) return guarded;
+  const placed = { ...next, placement: candidate.placement };
+  const after = currentModules.map((moduleState) => {
+    if (moduleState.id === previous.id) return placed;
+    const placement = candidate.placements.get(moduleState.id);
+    return placement ? { ...moduleState, placement } : moduleState;
+  });
+  for (const moduleState of after.filter((entry) => entry === placed || candidate.placements.has(entry.id))) {
+    const validation = validateVariantModule(
+      moduleState,
+      moduleState.placement,
+      after.filter((entry) => entry.id !== moduleState.id),
+    );
+    if (!validation.ok) return { ok: false, message: validation.message ?? 'Bu varyant bu konuma sığmıyor.' };
+  }
+  return { ok: true };
+}
+
+function planVariantFit(previous, next) {
+  const chain = planContinuousWallReplacement({
+    // Zincirde eski modül (eski genişlik) durur; yerine yeni varyant konur.
+    modules: withStandEdgeWallIds(currentModules, currentStand.standType, currentStand.xCm),
+    replacement: next,
+    standType: currentStand.standType,
+    standXCm: currentStand.xCm,
+    standYCm: currentStand.yCm,
+  });
+  if (!chain.notInChain) return guardPlanAgainstLocks(chain, currentModules);
+  let failure = null;
+  for (const candidate of planFreeVariantCandidates(previous, next)) {
+    const result = checkVariantCandidate(previous, next, candidate);
+    if (result.ok) {
+      next.placement = candidate.placement;
+      return { ok: true, placements: candidate.placements };
+    }
+    failure ??= result;
+  }
+  return failure ?? { ok: false, message: 'Bu varyant bu konuma sığmıyor.' };
+}
+
+// Duvar üstü öğeler (TV, logo, raf…) takılı oldukları öğe kayınca onunla birlikte kayar:
+// aynı eksende, aynı hatta ve ortası öğenin eski aralığında duranlar.
+const VARIANT_MOUNT_DEPTH_CM = 40;
+
+function carryMountedOverlays(before, changedId) {
+  const moved = new Set();
+  before.forEach((host, hostId) => {
+    // Değişen öğenin üstündekiler yerinde kalır; yalnız itilen öğelerin üstündekiler kayar.
+    if (hostId === changedId) return;
+    const after = currentModules.find((moduleState) => moduleState.id === hostId)?.placement;
+    const hostInterval = getPlacementInterval(host.placement, host.widthCm);
+    if (!after || !hostInterval) return;
+    const field = placementFieldOf(hostInterval.axis);
+    const cross = crossFieldOf(hostInterval.axis);
+    const delta = Number(after[field]) - Number(host.placement[field]);
+    if (!Number.isFinite(delta) || Math.abs(delta) < 0.001) return;
+    for (const overlay of currentModules) {
+      if (moved.has(overlay.id) || !isWallOverlayModule(overlay)) continue;
+      const mount = before.get(overlay.id);
+      const mountInterval = mount ? getPlacementInterval(mount.placement, overlay.widthCm) : null;
+      if (!mountInterval || mountInterval.axis !== hostInterval.axis) continue;
+      if (Math.abs(Number(mount.placement[cross]) - Number(host.placement[cross])) > VARIANT_MOUNT_DEPTH_CM) continue;
+      const center = (mountInterval.startCm + mountInterval.endCm) / 2;
+      if (center < hostInterval.startCm || center > hostInterval.endCm) continue;
+      overlay.placement = { ...overlay.placement, [field]: Number(mount.placement[field]) + delta };
+      moved.add(overlay.id);
+    }
+  });
+}
+
+function changeModuleVariant(context, itemKey, optionOn) {
+  const index = findContextModuleIndex(context);
+  const previous = index >= 0 ? currentModules[index] : null;
+  if (!previous || !currentStand) return;
+  if (isModuleLocked(previous)) {
+    renderWallResult(MODULE_LOCKED_MESSAGE, true);
+    return;
+  }
+  const nextKey = resolveModuleVariantItemKey(previous, itemKey, optionOn);
+  const next = nextKey ? createCatalogModuleState({ itemKey: nextKey }, { itemKey: nextKey }) : null;
+  if (!next) {
+    renderWallResult('Bu varyant bu öğe için kullanılamıyor.', true);
+    schedulePropertyPanelRefresh();
+    return;
+  }
+  if (next.itemKey === previous.itemKey) return;
+  carryVariantCustomizations(previous, next);
+  const plan = planVariantFit(previous, next);
+  if (!plan.ok) {
+    renderWallResult(plan.message ?? 'Bu varyant bu konuma sığmıyor.', true);
+    schedulePropertyPanelRefresh();
+    return;
+  }
+  designHistory.capture();
+  // Kaymadan önceki yerler: duvar kimliği stand kenarına göre okunur (serbest bırakılmış duvar öğesi dahil).
+  const edgeWallIds = new Map(withStandEdgeWallIds(currentModules, currentStand.standType, currentStand.xCm)
+    .map((moduleState) => [moduleState.id, moduleState.placement?.wallId ?? null]));
+  const before = new Map(currentModules.map((moduleState) => [moduleState.id, {
+    placement: { ...moduleState.placement, wallId: edgeWallIds.get(moduleState.id) },
+    wallId: edgeWallIds.get(moduleState.id),
+    widthCm: moduleState.widthCm,
+  }]));
+  currentModules[index] = next;
+  plan.placements.forEach((placement, moduleId) => {
+    const moduleState = currentModules.find((candidate) => candidate.id === moduleId);
+    if (moduleState) moduleState.placement = { ...placement };
+  });
+  carryMountedOverlays(before, next.id);
+  rebuildWall({ resetView: false });
+  // Seçim aynı öğede kalır; panel yeni varyantla açık durur.
+  scene3d.selectModuleSurface(next.id);
+  designHistory.capture();
+  selectionInfo.textContent = `${getModuleCatalogLabel(next)} seçildi.`;
+}
+
 const moduleContextMenu = createModuleContextMenu({
   onDelete: deleteContextModule,
   onAdd: addCatalogModule,
@@ -1624,6 +1894,8 @@ const moduleContextMenu = createModuleContextMenu({
     addTarget: context?.groupOptions?.addTarget ?? null,
   }),
   onAfterAction: () => schedulePropertyPanelRefresh(),
+  getVariantChoices: describeVariantChoices,
+  onVariantChange: changeModuleVariant,
   getDimensionFields: describeDimensionFields,
   onDimensionInput: applyDimensionInput,
   surfaceControls: surfaceEditControls
@@ -2043,11 +2315,6 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
       reportGroupResult(GROUP_LOCKED_MESSAGE, true);
       return;
     }
-    const confirmed = window.confirm(
-      `“${group.name}” grubunun tamamı silinecek (${group.moduleIds.length} parça). `
-        + 'Bu parçalardaki renk ve görsel düzenlemeleri de kaybolacak. Devam edilsin mi?',
-    );
-    if (!confirmed) return;
     const ids = new Set(group.moduleIds);
     currentModules = currentModules.filter((module) => !ids.has(module.id));
     scene3d.clearSelection();
@@ -2057,7 +2324,7 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
 }
 
 moduleDragSidebar = createModuleDragSidebar({
-  anchorButton: openModuleCatalogButton,
+  container: document.querySelector('#module-add-content'),
   viewport,
   canDrag: () => Boolean(currentStand),
   createModuleState: (module, moduleKey) => createCatalogModuleState(module, { itemKey: moduleKey }),
@@ -2072,23 +2339,8 @@ moduleDragSidebar = createModuleDragSidebar({
   ),
   onDrop: (droppedState, clientX, clientY, rotationZDeg, rotationLocked, catalogKey) => {
     void (async () => {
-      let moduleState = droppedState;
-      if (isCatalogWidthFamilyDescriptor(moduleState)) {
-        // Panel, kısa panel ve separatörde kart tek; genişlik (separatörde Sarmaşıklı) konum
-        // hesabından önce seçilir, çünkü profile ve yan panele bağlanma genişlikle çözülür.
-        const choice = await requestCatalogWidth({ selectedItemKey: moduleState.itemKey });
-        if (!choice) {
-          scene3d.clearCatalogModuleDrag();
-          return;
-        }
-        if (choice.itemKey !== moduleState.itemKey) {
-          moduleState = createCatalogModuleState({ itemKey: choice.itemKey }, { itemKey: choice.itemKey });
-          if (!moduleState) {
-            scene3d.clearCatalogModuleDrag();
-            return;
-          }
-        }
-      }
+      // Varyant ailesinde kartın kendisi (varsayılan varyant) konur; varyant Özellikler panelinde seçilir.
+      const moduleState = droppedState;
       const result = scene3d.dropCatalogModuleDrag(
         moduleState,
         clientX,
@@ -2156,10 +2408,9 @@ moduleDragSidebar = createModuleDragSidebar({
         moduleState.heightCm = dimensions.heightCm;
         moduleState.opacity = dimensions.opacity;
       }
-      // Dikme, profil ve genişlik ailelerinde kart tek (upright_346_5, profile_289, wall_100_350,
-      // wall_separator_100_350, wall_100_short_1/2); kayıt seçilen ölçünün anahtarıyla yapılır.
+      // Dikme ve profilde kart tek (upright_346_5, profile_289); kayıt seçilen boyun anahtarıyla yapılır.
       const commitKey = moduleState?.type === 'upright' || moduleState?.type === 'profile'
-        || isCatalogWidthFamilyDescriptor(moduleState) ? moduleState.itemKey : catalogKey;
+        ? moduleState.itemKey : catalogKey;
       const committed = commitDroppedCatalogModule(moduleState, result, commitKey);
       if (!committed.ok) {
         renderWallResult(committed.message ?? 'Modül bu konuma bırakılamadı.', true);
@@ -2703,11 +2954,6 @@ for (const input of [floorAreaXInput, floorAreaYInput, floorAreaWidthInput, floo
 }
 floorAreaTypeSelect?.addEventListener('change', onFloorAreaFieldChange);
 
-openModuleCatalogButton.addEventListener('click', () => {
-  if (!currentStand) return;
-  moduleContextMenu.openPicker({ placement: 'append' });
-});
-
 clearWallButton.addEventListener('click', () => {
   const sceneSetup = readSceneSetupFromControls();
   if (!sceneSetup.ok) {
@@ -3087,7 +3333,7 @@ function runDesignHistory(direction) {
 }
 
 // Proje açılınca, yeni proje kurulunca veya sahne temizlenince geçmiş baştan başlar.
-// Geçmiş revizyon görünümünde geri alma kapalıdır.
+// Geçmiş revizyon görünümünde de geri alma açıktır (silme onay sormaz, Geri al ile döner).
 function resetDesignHistory({ enabled = true } = {}) {
   designHistory.setEnabled(enabled);
   designHistory.reset();
@@ -3275,7 +3521,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
       revisions: project.revisions || revisionSession.revisions,
     });
     renderRevisionList();
-    resetDesignHistory({ enabled: false });
+    resetDesignHistory();
     projectStatus.textContent = `Geçmiş revizyon R${historicalRevisionNumber} · salt okunur${missingImageNotice(missingImageCount)}`;
     return;
   }
@@ -3964,6 +4210,12 @@ saveProjectButton.addEventListener('click', async () => {
     autosaveController.clearPending();
     const saved = await persistActiveProject({ reason: 'design' });
     if (saved?.enableAutosave !== false) autosaveController.enableFromCurrentState();
+    // Geçmiş revizyonda değişiklik yoksa yazılacak bir şey yoktur; durum "kaydediliyor"da kalmaz.
+    if (!saved?.stored) {
+      projectStatus.textContent = revisionSession.mode === 'historical'
+        ? `Geçmiş revizyon R${revisionSession.viewingRevisionNumber} açık · değişiklik yok, kaydedilmedi.`
+        : 'Kaydedilecek değişiklik yok.';
+    }
   } catch (error) {
     reportError('Proje kaydedilemedi', error);
     projectStatus.textContent = 'Proje kaydedilemedi.';

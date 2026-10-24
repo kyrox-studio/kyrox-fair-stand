@@ -5,8 +5,8 @@ Kanonik kaynak DB Item store ve `fair_stand_item_width_variants` ilişkileridir.
 | Katalog kartı | Hedef duvardan seçilen ürün |
 |---|---|
 | `shelf_row_1` — Tekli raf | `shelf_100`, `shelf_150`, `shelf_200` |
-| `shelf_row_2` — 2 sıralı raf | `shelf_row_2_100`, `shelf_row_2_150`, `shelf_row_2_200` |
-| `shelf_row_3` — 3 sıralı raf | `shelf_row_3_100`, `shelf_row_3_150`, `shelf_row_3_200` |
+| `shelf_row_2` — 2 sıralı raf (0086: katalogda gizli, panelde varyant) | `shelf_row_2_100`, `shelf_row_2_150`, `shelf_row_2_200` |
+| `shelf_row_3` — 3 sıralı raf (0086: katalogda gizli, panelde varyant) | `shelf_row_3_100`, `shelf_row_3_150`, `shelf_row_3_200` |
 
 Genişlik seçimi key deseninden üretilmez; DB eşlemesi ve varyantın fiziksel genişliği kullanılır. 50 cm duvara eşleşme yoktur. Kart önizleme state'i en dar üründen başlar; bırakma ve başka duvara taşıma hedef genişliği yeniden çözer. Kayda gerçek üretim ürününün `itemKey` alanı yazılır; kopyalama da aynı yerleştirme yolundan geçer.
 

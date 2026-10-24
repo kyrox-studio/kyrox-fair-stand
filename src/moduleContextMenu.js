@@ -38,6 +38,10 @@ export function createModuleContextMenu({
   // Ölçü alanları: seçime göre { key, title, fields[] } ya da null; değer değişince onDimensionInput.
   getDimensionFields,
   onDimensionInput,
+  // Varyant: ailesi olan öğede { title, options[], selectedItemKey, option, disabled } ya da null;
+  // seçilince onVariantChange(context, itemKey, optionOn) sahnede canlı uygular.
+  getVariantChoices,
+  onVariantChange,
   surfaceControls = null,
   // İşlem sonuç / seçim mesajları satırı (#selection-info) panel başlığının altında durur.
   statusElement = null,
@@ -66,6 +70,7 @@ export function createModuleContextMenu({
     </div>
     <p class="selection-property-note" hidden></p>
     <p class="selection-property-empty" hidden>Seçim yok. Sahnede bir yüzey veya öğe seçin.</p>
+    <div class="selection-property-variants" hidden></div>
     <div class="selection-property-fields" hidden></div>
     <div class="selection-property-surface" hidden>
       <p class="selection-property-surface-note" aria-live="polite"></p>
@@ -121,6 +126,8 @@ export function createModuleContextMenu({
   const surfaceNote = panel.querySelector('.selection-property-surface-note');
   const surfaceSlot = panel.querySelector('.selection-property-surface-slot');
   const fieldsSection = panel.querySelector('.selection-property-fields');
+  const variantSection = panel.querySelector('.selection-property-variants');
+  let variantContext = null;
   let fieldsKey = null;
   let fieldsSpec = null;
   let fieldsContext = null;
@@ -431,6 +438,7 @@ export function createModuleContextMenu({
     emptyHint.hidden = true;
     menu.hidden = true;
     lockNote.hidden = true;
+    renderVariantChoices(null);
     renderDimensionFields(context);
     renderSurfaceSection(context.surfaceSummary);
     heading.textContent = context.title;
@@ -463,6 +471,7 @@ export function createModuleContextMenu({
     emptyHint.hidden = Boolean(context);
     menu.hidden = !context;
     renderSurfaceSection(context?.surfaceSummary ?? null);
+    renderVariantChoices(context);
     renderDimensionFields(context);
     if (!context) return;
     if (Array.isArray(context.multiModuleIds) && context.multiModuleIds.length > 1) {
@@ -555,6 +564,73 @@ export function createModuleContextMenu({
     });
     syncAdvancedSection();
   }
+
+  // Varyant: ailenin üyeleri düğme olarak durur, seçili olan işaretlidir; tıklanınca sahnede canlı değişir.
+  function renderVariantChoices(context) {
+    const multi = Array.isArray(context?.multiModuleIds) && context.multiModuleIds.length > 1;
+    const spec = context && !multi ? (getVariantChoices?.(context) ?? null) : null;
+    variantContext = spec ? context : null;
+    variantSection.hidden = !spec;
+    if (!spec) {
+      variantSection.replaceChildren();
+      return;
+    }
+    const header = document.createElement('div');
+    header.className = 'selection-property-variant-header';
+    const title = document.createElement('p');
+    title.className = 'selection-property-section-title';
+    title.textContent = spec.title;
+    const current = document.createElement('strong');
+    current.className = 'selection-property-variant-current';
+    current.textContent = spec.options.find((option) => option.itemKey === spec.selectedItemKey)?.label ?? '';
+    header.append(title, current);
+    const grid = document.createElement('div');
+    grid.className = 'selection-property-variant-grid';
+    grid.setAttribute('role', 'group');
+    grid.setAttribute('aria-label', spec.title);
+    spec.options.forEach((option) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'selection-property-variant';
+      button.dataset.variantKey = option.itemKey;
+      button.textContent = option.label;
+      button.setAttribute('aria-pressed', String(option.itemKey === spec.selectedItemKey));
+      button.disabled = Boolean(spec.disabled);
+      grid.appendChild(button);
+    });
+    variantSection.replaceChildren(header, grid);
+    if (spec.option) {
+      const label = document.createElement('label');
+      label.className = 'selection-property-field is-checkbox';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.dataset.variantOption = 'true';
+      input.checked = Boolean(spec.option.checked);
+      // Seçili ölçünün eş ailede karşılığı yoksa çentik işaretlenemez.
+      input.disabled = Boolean(spec.disabled) || (!spec.option.available && !spec.option.checked);
+      const caption = document.createElement('span');
+      caption.textContent = spec.option.label;
+      label.append(input, caption);
+      variantSection.appendChild(label);
+    }
+  }
+
+  function selectedVariantKey() {
+    return variantSection.querySelector('[data-variant-key][aria-pressed="true"]')?.dataset.variantKey ?? null;
+  }
+
+  variantSection.addEventListener('click', (event) => {
+    const button = event.target.closest?.('[data-variant-key]');
+    if (!button || button.disabled || !variantContext) return;
+    if (button.getAttribute('aria-pressed') === 'true') return;
+    const optionInput = variantSection.querySelector('[data-variant-option]');
+    onVariantChange?.(variantContext, button.dataset.variantKey, Boolean(optionInput?.checked));
+  });
+  variantSection.addEventListener('change', (event) => {
+    if (!event.target.matches?.('[data-variant-option]') || !variantContext) return;
+    const itemKey = selectedVariantKey();
+    if (itemKey) onVariantChange?.(variantContext, itemKey, event.target.checked);
+  });
 
   // Ölçü alanları panelde durur, pencere açılmaz; değer değiştikçe sahne canlı güncellenir.
   // Aynı hedef yeniden çizilirken odaktaki alana dokunulmaz (yazarken imleç kaybolmaz).

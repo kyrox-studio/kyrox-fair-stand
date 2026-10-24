@@ -41,7 +41,7 @@ test('led_floodlight catalog drag creates a canonical top-light Item', async ({ 
   page.on('pageerror', (error) => errors.push(error.message));
   await createIslandStand(page, 'led_floodlight');
 
-  const button = page.locator('#open-module-catalog');
+  const button = page.locator('.module-drag-catalog');
   await page.locator('details', { has: button }).locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="led_floodlight"]');
   await page.locator('.module-drag-group', { has: card }).locator(':scope > summary').click();

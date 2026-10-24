@@ -176,7 +176,7 @@ test('dikme boyu sorulur; "Bir daha sorma" hatırlanır; sağ tık çentiği kal
   await createIslandProject(page, 'E2E Dikme Boyu', []);
   await page.evaluate(() => localStorage.removeItem('fairStand.uprightHeightItemKey'));
 
-  const open = page.locator('#open-module-catalog');
+  const open = page.locator('.module-drag-catalog');
   await page.locator('details', { has: open }).locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="upright_346_5"]').first();
   const group = page.locator('.module-drag-group', { has: card });
@@ -234,7 +234,7 @@ test('profil kartı tek; bırakırken boy sorulur, seçilen boyun Item’ıyla k
   await createIslandProject(page, 'E2E Profil Boyu', []);
   await page.evaluate(() => localStorage.removeItem('fairStand.profileLengthItemKey'));
 
-  const open = page.locator('#open-module-catalog');
+  const open = page.locator('.module-drag-catalog');
   await page.locator('details', { has: open }).locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="profile_289"]').first();
   const group = page.locator('.module-drag-group', { has: card });

@@ -16,7 +16,7 @@ async function createIslandStand(page, projectName) {
 }
 
 async function openCatalogCard(page, itemKey) {
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details.panel-card', { has: openCatalogButton }).first();
   if (!(await modulePanel.evaluate((el) => el.open))) {
     await modulePanel.locator(':scope > summary').click();
@@ -122,7 +122,7 @@ test('dar viewport smoke: boot, katalog ve sahne erişilebilir', async ({ page }
   await expect(page.getByRole('heading', { name: 'Maxima Konfigüratörü' })).toBeVisible();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
   await expect(page.locator('#viewport > canvas')).toBeVisible();
-  await expect(page.locator('#open-module-catalog')).toBeEnabled();
+  await expect(page.locator('#clear-wall')).toBeEnabled();
   await expect(page.locator('#save-project')).toBeEnabled();
   expect(pageErrors).toEqual([]);
 });

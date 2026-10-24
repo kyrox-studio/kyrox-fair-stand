@@ -50,7 +50,7 @@ test('mini fridge uses the 50x50x66 nominal footprint in the real catalog drag f
 
   await createIslandStand(page, 'Mini Fridge 50x50');
 
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   await modulePanel.locator(':scope > summary').click();
 

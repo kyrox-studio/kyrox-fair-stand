@@ -23,8 +23,8 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     assert len(body["items"]) == 136  # 0081: profile_346_5; 0079: profile_8; 0078: profil 239,5 + 289 + 388 + 487; 0075: bar masası; 0068: 5 yükseklik dikmesi; 0072: 3 raf tahtası + 3 kart + 6 sıralı raf; 0074: vitrin + broşürlük
     visible = [item for item in body["items"] if item["catalogVisible"] is True]
     hidden = [item for item in body["items"] if item["catalogVisible"] is not True]
-    assert len(visible) == 43  # 0084: Işıklı Strafor kartı; 0083: 6 banko/baza ölçüsü gizlendi, Banko/Köşe Banko/Baza için birer kart; 0082: 3 panel + 3 separatör gizlendi, Panel/Separatör için birer kart; 0079: 6 kısa panel gizlendi, Tek/Çift Sıra için birer kart; 0078: 4 profil gizlendi, profile_289 kartı
-    assert len(hidden) == 93  # 0084: Işıklı Strafor görünür; 0083: 6 banko/baza ölçüsü gizli; 0082: 3 panel + 3 separatör gizli; 0081: profile_346_5 gizli; 0080: profile_8 gizli; 0079: 6 kısa panel genişliği gizli; 0078: 4 profil gizlendi + 239,5 / 388 / 487; 0068: 5 gizli dikme; 0072: 3 tekli raf gizlenir, 3 tahta + 6 sıralı raf gizli
+    assert len(visible) == 35  # 0086: 8 aile üyesi gizlendi (vitrin, raf, TV, video wall, saksı); 0084: Işıklı Strafor kartı; 0083: 6 banko/baza ölçüsü gizlendi, Banko/Köşe Banko/Baza için birer kart; 0082: 3 panel + 3 separatör gizlendi, Panel/Separatör için birer kart; 0079: 6 kısa panel gizlendi, Tek/Çift Sıra için birer kart; 0078: 4 profil gizlendi, profile_289 kartı
+    assert len(hidden) == 101  # 0086: 8 aile üyesi gizli (vitrin, raf, TV, video wall, saksı); 0084: Işıklı Strafor görünür; 0083: 6 banko/baza ölçüsü gizli; 0082: 3 panel + 3 separatör gizli; 0081: profile_346_5 gizli; 0080: profile_8 gizli; 0079: 6 kısa panel genişliği gizli; 0078: 4 profil gizlendi + 239,5 / 388 / 487; 0068: 5 gizli dikme; 0072: 3 tekli raf gizlenir, 3 tahta + 6 sıralı raf gizli
     shelf = next(item for item in body["items"] if item["itemKey"] == "shelf_100")
     assert shelf["categoryId"] == 3
     assert "catalogCategory" not in shelf
@@ -40,8 +40,8 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     cards = {item["itemKey"]: item for item in body["items"] if item["itemKey"].startswith("shelf_row_") and item.get("widthVariants")}
     assert {key: (card["name"], card["catalogVisible"], card["widthVariants"]) for key, card in cards.items()} == {
         "shelf_row_1": ("Tekli raf", True, ["shelf_100", "shelf_150", "shelf_200"]),
-        "shelf_row_2": ("2 sıralı raf", True, ["shelf_row_2_100", "shelf_row_2_150", "shelf_row_2_200"]),
-        "shelf_row_3": ("3 sıralı raf", True, ["shelf_row_3_100", "shelf_row_3_150", "shelf_row_3_200"]),
+        "shelf_row_2": ("2 sıralı raf", False, ["shelf_row_2_100", "shelf_row_2_150", "shelf_row_2_200"]),
+        "shelf_row_3": ("3 sıralı raf", False, ["shelf_row_3_100", "shelf_row_3_150", "shelf_row_3_200"]),
     }
     two_row_150 = next(item for item in body["items"] if item["itemKey"] == "shelf_row_2_150")
     assert two_row_150["catalogVisible"] is False

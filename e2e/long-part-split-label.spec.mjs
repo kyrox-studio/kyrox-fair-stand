@@ -1,4 +1,3 @@
-import { openProductionDetails } from './helpers/productionDetails.mjs';
 import { test, expect } from '@playwright/test';
 
 // 500 cm duvarın reçetesindeki upright_495 Üretim Listesi'nde tek satır kalır, adın yanında
@@ -19,7 +18,6 @@ test('Üretim Listesi uzun dikmeyi parça bölünüşüyle tek satırda gösteri
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-empty')).toBeHidden();
 
-  await openProductionDetails(page);
   await page.locator('#toggle-production-bom').click();
   const panel = page.locator('#production-bom-panel');
   await expect(panel).toBeVisible();

@@ -34,7 +34,7 @@ test('ölçü pencereleri dialog semantiği ve Escape taşır; strafor ölçüs�
   assert.match(main, /event\.key !== 'Escape'/);
 });
 
-test('üretim listesi Ayrıntılar içinden açılır; sahne oluşturunca otomatik açılmaz', () => {
+test('üretim listesi üst banttaki butonla açılır; sahne oluşturunca otomatik açılmaz', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   const markup = readFileSync(new URL('../src/configuratorMarkup.js', import.meta.url), 'utf8');
@@ -43,8 +43,12 @@ test('üretim listesi Ayrıntılar içinden açılır; sahne oluşturunca otomat
   assert.match(main, /createProductionBomPanel/);
   assert.match(markup, /toggle-production-bom/);
   assert.match(main, /toggleProductionBomButton/);
-  assert.match(html, /<details id="design-details"[^>]*>[\s\S]*?id="toggle-production-bom"/);
-  assert.doesNotMatch(html.slice(html.indexOf('id="viewport-toolbar"')), /id="toggle-production-bom"/);
+  assert.match(html, /id="design-redo"[^>]*>İleri al<\/button><button id="toggle-production-bom"/);
+  assert.doesNotMatch(html, /id="design-details"/);
+  // Modül ekle kartında yalnız sürüklenebilir katalog kalır; Sahneyi Sıfırla alttaki sıfırlamaların başındadır.
+  assert.doesNotMatch(html, /id="open-module-catalog"/);
+  assert.match(html, /<div id="module-add-content" class="panel-card-content"><\/div>/);
+  assert.match(html, /id="clear-wall"[^>]*>Sahneyi Sıfırla<\/button>\s*<button id="reset-module-features"/);
   assert.match(html, /<details id="project-revisions"[^>]*>[\s\S]*?<span>Geçmiş<\/span>/);
 });
 

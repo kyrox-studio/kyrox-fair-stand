@@ -135,7 +135,7 @@ test('Shift+click no longer adds a module to the selection', async ({ page }) =>
 
 test('banko: Ctrl+click on a face still adds faces of the same counter', async ({ page }) => {
   await createStand(page, 'Ada Stand', 500, 500);
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   if (!(await modulePanel.evaluate((el) => el.open))) await modulePanel.locator(':scope > summary').click();
   const card = page.locator(`.module-drag-card[data-module-key="${catalogCardKeyFor('desk_banko_200')}"]`);

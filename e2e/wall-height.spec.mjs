@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { catalogCardKeyFor, chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
+import { dropCatalogCard } from './helpers/catalogDrop.mjs';
+import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
@@ -160,22 +161,18 @@ test('250 cm stand: door and showcases from the catalog take the stand height', 
       window.dispatchEvent(new CustomEvent('fair-stand:delete-selected-module', { detail: { moduleId } }));
     }, wall.id);
   }
-  const open = page.locator('#open-module-catalog');
-  await page.locator('details', { has: open }).locator(':scope > summary').click();
-  await open.click();
+  // Vitrin tek kart (0086): 2 göz Özellikler panelinde seçilir; her öğe stand yüksekliğine çözülür.
+  await dropCatalogCard(page, 'wall_door_100_350');
+  await page.keyboard.press('Escape');
+  await dropCatalogCard(page, 'wall_showcase_100_3_350', { points: [[0.55, 0.85], [0.6, 0.92]] });
+  await chooseCatalogWidth(page, 'wall_showcase_100_2_350');
+  // İkinci vitrin seçili vitrinin yanına Özellikler panelindeki Ekle… ile konur (kart 3 gözlü).
+  await page.locator('.selection-property-panel [data-module-action="add"]').click();
   const picker = page.locator('.module-picker-backdrop');
-  // Katalogdan her seferinde tek öğe eklenir.
-  for (const [tab, itemKey] of [
-    ['Raf & Vitrin', 'wall_showcase_100_2_350'],
-    ['Raf & Vitrin', 'wall_showcase_100_3_350'],
-    ['Panel & Duvar', 'wall_door_100_350'],
-  ]) {
-    if (!(await picker.isVisible())) await open.click();
-    await picker.locator('.module-picker-tab', { hasText: tab }).click();
-    await picker.locator(`[data-module-key="${itemKey}"]`).click();
-    await picker.locator('.module-picker-add').click();
-    await expect(picker).toBeHidden();
-  }
+  await picker.locator('.module-picker-tab', { hasText: 'Panel & Duvar' }).click();
+  await picker.locator('[data-module-key="wall_showcase_100_3_350"]').click();
+  await picker.locator('.module-picker-add').click();
+  await expect(picker).toBeHidden();
 
   const project = await savedProject(page);
   const byKey = Object.fromEntries(project.modules.filter((m) => Array.isArray(m.strips)).map((m) => [m.itemKey, m]));
@@ -201,7 +198,7 @@ for (const wallHeight of [250, 300, 350, 400, 450, 500]) {
     await page.locator('form input[name="projectName"]').fill(`E2E Sürükle ${wallHeight}`);
     await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
     await expect(page.locator('#viewport-toolbar')).toBeVisible();
-    const modulePanel = page.locator('details', { has: page.locator('#open-module-catalog') });
+    const modulePanel = page.locator('details', { has: page.locator('.module-drag-catalog') });
     if (!(await modulePanel.evaluate((el) => el.open))) await modulePanel.locator(':scope > summary').click();
     const card = page.locator('.module-drag-card[data-module-key="wall_100_350"]');
     await expect(card).toHaveAttribute('aria-disabled', 'false');
@@ -217,9 +214,7 @@ for (const wallHeight of [250, 300, 350, 400, 450, 500]) {
       await card.dragTo(page.locator('#viewport'), {
         targetPosition: { x: Math.round(viewport.width * x), y: Math.round(viewport.height * y) },
       });
-      // Panel tek kart: bırakınca genişlik penceresi açılır (0082); 100 seçili gelir.
-      const widthDialog = page.locator('.item-size-dialog');
-      if (await widthDialog.isVisible().catch(() => false)) await chooseCatalogWidth(page, 'wall_100_350');
+      // Panel tek kart: bırakınca 100 (kartın kendisi) konur; pencere açılmaz.
       project = await savedProject(page);
       if (project.modules.some((module) => module.itemKey === expected)) break;
     }
@@ -243,14 +238,7 @@ for (const wallHeight of [250, 300, 350, 400, 450, 500]) {
     await page.evaluate((moduleId) => {
       window.dispatchEvent(new CustomEvent('fair-stand:delete-selected-module', { detail: { moduleId } }));
     }, wall.id);
-    const open = page.locator('#open-module-catalog');
-    await page.locator('details', { has: open }).locator(':scope > summary').click();
-    await open.click();
-    const picker = page.locator('.module-picker-backdrop');
-    await picker.locator('.module-picker-tab', { hasText: 'Panel & Duvar' }).click();
-    await picker.locator('[data-module-key="wall_door_100_350"]').click();
-    await picker.locator('.module-picker-add').click();
-    await expect(picker).toBeHidden();
+    await dropCatalogCard(page, 'wall_door_100_350');
     const upperPanels = await page.evaluate(() => window.__sceneSurfaces()
       .filter((mesh) => mesh.userData.moduleType === 'door' && mesh.userData.surfaceRole === 'upper-panel').length);
     expect(upperPanels).toBe(wallHeight / 50 - 4);

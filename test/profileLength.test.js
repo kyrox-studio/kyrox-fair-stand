@@ -92,7 +92,7 @@ test('profil bırakılırken boy sorulur; Özellikler panelinde profil boyu alan
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   const menu = readFileSync(new URL('../src/moduleContextMenu.js', import.meta.url), 'utf8');
   assert.match(main, /if \(moduleState\?\.type === 'profile'\) \{[\s\S]*readProfileLengthPreference\(\)[\s\S]*requestProfileLength\(\{ selectedItemKey: moduleState\.itemKey \}\)[\s\S]*if \(choice\.remember\) writeProfileLengthPreference\(itemKey\);/);
-  assert.match(main, /const commitKey = moduleState\?\.type === 'upright' \|\| moduleState\?\.type === 'profile'\s+\|\| isCatalogWidthFamilyDescriptor\(moduleState\) \? moduleState\.itemKey : catalogKey;/);
+  assert.match(main, /const commitKey = moduleState\?\.type === 'upright' \|\| moduleState\?\.type === 'profile'\s+\? moduleState\.itemKey : catalogKey;/);
   // Panel alanı: boy listesi + "Bir daha sorma"; çentik kalkınca tercih silinir.
   assert.match(main, /profile: Object\.freeze\(\{\r?\n {4}title: 'Profil boyu',\r?\n {4}list: \(\) => listProfileLengthItems\(\),/);
   assert.match(main, /choiceSpec\.writePreference\(values\.remember \? values\.itemKey : null\);/);

@@ -54,7 +54,7 @@ async function createIslandStand(page) {
 }
 
 async function dropFridge(page, x, y) {
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   if (!(await modulePanel.evaluate((el) => el.open))) await modulePanel.locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="mini_fridge_avanti"]');
@@ -178,7 +178,7 @@ test('a short touch tap opens the property panel', async ({ page }) => {
 });
 
 async function openFridgeCard(page) {
-  const openCatalogButton = page.locator('#open-module-catalog');
+  const openCatalogButton = page.locator('.module-drag-catalog');
   const modulePanel = page.locator('details', { has: openCatalogButton });
   if (!(await modulePanel.evaluate((el) => el.open))) await modulePanel.locator(':scope > summary').click();
   const card = page.locator('.module-drag-card[data-module-key="mini_fridge_avanti"]');

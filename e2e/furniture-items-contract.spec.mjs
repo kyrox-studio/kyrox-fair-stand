@@ -96,7 +96,7 @@ for (const itemKey of Object.keys(expected)) {
     page.on('pageerror', (error) => errors.push(error.message));
     await createIslandStand(page, itemKey);
 
-    const button = page.locator('#open-module-catalog');
+    const button = page.locator('.module-drag-catalog');
     await page.locator('details', { has: button }).locator(':scope > summary').click();
     const card = page.locator(`.module-drag-card[data-module-key="${itemKey}"]`);
     await page.locator('.module-drag-group', { has: card }).locator(':scope > summary').click();

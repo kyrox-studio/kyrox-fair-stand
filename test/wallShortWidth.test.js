@@ -78,17 +78,14 @@ test('sağ tık başlığı sahnedeki öğenin kendi adını yazar (gizli geniş
   }
 });
 
-test('kısa panel bırakılırken genişlik konum hesabından önce sorulur ve seçilen anahtarla kaydedilir', () => {
+test('kısa panel kartı varsayılan genişlikle bırakılır; genişlik Özellikler panelinde seçilir', () => {
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
-  const source = readFileSync(new URL('../src/catalogWidthFamily.js', import.meta.url), 'utf8');
-  const choiceIndex = main.indexOf('const choice = await requestCatalogWidth({ selectedItemKey: moduleState.itemKey });');
-  const dropIndex = main.indexOf('const result = scene3d.dropCatalogModuleDrag(', Math.max(choiceIndex, 0));
-  assert.ok(choiceIndex > 0, 'genişlik penceresi bırakma akışında açılmalı');
-  assert.ok(choiceIndex < dropIndex, 'genişlik konum hesabından önce seçilmeli');
-  assert.match(main, /moduleState = createCatalogModuleState\(\{ itemKey: choice\.itemKey \}, \{ itemKey: choice\.itemKey \}\);/);
-  assert.match(main, /\|\| isCatalogWidthFamilyDescriptor\(moduleState\) \? moduleState\.itemKey : catalogKey;/);
-  // Sağ tık menüsü yok; tercih tutulmaz, her bırakışta sorulur.
-  assert.match(source, /allowRemember: false/);
+  const drop = main.slice(main.indexOf('onDrop: (droppedState'), main.indexOf('onCancel: () => scene3d.clearCatalogModuleDrag()'));
+  // Bırakmada pencere açılmaz; kartın kendisi (100) konur, kayıt katalog anahtarıyla yapılır.
+  assert.doesNotMatch(drop, /requestCatalogWidth|requestItemSizeChoice/);
+  assert.match(drop, /const moduleState = droppedState;/);
+  assert.match(main, /getVariantChoices: describeVariantChoices,\s+onVariantChange: changeModuleVariant,/);
+  // Genişlik başlığı ailenin tanımındadır; panel bileşeni aileye özel metin taşımaz.
   assert.doesNotMatch(readFileSync(new URL('../src/moduleContextMenu.js', import.meta.url), 'utf8'), /Panel genişliği/);
 });
 

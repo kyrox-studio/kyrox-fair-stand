@@ -29,7 +29,7 @@ test('user can create an island stand through the real browser UI', async ({ pag
 
   await expect(page.locator('#viewport-empty')).toBeHidden();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
-  await expect(page.locator('#open-module-catalog')).toBeEnabled();
+  await expect(page.locator('#clear-wall')).toBeEnabled();
   await expect(page.locator('#stage-result')).toContainText('Ada Stand · 500 × 500 cm');
   await expect(page.locator('#project-name-display')).toHaveText('E2E_Smoke-Ada_500_500');
 

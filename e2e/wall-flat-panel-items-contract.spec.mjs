@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
+import { dropCatalogCard } from './helpers/catalogDrop.mjs';
+import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
@@ -54,14 +56,6 @@ async function removeModules(page, modules) {
 // Kısa panelde katalog kartı varyant başına tek (migration 0079): Tek Sıra kartı wall_100_short_1;
 // diğer genişlikler bırakırken genişlik penceresinden gelir (e2e/wall-short-width.spec.mjs).
 
-// Genişlik ailesi (Panel / Separatör / kısa panel): katalogda tek kart; Ekle genişlik penceresini açar.
-async function chooseCatalogWidth(page, itemKey, { vine = false } = {}) {
-  const dialog = page.locator('.item-size-dialog');
-  await expect(dialog).toBeVisible();
-  await dialog.locator('select[name="itemKey"]').selectOption(itemKey);
-  if (vine) await dialog.locator('input[name="option"]').check();
-  await dialog.locator('button[type="submit"]').click();
-}
 
 const keys = ['wall_50_350', 'wall_100_350', 'wall_150_350', 'wall_200_350', 'wall_100_short_1'];
 
@@ -77,19 +71,10 @@ for (const itemKey of keys) {
     expect(initialProject.modules.length).toBeGreaterThan(0);
     await removeModules(page, initialProject.modules);
 
-    const openCatalogButton = page.locator('#open-module-catalog');
-    const modulePanel = page.locator('details', { has: openCatalogButton });
-    await modulePanel.locator(':scope > summary').click();
-    await openCatalogButton.click();
-
-    const picker = page.locator('.module-picker-backdrop');
-    await expect(picker).toBeVisible();
-    await picker.locator('.module-picker-tab', { hasText: itemKey.includes('_short_') ? 'Panel Ek Modül' : 'Panel & Duvar' }).click();
     const cardKey = itemKey.includes('_short_') ? itemKey : 'wall_100_350';
-    await picker.locator(`[data-module-key="${cardKey}"]`).click();
-    await picker.locator('.module-picker-add').click();
+    await dropCatalogCard(page, cardKey);
+    // Kart bırakılır, genişlik Özellikler panelinde seçilir.
     await chooseCatalogWidth(page, itemKey);
-    await expect(picker).toBeHidden();
 
     const project = await saveAndReadProject(page);
     const item = project.modules.find((module) => module.itemKey === itemKey);

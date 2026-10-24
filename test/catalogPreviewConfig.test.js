@@ -93,11 +93,11 @@ function serializeNode(node) {
   };
 }
 
-test('43 görünür Item catalogPreview taşır; gizli Item preview taşımaz', () => {
+test('35 görünür Item catalogPreview taşır; gizli Item preview taşımaz', () => {
   const visible = listRegisteredItems().filter((item) => item.catalogVisible === true);
   const hidden = listRegisteredItems().filter((item) => item.catalogVisible !== true);
-  assert.equal(visible.length, 43);
-  assert.equal(hidden.length, 90);
+  assert.equal(visible.length, 35);
+  assert.equal(hidden.length, 98);
 
   for (const item of visible) {
     assert.equal(typeof item.previewId, 'number', item.itemKey);
@@ -106,7 +106,8 @@ test('43 görünür Item catalogPreview taşır; gizli Item preview taşımaz', 
   }
 
   for (const item of hidden) {
-    if (item.type === 'shelf') {
+    // Gizli raf ürünleri sahne önizlemesini taşır; gizli raf kartları (0086: 2 / 3 sıralı) taşımaz.
+    if (item.type === 'shelf' && !item.widthVariants?.length) {
       assert.equal(item.previewId, 20, item.itemKey);
       assert.equal(getCatalogItem(item.itemKey), null);
       continue;
@@ -146,7 +147,7 @@ test('Catalog preview renderer yalnız catalogPreview key ile seçilir; type bra
   assert.match(catalogDoc, /Catalog preview renderer seçimi yalnız Item\.previewId üzerinden yapılır/);
 });
 
-test('43 Item catalogPreview dağılımı kilitlidir', () => {
+test('35 Item catalogPreview dağılımı kilitlidir', () => {
   const counts = {};
   for (const item of listCatalogItems()) {
     counts[item.previewId] = (counts[item.previewId] ?? 0) + 1;
@@ -164,29 +165,29 @@ test('43 Item catalogPreview dağılımı kilitlidir', () => {
     11: 2,
     12: 1,
     13: 1,
-    14: 3,
+    14: 1,
     15: 1,
     16: 1,
     17: 1,
     18: 1,
-    21: 2,
-    20: 3,
+    21: 1,
+    20: 1,
     22: 1,
     23: 1,
     24: 1,
     25: 1,
-    26: 3,
+    26: 1,
     27: 1,
-    28: 2,
+    28: 1,
     29: 1,
     30: 1,
   });
 });
 
-test('43 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
+test('35 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
   installDocument();
   const projected = listCatalogItems();
-  assert.equal(projected.length, 43);
+  assert.equal(projected.length, 35);
 
   for (const module of projected) {
     const tree = serializeNode(createModuleCatalogPreview(module));
@@ -222,8 +223,8 @@ test('43 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
 
   const showcase3 = serializeNode(createModuleCatalogPreview(getCatalogItem('wall_showcase_100_3_350')));
   assert.equal(showcase3.children[0].dataset.eyes, '3');
-  const showcase2 = serializeNode(createModuleCatalogPreview(getCatalogItem('wall_showcase_100_2_350')));
-  assert.equal(showcase2.children[0].dataset.eyes, '2');
+  // 0086: 2 gözlü vitrin katalogda gizli (Vitrin tek kart, varyant Özellikler panelinde).
+  assert.equal(getCatalogItem('wall_showcase_100_2_350'), null);
 
   // Sarmaşıklı separatör katalogda gizli (0082, Separatör penceresinde çentik); önizleme türü 19 durur.
   const vine = serializeNode(createModuleCatalogPreview({ previewId: 19, widthCm: 100 }));

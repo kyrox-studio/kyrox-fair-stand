@@ -203,9 +203,9 @@ test('catalogVisible=false Item runtime’da yok demek değildir', () => {
   }
 
   assert.equal(listRegisteredItems().length, 133);
-  assert.equal(listRegisteredItems().filter((item) => item.catalogVisible === true).length, 43);
-  assert.equal(listCatalogItems().length, 43);
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 43);
+  assert.equal(listRegisteredItems().filter((item) => item.catalogVisible === true).length, 35);
+  assert.equal(listCatalogItems().length, 35);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 35);
 
   const hiddenItem = getItem('panel_197');
   assert.ok(hiddenItem);

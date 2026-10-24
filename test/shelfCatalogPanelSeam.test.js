@@ -48,14 +48,13 @@ function wallModule(itemKey, xCm = 0) {
   return state;
 }
 
-test('raf kataloğu üç sıra kartı sunar; kartlar en dar üretim ürününe çözülür', () => {
+test('raf kataloğu tek Raf kartı sunar; sıra kartları en dar üretim ürününe çözülür', () => {
   const cards = ['shelf_row_1', 'shelf_row_2', 'shelf_row_3'];
-  assert.deepEqual([...listCatalogGroups().find((group) => group.id === 3).keys], [
-    'wall_showcase_100_3_350', 'wall_showcase_100_2_350', ...cards, 'floor_showcase_100',
-  ]);
+  // 0086: katalogda yalnız Raf (tekli); 2 ve 3 sıralı raf Özellikler panelinde seçilir.
+  assert.deepEqual([...listCatalogGroups().find((group) => group.id === 3).keys], ['shelf_row_1']);
   for (const [index, key] of cards.entries()) {
-    assert.ok(getCatalogItem(key));
-    const state = createModuleStateFromDescriptor(getCatalogItem(key));
+    assert.equal(Boolean(getCatalogItem(key)), index === 0, key);
+    const state = createModuleStateFromDescriptor(getCatalogItem(key) ?? { itemKey: key });
     assert.equal(state.itemKey, index === 0 ? 'shelf_100' : `shelf_row_${index + 1}_100`);
     assert.equal(state.widthCm, 100);
     assert.equal(state.heightCm, 1.8 + index * 50);
@@ -222,7 +221,9 @@ test('K wall_shelf_* Item’ları hâlâ yok', () => {
 });
 
 test('L wall_showcase_* ve glass_shelf regression bozulmaz', () => {
-  assert.equal(getItem('wall_showcase_100_2_350').catalogVisible, true);
+  // 0086: Vitrin tek kart (3 göz); 2 göz aile üyesi olarak durur.
+  assert.equal(getItem('wall_showcase_100_2_350').catalogVisible, false);
+  assert.equal(getItem('wall_showcase_100_2_350').variant, 'wall-showcase');
   assert.equal(getItem('wall_showcase_100_3_350').catalogVisible, true);
   assert.equal(getItem('glass_shelf').type, 'showcase-accessory');
   assert.equal(getItem('glass_shelf').catalogVisible, false);

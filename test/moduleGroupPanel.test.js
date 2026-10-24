@@ -111,9 +111,10 @@ test('context menu offers group commands and forwards them to main', () => {
   assert.match(menuSource, /setDisabled\(lockButton, group\?\.locked === true && context\.ownLocked !== true, GROUP_LOCKED_HINT\);/);
 });
 
-test('main wires group actions, confirms delete and moving between groups', () => {
+test('main wires group actions, deletes without confirm and confirms moving between groups', () => {
   assert.match(mainSource, /onGroupAction: \(action, context\) => handleGroupAction\(action, \{/);
-  assert.match(mainSource, /grubunun tamamı silinecek/);
+  // Grubu sil onay sormaz; yanlış silme Geri al ile döner.
+  assert.doesNotMatch(mainSource, /grubunun tamamı silinecek/);
   assert.match(mainSource, /grubuna eklensin mi\?/);
   assert.match(mainSource, /planGroupDuplicate\(currentModules, group\.id, stand, \{ duplicateModule: duplicateModuleState \}\)/);
   assert.match(mainSource, /pruneGroups\(currentModules, getGroupStand\(\)\);\n {2}scene3d\.buildWall\(currentModules, \{ resetView \}\);/);
