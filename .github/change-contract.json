@@ -146,7 +146,7 @@
         "status": "required",
         "tests": [
           "test/systemChangeSecurityControls.test.js::impact.security=affected without security block fails",
-          "test/systemChangeSecurityControls.test.js::missing control fails",
+          "test/systemChangeSecurityControls.test.js::xx-nonexistent-title-xx",
           "test/systemChangeSecurityControls.test.js::na with rejected rationale fails",
           "test/systemChangeSecurityControls.test.js::broken test reference fails",
           "test/systemChangeSecurityControls.test.js::verify CLI exits non-zero for a broken security test reference",
