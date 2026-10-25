@@ -95,6 +95,8 @@ Bir alan unutulduğu için boş bırakılamaz. Uygulanmıyorsa açıkça `not-ap
 
 Domain sayısı hard-code edilmiş bir süreç kuralı değildir. Registry yarın yeni domainlerle genişlerse change contract yeni registry'nin tamamını değerlendirmek zorundadır.
 
+**Güvenlik kontrolleri:** `impact.security = affected` olan her change contract `security.controls` içinde KYROX ortak kataloğunun SEC-01…SEC-22 kimliklerinin tamamını `required` veya `na` olarak sınıflandırır. Kurallar ve kanıt kaydı tek kaynaktadır: `kyrox-platform/standards/security/SECURITY_PROGRAM.md`; burada kopyalanmaz. `required` en az bir çözümlenen test referansı (`dosya` veya `dosya::test adı`), `na` en az 20 karakterlik somut mimari gerekçe ister ("UI gizli", "testler yeşil", "sonra bakarız", "TBD" gibi gerekçeler reddedilir). `impact.security = not-applicable` iken `required` kontrol yazılamaz. Gate yalnız kaydın bütünlüğünü ve test referansının varlığını kanıtlar; testin geçmesi `npm test` / `pytest` adımlarının işidir ve bu kontrol "sistem güvenli" kanıtı değildir.
+
 Browser E2E zorunluluğuna hangi domainlerin girdiği de ayrı registry olan `SYSTEM_BROWSER_E2E_DOMAINS` ile tanımlıdır. Bugün product/browser-visible alanlar burada bulunur; yarın registry değişirse validator yeni listeyi otomatik uygular.
 
 ---
