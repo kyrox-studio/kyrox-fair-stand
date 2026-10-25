@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
 
 // Profil ↑/↓ ile dikey taşınır ve zemin/tavan uzaklığı gösterilir; dikme bırakılırken boy
 // sorulur, "Bir daha sorma" işaretlenince sorulmaz, Özellikler panelindeki dikme boyu alanı çentiği kaldırır.
@@ -45,9 +46,11 @@ async function createIslandProject(page, name, modules) {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill(name);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
   await page.locator('#save-project').click();
   await expect(page.locator('#save-project')).toBeEnabled();

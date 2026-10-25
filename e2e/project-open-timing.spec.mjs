@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
 
 // Proje açma ölçümü (ölçüm anahtarı açıkken): kayıtlı proje yeniden açılınca konsola adım süreleri yazılır,
 // görseller ve modeller gelince "sahne tamamen hazır" satırı gelir. Açılış eskisi gibi tamamlanır.
@@ -17,9 +18,11 @@ test('opening a saved project logs step timings and model loads', async ({ page 
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('E2E Olcum');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 
   const openCatalogButton = page.locator('.module-drag-catalog');
@@ -74,9 +77,11 @@ test('without the timing switch no measurement lines reach the console', async (
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('E2E Olcum Kapali');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
   await page.locator('#save-project').click();
   await page.locator('#open-project').click();

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
 
 async function createIslandStand(page, projectName, { depotContents = false } = {}) {
   await page.goto('/');
@@ -14,11 +15,13 @@ async function createIslandStand(page, projectName, { depotContents = false } = 
     await page.locator('#auto-depot-contents').check();
   }
 
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();
   await projectNameInput.fill(projectName);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 }
 

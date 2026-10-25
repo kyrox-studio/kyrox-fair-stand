@@ -1,5 +1,6 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
+import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
 
 // Tablette çoklu panel: seçim çubuğunda "Çoklu panel"e basıp parmağı bir panelden diğerine
 // kaydırmak, Ctrl + tık ile aynı dikdörtgeni seçer (komşu modüller ve köşe dahil). Tek seferliktir.
@@ -29,9 +30,11 @@ async function createStand(page, standType, x, y) {
   await standSetup.getByRole('button', { name: standType }).click();
   await page.locator('#stand-size-x').fill(String(x / 100));
   await page.locator('#stand-size-y').fill(String(y / 100));
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill(`E2E Panel Tarama ${standType}`);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
   await openEditorSettings(page);
   await page.locator('#autosave-interval').selectOption('0');

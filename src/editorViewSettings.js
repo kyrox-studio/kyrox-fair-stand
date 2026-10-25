@@ -1,24 +1,23 @@
 // Editör tercihleri oturumluktur; fiziksel ürün ve proje state'inden bağımsızdır.
-export const EDITOR_VIEW_DEFAULTS = Object.freeze({
-  simple: Object.freeze({ measurementsVisible: false }),
-  advanced: Object.freeze({ measurementsVisible: true }),
-});
+// Ölçüler moda bağlı değildir: yalnız Ayarlar → Ölçüleri göster kutusu belirler.
+export const EDITOR_VIEW_DEFAULTS = Object.freeze({ measurementsVisible: true });
+const EDITOR_MODES = Object.freeze(['simple', 'advanced']);
 
 export function createEditorViewSettings() {
   let mode = 'simple';
-  const overrides = { simple: {}, advanced: {} };
+  let measurementsVisible = EDITOR_VIEW_DEFAULTS.measurementsVisible;
   function getSnapshot() {
-    return { mode, ...EDITOR_VIEW_DEFAULTS[mode], ...overrides[mode] };
+    return { mode, measurementsVisible };
   }
   return {
     getSnapshot,
     setMode(nextMode) {
-      if (!Object.hasOwn(EDITOR_VIEW_DEFAULTS, nextMode)) throw new TypeError('Bilinmeyen editör modu.');
+      if (!EDITOR_MODES.includes(nextMode)) throw new TypeError('Bilinmeyen editör modu.');
       mode = nextMode;
       return getSnapshot();
     },
     setMeasurementsVisible(visible) {
-      overrides[mode].measurementsVisible = Boolean(visible);
+      measurementsVisible = Boolean(visible);
       return getSnapshot();
     },
   };
