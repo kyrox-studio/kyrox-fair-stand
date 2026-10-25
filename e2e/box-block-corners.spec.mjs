@@ -1,5 +1,6 @@
 import { showSurfaceControls } from './helpers/surfaceControls.mjs';
 import { test, expect } from '@playwright/test';
+import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
 
 // Kutu blok yüz plakaları kutunun dış sınırına oturur ve her kenarda sıfır açıklıkla kavuşur:
 // gövde rengi hiçbir köşede çizgi olarak görünmez.
@@ -57,9 +58,11 @@ test('box block side faces meet at every vertical corner', async ({ page }) => {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('E2E Kose');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 
   const openCatalogButton = page.locator('.module-drag-catalog');
@@ -253,9 +256,11 @@ test('kutu blok ölçüsü Özellikler panelinde alan olarak durur ve sahnede ca
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('E2E Kutu Olcu');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 
   const openCatalogButton = page.locator('.module-drag-catalog');

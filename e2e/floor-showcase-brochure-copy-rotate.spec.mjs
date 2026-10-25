@@ -156,18 +156,21 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
   // Vitrini çift tıkla bütün olarak seç, Kopyala; Shift+R iki kez (180°) ve boş zemine bırak.
   const showcasePoint = await moduleScreenPoint(page, showcaseId);
   await page.mouse.dblclick(showcasePoint.x, showcasePoint.y);
-  // Seçili öğenin taban alanı ölçüleri: genişlik, derinlik, yükseklik.
+  // Seçili öğenin taban alanı ölçüleri: genişlik, derinlik, yükseklik. Ölçüler moddan
+  // bağımsızdır; yalnız Ayarlar → Ölçüleri göster kutusu belirler (varsayılan açık).
   await expect(page.locator('#editor-mode-advanced')).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('.scene-measure-label')).toHaveCount(0);
-  await page.locator('#editor-mode-advanced').click();
-  await expect(page.locator('#editor-mode-advanced')).toHaveAttribute('aria-pressed', 'true');
   const sizeLabels = page.locator('.scene-measure-label.is-size');
   await expect(sizeLabels).toHaveCount(3);
   await expect(sizeLabels).toHaveText(['100 cm', '40 cm', '100 cm']);
+  await page.locator('#editor-mode-advanced').click();
+  await expect(page.locator('#editor-mode-advanced')).toHaveAttribute('aria-pressed', 'true');
+  await expect(sizeLabels).toHaveCount(3);
   await openEditorSettings(page);
+  await expect(page.locator('#show-measurements')).toBeChecked();
   await page.locator('#show-measurements').uncheck();
   await expect(page.locator('.scene-measure-label')).toHaveCount(0);
   await page.locator('#editor-mode-simple').click();
+  await expect(page.locator('.scene-measure-label')).toHaveCount(0);
   await page.locator('#editor-mode-advanced').click();
   await expect(page.locator('.scene-measure-label')).toHaveCount(0);
   await page.locator('#show-measurements').check();
@@ -180,9 +183,10 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
   await expect(page.locator('.scene-measure-label.is-distance')).toHaveCount(4);
   await expect(sizeLabels).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.__testScene.getObjectByName('stand-floor-grid')?.visible)).toBe(true);
+  // Basit modda da kutu açıkken uzaklık etiketleri kalır.
   await page.locator('#editor-mode-simple').click();
-  await expect(page.locator('.scene-measure-label')).toHaveCount(0);
   await page.mouse.move(drop.x, drop.y);
+  await expect(page.locator('.scene-measure-label.is-distance')).toHaveCount(4);
   await expect.poll(() => page.evaluate(() => window.__testScene.getObjectByName('stand-floor-grid')?.visible)).toBe(true);
   await page.locator('#editor-mode-advanced').click();
   await page.mouse.move(drop.x, drop.y);

@@ -1,6 +1,6 @@
 /**
- * GOVERNANCE katmanı. Otomatik depo/duvar/alınlık planner’ları (`autoDepot.js`, `autoFascia.js`,
- * `automaticWall.js`) bu registry’yi runtime’da okumaz; testler planner
+ * GOVERNANCE katmanı. Otomatik depo/duvar/alınlık/mobilya planner’ları (`autoDepot.js`, `autoFascia.js`,
+ * `automaticWall.js`, `autoFurniture.js`) bu registry’yi runtime’da okumaz; testler planner
  * çıktısını sözleşmeyle karşılaştırır.
  */
 export const FEATURE_CONTRACTS = Object.freeze({
@@ -71,6 +71,42 @@ export const FEATURE_CONTRACTS = Object.freeze({
     tests: Object.freeze({
       contract: 'required',
       regressionFiles: Object.freeze(['test/autoFascia.test.js']),
+      fullSuite: 'required',
+      build: 'required',
+    }),
+  }),
+  automaticFurniture: Object.freeze({
+    id: 'automatic-furniture',
+    kind: 'scene-composition',
+    owner: 'src/autoFurniture.js',
+    trigger: Object.freeze({
+      mode: 'explicit-stage-option',
+      defaultEnabled: true,
+    }),
+    inputs: Object.freeze([
+      'standXCm',
+      'standYCm',
+      'depot',
+    ]),
+    creates: Object.freeze({
+      furnitureCatalogKeys: Object.freeze([
+        'desk_banko_100',
+        'furniture_bar_stool_classic',
+        'furniture_table_chair_set_eames',
+        'brochure_stand',
+        'extra_indoor_plant_1',
+      ]),
+    }),
+    placement: Object.freeze({
+      owner: 'src/autoFurniture.js',
+      rule: 'front-row-facing-aisle-inside-stand-without-depot-or-furniture-overlap-skip-when-no-fit',
+    }),
+    persistence: Object.freeze({
+      mode: 'generated-modules-enter-project-state',
+    }),
+    tests: Object.freeze({
+      contract: 'required',
+      regressionFiles: Object.freeze(['test/autoFurniture.test.js']),
       fullSuite: 'required',
       build: 'required',
     }),

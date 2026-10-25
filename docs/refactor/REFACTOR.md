@@ -149,6 +149,18 @@ yeni DB alanı, Alembic migration veya BOM değişikliği yoktur.
 
 "Depo eklensin" onay kutusu (`#auto-depot-enabled`) kaldırıldı. `#auto-depot-size` listesinin ilk seçeneği **Depo yok** (`value=""`), ardından 1×1, 1,5×1, 2×1, 2×2 m. Depo seçiliyken altındaki **Depo içeriği eklensin** açılır ve açıklaması (`#auto-depot-contents-hint`) görünür; Depo yok'a dönünce kapanır ve işareti kalkar. Sol menüde alt alta; sihirbazda aynı liste ve kutu. Kayıt biçimi aynı (`stand.depot { enabled, sizeKey, includeContents }`); proje açılınca liste kayda göre dolar. Kutuyu işaretleyen 3 E2E'den yalnız o satır çıktı.
 
+### Otomatik stand mobilyaları
+
+`#auto-furniture` kutusu (Stand Tipi kartında alınlığın altında, sihirbazın ölçü adımında; varsayılan seçili). İşaretliyse `readSceneSetupFromControls` `planAutomaticFurniture({ standXCm, standYCm, depot })` çağırır; `createAutomaticFurnitureStates` her öğeyi `createModuleStateFromCatalogKey` ile kurar ve planın yerleşimini (`wallId: 'free'`) verir. Planlayıcı yalnız Item master okur (`dimensions`, `defaultRotationDeg`); yeni Item, BOM satırı veya reçete eklemez. Yerleşim: banko ön sol, tabure bankonun 10 cm arkasında ortalı, çiçek ön sağ köşe, broşürlük ön orta (sığmazsa bankonun sağı), masa takımı arka bölgede 35 % / 65 % / orta / kenar adaylarından ilk sığana. Kenar payı 30 cm, öğe ve depo arası 20 cm; hiçbir adaya sığmayan öğe `skipped` olur. Sözleşme `FEATURE_CONTRACTS.automaticFurniture`, test `test/autoFurniture.test.js`.
+
+### Duvar zinciri koruma uyarısı
+
+`createStageButton` ilk kayıttan (`persistActiveProject`) sonra `offerWallLockRelease()` çağırır (beklemez; ilk ipucu da açılır); sahnede kilitli öğe yoksa sormaz. `requestWallLockDecision` (`src/wallLockNotice.js`) sahneyi kilitlemeyen bir kart açar (`.viewport-wrap` sol üst, `aria-modal="false"`, `pointerdown` sahneye geçmez): **Korumayı kaldır** → `changeModuleLock(tüm öğeler, false)` iki `designHistory.capture()` arasında ve `syncAllModulesLockControl()`; **Koruma kalsın** / Escape → değişiklik yok. Kart açıkken proje değiştiyse cevap yok sayılır; `rebuildSceneFromSetup` ve `restoreProject` açık kartı kapatır (`dismissWallLockNotice`).
+
+### Ölçüler moddan bağımsız
+
+Eskiden ölçü görünürlüğü moda bağlıydı (Basit kapalı, Gelişmiş açık; kutu yalnız Gelişmiş'in tercihini değiştirirdi), bu yüzden ölçüler yalnız Gelişmiş'e geçince görünürdü. Şimdi `editorViewSettings` tek bir `measurementsVisible` tutar (varsayılan `true`); `#show-measurements` kutusu bunu yazar, mod değişimi dokunmaz. `main.js` açılışta `applyEditorView()` çağırır, kutu ve sahne aynı değerle başlar.
+
 ### Yeni proje sihirbazı ve ilk ipuçları
 
 **Sihirbaz** (`src/newProjectWizard.js`): yeni projede (`initialProjectId` yok veya sahne sıfırlanınca) boş sahnenin (`#viewport-empty`) ortasında 3 adım: stand tipi, ölçü (X, Y, duvar yüksekliği, depo), özet + Oluştur. Yeni kurulum yolu yok: seçimleri sol menüdeki alanlara yazar (`input`/`change` olaylarıyla), ölçüyü `readSceneSetupFromControls` ile doğrular, Oluştur mevcut `#create-stage`'e basar (proje adı penceresi, kayıt, revizyon aynı). ✕ ile kapanır, bugünkü boş sahne kartı görünür. Mevcut proje açılınca çıkmaz.

@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
 import { dropCatalogCard } from './helpers/catalogDrop.mjs';
 import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
+import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
@@ -49,9 +50,11 @@ async function createBackWallStand(page, { wallHeight, projectName }) {
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
   if (wallHeight) await page.locator('#wall-height').selectOption(String(wallHeight));
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill(projectName);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 }
 
@@ -194,9 +197,11 @@ for (const wallHeight of [250, 300, 350, 400, 450, 500]) {
     await page.locator('#stand-size-x').fill('6');
     await page.locator('#stand-size-y').fill('6');
     await page.locator('#wall-height').selectOption(String(wallHeight));
+    await disableAutoFurniture(page);
     await page.locator('#create-stage').click();
     await page.locator('form input[name="projectName"]').fill(`E2E Sürükle ${wallHeight}`);
     await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+    await keepWallLock(page);
     await expect(page.locator('#viewport-toolbar')).toBeVisible();
     const modulePanel = page.locator('details', { has: page.locator('.module-drag-catalog') });
     if (!(await modulePanel.evaluate((el) => el.open))) await modulePanel.locator(':scope > summary').click();

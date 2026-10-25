@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
 import { dropCatalogCard } from './helpers/catalogDrop.mjs';
 import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
+import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
@@ -12,11 +13,13 @@ async function createStand(page) {
   await setup.getByRole('button', { name: 'Sırt Duvar' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   const input = page.locator('form input[name="projectName"]');
   await expect(input).toBeVisible();
   await input.fill('Wall Showcase Contract');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 }
 

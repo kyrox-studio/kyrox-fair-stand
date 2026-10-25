@@ -14,6 +14,7 @@ import { getCommercialItemForType, getItem } from '../src/items.js';
 import { composeAutomaticStandWall } from '../src/automaticWall.js';
 import { FEATURE_CONTRACTS, getFeatureContract } from '../src/featureContracts.js';
 import { planAutomaticFascia } from '../src/autoFascia.js';
+import { AUTO_FURNITURE_ITEM_KEYS, planAutomaticFurniture } from '../src/autoFurniture.js';
 import { readFileSync } from 'node:fs';
 
 const REQUIRED_CONTRACT_SECTIONS = Object.freeze([
@@ -146,6 +147,20 @@ test('automatic fascia feature contract matches planAutomaticFascia', () => {
   }
 });
 
+test('automatic furniture feature contract matches planAutomaticFurniture', () => {
+  const contract = FEATURE_CONTRACTS.automaticFurniture;
+  assert.equal(getFeatureContract('automatic-furniture'), contract);
+  assert.equal(contract.owner, 'src/autoFurniture.js');
+  assert.equal(contract.trigger.defaultEnabled, true);
+  assert.deepEqual([...contract.inputs], ['standXCm', 'standYCm', 'depot']);
+  assert.deepEqual([...contract.creates.furnitureCatalogKeys].sort(), Object.values(AUTO_FURNITURE_ITEM_KEYS).sort());
+  assert.match(contract.tests.regressionFiles.join(' '), /autoFurniture.test.js/);
+
+  const plan = planAutomaticFurniture({ standXCm: 600, standYCm: 300 });
+  assert.equal(plan.ok, true);
+  assert.deepEqual(plan.specs.map((spec) => spec.itemKey).sort(), [...contract.creates.furnitureCatalogKeys].sort());
+});
+
 test('moduleContracts and featureContracts stay governance-only: production runtime does not import them', () => {
   const runtimeFiles = [
     'src/main.js',
@@ -153,6 +168,7 @@ test('moduleContracts and featureContracts stay governance-only: production runt
     'src/moduleBehavior.js',
     'src/autoDepot.js',
     'src/autoFascia.js',
+    'src/autoFurniture.js',
     'src/automaticWall.js',
     'src/scene3d.js',
     'src/designState.js',
