@@ -1,15 +1,14 @@
 {
   "schemaVersion": 2,
-  "id": "security-sec-controls",
-  "kind": "tooling",
-  "summary": "Change contract gate, impact.security=affected olduğunda KYROX ortak güvenlik kataloğunun SEC-01..SEC-22 kimliklerini security.controls içinde required (çözümlenen test referansı) / na (somut gerekçe) olarak zorunlu kılar; scripts/verify-change-contract.mjs referansları çözer. Kurallar kyrox-platform/standards/security/SECURITY_PROGRAM.md'de.",
+  "id": "patched-dependency-floors",
+  "kind": "bugfix",
+  "summary": "Backend bağımlılık alt sınırları yamalı sürümlere yükseltilir: Pillow>=13.0.0 (major; 4 kritik/22 yüksek kayıt), PyJWT>=2.15.0, certifi>=2026.10.19. Deploy pip install -r mevcut sürümleri yükseltmediği için canlı venv eski kalıyordu (SECURITY_PROGRAM F-G2). Uygulama kodu değişmez.",
   "owners": [
-    "src/systemChangeContract.js",
-    "scripts/verify-change-contract.mjs"
+    "backend/requirements.txt"
   ],
   "sourceOfTruth": [
-    "src/systemChangeContract.js",
-    "SYSTEM_CHANGE_GATE.md"
+    "backend/requirements.txt",
+    "kyrox-platform/standards/security/SECURITY_PROGRAM.md"
   ],
   "impact": {
     "catalog": "not-applicable",
@@ -21,7 +20,7 @@
     "bom": "not-applicable",
     "ui": "not-applicable",
     "composition": "not-applicable",
-    "assets": "not-applicable",
+    "assets": "affected",
     "storage": "not-applicable",
     "importExport": "not-applicable",
     "performance": "not-applicable",
@@ -33,39 +32,14 @@
   "impactAnalysis": {
     "mode": "full-system",
     "affectedFiles": [
-      "package.json"
+      "backend/app/modules/fair_stand/application/image_optimize.py"
     ],
     "affectedTests": [
-      "test/systemChangeSecurityControls.test.js",
-      "test/systemChangeGate.test.js",
-      "test/systemChangeGateCiContract.test.js",
-      "test/systemChangeGateLocalDiff.test.js",
-      "test/developerEntrypointDocs.test.js",
-      "test/hygieneGates.test.js",
-      "test/pythonPatchArchive.test.js"
+      "backend/tests/modules/fair_stand/test_image_optimize.py",
+      "e2e/project-open-asset-cache.spec.mjs",
+      "e2e/missing-project-asset-open.spec.mjs"
     ],
-    "affectedDocs": [
-      "SYSTEM_CHANGE_GATE.md",
-      "PROJECT_RULES.md",
-      "README.md",
-      "SYSTEM_AUDIT_CHECKLIST.md",
-      "SYSTEM_DEVELOPMENT_CONTRACT.md",
-      "audit/evidence/A00_BASELINE.md",
-      "audit/evidence/A01_DOCS_SOURCE_OF_TRUTH.md",
-      "audit/evidence/A02_CHANGE_GATE.md",
-      "audit/evidence/A03_ARCHITECTURE.md",
-      "audit/remediation/A02_CLOSURE.md",
-      "audit/remediation/A02_F005_CLOSURE.md",
-      "audit/remediation/A02_F006_CLOSURE.md",
-      "docs/items/audit/properties/properties/catalog.type.md",
-      "docs/items/audit/properties/properties/featureContracts.md",
-      "docs/items/audit/properties/properties/state.stripOccupancy.md",
-      "docs/items/audit/properties/properties/state.type.md",
-      "docs/items/audit/properties/properties/static.stripOccupancy.align.md",
-      "docs/items/audit/properties/properties/static.stripOccupancy.stripCount.md",
-      "docs/items/audit/properties/properties/ui.editable.placement.md",
-      "docs/items/audit/properties/properties/ui.sidebar.md"
-    ],
+    "affectedDocs": [],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": [
@@ -75,132 +49,125 @@
         "F-009"
       ]
     },
-    "notes": "package.json yalnız contract:verify komutuyla bağlı; komut değişmedi. Keşfedilen gate testleri hedefli koşuldu; mevcut contract alanları ve path/domain duvarı değişmedi, yalnız security.controls doğrulaması eklendi. SYSTEM_CHANGE_GATE.md kural özeti ve SECURITY_PROGRAM.md bağlantısıyla güncellendi; diğer keşfedilen belgeler change-contract/gate adını referans verir, anlamları değişmez. F-004/F-005/F-006/F-009 (Stand audit numaraları; platform SECURITY_PROGRAM F-00x ile aynı değil) kapalı gate bulgularıdır; değişiklik gate'i sıkılaştırır, hiçbirini yeniden açmaz."
+    "notes": "Kod değişmez; Pillow'u kullanan tek yol image_optimize.py (proje asset normalize/optimize). Platform F-001/F-002 (SVG ve piksel sınırı) bu değişiklikle kapanmaz."
   },
   "tests": {
     "targeted": [
-      "test/systemChangeSecurityControls.test.js",
-      "test/systemChangeGate.test.js",
-      "test/systemChangeGateCiContract.test.js",
-      "test/systemChangeGateLocalDiff.test.js",
-      "test/developerEntrypointDocs.test.js",
-      "test/hygieneGates.test.js",
-      "test/pythonPatchArchive.test.js"
+      "backend/tests/modules/fair_stand/test_image_optimize.py"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
-      "required": false,
-      "targeted": [],
-      "reason": "Yalnız CI gate/tooling değişir; tarayıcıda görünen davranış yok."
+      "required": true,
+      "targeted": [
+        "e2e/project-open-asset-cache.spec.mjs",
+        "e2e/missing-project-asset-open.spec.mjs"
+      ],
+      "reason": "Proje görsel varlıkları Pillow ile normalize edilir; varlıklı proje açılışı yeni Pillow sürümüyle tarayıcıda doğrulanır."
     }
   },
   "risk": {
-    "level": "low",
-    "notes": "Gate sıkılaşır: impact.security=affected olan sonraki değişiklikler SEC sınıflaması olmadan geçemez. not-applicable olan dallar etkilenmez."
+    "level": "medium",
+    "notes": "Pillow major sürüm: görsel normalize/optimize yolu yeni sürümle backend testlerinde doğrulanır; API davranışı değişmez."
   },
   "migration": {
     "required": false,
-    "notes": "Veri/şema geçişi yok; schemaVersion 2 korunur, security alanı eklenir."
+    "notes": "Veri veya şema geçişi yok; bir sonraki deploy yeni paketleri kurar."
   },
-  "rollback": "Commit'i geri al; security alanı isteğe bağlı olduğundan eski contract'lar geçerli kalır.",
+  "rollback": "Commit'i geri al ve deploy et; pip eski alt sınırla mevcut sürümü korur, gerekiyorsa sürüm elle indirilir.",
   "security": {
     "controls": {
       "SEC-01": {
         "status": "na",
-        "reason": "Gate tooling change; no protected API operation or permission check is added or changed."
+        "reason": "No protected API operation or permission check changes; dependency versions only."
       },
       "SEC-02": {
         "status": "na",
-        "reason": "No organization-scoped data path, project, asset or export query is touched."
+        "reason": "No organization-scoped query, list, file or job access path changes."
       },
       "SEC-03": {
         "status": "na",
-        "reason": "No token, session, login or recovery code path is touched."
+        "reason": "Token validation code is unchanged; PyJWT floor only moves to a patched release with the same API."
       },
       "SEC-04": {
         "status": "na",
-        "reason": "Gate reads committed contract and test files only; it handles no secret values."
+        "reason": "No secret handling, storage or logging path changes."
       },
       "SEC-05": {
         "status": "na",
-        "reason": "No database connection, role or network access is involved in contract validation."
+        "reason": "Database roles and network access are unchanged."
       },
       "SEC-06": {
         "status": "na",
-        "reason": "git runs via execFileSync argument lists (no shell); contract data never reaches SQL or a shell."
+        "reason": "No SQL, sort, filter or shell command construction changes."
       },
       "SEC-07": {
-        "status": "na",
-        "reason": "No upload or import endpoint; test references are only checked for existence in the repository."
+        "status": "required",
+        "tests": [
+          "backend/tests/modules/fair_stand/test_image_optimize.py"
+        ]
       },
       "SEC-08": {
         "status": "na",
-        "reason": "No server request input schema changes; change-contract JSON is CI-only repository data."
+        "reason": "No server request input schema is added or changed."
       },
       "SEC-09": {
-        "status": "na",
-        "reason": "No dependency or lockfile is added or changed by this gate change."
-      },
-      "SEC-10": {
         "status": "required",
         "tests": [
-          "test/systemChangeSecurityControls.test.js::impact.security=affected without security block fails",
-          "test/systemChangeSecurityControls.test.js::missing control fails",
-          "test/systemChangeSecurityControls.test.js::na with rejected rationale fails",
-          "test/systemChangeSecurityControls.test.js::broken test reference fails",
-          "test/systemChangeSecurityControls.test.js::verify CLI exits non-zero for a broken security test reference",
-          "test/systemChangeSecurityControls.test.js::verify CLI exits non-zero when affected security has no classification",
-          "test/systemChangeSecurityControls.test.js::verify CLI accepts a valid security classification"
+          "backend/tests/modules/fair_stand/test_image_optimize.py"
         ]
+      },
+      "SEC-10": {
+        "status": "na",
+        "reason": "No workflow, CI permission or release path changes."
       },
       "SEC-11": {
         "status": "na",
-        "reason": "No outbound network call or TLS configuration is involved in the gate."
+        "reason": "TLS handling unchanged; certifi floor only refreshes the trusted root bundle."
       },
       "SEC-12": {
         "status": "na",
-        "reason": "No backup, retention or restore path is touched."
+        "reason": "No backup or restore behavior changes."
       },
       "SEC-13": {
         "status": "na",
-        "reason": "No identity, authorization or data event emission is added or changed."
+        "reason": "No audit or security event emission changes."
       },
       "SEC-14": {
         "status": "na",
-        "reason": "No user content is rendered; gate output is plain CI log text."
+        "reason": "Image output handling code is unchanged; SVG passthrough is tracked separately as platform F-001."
       },
       "SEC-15": {
         "status": "na",
-        "reason": "No cookie is set, read or changed."
+        "reason": "No cookie is set, read or changed; Stand uses bearer tokens."
       },
       "SEC-16": {
         "status": "na",
-        "reason": "No public endpoint or expensive user-triggered resource is exposed; gate runs in CI only."
+        "reason": "Resource limits are unchanged; the pixel limit remains open as platform F-002."
       },
       "SEC-17": {
         "status": "na",
-        "reason": "No HTTP response or browser security header is produced."
+        "reason": "No HTTP response header is produced or changed."
       },
       "SEC-18": {
         "status": "na",
-        "reason": "No CORS configuration or cross-origin endpoint is touched."
+        "reason": "No CORS configuration is touched."
       },
       "SEC-19": {
         "status": "na",
-        "reason": "No cookie-authenticated state-changing request exists in a CI gate."
+        "reason": "No cookie-authenticated state-changing request exists in Stand."
       },
       "SEC-20": {
         "status": "na",
-        "reason": "No HTTP error response or authorization dependency is involved."
+        "reason": "No error response or authorization dependency changes."
       },
       "SEC-21": {
         "status": "na",
-        "reason": "Gate makes no server-side request to external URLs."
+        "reason": "Stand makes no server-side request to user-supplied URLs."
       },
       "SEC-22": {
         "status": "na",
-        "reason": "No async job, retry, cancel or concurrent business operation is involved."
+        "reason": "No async job, retry or concurrent business operation changes."
       }
     }
   }
