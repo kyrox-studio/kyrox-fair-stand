@@ -3,6 +3,8 @@ import { createEditorViewSettings } from './editorViewSettings.js';
 import { createStandScene, prefetchModuleModels } from './scene3d.js';
 import { initHelpGuide } from './helpGuide.js';
 import { planAutomaticDepot } from './autoDepot.js';
+import { planAutomaticFurniture } from './autoFurniture.js';
+import { requestWallLockDecision } from './wallLockNotice.js';
 import { planAutomaticFascia, resolveFasciaPanelItemKey, resolveFasciaUprightItemKey } from './autoFascia.js';
 import {
   composeAutomaticStandWall,
@@ -285,6 +287,8 @@ const autoDepotContentsInput = document.querySelector('#auto-depot-contents');
 const autoDepotContentsHint = document.querySelector('#auto-depot-contents-hint');
 // Alınlık: "Alınlık yok" / tek sıra / çift sıra; açık kenarlara wall-short + köşe dikmesi.
 const autoFasciaRowsSelect = document.querySelector('#auto-fascia-rows');
+// Stand mobilyaları: banko + bar taburesi, masa takımı, broşürlük, yapay çiçek (varsayılan seçili).
+const autoFurnitureInput = document.querySelector('#auto-furniture');
 const stageResult = document.querySelector('#stage-result');
 const standSummaryChip = document.querySelector('#stand-summary-chip');
 const clearWallButton = document.querySelector('#clear-wall');
@@ -480,6 +484,32 @@ lockAllModulesInput?.addEventListener('change', () => {
   changeModuleLock(currentModules.map(module => module.id), lockAllModulesInput.checked);
   designHistory.capture();
 });
+
+/** Açık koruma kartı (yeni sahne / sıfırlama öncesinde kapanır). */
+function dismissWallLockNotice() {
+  document.querySelectorAll('.wall-lock-notice').forEach((card) => card.remove());
+}
+
+/**
+ * Yeni sahnede kilitli duvar zinciri varsa sahneyi kilitlemeyen bir kartla sorar;
+ * "kaldır" denirse Herşeyi Kilitle kalkar. Kart açıkken sahne değiştiyse cevap yok sayılır.
+ */
+async function offerWallLockRelease() {
+  dismissWallLockNotice();
+  if (!currentStand || !getModulesLockState(currentModules).locked) return;
+  const askedProjectId = activeProjectId;
+  const container = viewportEmpty?.closest('.viewport-wrap');
+  // Kart üst bandın (satır sayısı genişliğe göre değişir) hemen altında açılır.
+  const toolbarBottom = viewportToolbar && !viewportToolbar.hidden && container
+    ? viewportToolbar.getBoundingClientRect().bottom - container.getBoundingClientRect().top
+    : 0;
+  const unlock = await requestWallLockDecision({ documentRef: document, container, topPx: toolbarBottom + 12 });
+  if (!unlock || activeProjectId !== askedProjectId || !currentStand) return;
+  designHistory.capture();
+  changeModuleLock(currentModules.map(module => module.id), false);
+  designHistory.capture();
+  syncAllModulesLockControl();
+}
 const editorViewSettings = createEditorViewSettings();
 function applyEditorView() {
   const { measurementsVisible: visible } = editorViewSettings.getSnapshot();
@@ -507,6 +537,8 @@ showMeasurementsInput?.addEventListener('change', () => {
   editorViewSettings.setMeasurementsVisible(showMeasurementsInput.checked);
   applyEditorView();
 });
+// Açılışta kutu ve sahne aynı tercihle başlar (moddan bağımsız).
+applyEditorView();
 
 // Sahne Işığı: oturumluk editör önizlemesi; projeye kaydedilmez, sayfa açılışında açıktır.
 toggleStageLightButton?.addEventListener('click', () => {
@@ -2576,7 +2608,29 @@ function readSceneSetupFromControls() {
     return { ok: false, message: fasciaPlan.message };
   }
 
-  return { ok: true, setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan };
+  const furnitureConfig = { enabled: Boolean(autoFurnitureInput?.checked) };
+  const furniturePlan = furnitureConfig.enabled ? planAutomaticFurniture({
+    standXCm: setup.xCm,
+    standYCm: setup.yCm,
+    depot: depotPlan,
+  }) : null;
+
+  if (furniturePlan && !furniturePlan.ok) {
+    return { ok: false, message: furniturePlan.message };
+  }
+
+  return { ok: true, setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan, furnitureConfig, furniturePlan };
+}
+
+/** Otomatik stand mobilyaları: katalog Item'ı olarak oluşur, kilitsizdir; kullanıcı taşıyıp silebilir. */
+function createAutomaticFurnitureStates(plan) {
+  if (!plan?.ok) return [];
+  return plan.specs.map((spec) => {
+    const state = createModuleStateFromCatalogKey(spec.itemKey);
+    if (!state) return null;
+    state.placement = { ...spec.placement };
+    return state;
+  }).filter(Boolean);
 }
 
 /** Otomatik alınlık modülleri: Z, wall-short / dikme öğesinin kendi varsayılanından gelir. */
@@ -2644,7 +2698,8 @@ function appendAutomaticDepotLamps() {
   }
 }
 
-function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan }) {
+function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan, furnitureConfig, furniturePlan }) {
+  dismissWallLockNotice();
   currentModules = [];
   moduleContextMenu.close();
   moduleContextMenu.closePicker();
@@ -2661,7 +2716,7 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fa
     return false;
   }
 
-  currentStand = assignStandFloorItem({ ...setup, depot: depotConfig, fascia: fasciaConfig }, floorTypeSelect.value);
+  currentStand = assignStandFloorItem({ ...setup, depot: depotConfig, fascia: fasciaConfig, furniture: furnitureConfig }, floorTypeSelect.value);
   setActiveWallLineHeightCm(activeWallHeightCm());
   syncSaveProjectButton();
   scene3d.setFloorType(floorTypeSelect.value);
@@ -2754,6 +2809,7 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fa
   }
   // Lambalardan sonra: alınlık flat-panel'leri otomatik duvar lambası planına girmez.
   currentModules.push(...createAutomaticFasciaStates(fasciaPlan));
+  currentModules.push(...createAutomaticFurnitureStates(furniturePlan));
   rebuildWall({ resetView: true });
 
   const label = STAND_TYPE_LABELS[setup.standType];
@@ -2772,7 +2828,7 @@ createStageButton.addEventListener('click', async () => {
     renderStageResult(sceneSetup.message, true);
     return;
   }
-  const { setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan } = sceneSetup;
+  const { setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan, furnitureConfig, furniturePlan } = sceneSetup;
 
   if (currentStand || currentModules.length || autosaveController.isEnabled()) {
     const currentProjectName = projectNameInput.value.trim() || 'Adsız Proje';
@@ -2801,12 +2857,14 @@ createStageButton.addEventListener('click', async () => {
   renderRevisionList();
   projectStatus.textContent = 'Yeni proje hazırlanıyor: ' + projectName + '…';
 
-  if (!rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan })) return;
+  if (!rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan, furnitureConfig, furniturePlan })) return;
 
   try {
     await persistActiveProject({ quiet: true, reason: 'init' });
     autosaveController.enableFromCurrentState();
     projectStatus.textContent = 'Oluşturuldu ve kaydedildi: ' + projectName;
+    // Kart sahneyi kilitlemez; cevap beklenmeden ilk ipucu da açılır.
+    void offerWallLockRelease();
     onboardingTips.maybeShow();
   } catch (error) {
     reportError('Yeni proje ilk kayıt sırasında kaydedilemedi', error);
@@ -3421,6 +3479,7 @@ async function showProjectCustomerName() {
 async function restoreProject(project, { historicalRevisionNumber = null, sessionRevisionNumber = null } = {}) {
   if (!project) return;
   autosaveController.disable();
+  dismissWallLockNotice();
   activeProjectId = project.id;
   syncHostProjectUrl(project.id);
   if (project.customerId) activeCustomerId = project.customerId;
@@ -3459,6 +3518,8 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     if (autoFasciaRowsSelect) {
       autoFasciaRowsSelect.value = currentStand.fascia?.enabled ? String(currentStand.fascia.rows || 1) : '';
     }
+    // Alanı olmayan eski projelerde mobilya otomatiği çalışmamıştır.
+    if (autoFurnitureInput) autoFurnitureInput.checked = Boolean(currentStand.furniture?.enabled);
     const endSceneBuild = beginProjectOpenStep('scene-build');
     const stage = scene3d.createStage({
       widthCm: currentStand.xCm,
@@ -3629,6 +3690,7 @@ function resetToFirstOpenState() {
   if (autoDepotSizeSelect) autoDepotSizeSelect.value = '';
   syncAutoDepotControls();
   if (autoFasciaRowsSelect) autoFasciaRowsSelect.value = '';
+  if (autoFurnitureInput) autoFurnitureInput.checked = true;
   syncFloorTypeSelect();
   if (foamLightControls) foamLightControls.hidden = true;
 

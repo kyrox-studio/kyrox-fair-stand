@@ -14,6 +14,8 @@ async function createIslandStand(page, projectName) {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
+  // Kilit akışı boş ada standda sınanır; otomatik stand mobilyaları bırakma noktalarını doldurur.
+  await page.locator('#auto-furniture').uncheck();
   await page.locator('#create-stage').click();
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();

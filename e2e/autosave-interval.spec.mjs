@@ -1,5 +1,6 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
+import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
 
 async function createIslandProject(page, baseName) {
   const standSetup = page.locator('details.stand-setup-card');
@@ -9,11 +10,13 @@ async function createIslandProject(page, baseName) {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   const nameInput = page.locator('form input[name="projectName"]');
   await expect(nameInput).toBeVisible();
   await nameInput.fill(baseName);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
 
   await expect(page.locator('#project-status')).toContainText('Oluşturuldu ve kaydedildi');
   return page.locator('#project-name-display').textContent();

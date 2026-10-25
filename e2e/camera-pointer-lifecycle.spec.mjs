@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
 
 async function openScene(page, { frameIntervalMs = 0 } = {}) {
   // Observe the real controls without adding a production debug API.
@@ -29,9 +30,11 @@ async function openScene(page, { frameIntervalMs = 0 } = {}) {
   await setup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('4');
   await page.locator('#stand-size-y').fill('4');
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('Camera lifecycle');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-empty')).toBeHidden();
   const box = await page.locator('#viewport > canvas').boundingBox();
   expect(box).not.toBeNull();

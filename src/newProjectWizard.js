@@ -73,6 +73,7 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     depotSize: document.querySelector('#auto-depot-size'),
     depotContents: document.querySelector('#auto-depot-contents'),
     fasciaRows: document.querySelector('#auto-fascia-rows'),
+    furniture: document.querySelector('#auto-furniture'),
     floorType: document.querySelector('#floor-type'),
   };
   const emptyCard = container.querySelector('.viewport-empty-card');
@@ -218,11 +219,20 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     fasciaRows.addEventListener('change', syncFascia);
     fasciaRows.disabled = !fascia.checked;
 
+    // Stand mobilyaları: sol menüdeki kutucukla aynı (varsayılan seçili).
+    const furniture = document.createElement('input');
+    furniture.type = 'checkbox';
+    furniture.id = 'wizard-furniture';
+    furniture.checked = Boolean(sidebar.furniture?.checked);
+    furniture.addEventListener('change', () => setControlValue(sidebar.furniture, furniture.checked));
+
     const contentsLabel = field('Depo ekipmanlarını ekle', contents);
     contentsLabel.classList.add('wizard-check');
     contentsHint.style.gridColumn = '1 / -1';
     const fasciaLabel = field('Üst tabela (alınlık) ekle', fascia);
     fasciaLabel.classList.add('wizard-check');
+    const furnitureLabel = field('Stand mobilyalarını ekle', furniture);
+    furnitureLabel.classList.add('wizard-check');
     fields.append(
       field('Genişlik (m)', x),
       field('Derinlik (m)', y),
@@ -232,6 +242,7 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
       contentsHint,
       fasciaLabel,
       field('Alınlık düzeni', fasciaRows),
+      furnitureLabel,
       field('Zemin kaplaması', floor),
     );
     const hint = document.createElement('p');
@@ -248,9 +259,10 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
       ? `${sidebar.depotSize.selectedOptions?.[0]?.textContent ?? ''}${sidebar.depotContents?.checked ? ' · içerikli' : ''}`
       : 'Yok';
     const fascia = sidebar.fasciaRows?.value ? sidebar.fasciaRows.selectedOptions?.[0]?.textContent ?? '' : 'Yok';
+    const furniture = sidebar.furniture?.checked ? 'Banko + tabure, masa takımı, broşürlük, çiçek' : 'Yok';
     const summary = document.createElement('p');
     summary.className = 'wizard-summary';
-    summary.innerHTML = `<strong>${type}</strong><br>${formatMeters(metersInputToCm(sidebar.sizeX?.value))} × ${formatMeters(metersInputToCm(sidebar.sizeY?.value))} m · duvar ${formatMeters(sidebar.wallHeight?.value)} m<br>Depo: ${depot}<br>Alınlık: ${fascia}<br>Zemin: ${sidebar.floorType?.selectedOptions?.[0]?.textContent ?? '—'}`;
+    summary.innerHTML = `<strong>${type}</strong><br>${formatMeters(metersInputToCm(sidebar.sizeX?.value))} × ${formatMeters(metersInputToCm(sidebar.sizeY?.value))} m · duvar ${formatMeters(sidebar.wallHeight?.value)} m<br>Depo: ${depot}<br>Alınlık: ${fascia}<br>Mobilya: ${furniture}<br>Zemin: ${sidebar.floorType?.selectedOptions?.[0]?.textContent ?? '—'}`;
     const hint = document.createElement('p');
     hint.className = 'wizard-hint';
     hint.textContent = 'Oluştur dediğinde proje adı sorulur, sahne kurulur ve proje kaydedilir.';

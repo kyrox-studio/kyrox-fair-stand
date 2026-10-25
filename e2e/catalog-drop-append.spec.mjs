@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
 
 // Katalogdan bırakılan tek modül sahneye tek başına eklenir: sahnedeki diğer modüller ve
 // görselleri yeniden yaratılmaz (eskiden her bırakmada bütün sahne baştan kuruluyordu).
@@ -49,9 +50,11 @@ test('dropping a catalog module adds only that module and keeps the others untou
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('6');
   await page.locator('#stand-size-y').fill('6');
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('E2E Ekleme');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 
   await dropBoxBlock(page, 0.6, 0.85);
@@ -86,9 +89,11 @@ test('undo and redo touch only the module that changed', async ({ page }) => {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('6');
   await page.locator('#stand-size-y').fill('6');
+  await disableAutoFurniture(page);
   await page.locator('#create-stage').click();
   await page.locator('form input[name="projectName"]').fill('E2E Geri Al');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 
   await dropBoxBlock(page, 0.6, 0.85);
