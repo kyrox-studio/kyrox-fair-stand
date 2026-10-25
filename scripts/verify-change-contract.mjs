@@ -4,6 +4,8 @@ import { extname, resolve } from 'node:path';
 import {
   isGuardedChangeFile,
   requiredDomainsForFile,
+  securityTestReferenceError,
+  securityTestReferences,
   validateSystemChangeContract,
 } from '../src/systemChangeContract.js';
 import { analyzeChangeImpact } from './change-impact-analysis.mjs';
@@ -209,6 +211,27 @@ const missingDeclaredTestFiles = declaredTestFiles.filter((path) => !existsSync(
 if (missingDeclaredTestFiles.length) {
   console.error('Declared regression/E2E test files do not exist:');
   for (const path of missingDeclaredTestFiles) console.error(`- ${path}`);
+  process.exit(1);
+}
+
+const readRepositoryText = (path) => {
+  const absolute = resolve(path);
+  if (!existsSync(absolute)) return null;
+  try {
+    return readFileSync(absolute, 'utf8');
+  } catch {
+    return null;
+  }
+};
+const brokenSecurityTests = securityTestReferences(contract)
+  .map(({ id, index, reference }) => {
+    const problem = securityTestReferenceError(reference, readRepositoryText);
+    return problem ? `security.controls.${id}.tests[${index}] ${problem}` : null;
+  })
+  .filter(Boolean);
+if (brokenSecurityTests.length) {
+  console.error('Security control test references do not resolve:');
+  for (const problem of brokenSecurityTests) console.error(`- ${problem}`);
   process.exit(1);
 }
 

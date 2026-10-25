@@ -55,6 +55,16 @@ export const SYSTEM_IMPACT_DECISIONS = Object.freeze([
   'not-applicable',
 ]);
 
+// Yalnız kontrol kimlikleri; kurallar ve kanıtlar tek kaynakta:
+// kyrox-platform/standards/security/SECURITY_PROGRAM.md
+export const SECURITY_CONTROL_IDS = Object.freeze(
+  Array.from({ length: 22 }, (_, index) => `SEC-${String(index + 1).padStart(2, '0')}`),
+);
+export const SECURITY_NA_MIN_REASON = 20;
+// SECURITY_PROGRAM.md §1.5: bunlar N/A gerekçesi değildir.
+const SECURITY_REJECTED_NA_RE = /\b(?:ui\s+gizli|hidden\s+in\s+(?:the\s+)?ui|ui\s+hidden|admin\s+kullan[ıi]yor|only\s+admins?\s+use|testler\s+ye[şs]il|tests?\s+(?:are\s+)?(?:green|pass(?:ing)?)|sonra\s+bakar[ıi]z|check\s+later|tbd|todo)\b/i;
+const PY_TEST_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
 const KIND_REQUIRED_DOMAINS = Object.freeze({
   'ui-control': Object.freeze(['ui']),
   'state-change': Object.freeze(['state']),
@@ -249,6 +259,95 @@ function validateFindingArray(errors, value, fieldName) {
   }
 }
 
+function validateSecurityControls(errors, contract) {
+  const securityImpact = contract.impact?.security;
+  const security = contract.security;
+
+  if (security === undefined) {
+    if (securityImpact === 'affected') {
+      errors.push('impact.security=affected requires security.controls classifying SEC-01..SEC-22 (SECURITY_PROGRAM.md).');
+    }
+    return;
+  }
+  if (!security || typeof security !== 'object' || Array.isArray(security)) {
+    errors.push('security must be an object.');
+    return;
+  }
+  const controls = security.controls;
+  if (!controls || typeof controls !== 'object' || Array.isArray(controls)) {
+    errors.push('security.controls must be an object.');
+    return;
+  }
+
+  const missing = SECURITY_CONTROL_IDS.filter((id) => !Object.hasOwn(controls, id));
+  const unknown = Object.keys(controls).filter((id) => !SECURITY_CONTROL_IDS.includes(id));
+  if (missing.length) errors.push(`security.controls missing: ${missing.join(', ')}.`);
+  if (unknown.length) errors.push(`security.controls has unknown ids: ${unknown.join(', ')}.`);
+
+  let requiredCount = 0;
+  for (const id of SECURITY_CONTROL_IDS) {
+    const entry = controls[id];
+    if (entry === undefined) continue;
+    const prefix = `security.controls.${id}`;
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      errors.push(`${prefix} must be an object.`);
+      continue;
+    }
+    if (entry.status === 'na') {
+      if (typeof entry.reason !== 'string' || entry.reason.trim().length < SECURITY_NA_MIN_REASON) {
+        errors.push(`${prefix}=na requires a concrete architectural reason (>= ${SECURITY_NA_MIN_REASON} chars).`);
+      } else if (SECURITY_REJECTED_NA_RE.test(entry.reason)) {
+        errors.push(`${prefix}=na reason is not an accepted N/A rationale.`);
+      }
+      if (Array.isArray(entry.tests) && entry.tests.length) errors.push(`${prefix}=na must not list tests.`);
+    } else if (entry.status === 'required') {
+      requiredCount += 1;
+      if (!isNonEmptyStringArray(entry.tests)) {
+        errors.push(`${prefix}=required requires at least one test reference.`);
+      }
+    } else {
+      errors.push(`${prefix}.status must be required or na.`);
+    }
+  }
+
+  if (securityImpact !== 'affected' && requiredCount > 0) {
+    errors.push('security.controls marks a control required but impact.security is not affected.');
+  }
+}
+
+export function securityTestReferences(contract) {
+  const controls = contract?.security?.controls;
+  if (!controls || typeof controls !== 'object') return [];
+  return SECURITY_CONTROL_IDS.flatMap((id) => {
+    const entry = controls[id];
+    if (entry?.status !== 'required' || !Array.isArray(entry.tests)) return [];
+    return entry.tests.map((reference, index) => ({ id, index, reference }));
+  });
+}
+
+// `dosya[::Sınıf]::test` referansının çözülmediği nedeni döndürür; çözülüyorsa null.
+// Yalnız varlık kanıtlanır; testin geçmesi CI'daki npm test / pytest adımlarının işidir.
+export function securityTestReferenceError(reference, readText) {
+  if (!isNonEmptyString(reference)) return 'must be a non-empty string';
+  const [filePart, ...symbolParts] = reference.split('::');
+  const segments = filePart.split(/[\\/]/);
+  if (/^(?:[A-Za-z]:)?[\\/]/.test(filePart) || segments.includes('..')) {
+    return 'path must be repository-relative';
+  }
+  const text = readText(filePart);
+  if (text === null) return `file '${filePart}' does not exist`;
+  if (!symbolParts.length) return null;
+  const symbol = symbolParts[symbolParts.length - 1].split('[')[0];
+  if (filePart.endsWith('.py')) {
+    if (!PY_TEST_NAME_RE.test(symbol)) return `'${symbol}' is not a valid Python test name`;
+    const defined = new RegExp(`^\\s*(?:async\\s+)?def\\s+${symbol}\\s*\\(`, 'm');
+    if (!defined.test(text)) return `test '${symbol}' is not defined in '${filePart}'`;
+  } else if (!symbol || !text.includes(symbol)) {
+    return `test '${symbol}' is not found in '${filePart}'`;
+  }
+  return null;
+}
+
 export function requiresBrowserE2E(impact) {
   if (!impact || typeof impact !== 'object' || Array.isArray(impact)) return false;
   return SYSTEM_BROWSER_E2E_DOMAINS.some((domain) => impact[domain] === 'affected');
@@ -406,6 +505,8 @@ export function validateSystemChangeContract(contract) {
   }
 
   if (!isNonEmptyString(contract.rollback)) errors.push('rollback plan is required.');
+
+  validateSecurityControls(errors, contract);
 
   return errors;
 }
