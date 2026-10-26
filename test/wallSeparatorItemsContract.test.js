@@ -122,7 +122,7 @@ for (const itemKey of SEPARATOR_KEYS) {
     const behavior = getModuleBehavior(state);
     assert.equal(behavior.placement, 'wall');
     assert.equal(behavior.moveSnapCm, 10);
-    assert.equal(getModuleRotationStepDeg(state), 90);
+    assert.equal(getModuleRotationStepDeg(state), 15);
 
     const contract = resolveModuleContract(itemKey);
     assert.equal(contract.bom.mode, 'recipe');

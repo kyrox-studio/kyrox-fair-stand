@@ -24,7 +24,7 @@ test('kettle keeps its declared free-positioned collision contract', () => {
   assert.equal(behavior.placement, 'free');
   assert.equal(behavior.collision, 'none');
   assert.equal(behavior.magneticSnap, 'none');
-  assert.equal(getModuleRotationStepDeg({ itemKey: 'kettle' }), 90);
+  assert.equal(getModuleRotationStepDeg({ itemKey: 'kettle' }), 15);
   assert.deepEqual(behavior.overlapWithTypes, ['mini-fridge']);
 });
 

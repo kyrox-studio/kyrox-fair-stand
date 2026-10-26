@@ -1,7 +1,7 @@
 import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument.js';
 
-// Seçili modülün üstünde küçük işlem çubuğu: Döndür / Kopyala / Sil / Çoklu panel|modül. Diğer işlemler
-// öğeye tıklayınca açılan Özellikler panelindedir.
+// Seçili modülün üstünde Çoklu panel/modül kontrolü. Döndür / Kopyala / Sil Özellikler kartındadır.
+// Kopyalama sırasında tablette işlemi bitirebilmek için yalnız Kopyalamayı bitir görünür.
 // Sahnede tek öğe mavi, grup/çoklu seçim ortak turuncu kesik sınırla gösterilir.
 // Fare ve dokunmatikte aynı çalışır; tablette sağ tık yerine geçer. Konumu sahne bildirir
 // (seçili modülün tepe ortası, ekran pikseli); seçim yoksa veya sürüklenirken gizlenir.
@@ -51,9 +51,7 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMult
   bar.setAttribute('role', 'toolbar');
   bar.setAttribute('aria-label', 'Seçim işlemleri');
   bar.innerHTML = `
-    <button type="button" data-selection-action="rotate" title="Döndür (Shift+R)">⟳ Döndür</button>
-    <button type="button" data-selection-action="duplicate" aria-pressed="false" title="Hafızaya al; sahnede dokunduğun her yere bir kopya bırakır (Ctrl+C)">⧉ Kopyala</button>
-    <button type="button" data-selection-action="delete" title="Sil">Sil</button>
+    <button type="button" data-selection-action="duplicate" aria-pressed="false" hidden title="Kopyalamayı bitir">✕ Kopyalamayı bitir</button>
     <button type="button" data-selection-action="multi" data-kind="module" aria-pressed="false">Çoklu modül</button>
   `;
   document.body.appendChild(bar);
@@ -128,9 +126,8 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMult
       bar.hidden = false;
       if (!anchor) return;
     } else {
-      allButtons.forEach((button) => { button.hidden = false; });
+      allButtons.forEach((button) => { button.hidden = button !== multiButton; });
       // Toplu seçimde silme ve çoklu modül kullanılabilir; toplu işlemler Özellikler panelindedir.
-      singleOnly.forEach((button) => { button.hidden = anchor.count > 1; });
       syncMultiButton();
       bar.hidden = false;
     }

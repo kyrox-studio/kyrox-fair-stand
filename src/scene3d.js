@@ -3479,7 +3479,7 @@ export function createStandScene(
     return keyboardRotationCursor;
   }
 
-  function rotateSelectedModule(deltaDeg) {
+  function rotateSelectedModule(deltaDeg, { exact = false } = {}) {
     if (!stageLayout || dragSession?.dragging) return { handled: false, ok: false };
     const moduleGroup = getSingleSelectedModuleGroup();
     const moduleState = moduleGroup?.userData?.moduleState;
@@ -3493,7 +3493,7 @@ export function createStandScene(
     // Gruptaki öğede Shift+R bütün grubu grup merkezi etrafında 45° döndürür.
     if (getModuleGroupId(moduleState)) {
       const groupDeltaDeg = Number(deltaDeg) < 0 ? -GROUP_ROTATE_STEP_DEG : GROUP_ROTATE_STEP_DEG;
-      const plan = planRenderedGroupRotate(getModuleGroupId(moduleState), groupDeltaDeg);
+      const plan = planRenderedGroupRotate(getModuleGroupId(moduleState), exact ? Number(deltaDeg) : groupDeltaDeg);
       if (!plan.ok) {
         showPlacementFeedback(plan.message, { durationMs: 1800 });
         return { handled: true, ok: false, message: plan.message };
@@ -3509,7 +3509,7 @@ export function createStandScene(
       return { handled: true, ok: false, message };
     }
 
-    const effectiveDeltaDeg = resolveModuleRotationDeltaDeg(moduleState, deltaDeg);
+    const effectiveDeltaDeg = exact ? Number(deltaDeg) : resolveModuleRotationDeltaDeg(moduleState, deltaDeg);
     const rotationCursor = getKeyboardRotationCursor(moduleState);
     rotationCursor.rotationZDeg = rotateModuleRotationZDeg(
       rotationCursor.rotationZDeg,
@@ -7348,6 +7348,10 @@ export function createStandScene(
     }
 
     const rotationResult = rotateSelectedModule(requestedDeltaDeg);
+    if (rotationResult.ok) {
+      requestEditorRender();
+      notifySelection();
+    }
     if (rotationResult.handled) event.preventDefault();
   }, { signal });
 
@@ -7501,11 +7505,17 @@ export function createStandScene(
   }
 
   // Menü ve araç çubuğu Döndür: modülü seçip klavyedeki Shift+R ile aynı döndürmeyi yapar.
-  function rotateModuleById(moduleId) {
+  function rotateModuleById(moduleId, deltaDeg = null) {
+    if (deltaDeg !== null && ![-90, -45, -15, 15, 45, 90].includes(deltaDeg)) return { handled: false, ok: false };
     if (moduleId && getSingleSelectedModuleGroup()?.userData?.moduleState?.id !== moduleId) {
       selectModulesById([moduleId]);
     }
-    return rotateSelectedModule(-90);
+    const result = rotateSelectedModule(deltaDeg ?? -90, { exact: deltaDeg !== null });
+    if (result.ok) {
+      requestEditorRender();
+      notifySelection();
+    }
+    return result;
   }
 
   async function captureCurrentViewPng({ scale = 3 } = {}) {
@@ -7660,7 +7670,6 @@ export function createStandScene(
     buildWall,
     clearWall,
     clearSelection: (...args) => {
-      selectedModuleId = null;
       return clearSelection(...args);
     },
     resetStageView,
@@ -9491,8 +9500,15 @@ function makeBeigeSofaBodyWhite(object, upholsteryColor) {
 
   let minY = Infinity;
   let maxY = -Infinity;
+  // Meshopt quantization moves/scales vertices into a normalized local frame.
+  // Masks describe the original asset frame; classify there, without changing geometry.
+  object.updateWorldMatrix(true, false);
+  const maskPositions = new Float64Array(position.count * 3);
+  const maskPoint = new THREE.Vector3();
   for (let vertexIndex = 0; vertexIndex < position.count; vertexIndex += 1) {
-    const y = position.getY(vertexIndex);
+    maskPoint.fromBufferAttribute(position, vertexIndex).applyMatrix4(object.matrixWorld);
+    maskPositions.set([maskPoint.x, maskPoint.y, maskPoint.z], vertexIndex * 3);
+    const y = maskPoint.y;
     minY = Math.min(minY, y);
     maxY = Math.max(maxY, y);
   }
@@ -9507,9 +9523,9 @@ function makeBeigeSofaBodyWhite(object, upholsteryColor) {
     const a = index ? index.getX(offset) : offset;
     const b = index ? index.getX(offset + 1) : offset + 1;
     const c = index ? index.getX(offset + 2) : offset + 2;
-    const centerX = (position.getX(a) + position.getX(b) + position.getX(c)) / 3;
-    const centerY = (position.getY(a) + position.getY(b) + position.getY(c)) / 3;
-    const centerZ = (position.getZ(a) + position.getZ(b) + position.getZ(c)) / 3;
+    const centerX = (maskPositions[a * 3] + maskPositions[b * 3] + maskPositions[c * 3]) / 3;
+    const centerY = (maskPositions[a * 3 + 1] + maskPositions[b * 3 + 1] + maskPositions[c * 3 + 1]) / 3;
+    const centerZ = (maskPositions[a * 3 + 2] + maskPositions[b * 3 + 2] + maskPositions[c * 3 + 2]) / 3;
 
     if (centerY > legMaxY) continue;
     const isLeg = mask.centers.some(([legX, legZ]) => {

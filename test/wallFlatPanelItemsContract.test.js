@@ -92,7 +92,7 @@ for (const itemKey of WALL_KEYS) {
 
     assert.equal(getModuleBehavior(state).placement, 'wall');
     assert.equal(getModuleBehavior(state).moveSnapCm, 10);
-    assert.equal(getModuleRotationStepDeg(state), 90);
+    assert.equal(getModuleRotationStepDeg(state), 15);
 
     const contract = resolveModuleContract(itemKey);
     assert.equal(contract.bom.mode, 'recipe');

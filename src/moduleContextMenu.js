@@ -20,7 +20,9 @@ export function resolveModuleSidePlacement(context, visualSide) {
 }
 
 export function createModuleContextMenu({
+  onClearSelection,
   onDelete,
+  onDuplicate,
   onAdd,
   onGlassModeChange,
   onMetalSeparatorModeChange,
@@ -66,7 +68,7 @@ export function createModuleContextMenu({
         <strong class="selection-property-heading">Özellikler</strong>
         <span class="selection-property-subheading" hidden></span>
       </div>
-      <button type="button" class="selection-property-close" aria-label="Özellikler panelini kapat" title="Kapat (Esc)">×</button>
+      <button type="button" class="selection-property-close" aria-label="Seçimi kaldır" title="Seçimi kaldır">Seçimi kaldır <span aria-hidden="true">×</span></button>
     </div>
     <p class="selection-property-note" hidden></p>
     <p class="selection-property-empty" hidden>Seçim yok. Sahnede bir yüzey veya öğe seçin.</p>
@@ -97,8 +99,16 @@ export function createModuleContextMenu({
     <button type="button" role="menuitem" data-module-action="toggle-lock">Kilitle</button>
     <button type="button" role="menuitem" data-module-action="lock-selection" hidden>Seçilenleri kilitle</button>
     <button type="button" role="menuitem" data-module-action="unlock-selection" hidden>Seçilenlerin kilidini aç</button>
-    <button type="button" role="menuitem" data-module-action="rotate">Döndür</button>
-    <button type="button" role="menuitem" data-module-action="delete" class="danger">Sil</button>
+    <div class="selection-rotation-controls" role="group" aria-label="Döndür">
+      <div class="selection-rotation-heading"><span>Döndürme — <output class="selection-rotation-value" aria-label="Mevcut açı" aria-live="polite"></output></span></div>
+      <div class="selection-rotation-buttons">
+        ${[-45, -15, 15, 45].map((angle) => `<button type="button" role="menuitem" data-module-action="rotate" data-rotation-delta="${angle}" aria-label="${angle < 0 ? 'Sola' : 'Sağa'} ${Math.abs(angle)} derece döndür">${angle > 0 ? '+' : '−'}${Math.abs(angle)}°</button>`).join('')}
+      </div>
+    </div>
+    <div class="selection-primary-actions">
+      <button type="button" role="menuitem" data-module-action="duplicate" class="selection-copy-action">Kopyala</button>
+      <button type="button" role="menuitem" data-module-action="delete" class="danger selection-delete-action">Sil</button>
+    </div>
     <div class="module-context-separator"></div>
     <button type="button" role="menuitem" data-module-action="toggle-shelf-light" hidden>Raf altı aydınlatmayı aç</button>
     <button type="button" role="menuitem" data-module-action="toggle-back-panels" hidden>Arka yüze panel ekle</button>
@@ -173,7 +183,10 @@ export function createModuleContextMenu({
   const lockSelectionButton = menu.querySelector('[data-module-action="lock-selection"]');
   const unlockSelectionButton = menu.querySelector('[data-module-action="unlock-selection"]');
   const deleteButton = menu.querySelector('[data-module-action="delete"]');
-  const rotateButton = menu.querySelector('[data-module-action="rotate"]');
+  const rotateButtons = [...menu.querySelectorAll('[data-module-action="rotate"]')];
+  const rotationControls = menu.querySelector('.selection-rotation-controls');
+  const rotationValue = menu.querySelector('.selection-rotation-value');
+  const duplicateButton = menu.querySelector('[data-module-action="duplicate"]');
   const separator = menu.querySelector('.module-context-separator:not(.module-context-group-separator)');
   const groupSeparator = menu.querySelector('.module-context-group-separator');
   // Panel dönüşümleri (Cam, Metal Separatör, Lightbox, Mesh) ayrı bir açılır sekme olmadan
@@ -236,6 +249,7 @@ export function createModuleContextMenu({
 
   // Toplu seçim menüsü: yalnız toplu kilit komutları; tek öğe komutları gizlenir.
   function openMultiSelection(context) {
+    rotationControls.hidden = true;
     const ids = context.multiModuleIds;
     const lockedCount = Number(context.multiLockedCount) || 0;
     const groupSuffix = context.selectionGroupName ? ` · Grup: ${context.selectionGroupName}` : '';
@@ -434,6 +448,7 @@ export function createModuleContextMenu({
 
   // Zemin: öğe işlemi yoktur; yalnız zeminin desteklediği renk gösterilir.
   function renderFloor(context) {
+    rotationControls.hidden = true;
     activeContext = null;
     emptyHint.hidden = true;
     menu.hidden = true;
@@ -484,15 +499,23 @@ export function createModuleContextMenu({
     const group = context.group ?? null;
     showSingleGroupSection(group);
     lockButton.hidden = false;
-    lockButton.textContent = locked ? 'Kilidi aç' : 'Kilitle';
+    lockButton.textContent = locked ? 'Kilitli' : 'Kilitle';
+    lockButton.classList.toggle('is-locked', locked);
     // Grup kilidi öğe kilidinden açılamaz.
     setDisabled(lockButton, group?.locked === true && context.ownLocked !== true, GROUP_LOCKED_HINT);
+    if (!lockButton.disabled && locked) lockButton.title = 'Kilidi açmak için tıkla';
     lockSelectionButton.hidden = true;
     unlockSelectionButton.hidden = true;
     deleteButton.hidden = false;
     setDisabled(deleteButton, locked);
-    rotateButton.hidden = false;
-    setDisabled(rotateButton, locked);
+    rotationControls.hidden = false;
+    rotationValue.textContent = `${((Number(context.placement?.rotationZDeg) || 0) % 360 + 360) % 360}°`;
+    rotateButtons.forEach((button) => {
+      button.hidden = false;
+      setDisabled(button, locked);
+    });
+    duplicateButton.hidden = false;
+    setDisabled(duplicateButton, false);
     separator.hidden = false;
     const summary = context.surfaceSummary ?? null;
     const multiSurface = (summary?.count ?? 0) > 1;
@@ -844,7 +867,12 @@ export function createModuleContextMenu({
     }
 
     if (action === 'rotate') {
-      onRotate?.(context);
+      onRotate?.(context, Number(button.dataset.rotationDelta));
+      return;
+    }
+
+    if (action === 'duplicate') {
+      onDuplicate?.(context);
       return;
     }
 
@@ -900,7 +928,10 @@ export function createModuleContextMenu({
     handleMenuClick(event);
     if (actionable) onAfterAction?.();
   });
-  panel.querySelector('.selection-property-close').addEventListener('click', () => close());
+  panel.querySelector('.selection-property-close').addEventListener('click', () => {
+    close();
+    onClearSelection?.();
+  });
 
   pickerAddButton.addEventListener('click', () => { void submitPickerSelection(); });
 

@@ -79,7 +79,7 @@ test('trash bin state and behavior preserve fridge-style movement without overla
   const behavior = getModuleBehavior(state);
   assert.equal(behavior.placement, 'free');
   assert.equal(behavior.moveSnapCm, 10);
-  assert.equal(getModuleRotationStepDeg(state), 90);
+  assert.equal(getModuleRotationStepDeg(state), 15);
   assert.equal(getModuleDefaultRotationDeg(state), 0);
   assert.equal(behavior.collision, 'none');
   assert.equal(behavior.magneticSnap, 'none');
