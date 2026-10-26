@@ -483,6 +483,8 @@ Proje yüzey görseli **meta** satırı. Binary PostgreSQL’de değil; disk kö
 
 Yüklemede sunucu optimize eder (tercihen WebP). Path: `{organization_id}/{project_id}/{asset_id}.webp` (`build_storage_key` / `asset_storage.py`). Proje silinince satırlar CASCADE + klasör silinir.
 
+Sunucu sınırları (`POST /fair-stand/projects/{id}/assets`): dosya parça parça okunur, `max_image_upload_mb` aşılınca okuma kesilir ve 400 `Image exceeds upload limit` döner (tam dosya belleğe alınmaz). Raster görselin başlıktaki piksel sayısı Pillow varsayılan açılım sınırını (`MAX_DECODE_PIXELS` = 89.478.485) aşarsa çözümlenmeden 400 `Image exceeds pixel limit` döner; Pillow'un süreç genel `Image.MAX_IMAGE_PIXELS` ayarı değiştirilmez. JPEG küçültülecekse `draft` ile düşük ölçekte açılır; decode/encode olay döngüsünü bloklamadan thread havuzunda çalışır.
+
 | Kolon | JSON / API | Nedir | Neden | Nerede |
 |---|---|---|---|---|
 | `id` | `id` | Asset UUID PK | Payload `imageAssetId` ile aynı | upload/get/delete |
