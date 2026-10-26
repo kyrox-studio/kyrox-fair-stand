@@ -62,6 +62,44 @@ Akış (catalog): PostgreSQL → Fair Stand API bootstrap → CRM proxy → tara
 Akış (proje): PostgreSQL + disk assets → Fair Stand projects API → CRM proxy → `projectRemote` → IndexedDB cache.  
 CRM/Core kendi DB’lerinde bu tablolar yok; `organization_id` Core org UUID’sidir (FK yok). Yetki Core permission kodları: `fair_crm.fair_stand.projects.{read,create,update,delete,execute}`.
 
+## Organizasyon verisi, yaşam döngüsü ve audit (D-12, D-18)
+
+Kaynak kararlar: platform ADR-0004 (audit), ADR-0006 (org yaşam döngüsü), OL08-D (ürün verisi imhası), `SECURITY_PROGRAM.md` D-12 / D-18.
+
+### Tenant'a ait veri sınıfları
+
+| Sınıf | Tablo / yer | Organizasyon anahtarı | Bağımlılık |
+|---|---|---|---|
+| Projeler | `fair_stand_projects` | Doğrudan `organization_id` | `customer_id` CRM müşterisine mantıksal bağ (aşağıda) |
+| Proje revizyonları | `fair_stand_project_revisions` | Parent üzerinden (`project_id` → proje) | FK `ON DELETE CASCADE`; son 3 fiziksel satır tutulur |
+| Proje görsel meta kaydı | `fair_stand_project_assets` | Doğrudan `organization_id` + parent `project_id` | FK `ON DELETE CASCADE` |
+| Proje görsel dosyaları | Disk: `FAIR_STAND_PROJECT_ASSET_ROOT/{organization_id}/{project_id}/` | Yol öneki | Binary artefakt; proje silinince klasör silinir |
+| Maliyet kalemleri | `fair_stand_cost_items` | Doğrudan `organization_id` | `item_key` → `fair_stand_items`, `unit` → `fair_stand_units` FK `ON DELETE CASCADE` (sistem kataloğu satırı silinirse tenant satırı da gider) |
+| Grup şablonları | `fair_stand_group_templates` | Doğrudan `organization_id` | FK yok; payload `itemKey` metni taşır |
+| Canlı paylaşım oturumu | Süreç belleği (`LiveShareRegistry`) | Kalıcı değil | Süre dolunca / yeniden başlatmada kaybolur |
+
+Sistem kataloğu (organizasyon satırı yok): kategoriler, önizleme kartları, birimler, Item tabloları ve child tabloları, tip/kural tabloları, `fair_stand_dimensions`, `fair_stand_settings`. Org kapanışında silinmez.
+
+Org kapanışında tenant verisinin imhası için üretim worker'ı **yoktur**; OL08-D bunu ayrıca yetkilendirmeden yazılmaz.
+
+### `customer_id` bağlantı kuralı
+
+`crm_customers` başka veritabanında olduğu için FK kurulamaz. Kural:
+
+1. `customer_id`, aynı `organization_id` içindeki CRM müşteri kimliğine mantıksal referanstır; her sorgu önce `organization_id` ile süzülür (`ix_fair_stand_projects_organization_id_customer_id`).
+2. Yetki veya organizasyon sınırı kaynağı değildir; başka organizasyonun müşteri kimliği yazılsa bile proje yalnız kendi organizasyonunda görünür.
+3. CRM müşterisi silinirse Stand projesi silinmez; kimlik sarkık kalabilir. Proje organizasyona aittir ve organizasyonla birlikte imha edilir.
+4. `00000000-0000-4000-8000-000000000001` atanmamış eski satırların işaretidir; CRM satırı değildir.
+5. Müşteri silindiğinde projelerin ne olacağı (sil / atanmamışa çek) ürün kararıdır; karar verilmeden davranış eklenmez.
+
+### Yaşam döngüsü kapısı
+
+Organizasyona ait her yazma (proje oluştur/kaydet/müşteri ata/sil, görsel yükle/sil, maliyet kalemi, grup şablonu, canlı paylaşım başlatma) yetki kontrolünden sonra Core `GET /api/v1/organizations/{id}/lifecycle-snapshot` sonucunu ister (`X-Kyrox-Product-Lifecycle-Token`). `work_allowed=false` → 403; credential yok/kısa/`dev-insecure`, Core erişilemez veya cevap tutarsız → 503. Okumalar kapıdan geçmez. Yalnız olumlu cevap 10 sn önbellekte tutulur. Canlı paylaşımı durdurma kapı dışıdır (tenant verisine yazmaz). Ortam değişkeni: `KYROX_CORE_PRODUCT_LIFECYCLE_TOKEN`.
+
+### Audit olayları
+
+Core `POST /api/v1/organizations/{id}/audit-events`, kullanıcının bearer'ı ile. Önek `fair_stand.<kaynak>.<fiil>`. Kapsam: 33 admin mutasyonu (`metadata.scope=system_catalog`, isteğin organizasyonuna yazılır) ve proje silme (`fair_stand.project.deleted`, `scope=organization`, yalnız kimlik). Olay DB commit'inden sonra gönderilir; geri alınan işlem olay üretmez. Yazım best-effort'tur (CRM kararıyla aynı): Core hatası uyarı log'una düşer, işlem başarılı kalır. Değerler yalnız kısa üst düzey skalerlerdir; sır benzeri anahtarlar, iç içe veri ve uzun metin (önizleme markup/css) atlanır, yalnız alan adı `metadata.omitted_fields`'a yazılır.
+
 ---
 
 ## `alembic_version`
@@ -436,7 +474,7 @@ Auth: org-scoped Core verify; `X-Organization-Id` + Bearer. API: `backend/app/mo
 |---|---|---|---|---|
 | `id` | `id` | Proje UUID PK | İstemci ve asset path aynı id | `projectRemote`, asset `storage_key` |
 | `organization_id` | `organizationId` | Core org UUID (FK yok) | Çok kiracılı izolasyon | list/get filtre; disk `{org}/…` |
-| `customer_id` | `customerId` | Zorunlu UUID. `crm_customers` FK’si yok. Boş eski satırlar `00000000-0000-4000-8000-000000000001` | Proje bir müşteriye bağlıdır | kolon + index `ix_fair_stand_projects_organization_id_customer_id`. Çizim kaydı (PUT payload) bu değeri değiştirmez. Başka müşteri `PATCH /{id}/customer` |
+| `customer_id` | `customerId` | Zorunlu UUID. `crm_customers` FK’si yok (bağlantı kuralı: “`customer_id` bağlantı kuralı”). Boş eski satırlar `00000000-0000-4000-8000-000000000001` | Proje bir müşteriye bağlıdır | kolon + index `ix_fair_stand_projects_organization_id_customer_id`. Çizim kaydı (PUT payload) bu değeri değiştirmez. Başka müşteri `PATCH /{id}/customer` |
 | `name` | `name` | Görünen ad (trim, boş değil) | Liste / başlık | UI proje listesi |
 | `version` | `version` | Optimistic / sıra (`> 0`) | İstemci sürüm bilinci | API response |
 | `payload` | `payload` (+ düz `stand` / `modules`) | JSONB proje gövdesi | Tek blob; kolon patlatma yok | `ProjectService`; `buildProjectSnapshot` şekli |
