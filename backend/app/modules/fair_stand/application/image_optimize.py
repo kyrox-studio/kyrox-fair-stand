@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import math
 from dataclasses import dataclass
 
 from PIL import Image, ImageOps
@@ -11,6 +12,10 @@ MAX_IMAGE_LONG_EDGE_PX = 1536
 IMAGE_ENCODE_QUALITY = 75
 SVG_MIME = "image/svg+xml"
 MAX_DEFAULT_UPLOAD_BYTES = 5 * 1024 * 1024
+# Pillow's own default decompression-bomb threshold (PIL.Image.MAX_IMAGE_PIXELS default),
+# fixed here so a process-wide override cannot widen or disable it.
+MAX_DECODE_PIXELS = int(1024 * 1024 * 1024 // 4 // 3)
+PIXEL_LIMIT_MESSAGE = f"Image exceeds pixel limit ({MAX_DECODE_PIXELS} pixels)"
 
 
 class ImageOptimizeError(ValueError):
@@ -24,22 +29,43 @@ class OptimizedImage:
     extension: str
 
 
+def upload_limit_message(max_upload_bytes: int) -> str:
+    return f"Image exceeds upload limit ({max_upload_bytes} bytes)"
+
+
 def build_storage_key(*, organization_id, project_id, asset_id, extension: str) -> str:
     ext = extension if extension.startswith(".") else f".{extension}"
     return f"{organization_id}/{project_id}/{asset_id}{ext}"
 
 
+def _draft_size(width: int, height: int) -> tuple[int, int] | None:
+    long_edge = max(width, height)
+    if long_edge <= MAX_IMAGE_LONG_EDGE_PX:
+        return None
+    scale = MAX_IMAGE_LONG_EDGE_PX / long_edge
+    return (max(1, math.ceil(width * scale)), max(1, math.ceil(height * scale)))
+
+
 def _open_raster_for_optimize(raw: bytes) -> Image.Image:
-    """Decode raster bytes; pixel count is capped by downscale, not by upload policy."""
-    buffer = io.BytesIO(raw)
-    previous_limit = Image.MAX_IMAGE_PIXELS
+    """Decode raster bytes after a header-only pixel check.
+
+    Pillow's process-wide ``Image.MAX_IMAGE_PIXELS`` is never modified (thread-safe).
+    Images above ``MAX_DECODE_PIXELS`` are rejected before any pixel data is decoded;
+    JPEG sources are decoded at a reduced scale via ``draft`` when they will be downscaled.
+    """
     try:
-        Image.MAX_IMAGE_PIXELS = None
-        with Image.open(buffer) as opened:
-            opened.load()
-            return opened.copy()
-    finally:
-        Image.MAX_IMAGE_PIXELS = previous_limit
+        opened = Image.open(io.BytesIO(raw))
+    except (Image.DecompressionBombError, Image.DecompressionBombWarning) as exc:
+        raise ImageOptimizeError(PIXEL_LIMIT_MESSAGE) from exc
+    with opened:
+        width, height = opened.size
+        if width <= 0 or height <= 0 or width * height > MAX_DECODE_PIXELS:
+            raise ImageOptimizeError(PIXEL_LIMIT_MESSAGE)
+        draft_size = _draft_size(width, height)
+        if draft_size is not None:
+            opened.draft(opened.mode, draft_size)
+        opened.load()
+        return opened.copy()
 
 
 def optimize_uploaded_image(
@@ -51,7 +77,7 @@ def optimize_uploaded_image(
     if not raw:
         raise ImageOptimizeError("Empty image upload")
     if len(raw) > max_upload_bytes:
-        raise ImageOptimizeError(f"Image exceeds upload limit ({max_upload_bytes} bytes)")
+        raise ImageOptimizeError(upload_limit_message(max_upload_bytes))
 
     mime = (content_type or "").split(";")[0].strip().lower()
     if mime == SVG_MIME or (not mime and raw.lstrip().startswith(b"<")):

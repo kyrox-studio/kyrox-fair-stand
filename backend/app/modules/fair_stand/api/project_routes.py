@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
 from fastapi.security import HTTPAuthorizationCredentials
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.integrations.kyrox_core.auth import AuthContext
@@ -26,6 +27,7 @@ from app.modules.fair_stand.api.dependencies import (
     get_project_service,
     require_permission,
 )
+from app.modules.fair_stand.application.image_optimize import upload_limit_message
 from app.modules.fair_stand.application.projects import (
     AssetView,
     ProjectDetail,
@@ -79,6 +81,28 @@ class ProjectCustomerBody(BaseModel):
 
 def _raise_service(exc: ProjectServiceError) -> None:
     raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+
+UPLOAD_READ_CHUNK_BYTES = 64 * 1024
+
+
+async def read_upload_limited(file: UploadFile, *, max_bytes: int) -> bytes:
+    """Read an upload in chunks, stopping as soon as ``max_bytes`` is exceeded.
+
+    At most ``max_bytes + 1`` bytes are ever read into memory; the error matches the
+    existing byte-limit contract of ``optimize_uploaded_image`` (HTTP 400).
+    """
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(min(UPLOAD_READ_CHUNK_BYTES, max_bytes + 1 - total))
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=upload_limit_message(max_bytes))
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 def _ms(dt) -> int:
@@ -274,9 +298,12 @@ async def upload_project_asset(
     asset_id: UUID | None = Form(default=None),
     name: str | None = Form(default=None),
 ) -> dict[str, Any]:
-    raw = await file.read()
+    max_bytes = await run_in_threadpool(service.max_upload_bytes)
+    raw = await read_upload_limited(file, max_bytes=max_bytes)
     try:
-        asset = service.upsert_asset(
+        # Pillow decode/encode is CPU-bound: keep it off the event loop.
+        asset = await run_in_threadpool(
+            service.upsert_asset,
             project_id=project_id,
             organization_id=auth.organization_id,
             raw=raw,
