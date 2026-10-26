@@ -14,7 +14,12 @@ from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.modules.fair_stand.api.dependencies import get_authorization_adapter, get_core_http_client
+from app.modules.fair_stand.api.dependencies import (
+    get_audit_adapter,
+    get_authorization_adapter,
+    get_core_http_client,
+    get_lifecycle_guard,
+)
 from app.modules.fair_stand.infrastructure import models as _fair_stand_models  # noqa: F401
 from app.integrations.kyrox_core.ports import AuthorizationPort
 
@@ -29,6 +34,23 @@ class FakeCoreHttp:
     def request(self, *args, **kwargs):
         _ = (args, kwargs)
         return SimpleNamespace(status_code=200)
+
+
+class RecordingAuditAdapter:
+    """Core audit stand-in: keeps every event the app would send (D-18)."""
+
+    def __init__(self) -> None:
+        self.events: list[dict] = []
+
+    def record_event(self, **kwargs) -> None:
+        self.events.append(kwargs)
+
+
+class AllowAllLifecycleGuard:
+    """Core lifecycle stand-in: organization is active (D-12). Guard tests use their own."""
+
+    def require_work_allowed(self, organization_id: UUID) -> None:
+        _ = organization_id
 
 
 def create_test_token(*, user_id: UUID, email: str = "test@example.com") -> str:
@@ -96,7 +118,16 @@ def auth_headers(user_id: UUID, organization_id: UUID) -> dict[str, str]:
 
 
 @pytest.fixture
-def client(db_session: Session, monkeypatch: pytest.MonkeyPatch) -> TestClient:
+def audit_adapter() -> RecordingAuditAdapter:
+    return RecordingAuditAdapter()
+
+
+@pytest.fixture
+def client(
+    db_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    audit_adapter: RecordingAuditAdapter,
+) -> TestClient:
     monkeypatch.setenv("FAIR_STAND_DEV_BYPASS_CORE", "false")
     monkeypatch.setenv("APP_ENV", "test")
     get_settings.cache_clear()
@@ -108,6 +139,8 @@ def client(db_session: Session, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_authorization_adapter] = lambda: AllowAllAuthorization()
     app.dependency_overrides[get_core_http_client] = lambda: FakeCoreHttp()
+    app.dependency_overrides[get_audit_adapter] = lambda: audit_adapter
+    app.dependency_overrides[get_lifecycle_guard] = lambda: AllowAllLifecycleGuard()
     try:
         yield TestClient(app)
     finally:

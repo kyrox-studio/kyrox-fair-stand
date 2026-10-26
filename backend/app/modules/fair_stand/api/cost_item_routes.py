@@ -17,6 +17,7 @@ from app.modules.fair_stand.api.dependencies import (
     PERMISSION_COST_ITEMS_UPDATE,
     get_cost_item_service,
     require_permission,
+    require_work_permission,
 )
 from app.modules.fair_stand.application.cost_items import CostItemService, CostItemServiceError, CostItemView
 
@@ -77,7 +78,7 @@ def list_cost_items(
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_cost_item(
     body: CostItemCreateBody,
-    auth: AuthContext = Depends(require_permission(PERMISSION_COST_ITEMS_CREATE)),
+    auth: AuthContext = Depends(require_work_permission(PERMISSION_COST_ITEMS_CREATE)),
     service: CostItemService = Depends(get_cost_item_service),
 ) -> dict[str, str | int | None]:
     try:
@@ -99,7 +100,7 @@ def create_cost_item(
 def update_cost_item(
     price_id: UUID,
     body: CostItemUpdateBody,
-    auth: AuthContext = Depends(require_permission(PERMISSION_COST_ITEMS_UPDATE)),
+    auth: AuthContext = Depends(require_work_permission(PERMISSION_COST_ITEMS_UPDATE)),
     service: CostItemService = Depends(get_cost_item_service),
 ) -> dict[str, str | int | None]:
     fields = body.model_fields_set
@@ -130,7 +131,7 @@ def update_cost_item(
 @router.delete("/{price_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_cost_item(
     price_id: UUID,
-    auth: AuthContext = Depends(require_permission(PERMISSION_COST_ITEMS_DELETE)),
+    auth: AuthContext = Depends(require_work_permission(PERMISSION_COST_ITEMS_DELETE)),
     service: CostItemService = Depends(get_cost_item_service),
 ) -> None:
     if not service.delete_cost_item(price_id, auth.organization_id):

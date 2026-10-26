@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "change-me-in-production-use-a-long-random-string"
     jwt_algorithm: str = "HS256"
     kyrox_core_base_url: str = "http://127.0.0.1:8000"
+    # Core'un ürün yaşam döngüsü kimlik bilgisi. Varsayılan sır yok: tanımsız, kısa veya
+    # dev-insecure değer Core'a gönderilmez ve organizasyona ait yazma işleri 503 ile durur.
+    kyrox_core_product_lifecycle_token: str | None = Field(
+        default=None,
+        validation_alias="KYROX_CORE_PRODUCT_LIFECYCLE_TOKEN",
+    )
     app_env: str = "development"
     log_level: str = "INFO"
     host: str = "127.0.0.1"

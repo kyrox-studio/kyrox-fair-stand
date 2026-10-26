@@ -3,6 +3,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.integrations.kyrox_core.audit import SCOPE_SYSTEM_CATALOG, StandAuditRecorder
 from app.integrations.kyrox_core.auth import AuthContext
 from app.modules.fair_stand.application.admin_catalog import AdminCatalogService, CatalogAdminError
 from app.modules.fair_stand.application.admin_items import AdminItemsService, ItemAdminError
@@ -30,6 +31,7 @@ from app.modules.fair_stand.api.dependencies import (
     get_admin_units_service,
     get_catalog_bootstrap_use_case,
     get_item_use_case,
+    get_stand_audit,
     require_any_permission,
     require_fair_stand_catalog_access,
     require_permission,
@@ -204,6 +206,15 @@ def _preview_kind_payload(preview) -> dict[str, Any]:
     }
 
 
+def _result_key(result: Any, *keys: str) -> Any:
+    """Audit resource id from the service result (create/clone returns the new key)."""
+    if isinstance(result, dict):
+        for key in keys:
+            if result.get(key) is not None:
+                return result[key]
+    return None
+
+
 def _raise_admin(
     exc: CatalogAdminError | SettingsAdminError | ItemAdminError | SnapCatalogAdminError | UnitAdminError,
 ) -> None:
@@ -265,10 +276,11 @@ def admin_create_category(
     body: CategoryCreateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_CREATE)),
     service: AdminCatalogService = Depends(get_admin_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.create_category(
+        result = service.create_category(
             catalog_name=body.catalog_name,
             catalog_index=body.catalog_index,
             is_active=body.is_active,
@@ -276,6 +288,14 @@ def admin_create_category(
     except CatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.catalog_category.created",
+        "catalog_category",
+        _result_key(result, "id"),
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(),
+    )
+    return result
 
 
 @router.patch("/admin/categories/{category_id}")
@@ -284,10 +304,11 @@ def admin_update_category(
     body: CategoryUpdateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_UPDATE)),
     service: AdminCatalogService = Depends(get_admin_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.update_category(
+        result = service.update_category(
             category_id,
             catalog_name=body.catalog_name,
             catalog_index=body.catalog_index,
@@ -296,6 +317,14 @@ def admin_update_category(
     except CatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.catalog_category.updated",
+        "catalog_category",
+        category_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(exclude_unset=True),
+    )
+    return result
 
 
 @router.post("/admin/categories/{category_id}/archive")
@@ -303,13 +332,21 @@ def admin_archive_category(
     category_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_ARCHIVE)),
     service: AdminCatalogService = Depends(get_admin_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.archive_category(category_id)
+        result = service.archive_category(category_id)
     except CatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.catalog_category.archived",
+        "catalog_category",
+        category_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.post("/admin/categories/{category_id}/restore")
@@ -317,13 +354,21 @@ def admin_restore_category(
     category_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_ARCHIVE)),
     service: AdminCatalogService = Depends(get_admin_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.restore_category(category_id)
+        result = service.restore_category(category_id)
     except CatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.catalog_category.restored",
+        "catalog_category",
+        category_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.get("/admin/units")
@@ -340,10 +385,11 @@ def admin_create_unit(
     body: UnitCreateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_CREATE)),
     service: AdminUnitsService = Depends(get_admin_units_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.create_unit(
+        result = service.create_unit(
             name=body.name,
             symbol=body.symbol,
             is_active=body.is_active,
@@ -351,6 +397,14 @@ def admin_create_unit(
     except UnitAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.unit.created",
+        "unit",
+        _result_key(result, "id"),
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(),
+    )
+    return result
 
 
 @router.patch("/admin/units/{unit_id}")
@@ -359,10 +413,11 @@ def admin_update_unit(
     body: UnitUpdateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_UPDATE)),
     service: AdminUnitsService = Depends(get_admin_units_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.update_unit(
+        result = service.update_unit(
             unit_id,
             name=body.name,
             symbol=body.symbol,
@@ -371,6 +426,14 @@ def admin_update_unit(
     except UnitAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.unit.updated",
+        "unit",
+        unit_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(exclude_unset=True),
+    )
+    return result
 
 
 @router.post("/admin/units/{unit_id}/archive")
@@ -378,13 +441,21 @@ def admin_archive_unit(
     unit_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_ARCHIVE)),
     service: AdminUnitsService = Depends(get_admin_units_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.archive_unit(unit_id)
+        result = service.archive_unit(unit_id)
     except UnitAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.unit.archived",
+        "unit",
+        unit_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.post("/admin/units/{unit_id}/restore")
@@ -392,13 +463,21 @@ def admin_restore_unit(
     unit_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_ARCHIVE)),
     service: AdminUnitsService = Depends(get_admin_units_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.restore_unit(unit_id)
+        result = service.restore_unit(unit_id)
     except UnitAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.unit.restored",
+        "unit",
+        unit_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.get("/admin/items")
@@ -416,10 +495,11 @@ def admin_update_item_catalog(
     body: ItemCatalogUpdateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_UPDATE)),
     service: AdminCatalogService = Depends(get_admin_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.update_item_catalog(
+        result = service.update_item_catalog(
             item_key,
             catalog_visible=body.catalog_visible,
             category_id=body.category_id,
@@ -432,6 +512,14 @@ def admin_update_item_catalog(
     except CatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.catalog_item.updated",
+        "catalog_item",
+        item_key,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(exclude_unset=True),
+    )
+    return result
 
 
 @router.get("/admin/previews")
@@ -448,10 +536,11 @@ def admin_create_preview(
     body: PreviewCreateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_CREATE)),
     service: AdminCatalogService = Depends(get_admin_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.create_preview(
+        result = service.create_preview(
             display_name=body.display_name,
             markup=body.markup,
             css_code=body.css_code,
@@ -461,6 +550,14 @@ def admin_create_preview(
     except CatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.catalog_preview.created",
+        "catalog_preview",
+        _result_key(result, "id"),
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(),
+    )
+    return result
 
 
 @router.patch("/admin/previews/{preview_id}")
@@ -469,10 +566,11 @@ def admin_update_preview(
     body: PreviewUpdateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_UPDATE)),
     service: AdminCatalogService = Depends(get_admin_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.update_preview(
+        result = service.update_preview(
             preview_id,
             display_name=body.display_name,
             markup=body.markup,
@@ -483,6 +581,14 @@ def admin_update_preview(
     except CatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.catalog_preview.updated",
+        "catalog_preview",
+        preview_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(exclude_unset=True),
+    )
+    return result
 
 
 @router.post("/admin/previews/{preview_id}/archive")
@@ -490,13 +596,21 @@ def admin_archive_preview(
     preview_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_ARCHIVE)),
     service: AdminCatalogService = Depends(get_admin_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.archive_preview(preview_id)
+        result = service.archive_preview(preview_id)
     except CatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.catalog_preview.archived",
+        "catalog_preview",
+        preview_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.post("/admin/previews/{preview_id}/restore")
@@ -504,13 +618,21 @@ def admin_restore_preview(
     preview_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_ARCHIVE)),
     service: AdminCatalogService = Depends(get_admin_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.restore_preview(preview_id)
+        result = service.restore_preview(preview_id)
     except CatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.catalog_preview.restored",
+        "catalog_preview",
+        preview_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.get("/admin/settings")
@@ -527,10 +649,11 @@ def admin_update_stand_dimensions(
     body: StandDimensionsUpdateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_SETTINGS_UPDATE)),
     service: AdminSettingsService = Depends(get_admin_settings_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.update_stand_dimensions(
+        result = service.update_stand_dimensions(
             height_cm=body.height_cm,
             depth_cm=body.depth_cm,
             frame_width_cm=body.frame_width_cm,
@@ -540,6 +663,14 @@ def admin_update_stand_dimensions(
     except SettingsAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.stand_dimensions.updated",
+        "stand_dimensions",
+        None,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(),
+    )
+    return result
 
 
 @router.put("/admin/runtime-settings")
@@ -547,10 +678,11 @@ def admin_update_runtime_settings(
     body: RuntimeSettingsUpdateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_SETTINGS_UPDATE)),
     service: AdminSettingsService = Depends(get_admin_settings_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.update_runtime_settings(
+        result = service.update_runtime_settings(
             max_image_upload_mb=body.max_image_upload_mb,
             export_button_visible=body.export_button_visible,
             import_button_visible=body.import_button_visible,
@@ -559,6 +691,14 @@ def admin_update_runtime_settings(
     except SettingsAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.runtime_settings.updated",
+        "runtime_settings",
+        None,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(),
+    )
+    return result
 
 
 @router.get("/admin/item-records")
@@ -608,13 +748,22 @@ def admin_create_item_record(
     body: dict[str, Any],
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_CREATE)),
     service: AdminItemsService = Depends(get_admin_items_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.create_item(body)
+        result = service.create_item(body)
     except ItemAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.item_record.created",
+        "item_record",
+        _result_key(result, "itemKey", "item_key"),
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body,
+    )
+    return result
 
 
 @router.post("/admin/item-records/{item_key}/clone", status_code=status.HTTP_201_CREATED)
@@ -623,13 +772,22 @@ def admin_clone_item_record(
     body: dict[str, Any],
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_CREATE)),
     service: AdminItemsService = Depends(get_admin_items_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.clone_item(item_key, body or {})
+        result = service.clone_item(item_key, body or {})
     except ItemAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.item_record.cloned",
+        "item_record",
+        _result_key(result, "itemKey", "item_key"),
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body,
+    )
+    return result
 
 
 @router.put("/admin/item-records/{item_key}")
@@ -638,13 +796,22 @@ def admin_update_item_record(
     body: dict[str, Any],
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_UPDATE)),
     service: AdminItemsService = Depends(get_admin_items_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.update_item(item_key, body)
+        result = service.update_item(item_key, body)
     except ItemAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.item_record.updated",
+        "item_record",
+        item_key,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body,
+    )
+    return result
 
 
 @router.put("/admin/item-records/{item_key}/assembly")
@@ -653,16 +820,25 @@ def admin_replace_item_assembly(
     body: dict[str, Any],
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_UPDATE)),
     service: AdminItemsService = Depends(get_admin_items_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     parts = body.get("parts") if isinstance(body, dict) else None
     if parts is None and isinstance(body, list):
         parts = body
     try:
-        return service.replace_assembly_parts(item_key, parts or [])
+        result = service.replace_assembly_parts(item_key, parts or [])
     except ItemAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.item_record.assembly_replaced",
+        "item_record",
+        item_key,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values={"part_count": len(parts or [])},
+    )
+    return result
 
 
 @router.post("/admin/item-records/{item_key}/archive")
@@ -670,13 +846,21 @@ def admin_archive_item_record(
     item_key: str,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_ARCHIVE)),
     service: AdminItemsService = Depends(get_admin_items_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.archive_item(item_key)
+        result = service.archive_item(item_key)
     except ItemAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.item_record.archived",
+        "item_record",
+        item_key,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.post("/admin/item-records/{item_key}/restore")
@@ -684,13 +868,21 @@ def admin_restore_item_record(
     item_key: str,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_ARCHIVE)),
     service: AdminItemsService = Depends(get_admin_items_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.restore_item(item_key)
+        result = service.restore_item(item_key)
     except ItemAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.item_record.restored",
+        "item_record",
+        item_key,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.get("/admin/item-types")
@@ -707,13 +899,22 @@ def admin_create_item_type(
     body: ItemTypeCreateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_CREATE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.create_item_type(**body.model_dump())
+        result = service.create_item_type(**body.model_dump())
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.item_type.created",
+        "item_type",
+        _result_key(result, "id"),
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(),
+    )
+    return result
 
 
 @router.patch("/admin/item-types/{item_type_id}")
@@ -722,13 +923,22 @@ def admin_update_item_type(
     body: ItemTypeUpdateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_UPDATE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.update_item_type(item_type_id, body.model_dump(exclude_unset=True))
+        result = service.update_item_type(item_type_id, body.model_dump(exclude_unset=True))
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.item_type.updated",
+        "item_type",
+        item_type_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(exclude_unset=True),
+    )
+    return result
 
 
 @router.post("/admin/item-types/{item_type_id}/archive")
@@ -736,13 +946,21 @@ def admin_archive_item_type(
     item_type_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_ARCHIVE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.archive_item_type(item_type_id)
+        result = service.archive_item_type(item_type_id)
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.item_type.archived",
+        "item_type",
+        item_type_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.post("/admin/item-types/{item_type_id}/restore")
@@ -750,13 +968,21 @@ def admin_restore_item_type(
     item_type_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_ARCHIVE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.restore_item_type(item_type_id)
+        result = service.restore_item_type(item_type_id)
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.item_type.restored",
+        "item_type",
+        item_type_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.get("/admin/rule-types")
@@ -773,13 +999,22 @@ def admin_create_rule_type(
     body: RuleTypeCreateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_CREATE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.create_rule_type(**body.model_dump())
+        result = service.create_rule_type(**body.model_dump())
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.snap_rule_type.created",
+        "snap_rule_type",
+        _result_key(result, "id"),
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(),
+    )
+    return result
 
 
 @router.patch("/admin/rule-types/{rule_type_id}")
@@ -788,13 +1023,22 @@ def admin_update_rule_type(
     body: RuleTypeUpdateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_UPDATE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.update_rule_type(rule_type_id, body.model_dump(exclude_unset=True))
+        result = service.update_rule_type(rule_type_id, body.model_dump(exclude_unset=True))
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.snap_rule_type.updated",
+        "snap_rule_type",
+        rule_type_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(exclude_unset=True),
+    )
+    return result
 
 
 @router.post("/admin/rule-types/{rule_type_id}/archive")
@@ -802,13 +1046,21 @@ def admin_archive_rule_type(
     rule_type_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_ARCHIVE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.archive_rule_type(rule_type_id)
+        result = service.archive_rule_type(rule_type_id)
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.snap_rule_type.archived",
+        "snap_rule_type",
+        rule_type_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.post("/admin/rule-types/{rule_type_id}/restore")
@@ -816,13 +1068,21 @@ def admin_restore_rule_type(
     rule_type_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_ARCHIVE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.restore_rule_type(rule_type_id)
+        result = service.restore_rule_type(rule_type_id)
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.snap_rule_type.restored",
+        "snap_rule_type",
+        rule_type_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.get("/admin/rules")
@@ -839,13 +1099,22 @@ def admin_create_rule(
     body: RuleCreateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_CREATE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.create_rule(**body.model_dump())
+        result = service.create_rule(**body.model_dump())
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.snap_rule.created",
+        "snap_rule",
+        _result_key(result, "id"),
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(),
+    )
+    return result
 
 
 @router.patch("/admin/rules/{rule_id}")
@@ -854,13 +1123,22 @@ def admin_update_rule(
     body: RuleUpdateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_UPDATE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.update_rule(rule_id, body.model_dump(exclude_unset=True))
+        result = service.update_rule(rule_id, body.model_dump(exclude_unset=True))
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.snap_rule.updated",
+        "snap_rule",
+        rule_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(exclude_unset=True),
+    )
+    return result
 
 
 @router.post("/admin/rules/{rule_id}/archive")
@@ -868,13 +1146,21 @@ def admin_archive_rule(
     rule_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_ARCHIVE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.archive_rule(rule_id)
+        result = service.archive_rule(rule_id)
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.snap_rule.archived",
+        "snap_rule",
+        rule_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result
 
 
 @router.post("/admin/rules/{rule_id}/restore")
@@ -882,10 +1168,18 @@ def admin_restore_rule(
     rule_id: int,
     auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_ARCHIVE)),
     service: AdminSnapCatalogService = Depends(get_admin_snap_catalog_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> dict[str, Any]:
     _ = auth
     try:
-        return service.restore_rule(rule_id)
+        result = service.restore_rule(rule_id)
     except SnapCatalogAdminError as exc:
         _raise_admin(exc)
         raise
+    audit.record(
+        "fair_stand.snap_rule.restored",
+        "snap_rule",
+        rule_id,
+        scope=SCOPE_SYSTEM_CATALOG,
+    )
+    return result

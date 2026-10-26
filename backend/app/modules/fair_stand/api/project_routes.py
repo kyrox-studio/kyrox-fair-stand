@@ -12,8 +12,10 @@ from fastapi.security import HTTPAuthorizationCredentials
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.integrations.kyrox_core.audit import SCOPE_ORGANIZATION, StandAuditRecorder
 from app.integrations.kyrox_core.auth import AuthContext
 from app.integrations.kyrox_core.dev_bypass import dev_bypass_enabled
+from app.integrations.kyrox_core.lifecycle import OrganizationLifecycleGuard
 from app.integrations.kyrox_core.ports import AuthorizationPort
 from app.modules.fair_stand.api.dependencies import (
     PERMISSION_PROJECTS_CREATE,
@@ -22,10 +24,14 @@ from app.modules.fair_stand.api.dependencies import (
     PERMISSION_PROJECTS_READ,
     PERMISSION_PROJECTS_UPDATE,
     bearer_scheme,
+    enforce_organization_work_allowed,
     get_authorization_adapter,
     get_auth_context,
+    get_lifecycle_guard,
     get_project_service,
+    get_stand_audit,
     require_permission,
+    require_work_permission,
 )
 from app.modules.fair_stand.application.image_optimize import upload_limit_message
 from app.modules.fair_stand.application.projects import (
@@ -174,7 +180,7 @@ def list_projects(
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_project(
     body: ProjectCreateBody,
-    auth: AuthContext = Depends(require_permission(PERMISSION_PROJECTS_CREATE)),
+    auth: AuthContext = Depends(require_work_permission(PERMISSION_PROJECTS_CREATE)),
     service: ProjectService = Depends(get_project_service),
 ) -> dict[str, Any]:
     try:
@@ -212,6 +218,7 @@ def update_project(
     authorization: AuthorizationPort = Depends(get_authorization_adapter),
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     service: ProjectService = Depends(get_project_service),
+    lifecycle: OrganizationLifecycleGuard = Depends(get_lifecycle_guard),
 ) -> dict[str, Any]:
     # Upsert: first save / ZIP import uses PUT with a client-generated id.
     # Existing row requires update; missing row requires create.
@@ -227,6 +234,7 @@ def update_project(
             access_token=credentials.credentials,
         ):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
+    enforce_organization_work_allowed(lifecycle, auth.organization_id)
     try:
         project = service.update_project(
             project_id=project_id,
@@ -262,7 +270,7 @@ def get_project_revision(
 def assign_project_customer(
     project_id: UUID,
     body: ProjectCustomerBody,
-    auth: AuthContext = Depends(require_permission(PERMISSION_PROJECTS_UPDATE)),
+    auth: AuthContext = Depends(require_work_permission(PERMISSION_PROJECTS_UPDATE)),
     service: ProjectService = Depends(get_project_service),
 ) -> dict[str, Any]:
     try:
@@ -279,20 +287,23 @@ def assign_project_customer(
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_project(
     project_id: UUID,
-    auth: AuthContext = Depends(require_permission(PERMISSION_PROJECTS_DELETE)),
+    auth: AuthContext = Depends(require_work_permission(PERMISSION_PROJECTS_DELETE)),
     service: ProjectService = Depends(get_project_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> Response:
     try:
         service.delete_project(project_id=project_id, organization_id=auth.organization_id)
     except ProjectServiceError as exc:
         _raise_service(exc)
+    # Yalnız kimlik: proje adı, müşteri ve çizim içeriği audit'e yazılmaz (ADR-0004 PII).
+    audit.record("fair_stand.project.deleted", "project", project_id, scope=SCOPE_ORGANIZATION)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{project_id}/assets", status_code=status.HTTP_201_CREATED)
 async def upload_project_asset(
     project_id: UUID,
-    auth: AuthContext = Depends(require_permission(PERMISSION_PROJECTS_UPDATE)),
+    auth: AuthContext = Depends(require_work_permission(PERMISSION_PROJECTS_UPDATE)),
     service: ProjectService = Depends(get_project_service),
     file: UploadFile = File(...),
     asset_id: UUID | None = Form(default=None),
@@ -342,7 +353,7 @@ def download_project_asset(
 def delete_project_asset(
     project_id: UUID,
     asset_id: UUID,
-    auth: AuthContext = Depends(require_permission(PERMISSION_PROJECTS_UPDATE)),
+    auth: AuthContext = Depends(require_work_permission(PERMISSION_PROJECTS_UPDATE)),
     service: ProjectService = Depends(get_project_service),
 ) -> Response:
     try:

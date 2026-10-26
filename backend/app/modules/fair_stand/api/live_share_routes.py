@@ -14,7 +14,7 @@ from app.integrations.kyrox_core.auth import AuthContext
 from app.modules.fair_stand.api.dependencies import (
     PERMISSION_PROJECTS_CREATE,
     PERMISSION_PROJECTS_UPDATE,
-    require_any_permission,
+    require_work_permission,
 )
 from app.modules.fair_stand.application.live_share import (
     VIEWER_OCCUPIED_MESSAGE,
@@ -57,7 +57,7 @@ def get_registry() -> LiveShareRegistry:
 
 @router.post("/live-shares", response_model=LiveShareCreatedResponse)
 def create_live_share(
-    auth: AuthContext = Depends(require_any_permission(PERMISSION_PROJECTS_UPDATE, PERMISSION_PROJECTS_CREATE)),
+    auth: AuthContext = Depends(require_work_permission(PERMISSION_PROJECTS_UPDATE, PERMISSION_PROJECTS_CREATE)),
     registry: LiveShareRegistry = Depends(get_registry),
 ) -> LiveShareCreatedResponse:
     _ = auth

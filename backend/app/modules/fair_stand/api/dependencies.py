@@ -8,12 +8,23 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.session import get_db
+from app.integrations.kyrox_core.audit import (
+    AuditPort,
+    HttpAuditAdapter,
+    NoOpAuditAdapter,
+    StandAuditRecorder,
+)
 from app.integrations.kyrox_core.auth import AuthContext
 from app.integrations.kyrox_core.client import HttpAuthorizationAdapter, KyroxCoreHttpClient
 from app.integrations.kyrox_core.dev_bypass import (
     AllowAllAuthorizationAdapter,
     dev_bypass_enabled,
     resolve_auth_context,
+)
+from app.integrations.kyrox_core.lifecycle import (
+    OrganizationLifecycleGuard,
+    OrganizationLifecycleUnavailableError,
+    OrganizationWorkNotAllowedError,
 )
 from app.integrations.kyrox_core.ports import AuthorizationPort
 from app.modules.fair_stand.application.admin_catalog import AdminCatalogService
@@ -191,3 +202,65 @@ def require_any_permission(*permission_codes: str):
     if not permission_codes:
         raise ValueError("At least one permission code is required")
     return _require_any_permission(permission_codes)
+
+
+def get_audit_adapter() -> AuditPort:
+    if dev_bypass_enabled():
+        return NoOpAuditAdapter()
+    return HttpAuditAdapter()
+
+
+def get_stand_audit(
+    auth: AuthContext = Depends(get_auth_context),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    adapter: AuditPort = Depends(get_audit_adapter),
+    db: Session = Depends(get_db),
+) -> StandAuditRecorder:
+    """Request-bound Core audit recorder (D-18); events are sent after the DB commit."""
+    token = credentials.credentials if credentials and credentials.credentials else ""
+    if not token:
+        adapter = NoOpAuditAdapter()
+    return StandAuditRecorder(
+        session=db,
+        adapter=adapter,
+        organization_id=auth.organization_id,
+        access_token=token,
+    )
+
+
+def get_lifecycle_guard() -> OrganizationLifecycleGuard:
+    return OrganizationLifecycleGuard()
+
+
+def enforce_organization_work_allowed(guard: OrganizationLifecycleGuard, organization_id: UUID) -> None:
+    """Fail closed unless Core reports the organization as active and not deleted (D-12)."""
+    if dev_bypass_enabled():
+        return
+    try:
+        guard.require_work_allowed(organization_id)
+    except OrganizationWorkNotAllowedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Organization lifecycle does not allow product work",
+        ) from exc
+    except OrganizationLifecycleUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Organization lifecycle authority unavailable",
+        ) from exc
+
+
+def require_work_permission(*permission_codes: str):
+    """Permission check first, then the Core lifecycle gate for organization-owned writes."""
+    if not permission_codes:
+        raise ValueError("At least one permission code is required")
+    permission_dependency = _require_any_permission(permission_codes)
+
+    def dependency(
+        auth: AuthContext = Depends(permission_dependency),
+        guard: OrganizationLifecycleGuard = Depends(get_lifecycle_guard),
+    ) -> AuthContext:
+        enforce_organization_work_allowed(guard, auth.organization_id)
+        return auth
+
+    return dependency
