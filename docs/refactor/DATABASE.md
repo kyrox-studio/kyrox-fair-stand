@@ -92,9 +92,9 @@ Org kapanışında tenant verisinin imhası için üretim worker'ı **yoktur**; 
 4. `00000000-0000-4000-8000-000000000001` atanmamış eski satırların işaretidir; CRM satırı değildir.
 5. Müşteri silindiğinde projelerin ne olacağı (sil / atanmamışa çek) ürün kararıdır; karar verilmeden davranış eklenmez.
 
-### Yaşam döngüsü kapısı
+### Askıdaki / kapanan organizasyon
 
-Organizasyona ait her yazma (proje oluştur/kaydet/müşteri ata/sil, görsel yükle/sil, maliyet kalemi, grup şablonu, canlı paylaşım başlatma) yetki kontrolünden sonra Core `GET /api/v1/organizations/{id}/lifecycle-snapshot` sonucunu ister (`X-Kyrox-Product-Lifecycle-Token`). `work_allowed=false` → 403; credential yok/kısa/`dev-insecure`, Core erişilemez veya cevap tutarsız → 503. Okumalar kapıdan geçmez. Yalnız olumlu cevap 10 sn önbellekte tutulur. Canlı paylaşımı durdurma kapı dışıdır (tenant verisine yazmaz). Ortam değişkeni: `KYROX_CORE_PRODUCT_LIFECYCLE_TOKEN`.
+Stand ayrı bir lifecycle snapshot çağrısı yapmaz. Her organizasyon isteği `require_permission` → Core `POST /api/v1/organizations/{id}/authorization/check` zincirinden geçer; Core yetki sorgusu yalnız `status=active` ve silinmemiş organizasyonda izin verir (Core `sqlalchemy_permission_checker.py`, test `test_sqlalchemy_permission_checker_evaluates_user_role_graph`). Askıdaki veya silinmiş organizasyonun kullanıcısı bu yüzden Stand'de okuyamaz ve yazamaz; olumlu karar en çok 10 sn önbellekte kalır (ADR-0003 notu, F-S5). Stand'de organizasyon verisine yazan kullanıcısız arka plan işi yoktur (`main.py` yalnız bellekteki canlı paylaşım temizleyicisini çalıştırır). Super Admin bu kontrolü atlar.
 
 ### Audit olayları
 

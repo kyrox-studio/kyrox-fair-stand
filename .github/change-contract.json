@@ -1,16 +1,14 @@
 {
   "schemaVersion": 2,
-  "id": "security-p1-stand-audit-lifecycle",
+  "id": "security-p1-stand-audit",
   "kind": "bugfix",
-  "summary": "F-S8/D-18: 33 admin mutasyonu ve proje silme Core audit API'sine fair_stand.* olayı olarak gider (commit sonrası, best-effort, sırsız). K-STAND-02/D-12: organizasyona ait yazmalar Core lifecycle snapshot'ı ile fail-closed kapıdan geçer; tenant veri envanteri ve customer_id bağlantı kuralı belgelenir. Üretimde veri silen worker yok.",
+  "summary": "F-S8/D-18: 33 admin mutasyonu ve proje silme Core audit API'sine fair_stand.* olayı olarak gider (commit sonrası, best-effort, sırsız). K-STAND-02/D-12: tenant veri envanteri ve customer_id bağlantı kuralı belgelenir; askıdaki organizasyon zaten Core authorization/check ile reddedildiği için ayrı lifecycle kapısı eklenmez. Üretimde veri silen worker yok.",
   "owners": [
     "backend/app/integrations/kyrox_core/audit.py",
-    "backend/app/integrations/kyrox_core/lifecycle.py",
     "backend/app/modules/fair_stand/api/dependencies.py"
   ],
   "sourceOfTruth": [
     "backend/app/integrations/kyrox_core/audit.py",
-    "backend/app/integrations/kyrox_core/lifecycle.py",
     "backend/app/modules/fair_stand/api/dependencies.py",
     "docs/refactor/DATABASE.md"
   ],
@@ -37,24 +35,20 @@
     "mode": "full-system",
     "affectedFiles": [],
     "affectedTests": [
-      "backend/tests/modules/fair_stand/test_core_audit.py",
-      "backend/tests/modules/fair_stand/test_core_lifecycle.py"
+      "backend/tests/modules/fair_stand/test_core_audit.py"
     ],
     "affectedDocs": [],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": []
     },
-    "notes": "Backend-only. Full-system sweep yalnız JS/JSON/HTML/CSS/YAML sembollerini tarar; Python dosyaları için çağıranlar elle tarandı: admin route'ları (routes.py, 33 mutasyon), proje/maliyet/grup şablonu/canlı paylaşım yazma route'ları ve bunları kullanan backend testleri. conftest Core audit ve lifecycle'ı mevcut FakeCoreHttp/AllowAll kalıbıyla taklit eder; mevcut yetki ve davranış testleri değişmeden geçer. Frontend (src/projectRemote.js, src/groupTemplateRemote.js, src/liveTabShare.js) değişmez; 403/503 mevcut hata yolundan gösterilir. Audit yalnız commit sonrası gönderilir, best-effort'tur (platform projects/fair-crm/decisions/KNOWN_DECISIONS.md §6 ve kyrox-core PRODUCT_INTEGRATION_GUIDE §7 ile aynı). Sistem kataloğu olayları isteğin X-Organization-Id organizasyonuna metadata.scope=system_catalog ile yazılır (CRM fair_crm.system_backup.* ile aynı kalıp); Core'da organizasyonsuz audit ucu yok. Lifecycle kapısı CRM integrations/kyrox_core/lifecycle.py doğrulama kurallarını kopyalar; okuma route'ları ve canlı paylaşımı durdurma kapı dışıdır. Tenant veri envanteri ve customer_id bağlantı kuralı docs/refactor/DATABASE.md'ye yazıldı. Veri silen worker eklenmedi (OL08-D üretim worker'ını yetkilendirmiyor). Alembic head ve şema değişmez."
+    "notes": "Backend-only. Full-system sweep yalnız JS/JSON/HTML/CSS/YAML sembollerini tarar; Python dosyaları için çağıranlar elle tarandı: admin route'ları (routes.py, 33 mutasyon), proje silme route'u ve bunları kullanan backend testleri. conftest Core audit'i mevcut FakeCoreHttp/AllowAll kalıbıyla taklit eder; mevcut yetki ve davranış testleri değişmeden geçer. Frontend değişmez. Audit yalnız commit sonrası gönderilir, best-effort'tur (platform projects/fair-crm/decisions/KNOWN_DECISIONS.md §6 ve kyrox-core PRODUCT_INTEGRATION_GUIDE §7 ile aynı; kullanıcı kararı 2026-10-27). Sistem kataloğu olayları isteğin X-Organization-Id organizasyonuna metadata.scope=system_catalog ile yazılır (CRM fair_crm.system_backup.* ile aynı kalıp; kullanıcı kararı 2026-10-27). Askıdaki/silinmiş organizasyon Core authorization/check ile zaten reddedilir; ayrı lifecycle kapısı eklenmedi. Tenant veri envanteri ve customer_id bağlantı kuralı docs/refactor/DATABASE.md'ye yazıldı. Veri silen worker eklenmedi. Alembic head ve şema değişmez."
   },
   "security": {
     "controls": {
       "SEC-01": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_permission_is_checked_before_lifecycle",
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_organization_owned_writes_fail_closed"
-        ]
+        "status": "na",
+        "reason": "Route permission dependencies are unchanged; audit is recorded only after the existing Core permission check."
       },
       "SEC-02": {
         "status": "required",
@@ -66,14 +60,11 @@
       },
       "SEC-03": {
         "status": "na",
-        "reason": "JWT decode, Core session validation and permission checks are unchanged; the new lifecycle gate runs only after them."
+        "reason": "JWT decode, Core session validation and permission checks are unchanged."
       },
       "SEC-04": {
         "status": "required",
         "tests": [
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_client_sends_credential_header_and_never_logs_it",
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_unsafe_lifecycle_credential_is_never_sent",
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_settings_read_lifecycle_credential_from_environment",
           "backend/tests/modules/fair_stand/test_core_audit.py::test_core_audit_failure_is_best_effort_and_never_logs_token",
           "backend/tests/modules/fair_stand/test_core_audit.py::test_sanitize_drops_secrets_nested_and_long_values"
         ]
@@ -84,11 +75,11 @@
       },
       "SEC-06": {
         "status": "na",
-        "reason": "No SQL, sort, filter or shell construction changes; audit and lifecycle use fixed Core paths with UUID path values."
+        "reason": "No SQL, sort, filter or shell construction changes; audit uses a fixed Core path with UUID path values."
       },
       "SEC-07": {
         "status": "na",
-        "reason": "Upload byte/pixel limits and storage path handling are unchanged; asset upload only gains the lifecycle gate."
+        "reason": "Upload byte/pixel limits, storage path handling and asset routes are unchanged."
       },
       "SEC-08": {
         "status": "na",
@@ -134,7 +125,7 @@
       },
       "SEC-16": {
         "status": "na",
-        "reason": "No new public endpoint or expensive operation; the extra Core lifecycle call is bounded by a 10 s positive cache per organization."
+        "reason": "No new public endpoint or expensive operation; audit adds one post-commit Core call per admin mutation or project delete."
       },
       "SEC-17": {
         "status": "na",
@@ -149,33 +140,22 @@
         "reason": "No cookie-authenticated state-changing request exists in Stand; bearer tokens only."
       },
       "SEC-20": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_core_errors_fail_closed",
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_invalid_or_inconsistent_snapshot_fails_closed",
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_missing_body_fields_fail_closed",
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_organization_owned_writes_fail_closed"
-        ]
+        "status": "na",
+        "reason": "No new fail-closed path; audit is best-effort by decision (CRM parity, 2026-10-27) and never blocks the committed mutation."
       },
       "SEC-21": {
         "status": "na",
-        "reason": "Lifecycle and audit requests go only to the configured Core base URL; no user-supplied URL is fetched."
+        "reason": "Audit requests go only to the configured Core base URL; no user-supplied URL is fetched."
       },
       "SEC-22": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_suspended_or_deleted_organization_refuses_work_every_time",
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_organization_owned_writes_fail_closed",
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_every_organization_owned_write_route_is_lifecycle_gated",
-          "backend/tests/modules/fair_stand/test_core_lifecycle.py::test_active_organization_allows_work_and_caches_only_allow"
-        ]
+        "status": "na",
+        "reason": "Organization lifecycle behavior is unchanged: Core authorization/check already denies non-active organizations (Core sqlalchemy_permission_checker); no Stand-side lifecycle gate is added."
       }
     }
   },
   "tests": {
     "targeted": [
-      "backend/tests/modules/fair_stand/test_core_audit.py",
-      "backend/tests/modules/fair_stand/test_core_lifecycle.py"
+      "backend/tests/modules/fair_stand/test_core_audit.py"
     ],
     "fullSuite": true,
     "build": true,
@@ -186,12 +166,12 @@
     }
   },
   "risk": {
-    "level": "medium",
-    "notes": "Lifecycle credential canlı Stand .env'inde yoksa organizasyona ait tüm yazmalar 503 ile durur (bilinçli fail-closed); deploy öncesi KYROX_CORE_PRODUCT_LIFECYCLE_TOKEN tanımlanmalı. Audit best-effort olduğundan Core audit kesintisi işlemleri durdurmaz."
+    "level": "low",
+    "notes": "Audit best-effort olduğundan Core audit kesintisi işlemleri durdurmaz. Canlıda yeni ortam değişkeni gerekmez."
   },
   "migration": {
     "required": false,
-    "notes": "Veritabanı şeması değişmez; Alembic head aynı kalır. Yeni ortam değişkeni: KYROX_CORE_PRODUCT_LIFECYCLE_TOKEN."
+    "notes": "Veritabanı şeması değişmez; Alembic head aynı kalır. Yeni ortam değişkeni yok."
   },
-  "rollback": "Bu dalın commit'lerini geri al: route'lar eski yetki bağımlılıklarına döner, audit ve lifecycle modülleri kalkar. Veri veya şema geri dönüşü gerekmez."
+  "rollback": "Bu dalın commit'lerini geri al: route'lar audit bağımlılığı olmadan çalışır, audit modülü kalkar. Veri veya şema geri dönüşü gerekmez."
 }

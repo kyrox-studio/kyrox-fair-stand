@@ -20,8 +20,8 @@ from app.modules.fair_stand.api.dependencies import (
     PERMISSION_PROJECTS_READ,
     PERMISSION_PROJECTS_UPDATE,
     get_group_template_service,
+    require_any_permission,
     require_permission,
-    require_work_permission,
 )
 from app.modules.fair_stand.application.group_templates import (
     GroupTemplateService,
@@ -89,7 +89,7 @@ def get_group_template(
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_group_template(
     body: GroupTemplateCreateBody,
-    auth: AuthContext = Depends(require_work_permission(PERMISSION_PROJECTS_CREATE, PERMISSION_PROJECTS_UPDATE)),
+    auth: AuthContext = Depends(require_any_permission(PERMISSION_PROJECTS_CREATE, PERMISSION_PROJECTS_UPDATE)),
     service: GroupTemplateService = Depends(get_group_template_service),
 ) -> dict[str, Any]:
     try:
@@ -108,7 +108,7 @@ def create_group_template(
 def rename_group_template(
     template_id: UUID,
     body: GroupTemplateRenameBody,
-    auth: AuthContext = Depends(require_work_permission(PERMISSION_PROJECTS_CREATE, PERMISSION_PROJECTS_UPDATE)),
+    auth: AuthContext = Depends(require_any_permission(PERMISSION_PROJECTS_CREATE, PERMISSION_PROJECTS_UPDATE)),
     service: GroupTemplateService = Depends(get_group_template_service),
 ) -> dict[str, Any]:
     try:
@@ -120,7 +120,7 @@ def rename_group_template(
 @router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_group_template(
     template_id: UUID,
-    auth: AuthContext = Depends(require_work_permission(PERMISSION_PROJECTS_DELETE)),
+    auth: AuthContext = Depends(require_permission(PERMISSION_PROJECTS_DELETE)),
     service: GroupTemplateService = Depends(get_group_template_service),
 ) -> Response:
     try:

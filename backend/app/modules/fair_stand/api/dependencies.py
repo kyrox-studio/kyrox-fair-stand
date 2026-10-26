@@ -21,11 +21,6 @@ from app.integrations.kyrox_core.dev_bypass import (
     dev_bypass_enabled,
     resolve_auth_context,
 )
-from app.integrations.kyrox_core.lifecycle import (
-    OrganizationLifecycleGuard,
-    OrganizationLifecycleUnavailableError,
-    OrganizationWorkNotAllowedError,
-)
 from app.integrations.kyrox_core.ports import AuthorizationPort
 from app.modules.fair_stand.application.admin_catalog import AdminCatalogService
 from app.modules.fair_stand.application.admin_items import AdminItemsService
@@ -227,40 +222,3 @@ def get_stand_audit(
         access_token=token,
     )
 
-
-def get_lifecycle_guard() -> OrganizationLifecycleGuard:
-    return OrganizationLifecycleGuard()
-
-
-def enforce_organization_work_allowed(guard: OrganizationLifecycleGuard, organization_id: UUID) -> None:
-    """Fail closed unless Core reports the organization as active and not deleted (D-12)."""
-    if dev_bypass_enabled():
-        return
-    try:
-        guard.require_work_allowed(organization_id)
-    except OrganizationWorkNotAllowedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Organization lifecycle does not allow product work",
-        ) from exc
-    except OrganizationLifecycleUnavailableError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Organization lifecycle authority unavailable",
-        ) from exc
-
-
-def require_work_permission(*permission_codes: str):
-    """Permission check first, then the Core lifecycle gate for organization-owned writes."""
-    if not permission_codes:
-        raise ValueError("At least one permission code is required")
-    permission_dependency = _require_any_permission(permission_codes)
-
-    def dependency(
-        auth: AuthContext = Depends(permission_dependency),
-        guard: OrganizationLifecycleGuard = Depends(get_lifecycle_guard),
-    ) -> AuthContext:
-        enforce_organization_work_allowed(guard, auth.organization_id)
-        return auth
-
-    return dependency

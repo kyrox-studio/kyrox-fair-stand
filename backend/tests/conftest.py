@@ -18,7 +18,6 @@ from app.modules.fair_stand.api.dependencies import (
     get_audit_adapter,
     get_authorization_adapter,
     get_core_http_client,
-    get_lifecycle_guard,
 )
 from app.modules.fair_stand.infrastructure import models as _fair_stand_models  # noqa: F401
 from app.integrations.kyrox_core.ports import AuthorizationPort
@@ -44,13 +43,6 @@ class RecordingAuditAdapter:
 
     def record_event(self, **kwargs) -> None:
         self.events.append(kwargs)
-
-
-class AllowAllLifecycleGuard:
-    """Core lifecycle stand-in: organization is active (D-12). Guard tests use their own."""
-
-    def require_work_allowed(self, organization_id: UUID) -> None:
-        _ = organization_id
 
 
 def create_test_token(*, user_id: UUID, email: str = "test@example.com") -> str:
@@ -140,7 +132,6 @@ def client(
     app.dependency_overrides[get_authorization_adapter] = lambda: AllowAllAuthorization()
     app.dependency_overrides[get_core_http_client] = lambda: FakeCoreHttp()
     app.dependency_overrides[get_audit_adapter] = lambda: audit_adapter
-    app.dependency_overrides[get_lifecycle_guard] = lambda: AllowAllLifecycleGuard()
     try:
         yield TestClient(app)
     finally:
