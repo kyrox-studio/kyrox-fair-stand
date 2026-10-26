@@ -1,0 +1,5 @@
+# Uygulama ekranlari HTML robots meta etiketiyle noindex, nofollow tasir.
+# Tarama aciktir: botlarin noindex etiketini okuyabilmesi gerekir.
+# Bu dosya kimlik dogrulama veya erisim kontrolu degildir.
+User-agent: *
+Allow: /

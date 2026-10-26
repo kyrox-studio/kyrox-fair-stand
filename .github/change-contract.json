@@ -1,14 +1,19 @@
 {
   "schemaVersion": 2,
-  "id": "ci-pip-audit-warning",
-  "kind": "tooling",
-  "summary": "CI'a engellemeyen Python bağımlılık denetimi (pip-audit) uyarı adımı eklenir. Bilinen açık varsa PR'da uyarı görünür; iş durmaz. Deploy aynı major içindeki güvenlik yamalarını otomatik uygular (CRM deploy-all, SECURITY_PROGRAM F-G2).",
+  "id": "web-launch-stand-favicon",
+  "kind": "bugfix",
+  "summary": "Bağımsız Stand girişine kyrox-brand kaynaklı SVG/ICO sekme simgeleri eklenir. Stand dosya adları CRM derlemesinde mevcut favicon.ico dosyasının ezilmesini önler. Bağımsız sekme başlığı kullanıcı kararıyla Kyrox Studio | Stand Konfiguratör olur. Uygulama HTML başlığı noindex/nofollow taşır; gerçek robots.txt taramaya izin vererek botların noindex işaretini okuyabilmesini sağlar.",
   "owners": [
-    ".github/workflows/ci.yml"
+    "index.html",
+    "public/stand-favicon.svg",
+    "public/stand-favicon.ico",
+    "public/robots.txt"
   ],
   "sourceOfTruth": [
-    ".github/workflows/ci.yml",
-    "kyrox-platform/standards/security/SECURITY_PROGRAM.md"
+    "index.html",
+    "public/stand-favicon.svg",
+    "public/stand-favicon.ico",
+    "public/robots.txt"
   ],
   "impact": {
     "catalog": "not-applicable",
@@ -18,163 +23,103 @@
     "renderer": "not-applicable",
     "persistence": "not-applicable",
     "bom": "not-applicable",
-    "ui": "not-applicable",
+    "ui": "affected",
     "composition": "not-applicable",
-    "assets": "not-applicable",
+    "assets": "affected",
     "storage": "not-applicable",
     "importExport": "not-applicable",
     "performance": "not-applicable",
     "accessibility": "not-applicable",
-    "architecture": "affected",
-    "security": "affected",
+    "architecture": "not-applicable",
+    "security": "not-applicable",
     "tests": "affected"
   },
   "impactAnalysis": {
     "mode": "full-system",
     "affectedFiles": [
-      ".github/workflows/ci.yml"
+      "scripts/install-server.sh",
+      "scripts/verify-change-contract.mjs",
+      "src/systemChangeContract.js"
     ],
     "affectedTests": [
-      "test/historicalDocumentationStatus.test.js",
+      "test/autosaveMainIntegration.test.js",
+      "test/catalogDomainBoundary.test.js",
+      "test/catalogPreviewConfig.test.js",
+      "test/f027SceneReset.test.js",
+      "test/helpGuide.test.js",
       "test/hygieneGates.test.js",
+      "test/itemCatalogFields.test.js",
+      "test/moduleGroupPanel.test.js",
+      "test/projectCustomerPanel.test.js",
+      "test/projectRevisionSession.test.js",
+      "test/renderOnlyLights.test.js",
+      "test/runtimeSettings.test.js",
       "test/systemChangeGate.test.js",
-      "test/systemChangeGateCiContract.test.js"
+      "test/systemChangeGateLocalDiff.test.js",
+      "test/systemChangeSecurityControls.test.js",
+      "test/viewportToolbarMainIntegration.test.js",
+      "test/visibleUiContract.test.js",
+      "test/favicon.test.js",
+      "e2e/favicon.spec.mjs"
     ],
     "affectedDocs": [
-      "FRESH_REPOSITORY_REVIEW.md",
-      "REPOSITORY_CLEANUP_PROGRESS.md",
+      "RELEASE_HARDENING_ROADMAP.md",
+      "SYSTEM_AUDIT_CHECKLIST.md",
+      "SYSTEM_CHANGE_GATE.md",
+      "audit/FINDINGS.md",
       "audit/SISTEM_MUTABAKAT_RAPORU.md",
-      "audit/evidence/A00_BASELINE.md",
-      "audit/evidence/A01_DOCS_SOURCE_OF_TRUTH.md",
-      "audit/evidence/A20_BUILD_CI_DEPLOY.md",
-      "audit/evidence/A22_FILE_BY_FILE_SWEEP.md"
+      "audit/evidence/A02_CHANGE_GATE.md",
+      "audit/evidence/A10_UI_CONTROLS.md",
+      "audit/evidence/A22_FILE_BY_FILE_SWEEP.md",
+      "docs/items/audit/items/PLASTIC_TRASH_BIN.md",
+      "docs/items/audit/items/hali.md",
+      "docs/items/audit/items/karolaj.md",
+      "docs/items/audit/items/parke-acik.md",
+      "docs/items/audit/items/parke-beton.md",
+      "docs/items/audit/items/parke-sari.md",
+      "docs/items/audit/properties/FINAL_PROPERTY_AUDIT.md",
+      "docs/items/audit/properties/README.md",
+      "docs/items/audit/properties/properties/catalog.label.md",
+      "docs/items/audit/properties/properties/catalog.stripOccupancy.align.md",
+      "docs/items/audit/properties/properties/catalog.type.md",
+      "docs/items/audit/properties/properties/state.stripOccupancy.align.md",
+      "docs/items/audit/properties/properties/state.type.md",
+      "docs/items/audit/properties/properties/ui.editable.floorSelect.md",
+      "docs/items/current-system/hali.md",
+      "docs/items/current-system/karolaj.md",
+      "docs/items/current-system/parke.md",
+      "docs/items/inventory/ITEM_CAPABILITY_INVENTORY.md",
+      "docs/refactor/CATALOG.md"
     ],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": [
-        "F-004",
-        "F-005",
-        "F-006",
-        "F-009"
+        "F-025"
       ]
     },
-    "notes": "Adım engellemez; mevcut CI adımlarının sırası ve zorunluluğu değişmez. Keşfedilen belgeler ci.yml'e tarihî/genel atıf yapar; yeni uyarı adımı onların iddialarını değiştirmez, güncelleme gerekmez."
+    "notes": "Sahne, Item, BOM, persistence ve API değişmez. CRM Vite eklentisi Stand public dosyalarını kendi çıktısına kopyalar; stand-favicon adları mevcut CRM faviconunu korur. Kaynak varlıklar kyrox-brand deposundan aynen kopyalanır. Kimlik, organizasyon, yetki, kota, işler, veri yaşam döngüsü ve dış servisler etkilenmez; yalnız aynı origin statik marka simgesi eklenir. index.html referansları gözden geçirildi: mevcut testler editör gövdesi/toolbar/ayar alanlarını okur; yalnız head icon linkleri eklendi, gövde değişmedi. Kurulum scripti aynı dist/index.html dosyasını sunar. Gate dosyaları yalnız giriş dosyasını sınıflandırır. Belgelerdeki tarihî index.html atıfları değişmez. F-025 rawBomDebug yükleme bulgusudur; script yükleme davranışı değişmediği için etkilenmez. Başlık metni güncellenir; aynı tarayıcı senaryosu başlığı da doğrular. Kullanıcı isteğiyle tüm tarayıcı koşusu durduruldu; nihai kontroller toplu değişiklikler sonunda çalıştırılacak. İndeksleme politikası erişim güvenliği değildir; kimlik ve yetki denetimleri değişmez. CRM public/robots.txt aynı içeriktedir; CRM derlemesindeki kopyalama davranışıyla çakışmaz. Web tanıtım alanı ayrı origin üzerinde indekslenebilir kalır. public/robots.txt atıfları toplu son etki taramasında yeniden doğrulanacak. 26 Ekim toplu kontrol: origin/main ile güncellendi; Claude CI/pip-audit ve patched dependency değişiklikleri aynen korundu. 1546 Node testi, build ve favicon/robots gerçek Chromium kontrolü geçti. Windows CRLF yanıtı testte normalize edilir; Linux aynı kurallarla denetlenir."
   },
   "tests": {
     "targeted": [
-      "test/systemChangeGateCiContract.test.js"
+      "test/favicon.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
-      "required": false,
-      "targeted": [],
-      "reason": "Yalnız CI uyarı adımı eklenir; tarayıcı davranışı değişmez."
+      "required": true,
+      "targeted": [
+        "e2e/favicon.spec.mjs"
+      ],
+      "reason": "Tarayıcı başlığındaki simge ve gerçek varlık HTTP yanıtları doğrulanır."
     }
   },
   "risk": {
     "level": "low",
-    "notes": "Yalnız uyarı üretir; mevcut kapılar gevşemez."
+    "notes": "Düşük risk: sabit ürün başlığı, noindex metadata ve aynı origin marka varlıkları. Kimlik/yetki, sahne/BOM, veri kaydı ve API değişmez. Claude CI ve bağımlılık düzeltmeleri korunur."
   },
   "migration": {
     "required": false,
-    "notes": "Veri/şema geçişi yok."
+    "notes": "Veritabanı, proje şeması veya kullanıcı verisi değişmez."
   },
-  "rollback": "Commit'i geri al; adım kaldırılır, diğer CI adımları etkilenmez.",
-  "security": {
-    "controls": {
-      "SEC-01": {
-        "status": "na",
-        "reason": "No protected API operation or permission check changes; CI configuration only."
-      },
-      "SEC-02": {
-        "status": "na",
-        "reason": "No organization-scoped data path changes; CI configuration only."
-      },
-      "SEC-03": {
-        "status": "na",
-        "reason": "No token, session or recovery path changes."
-      },
-      "SEC-04": {
-        "status": "na",
-        "reason": "The audit step reads requirements.txt only and uses no secrets."
-      },
-      "SEC-05": {
-        "status": "na",
-        "reason": "No database role or network access changes."
-      },
-      "SEC-06": {
-        "status": "na",
-        "reason": "No SQL or shell command is built from untrusted input; fixed CI script."
-      },
-      "SEC-07": {
-        "status": "na",
-        "reason": "No upload or import endpoint is touched."
-      },
-      "SEC-08": {
-        "status": "na",
-        "reason": "No server request input schema changes."
-      },
-      "SEC-09": {
-        "status": "required",
-        "tests": [
-          "test/systemChangeGateCiContract.test.js"
-        ]
-      },
-      "SEC-10": {
-        "status": "required",
-        "tests": [
-          "test/systemChangeGateCiContract.test.js"
-        ]
-      },
-      "SEC-11": {
-        "status": "na",
-        "reason": "No TLS configuration change; pip-audit uses the default HTTPS index."
-      },
-      "SEC-12": {
-        "status": "na",
-        "reason": "No backup or restore behavior changes."
-      },
-      "SEC-13": {
-        "status": "na",
-        "reason": "No audit or security event emission changes."
-      },
-      "SEC-14": {
-        "status": "na",
-        "reason": "No user content is rendered to HTML."
-      },
-      "SEC-15": {
-        "status": "na",
-        "reason": "No cookie is set, read or changed; Stand uses bearer tokens."
-      },
-      "SEC-16": {
-        "status": "na",
-        "reason": "No public endpoint or resource limit changes."
-      },
-      "SEC-17": {
-        "status": "na",
-        "reason": "No HTTP response header changes."
-      },
-      "SEC-18": {
-        "status": "na",
-        "reason": "No CORS configuration is touched."
-      },
-      "SEC-19": {
-        "status": "na",
-        "reason": "No cookie-authenticated state-changing request exists in Stand."
-      },
-      "SEC-20": {
-        "status": "na",
-        "reason": "No error response or authorization dependency changes."
-      },
-      "SEC-21": {
-        "status": "na",
-        "reason": "No server-side request to user-supplied URLs."
-      },
-      "SEC-22": {
-        "status": "na",
-        "reason": "No async job or retry logic changes."
-      }
-    }
-  }
+  "rollback": "Bu PR içindeki head metadata/icon linkleri, robots.txt ve iki stand-favicon varlığını geri al; mevcut CRM faviconunu ve güvenlik/CI değişikliklerini koru."
 }
