@@ -1,17 +1,23 @@
 {
   "schemaVersion": 2,
-  "id": "stand-image-upload-limits",
+  "id": "privacy-links-local-fonts",
   "kind": "bugfix",
-  "summary": "Proje görseli yüklemesinde kaynak sınırları (SECURITY_PROGRAM F-002, F-003). Pillow'un süreç genel MAX_IMAGE_PIXELS ayarı artık kapatılmaz; başlıktaki piksel sayısı Pillow varsayılanını (89.478.485) aşan raster çözümlenmeden 400 ile reddedilir, JPEG küçültülecekse draft ile düşük ölçekte açılır, decode/encode thread havuzunda çalışır. Yükleme parça parça okunur; max_image_upload_mb aşılınca okuma kesilir ve mevcut 400 'Image exceeds upload limit' sözleşmesi döner.",
+  "summary": "Google Fonts otomatik isteği yerel Inter dosyalarıyla kaldırılır; mevcut kullanım kılavuzuna düzenlenebilir web gizlilik/kullanım/depolama sayfaları bağlanır. Reklam/analiz, oturum ve kayıt davranışı değişmez.",
   "owners": [
-    "backend/app/modules/fair_stand/application/image_optimize.py",
-    "backend/app/modules/fair_stand/api/project_routes.py",
-    "backend/app/modules/fair_stand/application/projects.py"
+    "index.html",
+    "src/helpGuide.js",
+    "public/fonts/inter.css",
+    "public/fonts/inter-latin.woff2",
+    "public/fonts/inter-latin-ext.woff2",
+    "public/fonts/OFL.txt"
   ],
   "sourceOfTruth": [
-    "backend/app/modules/fair_stand/application/image_optimize.py",
-    "backend/app/modules/fair_stand/api/project_routes.py",
-    "kyrox-platform/standards/security/SECURITY_PROGRAM.md"
+    "index.html",
+    "src/helpGuide.js",
+    "public/fonts/inter.css",
+    "public/fonts/inter-latin.woff2",
+    "public/fonts/inter-latin-ext.woff2",
+    "public/fonts/OFL.txt"
   ],
   "impact": {
     "catalog": "not-applicable",
@@ -21,161 +27,150 @@
     "renderer": "not-applicable",
     "persistence": "not-applicable",
     "bom": "not-applicable",
-    "ui": "not-applicable",
+    "ui": "affected",
     "composition": "not-applicable",
     "assets": "affected",
     "storage": "not-applicable",
     "importExport": "not-applicable",
-    "performance": "affected",
-    "accessibility": "not-applicable",
-    "architecture": "affected",
-    "security": "affected",
+    "performance": "not-applicable",
+    "accessibility": "affected",
+    "architecture": "not-applicable",
+    "security": "not-applicable",
     "tests": "affected"
   },
   "impactAnalysis": {
     "mode": "full-system",
-    "affectedFiles": [],
+    "affectedFiles": [
+      "scripts/install-server.sh",
+      "scripts/verify-change-contract.mjs",
+      "src/systemChangeContract.js",
+      "index.html",
+      "src/main.js",
+      "src/mountFairStand.js"
+    ],
     "affectedTests": [
-      "backend/tests/modules/fair_stand/test_image_optimize.py",
-      "backend/tests/modules/fair_stand/test_projects_api.py",
-      "e2e/project-open-asset-cache.spec.mjs",
-      "e2e/missing-project-asset-open.spec.mjs"
+      "test/autosaveMainIntegration.test.js",
+      "test/catalogDomainBoundary.test.js",
+      "test/catalogPreviewConfig.test.js",
+      "test/f027SceneReset.test.js",
+      "test/helpGuide.test.js",
+      "test/hygieneGates.test.js",
+      "test/itemCatalogFields.test.js",
+      "test/moduleGroupPanel.test.js",
+      "test/projectCustomerPanel.test.js",
+      "test/projectRevisionSession.test.js",
+      "test/renderOnlyLights.test.js",
+      "test/runtimeSettings.test.js",
+      "test/systemChangeGate.test.js",
+      "test/systemChangeGateLocalDiff.test.js",
+      "test/systemChangeSecurityControls.test.js",
+      "test/viewportToolbarMainIntegration.test.js",
+      "test/visibleUiContract.test.js",
+      "test/favicon.test.js",
+      "e2e/favicon.spec.mjs",
+      "test/bundleLoadingContract.test.js",
+      "test/catalogDragItemKeyInvariant.test.js",
+      "test/catalogWidthFamily.test.js",
+      "test/colorEditorControllerMainIntegration.test.js",
+      "test/colorEditorMainIntegration.test.js",
+      "test/editorViewSettings.test.js",
+      "test/f028FeatureReset.test.js",
+      "test/hostProjectUrl.test.js",
+      "test/illuminatedFoamModule.test.js",
+      "test/imageAssetDeletion.test.js",
+      "test/imageAssetLiveDelete.test.js",
+      "test/itemDefaultZCm.test.js",
+      "test/lightboxFabric.test.js",
+      "test/lightboxFabricAppearance.test.js",
+      "test/lightboxFabricLighting.test.js",
+      "test/moduleBehaviorPolicy.test.js",
+      "test/moduleStateConstructionRegistry.test.js",
+      "test/mountFairStandBoundary.test.js",
+      "test/productionBomPanelEntry.test.js",
+      "test/profileLength.test.js",
+      "test/projectAtomicDeletion.test.js",
+      "test/projectDropdownSwitchIntegration.test.js",
+      "test/projectImportFlow.test.js",
+      "test/projectOpenFastPath.test.js",
+      "test/projectOpenTiming.test.js",
+      "test/projectUiMainIntegration.test.js",
+      "test/removedIndoorPlant2.test.js",
+      "test/scene3dPublicContract.test.js",
+      "test/sceneAssetLoading.test.js",
+      "test/selectionFeedbackMainIntegration.test.js",
+      "test/shelfLighting.test.js",
+      "test/sidebarControllerMainIntegration.test.js",
+      "test/stageFeedbackMainIntegration.test.js",
+      "test/systemImpactAnalysis.test.js",
+      "test/toastNotifications.test.js",
+      "test/tulleFabric.test.js",
+      "test/uiFeedbackMainIntegration.test.js",
+      "test/verticalMoveUprightHeight.test.js",
+      "test/viewKeyboardMainIntegration.test.js",
+      "test/wallLockNotice.test.js",
+      "test/wallShortWidth.test.js",
+      "e2e/double-click-select.spec.mjs"
     ],
     "affectedDocs": [
-      "docs/refactor/DATABASE.md"
+      "RELEASE_HARDENING_ROADMAP.md",
+      "SYSTEM_AUDIT_CHECKLIST.md",
+      "SYSTEM_CHANGE_GATE.md",
+      "audit/FINDINGS.md",
+      "audit/SISTEM_MUTABAKAT_RAPORU.md",
+      "audit/evidence/A02_CHANGE_GATE.md",
+      "audit/evidence/A10_UI_CONTROLS.md",
+      "audit/evidence/A22_FILE_BY_FILE_SWEEP.md",
+      "docs/items/audit/items/PLASTIC_TRASH_BIN.md",
+      "docs/items/audit/items/hali.md",
+      "docs/items/audit/items/karolaj.md",
+      "docs/items/audit/items/parke-acik.md",
+      "docs/items/audit/items/parke-beton.md",
+      "docs/items/audit/items/parke-sari.md",
+      "docs/items/audit/properties/FINAL_PROPERTY_AUDIT.md",
+      "docs/items/audit/properties/README.md",
+      "docs/items/audit/properties/properties/catalog.label.md",
+      "docs/items/audit/properties/properties/catalog.stripOccupancy.align.md",
+      "docs/items/audit/properties/properties/catalog.type.md",
+      "docs/items/audit/properties/properties/state.stripOccupancy.align.md",
+      "docs/items/audit/properties/properties/state.type.md",
+      "docs/items/audit/properties/properties/ui.editable.floorSelect.md",
+      "docs/items/current-system/hali.md",
+      "docs/items/current-system/karolaj.md",
+      "docs/items/current-system/parke.md",
+      "docs/items/inventory/ITEM_CAPABILITY_INVENTORY.md",
+      "docs/refactor/CATALOG.md",
+      "audit/evidence/A03_ARCHITECTURE.md"
     ],
     "relatedFindings": {
       "affected": [],
-      "reviewedNotAffected": []
+      "reviewedNotAffected": [
+        "F-025"
+      ]
     },
-    "notes": "Yalnız backend görsel yükleme yolu değişir; sahne, Item, BOM, persistence şeması ve frontend değişmez. Frontend yükleme hatasını durum koduna göre ayırmaz; bayt sınırı aşımı önceki gibi 400 ve aynı mesajla döner. Önceki karar (e91e843f: yüksek pikselli görseli Pillow korumasını kapatarak küçült) Pillow varsayılan sınırı altında korunur; global ayarı düşürerek bunu taklit eden iki eski test gerçek 54 MP JPEG ile değiştirildi. Platform F-001 (SVG) kapsam dışıdır."
+    "notes": "Sahne, Item, BOM, persistence ve API değişmez. CRM Vite eklentisi Stand public dosyalarını kendi çıktısına kopyalar; stand-favicon adları mevcut CRM faviconunu korur. Kaynak varlıklar kyrox-brand deposundan aynen kopyalanır. Kimlik, organizasyon, yetki, kota, işler, veri yaşam döngüsü ve dış servisler etkilenmez; yalnız aynı origin statik marka simgesi eklenir. index.html referansları gözden geçirildi: mevcut testler editör gövdesi/toolbar/ayar alanlarını okur; yalnız head icon linkleri eklendi, gövde değişmedi. Kurulum scripti aynı dist/index.html dosyasını sunar. Gate dosyaları yalnız giriş dosyasını sınıflandırır. Belgelerdeki tarihî index.html atıfları değişmez. F-025 rawBomDebug yükleme bulgusudur; script yükleme davranışı değişmediği için etkilenmez. Başlık metni güncellenir; aynı tarayıcı senaryosu başlığı da doğrular. Kullanıcı isteğiyle tüm tarayıcı koşusu durduruldu; nihai kontroller toplu değişiklikler sonunda çalıştırılacak. İndeksleme politikası erişim güvenliği değildir; kimlik ve yetki denetimleri değişmez. CRM public/robots.txt aynı içeriktedir; CRM derlemesindeki kopyalama davranışıyla çakışmaz. Web tanıtım alanı ayrı origin üzerinde indekslenebilir kalır. public/robots.txt atıfları toplu son etki taramasında yeniden doğrulanacak. 26 Ekim toplu kontrol: origin/main ile güncellendi; Claude CI/pip-audit ve patched dependency değişiklikleri aynen korundu. 1546 Node testi, build ve favicon/robots gerçek Chromium kontrolü geçti. Windows CRLF yanıtı testte normalize edilir; Linux aynı kurallarla denetlenir. Yeni kapsam: yerel font ve kullanım kılavuzundaki sabit bilgi bağlantıları. Bilgilendirme kullanıcı rızası sayılmaz. Proje, yetki, persistence, veri silme ve STUN davranışı değişmez. Yeni analitik servisi yoktur. Help guide dependency sweep includes standalone index, main and embedded mount; these continue importing the same help initializer. Only a static information section is added. Existing gesture, BOM, storage and permission logic is unchanged. Full test/build and targeted real browser cover this UI slice. CI run 40311087521: tablet çift dokunma testinde ayrı Playwright tap snapshotları 349.35/377.51 ms başlangıç aralığı üretti; retry ürünün 350 ms eşiği dışında. Test gerçek Chromium CDP touchStart/touchEnd dizisiyle geçerli çift dokunma üretir. Ürün seçim kodu, süre sınırı ve mevcut assertionlar değiştirilmedi. Main görsel upload sınırları backend ve testleri origin/main ile aynıdır."
   },
   "tests": {
     "targeted": [
-      "backend/tests/modules/fair_stand/test_image_optimize.py",
-      "backend/tests/modules/fair_stand/test_projects_api.py"
+      "test/favicon.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/project-open-asset-cache.spec.mjs",
-        "e2e/missing-project-asset-open.spec.mjs"
+        "e2e/favicon.spec.mjs",
+        "e2e/double-click-select.spec.mjs"
       ],
-      "reason": "Proje görsel varlıkları yüklenip açılır; değişen sunucu yükleme yolu tarayıcıda doğrulanır."
+      "reason": "Tarayıcı başlığındaki simge ve gerçek varlık HTTP yanıtları doğrulanır."
     }
   },
   "risk": {
-    "level": "medium",
-    "notes": "89,5 MP üstü raster artık reddedilir (önceden küçültülüyordu). Bayt sınırı ve hata kodu değişmez. Multipart gövde Starlette tarafından yine geçici dosyaya alınır; bu üst sınırı nginx client_max_body_size belirler."
+    "level": "low",
+    "notes": "Düşük risk: sabit ürün başlığı, noindex metadata ve aynı origin marka varlıkları. Kimlik/yetki, sahne/BOM, veri kaydı ve API değişmez. Claude CI ve bağımlılık düzeltmeleri korunur."
   },
   "migration": {
     "required": false,
     "notes": "Veritabanı, proje şeması veya kullanıcı verisi değişmez."
   },
-  "rollback": "Bu PR'ın commit'ini geri al; görsel yükleme önceki tam okuma ve sınırsız piksel davranışına döner.",
-  "security": {
-    "controls": {
-      "SEC-01": {
-        "status": "na",
-        "reason": "Permission dependency on the asset upload route is unchanged; regression test only confirms 401/403 still apply."
-      },
-      "SEC-02": {
-        "status": "na",
-        "reason": "Organization-scoped project and asset lookup in ProjectService.upsert_asset is unchanged."
-      },
-      "SEC-03": {
-        "status": "na",
-        "reason": "Token validation and auth context resolution are not touched by this change."
-      },
-      "SEC-04": {
-        "status": "na",
-        "reason": "No secret handling, storage or logging path changes."
-      },
-      "SEC-05": {
-        "status": "na",
-        "reason": "Database roles, schema and network access are unchanged; no migration."
-      },
-      "SEC-06": {
-        "status": "na",
-        "reason": "No SQL, sort, filter or shell command construction changes."
-      },
-      "SEC-07": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_image_optimize.py::test_png_above_pixel_limit_rejected_before_decode",
-          "backend/tests/modules/fair_stand/test_image_optimize.py::test_pixel_limit_is_pillow_default_and_global_is_untouched",
-          "backend/tests/modules/fair_stand/test_image_optimize.py::test_high_resolution_image_below_pixel_limit_is_downscaled",
-          "backend/tests/modules/fair_stand/test_projects_api.py::test_asset_upload_rejects_png_above_pixel_limit",
-          "backend/tests/modules/fair_stand/test_projects_api.py::test_asset_upload_optimizes_high_pixel_jpeg_within_byte_limit"
-        ]
-      },
-      "SEC-08": {
-        "status": "na",
-        "reason": "Request schema of the upload endpoint (multipart file, asset_id, name) is unchanged."
-      },
-      "SEC-09": {
-        "status": "na",
-        "reason": "No dependency version changes; Pillow 13 floor is kept as is."
-      },
-      "SEC-10": {
-        "status": "na",
-        "reason": "No workflow, CI permission or release path changes."
-      },
-      "SEC-11": {
-        "status": "na",
-        "reason": "No TLS or outbound connection handling changes."
-      },
-      "SEC-12": {
-        "status": "na",
-        "reason": "No backup or restore behavior changes."
-      },
-      "SEC-13": {
-        "status": "na",
-        "reason": "No audit or security event emission changes."
-      },
-      "SEC-14": {
-        "status": "na",
-        "reason": "SVG passthrough output handling is unchanged; tracked separately as platform F-001, out of scope here."
-      },
-      "SEC-15": {
-        "status": "na",
-        "reason": "No cookie is set, read or changed; Stand uses bearer tokens."
-      },
-      "SEC-16": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_projects_api.py::test_asset_upload_stops_reading_once_byte_limit_exceeded",
-          "backend/tests/modules/fair_stand/test_projects_api.py::test_read_upload_limited_reads_at_most_limit_plus_one_byte",
-          "backend/tests/modules/fair_stand/test_projects_api.py::test_asset_upload_decodes_off_the_event_loop",
-          "backend/tests/modules/fair_stand/test_projects_api.py::test_asset_upload_auth_unchanged"
-        ]
-      },
-      "SEC-17": {
-        "status": "na",
-        "reason": "No HTTP response header is produced or changed."
-      },
-      "SEC-18": {
-        "status": "na",
-        "reason": "No CORS configuration is touched."
-      },
-      "SEC-19": {
-        "status": "na",
-        "reason": "No cookie-authenticated state-changing request exists in Stand."
-      },
-      "SEC-20": {
-        "status": "na",
-        "reason": "Error responses keep the existing 400 detail contract and authorization dependencies are unchanged."
-      },
-      "SEC-21": {
-        "status": "na",
-        "reason": "Stand makes no server-side request to user-supplied URLs."
-      },
-      "SEC-22": {
-        "status": "na",
-        "reason": "No async job, retry or concurrent business operation semantics change; only decode moves to the threadpool."
-      }
-    }
-  }
+  "rollback": "Bu PR içindeki head metadata/icon linkleri, robots.txt ve iki stand-favicon varlığını geri al; mevcut CRM faviconunu ve güvenlik/CI değişikliklerini koru."
 }

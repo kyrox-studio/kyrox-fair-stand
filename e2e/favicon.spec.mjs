@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 test('Stand sekmesi kendi simgelerini başarılı HTTP yanıtlarıyla yükler', async ({ page }) => {
+  const fontRequests = [];
+  page.on('request', request => {
+    if (/fonts\.(?:googleapis|gstatic)\.com/.test(request.url())) fontRequests.push(request.url());
+  });
   await page.goto('/');
   await expect(page).toHaveTitle('Kyrox Studio | Stand Konfiguratör');
   await expect(page.locator('head meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
@@ -19,5 +23,15 @@ test('Stand sekmesi kendi simgelerini başarılı HTTP yanıtlarıyla yükler', 
     expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toMatch(contentType);
     expect((await response.body()).length).toBeGreaterThan(0);
+  }
+  await page.evaluate(() => document.fonts.ready);
+  expect(fontRequests).toEqual([]);
+  const font = await page.request.get('/fonts/inter-latin-ext.woff2');
+  expect(font.status()).toBe(200);
+  expect((await font.body()).subarray(0, 4).toString()).toBe('wOF2');
+  await page.getByRole('button', { name: 'Kullanım kılavuzunu aç', exact: true }).click();
+  await page.getByText('Gizlilik ve Veri Kullanımı', { exact: true }).click();
+  for (const slug of ['gizlilik/#crm-stand', 'kullanim-kosullari/', 'cerezler/#crm-stand']) {
+    await expect(page.locator(`#help-guide-backdrop a[href="https://kyrox.studio/${slug}"]`)).toBeVisible();
   }
 });
