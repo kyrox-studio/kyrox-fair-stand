@@ -163,7 +163,8 @@ class ProjectService:
         self._session = session
         self._asset_root = asset_root
 
-    def _max_upload_bytes(self) -> int:
+    def max_upload_bytes(self) -> int:
+        """Effective per-file image upload byte limit (``max_image_upload_mb`` setting)."""
         row = self._session.get(FairStandSettingsModel, 1)
         mb = row.max_image_upload_mb if row is not None else MAX_IMAGE_UPLOAD_MB
         return int(mb) * 1024 * 1024
@@ -455,7 +456,7 @@ class ProjectService:
             optimized = optimize_uploaded_image(
                 raw,
                 content_type=content_type,
-                max_upload_bytes=self._max_upload_bytes(),
+                max_upload_bytes=self.max_upload_bytes(),
             )
         except ImageOptimizeError as exc:
             raise ProjectServiceError(str(exc)) from exc
