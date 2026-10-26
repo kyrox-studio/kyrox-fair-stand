@@ -1,13 +1,13 @@
 {
   "schemaVersion": 2,
-  "id": "patched-dependency-floors",
-  "kind": "bugfix",
-  "summary": "Backend bağımlılık alt sınırları yamalı sürümlere yükseltilir: Pillow>=13.0.0 (major; 4 kritik/22 yüksek kayıt), PyJWT>=2.15.0, certifi>=2026.10.19. Deploy pip install -r mevcut sürümleri yükseltmediği için canlı venv eski kalıyordu (SECURITY_PROGRAM F-G2). Uygulama kodu değişmez.",
+  "id": "ci-pip-audit-warning",
+  "kind": "tooling",
+  "summary": "CI'a engellemeyen Python bağımlılık denetimi (pip-audit) uyarı adımı eklenir. Bilinen açık varsa PR'da uyarı görünür; iş durmaz. Deploy aynı major içindeki güvenlik yamalarını otomatik uygular (CRM deploy-all, SECURITY_PROGRAM F-G2).",
   "owners": [
-    "backend/requirements.txt"
+    ".github/workflows/ci.yml"
   ],
   "sourceOfTruth": [
-    "backend/requirements.txt",
+    ".github/workflows/ci.yml",
     "kyrox-platform/standards/security/SECURITY_PROGRAM.md"
   ],
   "impact": {
@@ -20,7 +20,7 @@
     "bom": "not-applicable",
     "ui": "not-applicable",
     "composition": "not-applicable",
-    "assets": "affected",
+    "assets": "not-applicable",
     "storage": "not-applicable",
     "importExport": "not-applicable",
     "performance": "not-applicable",
@@ -32,14 +32,23 @@
   "impactAnalysis": {
     "mode": "full-system",
     "affectedFiles": [
-      "backend/app/modules/fair_stand/application/image_optimize.py"
+      ".github/workflows/ci.yml"
     ],
     "affectedTests": [
-      "backend/tests/modules/fair_stand/test_image_optimize.py",
-      "e2e/project-open-asset-cache.spec.mjs",
-      "e2e/missing-project-asset-open.spec.mjs"
+      "test/historicalDocumentationStatus.test.js",
+      "test/hygieneGates.test.js",
+      "test/systemChangeGate.test.js",
+      "test/systemChangeGateCiContract.test.js"
     ],
-    "affectedDocs": [],
+    "affectedDocs": [
+      "FRESH_REPOSITORY_REVIEW.md",
+      "REPOSITORY_CLEANUP_PROGRESS.md",
+      "audit/SISTEM_MUTABAKAT_RAPORU.md",
+      "audit/evidence/A00_BASELINE.md",
+      "audit/evidence/A01_DOCS_SOURCE_OF_TRUTH.md",
+      "audit/evidence/A20_BUILD_CI_DEPLOY.md",
+      "audit/evidence/A22_FILE_BY_FILE_SWEEP.md"
+    ],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": [
@@ -49,81 +58,78 @@
         "F-009"
       ]
     },
-    "notes": "Kod değişmez; Pillow'u kullanan tek yol image_optimize.py (proje asset normalize/optimize). Platform F-001/F-002 (SVG ve piksel sınırı) bu değişiklikle kapanmaz."
+    "notes": "Adım engellemez; mevcut CI adımlarının sırası ve zorunluluğu değişmez. Keşfedilen belgeler ci.yml'e tarihî/genel atıf yapar; yeni uyarı adımı onların iddialarını değiştirmez, güncelleme gerekmez."
   },
   "tests": {
     "targeted": [
-      "backend/tests/modules/fair_stand/test_image_optimize.py"
+      "test/systemChangeGateCiContract.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
-      "required": true,
-      "targeted": [
-        "e2e/project-open-asset-cache.spec.mjs",
-        "e2e/missing-project-asset-open.spec.mjs"
-      ],
-      "reason": "Proje görsel varlıkları Pillow ile normalize edilir; varlıklı proje açılışı yeni Pillow sürümüyle tarayıcıda doğrulanır."
+      "required": false,
+      "targeted": [],
+      "reason": "Yalnız CI uyarı adımı eklenir; tarayıcı davranışı değişmez."
     }
   },
   "risk": {
-    "level": "medium",
-    "notes": "Pillow major sürüm: görsel normalize/optimize yolu yeni sürümle backend testlerinde doğrulanır; API davranışı değişmez."
+    "level": "low",
+    "notes": "Yalnız uyarı üretir; mevcut kapılar gevşemez."
   },
   "migration": {
     "required": false,
-    "notes": "Veri veya şema geçişi yok; bir sonraki deploy yeni paketleri kurar."
+    "notes": "Veri/şema geçişi yok."
   },
-  "rollback": "Commit'i geri al ve deploy et; pip eski alt sınırla mevcut sürümü korur, gerekiyorsa sürüm elle indirilir.",
+  "rollback": "Commit'i geri al; adım kaldırılır, diğer CI adımları etkilenmez.",
   "security": {
     "controls": {
       "SEC-01": {
         "status": "na",
-        "reason": "No protected API operation or permission check changes; dependency versions only."
+        "reason": "No protected API operation or permission check changes; CI configuration only."
       },
       "SEC-02": {
         "status": "na",
-        "reason": "No organization-scoped query, list, file or job access path changes."
+        "reason": "No organization-scoped data path changes; CI configuration only."
       },
       "SEC-03": {
         "status": "na",
-        "reason": "Token validation code is unchanged; PyJWT floor only moves to a patched release with the same API."
+        "reason": "No token, session or recovery path changes."
       },
       "SEC-04": {
         "status": "na",
-        "reason": "No secret handling, storage or logging path changes."
+        "reason": "The audit step reads requirements.txt only and uses no secrets."
       },
       "SEC-05": {
         "status": "na",
-        "reason": "Database roles and network access are unchanged."
+        "reason": "No database role or network access changes."
       },
       "SEC-06": {
         "status": "na",
-        "reason": "No SQL, sort, filter or shell command construction changes."
+        "reason": "No SQL or shell command is built from untrusted input; fixed CI script."
       },
       "SEC-07": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_image_optimize.py"
-        ]
+        "status": "na",
+        "reason": "No upload or import endpoint is touched."
       },
       "SEC-08": {
         "status": "na",
-        "reason": "No server request input schema is added or changed."
+        "reason": "No server request input schema changes."
       },
       "SEC-09": {
         "status": "required",
         "tests": [
-          "backend/tests/modules/fair_stand/test_image_optimize.py"
+          "test/systemChangeGateCiContract.test.js"
         ]
       },
       "SEC-10": {
-        "status": "na",
-        "reason": "No workflow, CI permission or release path changes."
+        "status": "required",
+        "tests": [
+          "test/systemChangeGateCiContract.test.js"
+        ]
       },
       "SEC-11": {
         "status": "na",
-        "reason": "TLS handling unchanged; certifi floor only refreshes the trusted root bundle."
+        "reason": "No TLS configuration change; pip-audit uses the default HTTPS index."
       },
       "SEC-12": {
         "status": "na",
@@ -135,7 +141,7 @@
       },
       "SEC-14": {
         "status": "na",
-        "reason": "Image output handling code is unchanged; SVG passthrough is tracked separately as platform F-001."
+        "reason": "No user content is rendered to HTML."
       },
       "SEC-15": {
         "status": "na",
@@ -143,11 +149,11 @@
       },
       "SEC-16": {
         "status": "na",
-        "reason": "Resource limits are unchanged; the pixel limit remains open as platform F-002."
+        "reason": "No public endpoint or resource limit changes."
       },
       "SEC-17": {
         "status": "na",
-        "reason": "No HTTP response header is produced or changed."
+        "reason": "No HTTP response header changes."
       },
       "SEC-18": {
         "status": "na",
@@ -163,11 +169,11 @@
       },
       "SEC-21": {
         "status": "na",
-        "reason": "Stand makes no server-side request to user-supplied URLs."
+        "reason": "No server-side request to user-supplied URLs."
       },
       "SEC-22": {
         "status": "na",
-        "reason": "No async job, retry or concurrent business operation changes."
+        "reason": "No async job or retry logic changes."
       }
     }
   }

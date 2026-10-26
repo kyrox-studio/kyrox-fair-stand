@@ -50,6 +50,18 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pytest
 
+      # Uyarı yalnız (SECURITY_PROGRAM F-G2): deploy aynı major içindeki
+      # güvenlik yamalarını kendisi uygular; major yükseltme ayrı PR ister.
+      - name: Python dependency audit (warning only)
+        working-directory: backend
+        run: |
+          python -m venv "$RUNNER_TEMP/pip-audit"
+          "$RUNNER_TEMP/pip-audit/bin/pip" install --quiet "pip-audit>=2.7"
+          if ! "$RUNNER_TEMP/pip-audit/bin/pip-audit" -r requirements.txt --progress-spinner off > "$RUNNER_TEMP/pip-audit.txt" 2>&1; then
+            echo "::warning title=pip-audit::backend/requirements.txt için bilinen açık (veya denetim hatası); adım log'una bakın. Deploy aynı major yamalarını otomatik uygular; major yükseltme PR ister."
+          fi
+          cat "$RUNNER_TEMP/pip-audit.txt"
+
       - name: Build
         run: npm run build
 
