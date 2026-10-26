@@ -66,7 +66,7 @@ test('profile uses wall_200 move/rotate/snap contract and does not nest into a n
   assert.equal(behavior.magneticSnap, 'standard');
   assert.equal(behavior.collision, 'segment');
   assert.equal(behavior.moveSnapCm, 10);
-  assert.equal(getModuleRotationStepDeg(profile), 90);
+  assert.equal(getModuleRotationStepDeg(profile), 15);
   assert.equal(getModuleMagneticSnapStrategy(profile), 'standard');
   assert.deepEqual(behavior.overlapWithTypes, ['separator']);
 

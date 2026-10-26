@@ -588,3 +588,7 @@ Yerel veritabanında Alembic current ve heads: `0072_shelf_rows`. Migration mevc
 | Tahta `fair_stand_item_scene_dimensions` | `sceneDimensions` | `scene3d.js` kalınlık/derinlik: alan bazında sahne ölçüsü, yoksa fiziksel ölçü |
 
 Aile-varyant eşlemeleri iki Item FK, bileşik PK ve kendi kendine eşlemeyi engelleyen CHECK taşır. Admin klonlama ve seed de bu ilişkileri korur. Yukarıdaki eski envanter sayıları tarihli snapshot'tır; 0072 sonrasının güncel adetleri değildir. Yeni test fixture sayıları test seed'ine aittir; kullanıcı veritabanıyla aynı olmak zorunda değildir.
+
+## 0087 — Dönüş adımı 15° (2026-10-26)
+
+`0087_rotation_step_15`, yalnız dönüş adımı tanımlı Item satırlarının `rotation_step_deg` değerini 15 yapar; NULL alt parçalar, `default_rotation_deg`, başlangıç yönü ve kayıtlı proje açıları değişmez. Yeni katalog seed'i de aynı adımı verir. `fair_stand_rotation_step_0087_backup` tablosu önceki item_key/adım çiftlerini downgrade için saklar; downgrade yalnız hâlâ 15 olan mevcut satırları eski değerlerine döndürür, sonradan admin tarafından değiştirilen değerleri korur ve yedek tablosunu kaldırır. Yerelde 89 satır 15°, 52 satır NULL olarak doğrulandı; canlıya uygulanmadı.

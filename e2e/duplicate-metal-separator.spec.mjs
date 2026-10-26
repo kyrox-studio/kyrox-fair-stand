@@ -112,7 +112,7 @@ test('duplicating a panel with a metal separator gives the copy its own metal gr
 
   // Seçim çubuğundaki Kopyala: hafızaya alır; orijinalin sağındaki boş duvar önüne tıklamak kopyayı oraya bırakır.
   await page.mouse.click(650, 145);
-  await page.getByRole('toolbar', { name: 'Seçim işlemleri' }).getByRole('button', { name: /Kopyala/ }).click();
+  await page.locator('.selection-property-panel [data-module-action="duplicate"]').click();
   await expect(page.locator('.viewport-wrap')).toHaveClass(/catalog-place-armed/);
   await page.mouse.click(COPY_DROP_POINT.x, COPY_DROP_POINT.y);
   await page.keyboard.press('Escape');

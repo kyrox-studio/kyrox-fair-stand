@@ -32,27 +32,27 @@ const PLACEABLE_ITEM_TYPES = new Set([
 ]);
 
 const SPECIAL = Object.freeze({
-  box_block: Object.freeze({ rotationStepDeg: 45, defaultRotationDeg: 0, sideInsertRotation: 'inherit' }),
-  desk_banko_100: Object.freeze({ rotationStepDeg: 45, defaultRotationDeg: 0, sideInsertRotation: 'inherit' }),
-  desk_banko_150: Object.freeze({ rotationStepDeg: 45, defaultRotationDeg: 0, sideInsertRotation: 'inherit' }),
-  desk_banko_200: Object.freeze({ rotationStepDeg: 45, defaultRotationDeg: 0, sideInsertRotation: 'inherit' }),
-  desk_banko_100_l: Object.freeze({ rotationStepDeg: 90, defaultRotationDeg: 270, sideInsertRotation: 'inherit' }),
-  desk_banko_150_l: Object.freeze({ rotationStepDeg: 90, defaultRotationDeg: 270, sideInsertRotation: 'inherit' }),
-  desk_banko_200_l: Object.freeze({ rotationStepDeg: 90, defaultRotationDeg: 270, sideInsertRotation: 'inherit' }),
+  box_block: Object.freeze({ rotationStepDeg: 15, defaultRotationDeg: 0, sideInsertRotation: 'inherit' }),
+  desk_banko_100: Object.freeze({ rotationStepDeg: 15, defaultRotationDeg: 0, sideInsertRotation: 'inherit' }),
+  desk_banko_150: Object.freeze({ rotationStepDeg: 15, defaultRotationDeg: 0, sideInsertRotation: 'inherit' }),
+  desk_banko_200: Object.freeze({ rotationStepDeg: 15, defaultRotationDeg: 0, sideInsertRotation: 'inherit' }),
+  desk_banko_100_l: Object.freeze({ rotationStepDeg: 15, defaultRotationDeg: 270, sideInsertRotation: 'inherit' }),
+  desk_banko_150_l: Object.freeze({ rotationStepDeg: 15, defaultRotationDeg: 270, sideInsertRotation: 'inherit' }),
+  desk_banko_200_l: Object.freeze({ rotationStepDeg: 15, defaultRotationDeg: 270, sideInsertRotation: 'inherit' }),
   furniture_sofa_single_classic: Object.freeze({
-    rotationStepDeg: 45,
+    rotationStepDeg: 15,
     defaultRotationDeg: 0,
     sideInsertRotation: 'inherit',
   }),
   furniture_bar_stool_classic: Object.freeze({
-    rotationStepDeg: 45,
+    rotationStepDeg: 15,
     defaultRotationDeg: 270,
     sideInsertRotation: 'default',
   }),
 });
 
 const DEFAULT_PLACEABLE = Object.freeze({
-  rotationStepDeg: 90,
+  rotationStepDeg: 15,
   defaultRotationDeg: 0,
   sideInsertRotation: 'inherit',
 });

@@ -136,7 +136,7 @@ test('otomatik duvar kilidi silmeyi engeller; kullanıcı kilidi açınca kayıt
   const wall = walls[0];
   const menu = await wallContextMenu(page, wall.id);
   await expect(menu.locator('[data-module-action="delete"]')).toBeDisabled();
-  await expect(menu.locator('[data-module-action="toggle-lock"]')).toHaveText('Kilidi aç');
+  await expect(menu.locator('[data-module-action="toggle-lock"]')).toHaveText('Kilitli');
   await menu.locator('[data-module-action="toggle-lock"]').click();
   const unlocked = await savedProject(page);
   expect(unlocked.modules.find((module) => module.id === wall.id).locked).toBeUndefined();

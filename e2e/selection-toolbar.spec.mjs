@@ -19,10 +19,10 @@ test('editör kapanınca çubuk temizlenir; yeniden oluşturma tek etkin çubuk 
   await page.evaluate(async () => {
     const { createSelectionToolbar } = await import('/src/selectionToolbar.js');
     window.__toolbarClicks = { old: 0, current: 0 };
-    const old = createSelectionToolbar({ onRotate: () => window.__toolbarClicks.old++ });
+    const old = createSelectionToolbar({ onMultiSelectChange: () => window.__toolbarClicks.old++ });
     const anchor = { clientX: 300, clientY: 350, count: 1, kind: 'panel' };
     old.update(anchor);
-    const current = createSelectionToolbar({ onRotate: () => window.__toolbarClicks.current++ });
+    const current = createSelectionToolbar({ onMultiSelectChange: () => window.__toolbarClicks.current++ });
     current.update(anchor);
     // Eski sahne callbacks'i ve geciken kapanış yeni çubuğu etkilememeli.
     old.update(anchor);
@@ -32,7 +32,7 @@ test('editör kapanınca çubuk temizlenir; yeniden oluşturma tek etkin çubuk 
   });
   await expect(page.locator('.selection-toolbar')).toHaveCount(1);
   const toolbar = page.getByRole('toolbar', { name: 'Seçim işlemleri' });
-  await toolbar.getByRole('button', { name: /Döndür/ }).click();
+  await toolbar.locator('[data-selection-action="multi"]').click();
   expect(await page.evaluate(() => window.__toolbarClicks)).toEqual({ old: 0, current: 1 });
   await page.evaluate(() => window.__currentToolbar.destroy());
   await expect(page.locator('.selection-toolbar')).toHaveCount(0);
@@ -98,17 +98,17 @@ test('selection toolbar rotates, duplicates, deletes and opens the menu', async 
   await page.mouse.click(point.x, point.y);
   await expect(toolbar).toBeVisible();
 
-  // Döndür: Shift+R ile aynı (90°).
+  // Kartta seçilen 45° mevcut açıya eklenir.
   const [before] = await fridges(page);
   await expect(toolbar).toBeVisible();
-  await toolbar.getByRole('button', { name: /Döndür/ }).click();
+  await page.locator('.selection-property-panel [data-rotation-delta="45"]').click();
   const [rotated] = await fridges(page);
   expect(rotated.placement.rotationZDeg).not.toBe(before.placement.rotationZDeg);
 
   // Kopyala: hafızaya alır; sahnede tıklanan her yere bir kopya bırakır, "Kopyalamayı bitir" ile çıkar.
   const viewportBox = await page.locator('#viewport').boundingBox();
   const at = (fx, fy) => ({ x: viewportBox.x + Math.round(viewportBox.width * fx), y: viewportBox.y + Math.round(viewportBox.height * fy) });
-  await toolbar.getByRole('button', { name: /Kopyala/ }).click();
+  await page.locator('.selection-property-panel [data-module-action="duplicate"]').click();
   await expect(page.locator('.viewport-wrap')).toHaveClass(/catalog-place-armed/);
   const finish = toolbar.getByRole('button', { name: 'Kopyalamayı bitir', exact: false });
   await expect(finish).toHaveAttribute('aria-pressed', 'true');
@@ -126,9 +126,9 @@ test('selection toolbar rotates, duplicates, deletes and opens the menu', async 
   await expect(toolbar.getByRole('button', { name: 'Diğer işlemler' })).toHaveCount(0);
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
-  await expect(menu.getByRole('menuitem', { name: 'Döndür' })).toBeVisible();
-  // Çoğalt Sağ/Sol kaldırıldı; Kopyala yalnız seçim çubuğunda (sağ tık menüsünde yok).
-  await expect(menu.getByRole('menuitem', { name: 'Kopyala' })).toHaveCount(0);
+  await expect(menu.locator('[data-rotation-delta="45"]')).toBeVisible();
+  // Kopyala özellikler kartındadır; eski yönlü çoğalt komutları yoktur.
+  await expect(menu.getByRole('menuitem', { name: 'Kopyala', exact: true })).toBeVisible();
   await expect(menu.locator('[data-module-action^="duplicate-"]')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await page.mouse.click(5, 5);
@@ -137,7 +137,7 @@ test('selection toolbar rotates, duplicates, deletes and opens the menu', async 
   await page.mouse.click(point.x, point.y);
   await expect(toolbar).toBeVisible();
   page.once('dialog', (dialog) => dialog.accept());
-  await toolbar.getByRole('button', { name: 'Sil' }).click();
+  await page.locator('.selection-property-panel [data-module-action="delete"]').click();
   await expect.poll(async () => (await fridges(page)).length).toBe(2);
   expect(errors).toEqual([]);
 });
@@ -148,33 +148,25 @@ test('touch long-press on a module opens the module menu', async ({ page }) => {
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
   await expect(menu).toBeHidden();
 
-  await page.evaluate(async ({ x, y }) => {
-    const canvas = document.querySelector('#viewport > canvas');
-    const init = { pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, button: 0, buttons: 1, bubbles: true, cancelable: true };
-    canvas.dispatchEvent(new PointerEvent('pointerdown', init));
-    await new Promise((resolve) => setTimeout(resolve, 750));
-    window.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }));
-  }, point);
+  const touch = await page.context().newCDPSession(page);
+  try {
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: point.x, y: point.y, id: 1 }] });
+    await page.waitForTimeout(750);
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  } finally { await touch.detach(); }
 
   await expect(menu).toBeVisible();
-  await expect(menu.getByRole('menuitem', { name: 'Döndür' })).toBeVisible();
+  await expect(menu.locator('[data-rotation-delta="45"]')).toBeVisible();
 });
 
 // Kısa dokunma öğeyi seçer ve Özellikler panelini açar (tek tık kararı); uzun basma ile aynı panel.
 test('a short touch tap opens the property panel', async ({ page }) => {
   await createIslandStand(page);
   const point = await dropFridge(page, 0.6, 0.8);
-  await page.evaluate(async ({ x, y }) => {
-    const canvas = document.querySelector('#viewport > canvas');
-    const init = { pointerId: 8, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, button: 0, buttons: 1, bubbles: true, cancelable: true };
-    canvas.dispatchEvent(new PointerEvent('pointerdown', init));
-    await new Promise((resolve) => setTimeout(resolve, 120));
-    window.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }));
-    await new Promise((resolve) => setTimeout(resolve, 700));
-  }, point);
+  await page.touchscreen.tap(point.x, point.y);
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
-  await expect(menu.getByRole('menuitem', { name: 'Döndür' })).toBeVisible();
+  await expect(menu.locator('[data-rotation-delta="45"]')).toBeVisible();
 });
 
 async function openFridgeCard(page) {
@@ -255,7 +247,7 @@ test('module without panel surfaces shows no panel transforms', async ({ page })
   await expect(menu).toBeVisible();
   // Buzdolabında panel dönüşümü yok: Cam / Metal / Lightbox / Mesh bölümü çıkmaz.
   await expect(menu.locator('.module-context-advanced')).toBeHidden();
-  await expect(menu.getByRole('menuitem', { name: 'Döndür' })).toBeVisible();
+  await expect(menu.locator('[data-rotation-delta="45"]')).toBeVisible();
 });
 
 test('Ctrl+C copies the selected module and Ctrl+V starts placing it again; Esc ends', async ({ page }) => {
@@ -298,7 +290,7 @@ test('tablet: Kopyala then taps place copies; the toolbar button ends copying', 
   const toolbar = page.getByRole('toolbar', { name: 'Seçim işlemleri' });
 
   await page.touchscreen.tap(point.x, point.y);
-  await toolbar.getByRole('button', { name: /Kopyala/ }).tap();
+  await page.locator('.selection-property-panel [data-module-action="duplicate"]').tap();
   const tapAt = at(0.35, 0.8);
   await page.touchscreen.tap(tapAt.x, tapAt.y);
   await expect.poll(async () => (await fridges(page)).length).toBe(2);
@@ -310,4 +302,78 @@ test('tablet: Kopyala then taps place copies; the toolbar button ends copying', 
   const after = at(0.5, 0.92);
   await page.touchscreen.tap(after.x, after.y);
   expect((await fridges(page)).length).toBe(2);
+});
+
+
+test('kart göreli açıları uygular, mevcut açıyı gösterir ve 15 dereceyi yeniden açınca korur', async ({ page }, testInfo) => {
+  await createIslandStand(page);
+  const point = await dropFridge(page, 0.6, 0.8);
+  await page.touchscreen.tap(point.x, point.y);
+  const panel = page.locator('.selection-property-panel');
+  const [initial] = await fridges(page);
+  let expected = initial.placement.rotationZDeg || 0;
+  for (const delta of [15, 45, -15, -45, 15]) {
+    await panel.locator(`[data-rotation-delta="${delta}"]`).tap();
+    expected = (expected + delta + 360) % 360;
+    await expect(panel.locator('.selection-rotation-value')).toHaveText(`${expected}°`);
+    const [saved] = await fridges(page);
+    expect(saved.placement.rotationZDeg).toBe(expected);
+  }
+  const projectId = await page.locator('#project-select').inputValue();
+  await page.reload();
+  const select = page.locator('#project-select');
+  await expect(select.locator(`option[value="${projectId}"]`)).toHaveCount(1);
+  await select.evaluate((el, id) => { el.value = id; }, projectId);
+  await page.locator('#open-project').click();
+  await expect(page.locator('#project-status')).toContainText('Açıldı:');
+  const [reopened] = await fridges(page);
+  expect(reopened.placement.rotationZDeg).toBe(expected);
+  await page.mouse.click(point.x, point.y);
+  await expect(panel.locator('.selection-rotation-value')).toHaveText(`${expected}°`);
+  await panel.screenshot({ path: testInfo.outputPath('rotation-card.png') });
+  const keyboardStep = await page.evaluate(async () => {
+    const { getItem } = await import('/src/items.js');
+    return Number(getItem('mini_fridge_avanti').rotationStepDeg);
+  });
+  await page.keyboard.press('Shift+R');
+  expected = (expected - keyboardStep + 360) % 360;
+  await expect(panel.locator('.selection-rotation-value')).toHaveText(`${expected}°`);
+});
+
+
+test('kartta çakışan 45 dereceden sonraki basış 90 dereceye ilerler', async ({ page }, testInfo) => {
+  await page.route('**/src/scene3d.js*', async route => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace('  let surfaceMeshes = [];',
+      '  let surfaceMeshes = []; window.__selectRotationModule = (id) => { selectModuleSurface(id); onModuleContextMenu(getSelectionContext()); };');
+    await route.fulfill({ response, body });
+  });
+  await createIslandStand(page);
+  await page.locator('#save-project').click();
+  await expect(page.locator('#save-project')).toBeEnabled();
+  const data = await page.evaluate(async () => {
+    const { createModuleStateFromCatalogKey } = await import('/src/designState.js');
+    const fixture = createModuleStateFromCatalogKey('mini_fridge_avanti');
+    fixture.placement = { xCm: 0, yCm: 250, zCm: 0, rotationZDeg: 0, wallId: 'free' };
+    const db = await new Promise(resolve => { const request = indexedDB.open('fair-stand-configurator', 2); request.onsuccess = () => resolve(request.result); });
+    const projects = await new Promise(resolve => { const request = db.transaction('projects').objectStore('projects').getAll(); request.onsuccess = () => resolve(request.result); });
+    const project = projects.sort((a,b) => Number(b.updatedAt)-Number(a.updatedAt))[0];
+    project.modules = [fixture];
+    await new Promise((resolve,reject) => { const tx = db.transaction('projects','readwrite'); tx.objectStore('projects').put(project); tx.oncomplete = resolve; tx.onerror = reject; });
+    db.close();
+    return { projectId: project.id, moduleId: fixture.id };
+  });
+  await page.locator('#project-select').evaluate((el,id) => { el.value=id; },data.projectId);
+  await page.locator('#open-project').click();
+  await expect(page.locator('#project-status')).toContainText('Açıldı:');
+  await page.evaluate(id => window.__selectRotationModule(id), data.moduleId);
+  const panel = page.locator('.selection-property-panel');
+  await expect(panel).toBeVisible();
+  const rotate = panel.locator('[data-rotation-delta="45"]');
+  await rotate.click();
+  expect((await fridges(page))[0].placement.rotationZDeg).toBe(0);
+  await rotate.click();
+  await expect(panel.locator('.selection-rotation-value')).toHaveText('90°');
+  expect((await fridges(page))[0].placement.rotationZDeg).toBe(90);
+  await panel.screenshot({ path: testInfo.outputPath('compact-rotation-card.png') });
 });

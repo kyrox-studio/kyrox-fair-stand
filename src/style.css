@@ -710,12 +710,12 @@ button.asset-tile > span {
   z-index: 20;
   top: 220px;
   right: 12px;
-  bottom: 12px;
+  max-height: calc(100% - 232px);
   display: flex;
-  width: 300px;
+  width: 280px;
   box-sizing: border-box;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   overflow: auto;
   padding: 12px;
   border: 1px solid #e2e8f0;
@@ -753,13 +753,14 @@ button.asset-tile > span {
 }
 
 .selection-property-header .selection-property-close {
-  min-width: 32px;
+  min-width: 44px;
   min-height: 32px;
-  padding: 0;
+  padding: 0 8px;
   border: 0;
   background: transparent;
   color: #475569;
-  font-size: 18px;
+  font-size: 12px;
+  flex-shrink: 0;
 }
 
 .selection-property-empty,
@@ -849,6 +850,28 @@ button.asset-tile > span {
 .selection-property-panel [data-module-action="unlock-selection"]::before,
 .selection-property-panel [data-module-action="group-lock"]::before { content: "⚿"; }
 .selection-property-panel [data-module-action="rotate"]::before { content: "⟳"; }
+.selection-property-panel .selection-rotation-buttons [data-module-action="rotate"]::before { content: none; }
+.selection-rotation-controls { padding: 8px 0; border-block: 1px solid #e5e9ef; margin: 4px 0; }
+.selection-rotation-controls[hidden] { display: none; }
+.selection-rotation-heading { padding: 0 2px 6px; font-size: 12px; color: #64748b; }
+.selection-rotation-value { color: #1e293b; font-weight: 700; font-variant-numeric: tabular-nums; }
+.selection-rotation-buttons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.selection-property-panel .selection-rotation-buttons button { min-height: 32px; padding: 4px 2px; text-align: center; background: #f1f5f9; border: 1px solid #dbe3ed; border-radius: 6px; }
+.selection-property-panel .selection-rotation-buttons button:hover { background: #e2e8f0; }
+.selection-property-panel .selection-rotation-buttons button:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+.selection-property-panel .module-context-menu .selection-copy-action { min-height: 32px; border: 1px solid #dbe3ed; border-radius: 6px; background: #f8fafc; text-align: center; }
+.selection-property-panel .module-context-menu .selection-delete-action { min-height: 32px; margin-top: 0; border: 1px solid #fecaca; border-radius: 6px; background: #fff1f2; color: #9f1239; text-align: center; }
+.selection-primary-actions { display: flex; gap: 8px; }
+.selection-primary-actions > button { flex: 1; min-width: 0; }
+.selection-property-panel .module-context-menu button.is-locked:not([hidden]) {
+  display: block;
+  border: 1px solid #f5c876;
+  border-radius: 6px;
+  background: #fff8e8;
+  color: #854d0e;
+  font-weight: 700;
+}
+.selection-property-panel .module-context-menu button.is-locked::before { content: "🔒"; color: inherit; }
 .selection-property-panel [data-module-action="delete"]::before,
 .selection-property-panel [data-module-action="group-delete"]::before { content: "✕"; color: #b42318; }
 .selection-property-panel [data-module-action="add"]::before { content: "+"; }
@@ -867,9 +890,11 @@ button.asset-tile > span {
 
 /* Liste: referanstaki gibi sade satırlar; pasif satır yalnız soluk yazı, zemin rengi yok. */
 .selection-property-panel .module-context-menu button {
-  padding: 8px 10px;
-  font-size: 13px;
+  padding: 5px 8px;
+  font-size: 12px;
 }
+
+.selection-property-panel .selection-status { padding: 5px 7px; font-size: 11px; line-height: 1.35; }
 
 .selection-property-panel .module-context-menu button:disabled,
 .selection-property-panel .module-context-menu button:disabled:hover {
@@ -923,8 +948,8 @@ button.asset-tile > span {
 
 .selection-property-variant-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 4px;
 }
 
 .selection-property-variant {
@@ -1063,6 +1088,13 @@ button.asset-tile > span {
     width: auto;
     max-height: 55%;
   }
+}
+
+@media (pointer: coarse) {
+  .selection-property-panel .selection-property-close,
+  .selection-property-panel .selection-rotation-buttons button,
+  .selection-property-panel .module-context-menu .selection-copy-action,
+  .selection-property-panel .module-context-menu .selection-delete-action { min-height: 44px; }
 }
 
 .module-context-advanced[hidden] {

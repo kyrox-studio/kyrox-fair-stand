@@ -69,8 +69,8 @@ function snapDepthCenterCm(value, depthCm, stepCm = MODULE_PLACEMENT_SNAP_CM) {
 export function normalizeModuleRotationZDeg(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) return 0;
-  const eighthTurns = Math.round(number / 45);
-  return ((eighthTurns * 45) % 360 + 360) % 360;
+  const steps = Math.round(number / 15);
+  return ((steps * 15) % 360 + 360) % 360;
 }
 
 export function rotateModuleRotationZDeg(value, deltaDeg = 90) {

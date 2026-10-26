@@ -92,8 +92,15 @@ test('tek tık paneli açar, sağ tık aynı paneli gösterir; seçim değişinc
     (buttons) => buttons.map((button) => button.dataset.moduleAction),
   );
 
-  await page.getByRole('button', { name: 'Özellikler panelini kapat' }).click();
+  const multiSelect = page.locator('.selection-toolbar [data-selection-action="multi"]');
+  await multiSelect.click();
+  await expect(multiSelect).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Seçimi kaldır', exact: true }).click();
   await expect(panel).toBeHidden();
+  await expect(page.locator('.selection-toolbar')).toBeHidden();
+  await expect(page.locator('.viewport-wrap')).not.toHaveClass(/multi-select-/);
+  await expect(multiSelect).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#viewport')).toBeFocused();
 
   // Sağ tık: panel, gerçek öğe ve yüzey başlığı; renk kontrolleri panele taşınır.
   await page.mouse.click(first.x, first.y, { button: 'right' });
@@ -108,7 +115,7 @@ test('tek tık paneli açar, sağ tık aynı paneli gösterir; seçim değişinc
   expect(rightClickActions).toEqual(clickActions);
 
   // Panel kapatılıp aynı öğeye yeniden tıklanınca aynı işlem listesi gelir; ⋯ düğmesi yoktur.
-  await page.getByRole('button', { name: 'Özellikler panelini kapat' }).click();
+  await page.getByRole('button', { name: 'Seçimi kaldır', exact: true }).click();
   await expect(panel).toBeHidden();
   await expect(page.locator('#sidebar #apply-color')).toBeAttached();
   await expect(page.locator('.selection-toolbar [data-selection-action="more"]')).toHaveCount(0);
@@ -155,7 +162,7 @@ test('işlem sonrası panel açık kalır ve kilit durumunu güncel gösterir', 
   const before = (await lock.textContent()).trim();
   await lock.click();
   await expect(panel).toBeVisible();
-  await expect(lock).toHaveText(before === 'Kilitle' ? 'Kilidi aç' : 'Kilitle');
+  await expect(lock).toHaveText(before === 'Kilitle' ? 'Kilitli' : 'Kilitle');
   const remove = panel.locator('[data-module-action="delete"]');
   if (before === 'Kilitle') await expect(remove).toBeDisabled();
   else await expect(remove).toBeEnabled();

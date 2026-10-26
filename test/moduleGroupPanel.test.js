@@ -129,7 +129,7 @@ test('scene moves the whole group on drag and arrows, and refuses Shift+R for me
   assert.match(sceneSource, /moveGroupByArrow\(moduleGroup, moduleState, arrowScreenDirection\);/);
   // Faz 4: Shift+R on a group member rotates the whole group by 45 degrees.
   assert.match(sceneSource, /const groupDeltaDeg = Number\(deltaDeg\) < 0 \? -GROUP_ROTATE_STEP_DEG : GROUP_ROTATE_STEP_DEG;/);
-  assert.match(sceneSource, /const plan = planRenderedGroupRotate\(getModuleGroupId\(moduleState\), groupDeltaDeg\);/);
+  assert.match(sceneSource, /const plan = planRenderedGroupRotate\(getModuleGroupId\(moduleState\), exact \? Number\(deltaDeg\) : groupDeltaDeg\);/);
   assert.doesNotMatch(sceneSource, /GROUP_ROTATE_MESSAGE/);
 });
 

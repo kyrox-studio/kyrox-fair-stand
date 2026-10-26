@@ -97,6 +97,14 @@ for (const itemKey of Object.keys(expected)) {
   test(`${itemKey} katalog drag canonical furniture Item üretir`, async ({ page }) => {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
+    if (itemKey.startsWith('furniture_sofa_')) {
+      await page.route('**/src/scene3d.js*', async route => {
+        const response = await route.fetch();
+        const body = (await response.text()).replace('const scene = new THREE.Scene();',
+          'const scene = new THREE.Scene(); window.__sofaScene = scene;');
+        await route.fulfill({ response, body });
+      });
+    }
     await createIslandStand(page, itemKey);
 
     const button = page.locator('.module-drag-catalog');
@@ -119,6 +127,28 @@ for (const itemKey of Object.keys(expected)) {
     expect(item.widthCm).toBe(expected[itemKey].widthCm);
     expect(item.depthCm).toBe(expected[itemKey].depthCm);
     expect(item.heightCm).toBe(expected[itemKey].heightCm);
+    if (itemKey.startsWith('furniture_sofa_')) {
+      const masks = () => page.evaluate(() => {
+        const result = [];
+        window.__sofaScene.traverse(object => {
+          if (!object.isMesh || !Array.isArray(object.material)) return;
+          const wood = object.material.findIndex(mat => mat.userData?.sofaFixedWood);
+          if (wood < 0) return;
+          result.push({
+            woodIndices: object.geometry.groups.filter(group => group.materialIndex === wood).reduce((sum,group) => sum+group.count,0),
+            bodyIndices: object.geometry.groups.filter(group => group.materialIndex !== wood).reduce((sum,group) => sum+group.count,0),
+            woodColor: object.material[wood].color.getHexString(),
+          });
+        });
+        return result;
+      });
+      await expect.poll(async () => (await masks()).length).toBe(itemKey === 'furniture_sofa_set_classic' ? 3 : 1);
+      for (const mask of await masks()) {
+        expect(mask.woodIndices).toBeGreaterThan(0);
+        expect(mask.bodyIndices).toBeGreaterThan(mask.woodIndices);
+        expect(mask.woodColor).toBe('a66b3d');
+      }
+    }
     if (expected[itemKey].chairCount != null) {
       expect(item.chairCount).toBe(expected[itemKey].chairCount);
     }

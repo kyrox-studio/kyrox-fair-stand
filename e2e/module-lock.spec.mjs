@@ -92,9 +92,10 @@ async function contextAction(page, at, action) {
   const button = menu.locator(`[data-module-action="${action}"]`);
   await expect(button).toBeVisible();
   await button.click();
+  if (action === 'toggle-lock') await expect(page.locator('#selection-info')).toContainText('kilitlendi');
   // Özellikler paneli işlemden sonra açık kalır; sahneye dönmek için kapatılır.
   await expect(menu).toBeVisible();
-  await page.getByRole('button', { name: 'Özellikler panelini kapat' }).click();
+  await page.getByRole('button', { name: 'Seçimi kaldır', exact: true }).click();
   await expect(menu).toBeHidden();
 }
 
@@ -114,7 +115,6 @@ test('kilitli öğe sürükleme, ok tuşu ve Delete ile oynamaz; kilit kaydedili
   expect(fridge.locked).toBeUndefined();
 
   await contextAction(page, FRIDGE.at, 'toggle-lock');
-  await expect(page.locator('#selection-info')).toContainText('kilitlendi');
   const locked = await saveAndReadProject(page);
   expect(findModule(locked, fridge.id).locked).toBe(true);
 
@@ -138,7 +138,7 @@ test('kilitli öğe sürükleme, ok tuşu ve Delete ile oynamaz; kilit kaydedili
   const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
   await expect(menu.locator('.module-context-title')).toContainText('Kilitli');
   await expect(menu.locator('[data-module-action="delete"]')).toBeDisabled();
-  await expect(menu.locator('[data-module-action="toggle-lock"]')).toHaveText('Kilidi aç');
+  await expect(menu.locator('[data-module-action="toggle-lock"]')).toHaveText('Kilitli');
   await menu.locator('[data-module-action="toggle-lock"]').click();
 
   const unlocked = await saveAndReadProject(page);

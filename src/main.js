@@ -1906,7 +1906,16 @@ function changeModuleVariant(context, itemKey, optionOn) {
 }
 
 const moduleContextMenu = createModuleContextMenu({
+  onClearSelection: () => {
+    moduleDragSidebar?.cancelPlacement();
+    scene3d.setMultiSelectMode(false);
+    scene3d.clearSelection();
+    selectionToolbar.update(null);
+    if (!viewport.hasAttribute('tabindex')) viewport.tabIndex = -1;
+    viewport.focus({ preventScroll: true });
+  },
   onDelete: deleteContextModule,
+  onDuplicate: copyContextModule,
   onAdd: addCatalogModule,
   onGlassModeChange: changeContextPanelGlassMode,
   onMetalSeparatorModeChange: changeContextMetalSeparatorMode,
@@ -1918,7 +1927,7 @@ const moduleContextMenu = createModuleContextMenu({
   getBackPanelState: getContextBackPanelState,
   onBackPanelChange: changeContextBackPanels,
   onLockChange: changeModuleLock,
-  onRotate: (context) => scene3d.rotateModuleById(context.moduleId),
+  onRotate: (context, deltaDeg) => scene3d.rotateModuleById(context.moduleId, deltaDeg),
   onGroupAction: (action, context) => handleGroupAction(action, {
     groupId: context?.group?.id ?? null,
     moduleId: context?.moduleId ?? null,

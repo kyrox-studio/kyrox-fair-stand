@@ -130,9 +130,9 @@ for (const itemKey of BANKO_KEYS) {
     assert.equal(getModuleBehavior(state).moveSnapCm, 10);
     if (isL) {
       assert.equal(getModuleDefaultRotationDeg(state), 270);
-      assert.equal(getModuleRotationStepDeg(state), 90);
+      assert.equal(getModuleRotationStepDeg(state), 15);
     } else {
-      assert.equal(getModuleRotationStepDeg(state), 45);
+      assert.equal(getModuleRotationStepDeg(state), 15);
     }
 
     const contract = resolveModuleContract(itemKey);

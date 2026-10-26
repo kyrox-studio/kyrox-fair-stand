@@ -43,7 +43,7 @@ test('box-block state reads WDH opacity rotation and defaultZ from item DB field
   assert.deepEqual([state.widthCm, state.depthCm, state.heightCm], [100, 50, 50]);
   assert.equal(state.opacity, 0.85);
   assert.equal(getModuleBehavior(state).placement, 'free');
-  assert.equal(getModuleRotationStepDeg(state), 45);
+  assert.equal(getModuleRotationStepDeg(state), 15);
   assert.equal(getModuleDefaultRotationDeg(state), 0);
   assert.equal(resolveItemDefaultZCm(state), 0);
 });

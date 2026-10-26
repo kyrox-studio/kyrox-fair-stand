@@ -39,18 +39,18 @@ PLACEABLE_ITEM_TYPES = frozenset(
     }
 )
 
-_DEFAULT_PLACEABLE = (90, 0, "inherit")
+_DEFAULT_PLACEABLE = (15, 0, "inherit")
 
 _SPECIAL = {
-    "desk_banko_100": (45, 0, "inherit"),
-    "desk_banko_150": (45, 0, "inherit"),
-    "desk_banko_200": (45, 0, "inherit"),
-    "desk_banko_100_l": (90, 270, "inherit"),
-    "desk_banko_150_l": (90, 270, "inherit"),
-    "desk_banko_200_l": (90, 270, "inherit"),
-    "box_block": (45, 0, "inherit"),
-    "furniture_sofa_single_classic": (45, 0, "inherit"),
-    "furniture_bar_stool_classic": (45, 270, "default"),
+    "desk_banko_100": (15, 0, "inherit"),
+    "desk_banko_150": (15, 0, "inherit"),
+    "desk_banko_200": (15, 0, "inherit"),
+    "desk_banko_100_l": (15, 270, "inherit"),
+    "desk_banko_150_l": (15, 270, "inherit"),
+    "desk_banko_200_l": (15, 270, "inherit"),
+    "box_block": (15, 0, "inherit"),
+    "furniture_sofa_single_classic": (15, 0, "inherit"),
+    "furniture_bar_stool_classic": (15, 270, "default"),
 }
 
 

@@ -27,5 +27,5 @@ test('mini fridge is a free module without inter-module collision', () => {
   const behavior = getModuleBehavior({ type: 'mini-fridge' });
   assert.equal(behavior.placement, 'free');
   assert.equal(behavior.collision, 'none');
-  assert.equal(getModuleRotationStepDeg({ itemKey: 'mini_fridge_avanti' }), 90);
+  assert.equal(getModuleRotationStepDeg({ itemKey: 'mini_fridge_avanti' }), 15);
 });

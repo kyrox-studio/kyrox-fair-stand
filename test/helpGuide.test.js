@@ -78,7 +78,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.doesNotMatch(guideSource, /Üst ve alt yüze görsel/);
   assert.match(guideSource, /Adım 10 cm’dir/);
   assert.match(guideSource, /Kutuyu zeminde sürüklemek yüksekliği bozmaz/);
-  assert.match(guideSource, /Shift\+R<\/strong> kutuyu 45° döndürür/);
+  assert.match(guideSource, /Shift\+R<\/strong> kutuyu katalogdaki adımla \(varsayılan 15°\) döndürür/);
   assert.match(guideSource, /Aynı ölçü penceresi panel, Lightbox ve Mesh için geçerlidir/);
   assert.match(guideSource, /Panel, Lightbox ve Mesh görseli aynı pencereden ölçülür/);
   assert.match(guideSource, /Küpü sürüklemek kamerayı döndürür/);
@@ -95,7 +95,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /<strong>Kopyala:<\/strong> Modülü hafızaya alır; sahnede tıkladığın veya dokunduğun her yere/);
   assert.match(guideSource, /<th>Ctrl\/Cmd \+ C \/ V<\/th>/);
   assert.doesNotMatch(guideSource, /Çoğalt Sağ \/ Sol/);
-  assert.match(guideSource, /Özellikler panelinde Kopyala yoktur\./);
+  assert.match(guideSource, /Özellikler kartında mevcut açı gösterilir/);
   assert.match(guideSource, /<th>İki parmak \(tablet\)<\/th><td>Parmakları açıp kapatmak yakınlaştırır/);
   assert.match(guideSource, /<strong>Yeni proje sihirbazı:<\/strong> Yeni projede boş sahnenin ortasında 3 adım açılır/);
   assert.match(guideSource, /<strong>Depo<\/strong> listesinde <strong>Depo yok<\/strong> yerine 1×1, 1,5×1, 2×1 veya 2×2 m depo ölçüsünü seç\./);

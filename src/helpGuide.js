@@ -77,7 +77,7 @@ function listGuideSections() {
         <tr><th>Tık</th><td>Öğeye veya yüzeye tek tık (tablette tek dokunuş) onu seçer ve sahnenin sağında <strong>Özellikler</strong> panelini açar. Sürükleme ve kamera hareketi paneli açmaz; boş alana tık paneli kapatır.</td></tr>
 
         <tr><th>İki parmak (tablet)</th><td>Parmakları açıp kapatmak yakınlaştırır, birlikte kaydırmak sahneyi kaydırır. İkinci parmak ekrana değince ilk parmağın başlattığı öğe sürüklemesi iptal olur ve öğe yerinde kalır; ikinci parmak bir öğeyi yakalamaz. Görünüm küpü sahnenin sağ üst köşesindedir.</td></tr>
-        <tr><th>Seçim çubuğu</th><td>Seçili öğenin üstünde <strong>Döndür</strong>, <strong>Kopyala</strong>, <strong>Sil</strong>, <strong>Çoklu panel</strong> veya <strong>Çoklu modül</strong> çıkar; Kopyala açıkken yalnız <strong>Kopyalamayı bitir</strong> görünür; tek öğenin kapladığı alan mavi kesik çizgili kutu, grup ve çoklu öğe seçimi tamamını saran tek turuncu kesik çizgili kutuyla gösterilir; fare ve tablette aynı çalışır. <strong>Kopyala:</strong> Modülü hafızaya alır; sahnede tıkladığın veya dokunduğun her yere, katalogdan bırakmayla aynı kuralla bir kopya bırakır (görsel, renk, cam, Lightbox ve metal dahil); Esc veya <strong>Kopyalamayı bitir</strong> ile çıkılır. Kilitli öğenin kopyası kilitsiz gelir. Kopyadaki metal separatör kendi grubunu alır; kopyada kapatmak orijinali etkilemez. Kopyayı bırakmadan önce <strong>Shift+R</strong> yalnız kopyayı döndürür; seçili kalan asıl öğe dönmez. Özellikler panelinde Kopyala yoktur.</td></tr>
+        <tr><th>Seçim çubuğu</th><td>Seçili öğenin üstünde <strong>Çoklu panel</strong> veya <strong>Çoklu modül</strong> çıkar. <strong>Döndür</strong>, <strong>Kopyala</strong> ve <strong>Sil</strong> sağdaki Özellikler kartındadır; Kopyala açıkken yalnız <strong>Kopyalamayı bitir</strong> görünür; tek öğenin kapladığı alan mavi kesik çizgili kutu, grup ve çoklu öğe seçimi tamamını saran tek turuncu kesik çizgili kutuyla gösterilir; fare ve tablette aynı çalışır. <strong>Kopyala:</strong> Modülü hafızaya alır; sahnede tıkladığın veya dokunduğun her yere, katalogdan bırakmayla aynı kuralla bir kopya bırakır (görsel, renk, cam, Lightbox ve metal dahil); Esc veya <strong>Kopyalamayı bitir</strong> ile çıkılır. Kilitli öğenin kopyası kilitsiz gelir. Kopyadaki metal separatör kendi grubunu alır; kopyada kapatmak orijinali etkilemez. Kopyayı bırakmadan önce <strong>Shift+R</strong> yalnız kopyayı döndürür; seçili kalan asıl öğe dönmez. Özellikler kartında mevcut açı gösterilir; −45°, −15°, +15°, +45° mevcut açıya eklenir. Kartın üstündeki Seçimi kaldır düğmesi seçimi ve etkin yerleştirmeyi bitirir.</td></tr>
       </tbody></table>
     `,
   },
@@ -103,7 +103,7 @@ function listGuideSections() {
         <tr><th>Enter</th><td>X/Y alanlarında uygunsa sahne oluşturmayı; proje adı popupında onaylamayı tetikler.</td></tr>
       </tbody></table>
       <p class="help-guide-note">Geri al: Her işlem tek adımdır. Sürükleme sırasındaki ara konumlar ve basılı tutulan ok tuşu tek adım sayılır. Son 50 adım tutulur. Geçmiş kaydedilmez; proje açılınca, yeni proje kurulunca veya sayfa yenilenince sıfırlanır. Görsel kütüphanesinden bir görsel silinince de sıfırlanır, çünkü silinen görsele geri dönülemez. Geçmiş revizyon görünümünde de geri alma çalışır. Metin kutularında Ctrl+Z yalnız yazıyı geri alır.</p>
-      <p class="help-guide-note">Not: Döndürme adımı modüle göre değişebilir. Standart modüllerde çoğunlukla 90°, bazı banko ve ürünlerde 45° kullanılabilir.</p>
+      <p class="help-guide-note">Not: Tek öğede Shift+R katalogdaki dönüş adımını kullanır; varsayılan adım 15°’dir. Karttaki açı düğmeleri seçilen dereceyi uygular.</p>
       <p>ViewCube yüzüne tıklamak o görünüşe geçer; klavyede olmayan arka ve alt da buradadır. ⌂ ve H aynı home görünüşüdür: L Stand Sağ sol-ön, diğer tipler sağ-ön. Sahne ilk açıldığında kamera sağ-ön köşededir. Küpü sürüklemek kamerayı döndürür.</p>
     `,
   },
@@ -263,7 +263,7 @@ function listGuideSections() {
         <li>Ok tuşları ekranda görünen yöne gider: sağa, sola, ileri, geri ve yukarı, aşağı. Adım 10 cm’dir.</li>
         <li>Taban zeminin altına inmez. Kutunun tepesi stand tavanını geçmez.</li>
         <li>Kutuyu zeminde sürüklemek yüksekliği bozmaz.</li>
-        <li><strong>Shift+R</strong> kutuyu 45° döndürür.</li>
+        <li><strong>Shift+R</strong> kutuyu katalogdaki adımla (varsayılan 15°) döndürür.</li>
       </ul>
     `,
   },
