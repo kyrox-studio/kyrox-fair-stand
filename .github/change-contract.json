@@ -1,19 +1,23 @@
 {
   "schemaVersion": 2,
-  "id": "web-launch-stand-favicon",
+  "id": "privacy-links-local-fonts",
   "kind": "bugfix",
-  "summary": "Bağımsız Stand girişine kyrox-brand kaynaklı SVG/ICO sekme simgeleri eklenir. Stand dosya adları CRM derlemesinde mevcut favicon.ico dosyasının ezilmesini önler. Bağımsız sekme başlığı kullanıcı kararıyla Kyrox Studio | Stand Konfiguratör olur. Uygulama HTML başlığı noindex/nofollow taşır; gerçek robots.txt taramaya izin vererek botların noindex işaretini okuyabilmesini sağlar.",
+  "summary": "Google Fonts otomatik isteği yerel Inter dosyalarıyla kaldırılır; mevcut kullanım kılavuzuna düzenlenebilir web gizlilik/kullanım/depolama sayfaları bağlanır. Reklam/analiz, oturum ve kayıt davranışı değişmez.",
   "owners": [
     "index.html",
-    "public/stand-favicon.svg",
-    "public/stand-favicon.ico",
-    "public/robots.txt"
+    "src/helpGuide.js",
+    "public/fonts/inter.css",
+    "public/fonts/inter-latin.woff2",
+    "public/fonts/inter-latin-ext.woff2",
+    "public/fonts/OFL.txt"
   ],
   "sourceOfTruth": [
     "index.html",
-    "public/stand-favicon.svg",
-    "public/stand-favicon.ico",
-    "public/robots.txt"
+    "src/helpGuide.js",
+    "public/fonts/inter.css",
+    "public/fonts/inter-latin.woff2",
+    "public/fonts/inter-latin-ext.woff2",
+    "public/fonts/OFL.txt"
   ],
   "impact": {
     "catalog": "not-applicable",
@@ -29,7 +33,7 @@
     "storage": "not-applicable",
     "importExport": "not-applicable",
     "performance": "not-applicable",
-    "accessibility": "not-applicable",
+    "accessibility": "affected",
     "architecture": "not-applicable",
     "security": "not-applicable",
     "tests": "affected"
@@ -39,7 +43,10 @@
     "affectedFiles": [
       "scripts/install-server.sh",
       "scripts/verify-change-contract.mjs",
-      "src/systemChangeContract.js"
+      "src/systemChangeContract.js",
+      "index.html",
+      "src/main.js",
+      "src/mountFairStand.js"
     ],
     "affectedTests": [
       "test/autosaveMainIntegration.test.js",
@@ -60,7 +67,48 @@
       "test/viewportToolbarMainIntegration.test.js",
       "test/visibleUiContract.test.js",
       "test/favicon.test.js",
-      "e2e/favicon.spec.mjs"
+      "e2e/favicon.spec.mjs",
+      "test/bundleLoadingContract.test.js",
+      "test/catalogDragItemKeyInvariant.test.js",
+      "test/catalogWidthFamily.test.js",
+      "test/colorEditorControllerMainIntegration.test.js",
+      "test/colorEditorMainIntegration.test.js",
+      "test/editorViewSettings.test.js",
+      "test/f028FeatureReset.test.js",
+      "test/hostProjectUrl.test.js",
+      "test/illuminatedFoamModule.test.js",
+      "test/imageAssetDeletion.test.js",
+      "test/imageAssetLiveDelete.test.js",
+      "test/itemDefaultZCm.test.js",
+      "test/lightboxFabric.test.js",
+      "test/lightboxFabricAppearance.test.js",
+      "test/lightboxFabricLighting.test.js",
+      "test/moduleBehaviorPolicy.test.js",
+      "test/moduleStateConstructionRegistry.test.js",
+      "test/mountFairStandBoundary.test.js",
+      "test/productionBomPanelEntry.test.js",
+      "test/profileLength.test.js",
+      "test/projectAtomicDeletion.test.js",
+      "test/projectDropdownSwitchIntegration.test.js",
+      "test/projectImportFlow.test.js",
+      "test/projectOpenFastPath.test.js",
+      "test/projectOpenTiming.test.js",
+      "test/projectUiMainIntegration.test.js",
+      "test/removedIndoorPlant2.test.js",
+      "test/scene3dPublicContract.test.js",
+      "test/sceneAssetLoading.test.js",
+      "test/selectionFeedbackMainIntegration.test.js",
+      "test/shelfLighting.test.js",
+      "test/sidebarControllerMainIntegration.test.js",
+      "test/stageFeedbackMainIntegration.test.js",
+      "test/systemImpactAnalysis.test.js",
+      "test/toastNotifications.test.js",
+      "test/tulleFabric.test.js",
+      "test/uiFeedbackMainIntegration.test.js",
+      "test/verticalMoveUprightHeight.test.js",
+      "test/viewKeyboardMainIntegration.test.js",
+      "test/wallLockNotice.test.js",
+      "test/wallShortWidth.test.js"
     ],
     "affectedDocs": [
       "RELEASE_HARDENING_ROADMAP.md",
@@ -89,7 +137,8 @@
       "docs/items/current-system/karolaj.md",
       "docs/items/current-system/parke.md",
       "docs/items/inventory/ITEM_CAPABILITY_INVENTORY.md",
-      "docs/refactor/CATALOG.md"
+      "docs/refactor/CATALOG.md",
+      "audit/evidence/A03_ARCHITECTURE.md"
     ],
     "relatedFindings": {
       "affected": [],
@@ -97,7 +146,7 @@
         "F-025"
       ]
     },
-    "notes": "Sahne, Item, BOM, persistence ve API değişmez. CRM Vite eklentisi Stand public dosyalarını kendi çıktısına kopyalar; stand-favicon adları mevcut CRM faviconunu korur. Kaynak varlıklar kyrox-brand deposundan aynen kopyalanır. Kimlik, organizasyon, yetki, kota, işler, veri yaşam döngüsü ve dış servisler etkilenmez; yalnız aynı origin statik marka simgesi eklenir. index.html referansları gözden geçirildi: mevcut testler editör gövdesi/toolbar/ayar alanlarını okur; yalnız head icon linkleri eklendi, gövde değişmedi. Kurulum scripti aynı dist/index.html dosyasını sunar. Gate dosyaları yalnız giriş dosyasını sınıflandırır. Belgelerdeki tarihî index.html atıfları değişmez. F-025 rawBomDebug yükleme bulgusudur; script yükleme davranışı değişmediği için etkilenmez. Başlık metni güncellenir; aynı tarayıcı senaryosu başlığı da doğrular. Kullanıcı isteğiyle tüm tarayıcı koşusu durduruldu; nihai kontroller toplu değişiklikler sonunda çalıştırılacak. İndeksleme politikası erişim güvenliği değildir; kimlik ve yetki denetimleri değişmez. CRM public/robots.txt aynı içeriktedir; CRM derlemesindeki kopyalama davranışıyla çakışmaz. Web tanıtım alanı ayrı origin üzerinde indekslenebilir kalır. public/robots.txt atıfları toplu son etki taramasında yeniden doğrulanacak. 26 Ekim toplu kontrol: origin/main ile güncellendi; Claude CI/pip-audit ve patched dependency değişiklikleri aynen korundu. 1546 Node testi, build ve favicon/robots gerçek Chromium kontrolü geçti. Windows CRLF yanıtı testte normalize edilir; Linux aynı kurallarla denetlenir."
+    "notes": "Sahne, Item, BOM, persistence ve API değişmez. CRM Vite eklentisi Stand public dosyalarını kendi çıktısına kopyalar; stand-favicon adları mevcut CRM faviconunu korur. Kaynak varlıklar kyrox-brand deposundan aynen kopyalanır. Kimlik, organizasyon, yetki, kota, işler, veri yaşam döngüsü ve dış servisler etkilenmez; yalnız aynı origin statik marka simgesi eklenir. index.html referansları gözden geçirildi: mevcut testler editör gövdesi/toolbar/ayar alanlarını okur; yalnız head icon linkleri eklendi, gövde değişmedi. Kurulum scripti aynı dist/index.html dosyasını sunar. Gate dosyaları yalnız giriş dosyasını sınıflandırır. Belgelerdeki tarihî index.html atıfları değişmez. F-025 rawBomDebug yükleme bulgusudur; script yükleme davranışı değişmediği için etkilenmez. Başlık metni güncellenir; aynı tarayıcı senaryosu başlığı da doğrular. Kullanıcı isteğiyle tüm tarayıcı koşusu durduruldu; nihai kontroller toplu değişiklikler sonunda çalıştırılacak. İndeksleme politikası erişim güvenliği değildir; kimlik ve yetki denetimleri değişmez. CRM public/robots.txt aynı içeriktedir; CRM derlemesindeki kopyalama davranışıyla çakışmaz. Web tanıtım alanı ayrı origin üzerinde indekslenebilir kalır. public/robots.txt atıfları toplu son etki taramasında yeniden doğrulanacak. 26 Ekim toplu kontrol: origin/main ile güncellendi; Claude CI/pip-audit ve patched dependency değişiklikleri aynen korundu. 1546 Node testi, build ve favicon/robots gerçek Chromium kontrolü geçti. Windows CRLF yanıtı testte normalize edilir; Linux aynı kurallarla denetlenir. Yeni kapsam: yerel font ve kullanım kılavuzundaki sabit bilgi bağlantıları. Bilgilendirme kullanıcı rızası sayılmaz. Proje, yetki, persistence, veri silme ve STUN davranışı değişmez. Yeni analitik servisi yoktur. Help guide dependency sweep includes standalone index, main and embedded mount; these continue importing the same help initializer. Only a static information section is added. Existing gesture, BOM, storage and permission logic is unchanged. Full test/build and targeted real browser cover this UI slice."
   },
   "tests": {
     "targeted": [

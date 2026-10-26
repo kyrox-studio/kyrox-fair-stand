@@ -5,6 +5,17 @@ import { getMaxImageUploadMb } from './runtimeSettings.js';
 function listGuideSections() {
   return [
   {
+    title: 'Gizlilik ve Veri Kullanımı',
+    html: `
+      <p>Oturum, yerel proje kayıtları ve dış bağlantılar hakkında bilgi alın. Bağlantılar yeni sekmede açılır; tasarımınız açık kalır.</p>
+      <ul>
+        <li><a href="https://kyrox.studio/gizlilik/#crm-stand" target="_blank" rel="noopener noreferrer">Gizlilik ve veri kullanımı</a></li>
+        <li><a href="https://kyrox.studio/kullanim-kosullari/" target="_blank" rel="noopener noreferrer">Kullanım koşulları</a></li>
+        <li><a href="https://kyrox.studio/cerezler/#crm-stand" target="_blank" rel="noopener noreferrer">Çerezler ve depolama</a></li>
+      </ul>
+    `,
+  },
+  {
     title: '5 Dakikada İlk Standın',
     open: true,
     html: `
