@@ -108,7 +108,8 @@
       "test/verticalMoveUprightHeight.test.js",
       "test/viewKeyboardMainIntegration.test.js",
       "test/wallLockNotice.test.js",
-      "test/wallShortWidth.test.js"
+      "test/wallShortWidth.test.js",
+      "e2e/double-click-select.spec.mjs"
     ],
     "affectedDocs": [
       "RELEASE_HARDENING_ROADMAP.md",
@@ -146,7 +147,7 @@
         "F-025"
       ]
     },
-    "notes": "Sahne, Item, BOM, persistence ve API değişmez. CRM Vite eklentisi Stand public dosyalarını kendi çıktısına kopyalar; stand-favicon adları mevcut CRM faviconunu korur. Kaynak varlıklar kyrox-brand deposundan aynen kopyalanır. Kimlik, organizasyon, yetki, kota, işler, veri yaşam döngüsü ve dış servisler etkilenmez; yalnız aynı origin statik marka simgesi eklenir. index.html referansları gözden geçirildi: mevcut testler editör gövdesi/toolbar/ayar alanlarını okur; yalnız head icon linkleri eklendi, gövde değişmedi. Kurulum scripti aynı dist/index.html dosyasını sunar. Gate dosyaları yalnız giriş dosyasını sınıflandırır. Belgelerdeki tarihî index.html atıfları değişmez. F-025 rawBomDebug yükleme bulgusudur; script yükleme davranışı değişmediği için etkilenmez. Başlık metni güncellenir; aynı tarayıcı senaryosu başlığı da doğrular. Kullanıcı isteğiyle tüm tarayıcı koşusu durduruldu; nihai kontroller toplu değişiklikler sonunda çalıştırılacak. İndeksleme politikası erişim güvenliği değildir; kimlik ve yetki denetimleri değişmez. CRM public/robots.txt aynı içeriktedir; CRM derlemesindeki kopyalama davranışıyla çakışmaz. Web tanıtım alanı ayrı origin üzerinde indekslenebilir kalır. public/robots.txt atıfları toplu son etki taramasında yeniden doğrulanacak. 26 Ekim toplu kontrol: origin/main ile güncellendi; Claude CI/pip-audit ve patched dependency değişiklikleri aynen korundu. 1546 Node testi, build ve favicon/robots gerçek Chromium kontrolü geçti. Windows CRLF yanıtı testte normalize edilir; Linux aynı kurallarla denetlenir. Yeni kapsam: yerel font ve kullanım kılavuzundaki sabit bilgi bağlantıları. Bilgilendirme kullanıcı rızası sayılmaz. Proje, yetki, persistence, veri silme ve STUN davranışı değişmez. Yeni analitik servisi yoktur. Help guide dependency sweep includes standalone index, main and embedded mount; these continue importing the same help initializer. Only a static information section is added. Existing gesture, BOM, storage and permission logic is unchanged. Full test/build and targeted real browser cover this UI slice."
+    "notes": "Sahne, Item, BOM, persistence ve API değişmez. CRM Vite eklentisi Stand public dosyalarını kendi çıktısına kopyalar; stand-favicon adları mevcut CRM faviconunu korur. Kaynak varlıklar kyrox-brand deposundan aynen kopyalanır. Kimlik, organizasyon, yetki, kota, işler, veri yaşam döngüsü ve dış servisler etkilenmez; yalnız aynı origin statik marka simgesi eklenir. index.html referansları gözden geçirildi: mevcut testler editör gövdesi/toolbar/ayar alanlarını okur; yalnız head icon linkleri eklendi, gövde değişmedi. Kurulum scripti aynı dist/index.html dosyasını sunar. Gate dosyaları yalnız giriş dosyasını sınıflandırır. Belgelerdeki tarihî index.html atıfları değişmez. F-025 rawBomDebug yükleme bulgusudur; script yükleme davranışı değişmediği için etkilenmez. Başlık metni güncellenir; aynı tarayıcı senaryosu başlığı da doğrular. Kullanıcı isteğiyle tüm tarayıcı koşusu durduruldu; nihai kontroller toplu değişiklikler sonunda çalıştırılacak. İndeksleme politikası erişim güvenliği değildir; kimlik ve yetki denetimleri değişmez. CRM public/robots.txt aynı içeriktedir; CRM derlemesindeki kopyalama davranışıyla çakışmaz. Web tanıtım alanı ayrı origin üzerinde indekslenebilir kalır. public/robots.txt atıfları toplu son etki taramasında yeniden doğrulanacak. 26 Ekim toplu kontrol: origin/main ile güncellendi; Claude CI/pip-audit ve patched dependency değişiklikleri aynen korundu. 1546 Node testi, build ve favicon/robots gerçek Chromium kontrolü geçti. Windows CRLF yanıtı testte normalize edilir; Linux aynı kurallarla denetlenir. Yeni kapsam: yerel font ve kullanım kılavuzundaki sabit bilgi bağlantıları. Bilgilendirme kullanıcı rızası sayılmaz. Proje, yetki, persistence, veri silme ve STUN davranışı değişmez. Yeni analitik servisi yoktur. Help guide dependency sweep includes standalone index, main and embedded mount; these continue importing the same help initializer. Only a static information section is added. Existing gesture, BOM, storage and permission logic is unchanged. Full test/build and targeted real browser cover this UI slice. CI run 40311087521: tablet çift dokunma testinde ayrı Playwright tap snapshotları 349.35/377.51 ms başlangıç aralığı üretti; retry ürünün 350 ms eşiği dışında. Test gerçek Chromium CDP touchStart/touchEnd dizisiyle geçerli çift dokunma üretir. Ürün seçim kodu, süre sınırı ve mevcut assertionlar değiştirilmedi. Main görsel upload sınırları backend ve testleri origin/main ile aynıdır."
   },
   "tests": {
     "targeted": [
@@ -157,7 +158,8 @@
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/favicon.spec.mjs"
+        "e2e/favicon.spec.mjs",
+        "e2e/double-click-select.spec.mjs"
       ],
       "reason": "Tarayıcı başlığındaki simge ve gerçek varlık HTTP yanıtları doğrulanır."
     }

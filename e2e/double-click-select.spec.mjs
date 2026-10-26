@@ -168,8 +168,21 @@ test('banko: Ctrl+click on a face still adds faces of the same counter', async (
 test('tablet: double tap selects the whole module', async ({ page }) => {
   await createStand(page, 'Sırt Duvar', 600, 300);
   const [first] = await wallPanelsByModule(page, 3);
-  await page.touchscreen.tap(first.x, first.y);
-  await page.touchscreen.tap(first.x, first.y);
+  // İki ayrı Playwright tap eylemi arasındaki DOM/trace snapshot'ları CI'da 377 ms
+  // boşluk üretebiliyor; bu, ürünün 350 ms çift dokunma sınırının dışında kalır.
+  // Aynı Chromium oturumundan doğal touch olayları gönder: seçim beklentisi ve
+  // ürünün süre sınırı değişmez, yalnız test gerçek bir çift dokunma oluşturur.
+  const touch = await page.context().newCDPSession(page);
+  try {
+    for (let i = 0; i < 2; i += 1) {
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchStart', touchPoints: [{ x: first.x, y: first.y, id: 1 }],
+      });
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    }
+  } finally {
+    await touch.detach();
+  }
   await expect(toolbar(page).getByRole('button', { name: 'Çoklu modül' })).toBeVisible();
   expect((await surfaces(page)).filter((s) => s.selected)).toEqual([]);
 });
