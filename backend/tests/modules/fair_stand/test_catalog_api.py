@@ -85,7 +85,7 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     showcase = next(item for item in body["items"] if item["itemKey"] == "wall_showcase_100_2_350")
     assert showcase["bodyItems"]["glassShelfItemKey"] == "glass_shelf"
     wall_200 = next(item for item in body["items"] if item["itemKey"] == "wall_200_350")
-    assert wall_200["rotationStepDeg"] == 90
+    assert wall_200["rotationStepDeg"] == 15
     assert wall_200["defaultRotationDeg"] == 0
     assert wall_200["sideInsertRotation"] == "inherit"
     assert wall_200["isRender"] is True
@@ -96,13 +96,13 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     assert wall_200["acceptsMesh"] is True
     assert wall_200["defaultZCm"] == 0
     banko = next(item for item in body["items"] if item["itemKey"] == "desk_banko_150")
-    assert banko["rotationStepDeg"] == 45
+    assert banko["rotationStepDeg"] == 15
     stool = next(item for item in body["items"] if item["itemKey"] == "furniture_bar_stool_classic")
     assert stool["defaultRotationDeg"] == 270
     assert stool["sideInsertRotation"] == "default"
     l_banko = next(item for item in body["items"] if item["itemKey"] == "desk_banko_100_l")
     assert l_banko["defaultRotationDeg"] == 270
-    assert l_banko["rotationStepDeg"] == 90
+    assert l_banko["rotationStepDeg"] == 15
     assert "innerCorner" not in wall_200.get("composition", {})
     assert "nominalModuleWidthCm" not in wall_200
     corner = next(item for item in body["items"] if item["itemKey"] == "panel_corner_192")

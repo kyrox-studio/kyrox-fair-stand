@@ -1088,3 +1088,12 @@ test('mıknatıslı yapışma profili hedef profilin ortasına (10 cm adımla) T
   assert.equal(result?.placement?.xCm, 260);
   assert.equal(result?.placement?.yCm, 200);
 });
+
+
+test('15 derece aralıklar kaybolmaz; göreli dönüşler 360 derecede sarar', () => {
+  assert.equal(normalizeModuleRotationZDeg(15), 15);
+  assert.equal(normalizeModuleRotationZDeg(75), 75);
+  assert.equal(rotateModuleRotationZDeg(30, 45), 75);
+  assert.equal(rotateModuleRotationZDeg(0, -15), 345);
+  assert.equal(rotateModuleRotationZDeg(345, 15), 0);
+});

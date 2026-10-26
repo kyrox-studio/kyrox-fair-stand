@@ -175,7 +175,7 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
   await expect(page.locator('.scene-measure-label')).toHaveCount(0);
   await page.locator('#show-measurements').check();
   await expect(sizeLabels).toHaveCount(3);
-  await page.getByRole('toolbar', { name: 'Seçim işlemleri' }).getByRole('button', { name: /Kopyala/ }).click();
+  await page.locator('.selection-property-panel [data-module-action="duplicate"]').click();
   await expect(page.locator('.viewport-wrap')).toHaveClass(/catalog-place-armed/);
   const drop = await floorScreenPoint(page, 250, 120);
   await page.mouse.move(drop.x, drop.y);
@@ -198,8 +198,8 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
   await expect(page.locator('.scene-measure-label.is-distance')).toHaveText(['4.00 m', '4.60 m']);
   await page.mouse.move(drop.x, drop.y);
   await expect(page.locator('.scene-measure-label.is-distance')).toHaveCount(4);
-  await page.keyboard.press('Shift+R');
-  await page.keyboard.press('Shift+R');
+  // Same 180° copy orientation with the new 15° catalog step.
+  for (let step = 0; step < 12; step++) await page.keyboard.press('Shift+R');
   await page.mouse.click(drop.x, drop.y);
   await page.keyboard.press('Escape');
   await expect(page.locator('.viewport-wrap')).not.toHaveClass(/catalog-place-armed/);

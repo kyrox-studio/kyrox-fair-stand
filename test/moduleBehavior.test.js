@@ -15,17 +15,17 @@ import {
   validateModulePlacement,
 } from '../src/modulePlacement.js';
 
-test('straight 100/150/200 counters use 45 degree rotation steps', () => {
+test('straight 100/150/200 counters use 15 degree rotation steps', () => {
   for (const widthCm of [100, 150, 200]) {
-    assert.equal(getModuleRotationStepDeg({ itemKey: `desk_banko_${widthCm}` }), 45);
+    assert.equal(getModuleRotationStepDeg({ itemKey: `desk_banko_${widthCm}` }), 15);
   }
-  assert.equal(getModuleRotationStepDeg({ itemKey: 'desk_banko_150_l' }), 90);
+  assert.equal(getModuleRotationStepDeg({ itemKey: 'desk_banko_150_l' }), 15);
 });
 
-test('Bar Taburesi standard keeps 10 cm snap, 45 degree turns and 270 default', () => {
+test('Bar Taburesi standard keeps 10 cm snap, 15 degree turns and 270 default', () => {
   const stool = { itemKey: 'furniture_bar_stool_classic', type: 'bar-stool', widthCm: 60 };
   assert.equal(getModuleMoveSnapCm(stool), 10);
-  assert.equal(getModuleRotationStepDeg(stool), 45);
+  assert.equal(getModuleRotationStepDeg(stool), 15);
   assert.equal(getModuleDefaultRotationDeg(stool), 270);
   assert.equal(getModuleBehavior(stool).placement, 'free');
 });

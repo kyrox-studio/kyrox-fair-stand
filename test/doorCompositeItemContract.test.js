@@ -122,7 +122,7 @@ test('door_100 preserves the existing door behavior/contract family', () => {
   const behavior = getModuleBehavior(getItem('wall_door_100_350'));
   assert.equal(behavior.placement, 'wall');
   assert.equal(behavior.moveSnapCm, 10);
-  assert.equal(getModuleRotationStepDeg(getItem('wall_door_100_350')), 90);
+  assert.equal(getModuleRotationStepDeg(getItem('wall_door_100_350')), 15);
   assert.equal(behavior.collision, 'segment');
   assert.equal(behavior.allowSideInsert, true);
 
