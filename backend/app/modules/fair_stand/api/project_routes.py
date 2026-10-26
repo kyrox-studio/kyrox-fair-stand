@@ -12,6 +12,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.integrations.kyrox_core.audit import SCOPE_ORGANIZATION, StandAuditRecorder
 from app.integrations.kyrox_core.auth import AuthContext
 from app.integrations.kyrox_core.dev_bypass import dev_bypass_enabled
 from app.integrations.kyrox_core.ports import AuthorizationPort
@@ -25,6 +26,7 @@ from app.modules.fair_stand.api.dependencies import (
     get_authorization_adapter,
     get_auth_context,
     get_project_service,
+    get_stand_audit,
     require_permission,
 )
 from app.modules.fair_stand.application.image_optimize import upload_limit_message
@@ -281,11 +283,14 @@ def delete_project(
     project_id: UUID,
     auth: AuthContext = Depends(require_permission(PERMISSION_PROJECTS_DELETE)),
     service: ProjectService = Depends(get_project_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
 ) -> Response:
     try:
         service.delete_project(project_id=project_id, organization_id=auth.organization_id)
     except ProjectServiceError as exc:
         _raise_service(exc)
+    # Yalnız kimlik: proje adı, müşteri ve çizim içeriği audit'e yazılmaz (ADR-0004 PII).
+    audit.record("fair_stand.project.deleted", "project", project_id, scope=SCOPE_ORGANIZATION)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

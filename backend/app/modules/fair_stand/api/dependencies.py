@@ -8,6 +8,12 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.session import get_db
+from app.integrations.kyrox_core.audit import (
+    AuditPort,
+    HttpAuditAdapter,
+    NoOpAuditAdapter,
+    StandAuditRecorder,
+)
 from app.integrations.kyrox_core.auth import AuthContext
 from app.integrations.kyrox_core.client import HttpAuthorizationAdapter, KyroxCoreHttpClient
 from app.integrations.kyrox_core.dev_bypass import (
@@ -191,3 +197,28 @@ def require_any_permission(*permission_codes: str):
     if not permission_codes:
         raise ValueError("At least one permission code is required")
     return _require_any_permission(permission_codes)
+
+
+def get_audit_adapter() -> AuditPort:
+    if dev_bypass_enabled():
+        return NoOpAuditAdapter()
+    return HttpAuditAdapter()
+
+
+def get_stand_audit(
+    auth: AuthContext = Depends(get_auth_context),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    adapter: AuditPort = Depends(get_audit_adapter),
+    db: Session = Depends(get_db),
+) -> StandAuditRecorder:
+    """Request-bound Core audit recorder (D-18); events are sent after the DB commit."""
+    token = credentials.credentials if credentials and credentials.credentials else ""
+    if not token:
+        adapter = NoOpAuditAdapter()
+    return StandAuditRecorder(
+        session=db,
+        adapter=adapter,
+        organization_id=auth.organization_id,
+        access_token=token,
+    )
+
