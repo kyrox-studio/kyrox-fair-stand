@@ -1479,10 +1479,6 @@ export function createStandScene(
     });
   }
 
-  function formatMeasureCm(meters) {
-    return `${Math.round(meters * 100)} cm`;
-  }
-
   function formatMeasureM(meters) {
     return `${meters.toFixed(2)} m`;
   }
@@ -4934,45 +4930,6 @@ export function createStandScene(
     }
     return null;
   }
-  function createMeshBrandaAlphaMap(widthM, heightM) {
-    const size = 64;
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const context = canvas.getContext('2d');
-    if (!context) return null;
-
-    // Yaklaşık %31 açık alan: opak baskı yüzeyi korunur, yalnız delikler gerçek cutout olur.
-    context.fillStyle = '#ffffff';
-    context.fillRect(0, 0, size, size);
-    context.fillStyle = '#000000';
-    const radius = 10.2;
-    [16, 48].forEach((x) => {
-      [16, 48].forEach((y) => {
-        context.beginPath();
-        context.arc(x, y, radius, 0, Math.PI * 2);
-        context.fill();
-      });
-    });
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    // Yaklaşık %31 açık alan korunur; delikler yaklaşık 1 mm ölçeğine iner. Mipmap ve alpha-to-coverage açılı bakışta moiré/aliasing desenlerini bastırır.
-    texture.repeat.set(
-      Math.max(1, Number(widthM) * 300),
-      Math.max(1, Number(heightM) * 300),
-    );
-    texture.generateMipmaps = true;
-    texture.minFilter = THREE.LinearMipmapLinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    texture.generateMipmaps = false;
-    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    texture.needsUpdate = true;
-    return texture;
-  }
-
   function applyFabricOverlayLighting(overlay, fabricState = {}) {
     const material = overlay?.material;
     if (!material) return;

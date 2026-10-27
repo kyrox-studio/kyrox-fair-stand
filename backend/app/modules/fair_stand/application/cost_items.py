@@ -113,15 +113,6 @@ class CostItemService:
         ).all()
         return [_view(row) for row in rows]
 
-    def get_cost_item(self, price_id: UUID, organization_id: UUID) -> CostItemView | None:
-        row = self._session.scalar(
-            select(FairStandCostItemModel).where(
-                FairStandCostItemModel.id == price_id,
-                FairStandCostItemModel.organization_id == organization_id,
-            )
-        )
-        return None if row is None else _view(row)
-
     def create_cost_item(
         self,
         *,
