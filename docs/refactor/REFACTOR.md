@@ -653,7 +653,7 @@ kayıtlı Item 96; catalogVisible=true 55; gizli 41 (`VIDEO_WALL_PANEL` dahil); 
 
 ### Tarihsel audit
 
-`docs/items/audit/**` ve `docs/items/current-system/wall_base_*.md` regenerate edilmedi.
+`docs/items/audit/**` ve `docs/items/current-system/wall_base_*.md` regenerate edilmedi. (Bu belgeler 2026-10-27'de `kyrox-platform/archive/fair-stand/docs-items/` altına taşındı.)
 
 ---
 
@@ -687,7 +687,7 @@ kayıtlı Item 99; catalogVisible=true 58; gizli 41 (`VIDEO_WALL_PANEL` dahil); 
 
 ### Tarihsel audit
 
-`docs/items/audit/**` ve `docs/items/current-system/wall_shelf_*.md` regenerate edilmedi.
+`docs/items/audit/**` ve `docs/items/current-system/wall_shelf_*.md` regenerate edilmedi. (Bu belgeler 2026-10-27'de `kyrox-platform/archive/fair-stand/docs-items/` altına taşındı.)
 
 ---
 

@@ -20,12 +20,12 @@ Kaldırılan Item alanları → yeni kaynak:
 | `dimensions.screenHeightCm` | `dimensions.heightCm` |
 | `dimensions.catalogHeightCm` | `resolveSceneDimensions(item).heightCm`; yeni field yok |
 | `dimensions.tableDiameterCm` | `dimensions.widthCm` |
-| `videoWall.panelScreenWidthCm` | `VIDEO_WALL_PANEL.dimensions.widthCm` |
-| `videoWall.panelScreenHeightCm` | `VIDEO_WALL_PANEL.dimensions.heightCm` |
-| `sizeInch` | kimlik `itemKey` (`TV_42` / `TV_55` / `TV_65`) |
+| `videoWall.panelScreenWidthCm` | `video_wall_panel.dimensions.widthCm` |
+| `videoWall.panelScreenHeightCm` | `video_wall_panel.dimensions.heightCm` |
+| `sizeInch` | kimlik `itemKey` (`tv_42` / `tv_55` / `tv_65`) |
 | `composition.nominalWidthCm` | `item.dimensions.widthCm` (`itemBom.resolveRecipe`) |
 
-Yeni Item: `VIDEO_WALL_PANEL` (`catalogVisible=false`). `listRegisteredItems()` = 96 (ölçü dedup sonrası 105; 6 wall_shelf + 3 wall_base silindi). `Recipe.nominalWidthCm` durur.
+Yeni Item: `video_wall_panel` (`catalogVisible=false`). `listRegisteredItems()` = 96 (ölçü dedup sonrası 105; 6 wall_shelf + 3 wall_base silindi). `Recipe.nominalWidthCm` durur.
 
 ## Tarama
 
@@ -51,7 +51,7 @@ Yeni Item: `VIDEO_WALL_PANEL` (`catalogVisible=false`). `listRegisteredItems()` 
 | 14 | `src/horizontalImageLayout.js` | yatay birleşik layout |
 | 15 | `src/rectImageLayout.js` | dikdörtgen birleşik layout |
 | 16 | `src/catalog.js` | Catalog projection; `STAND_DIMENSIONS` yok |
-| 17 | `src/moduleRecipes.js` | `composition.items` expansion |
+| 17 | `src/moduleRecipes.js` | `composition.items` expansion  ⚠️ bayat: `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)) |
 | 18 | `src/itemBom.js` | `composition.mode === 'recipe'` vs leaf `unit` |
 | 19 | `src/moduleContracts.js` | profil + `appearance` + BOM policy |
 | 20 | `src/modulePlacement.js` | `rotationLocked` oturumu |
@@ -71,7 +71,11 @@ Yeni Item: `VIDEO_WALL_PANEL` (`catalogVisible=false`). `listRegisteredItems()` 
 
 Map sayıları: `LEAF_ITEMS` 39, `COMMERCIAL_ITEMS` 4, `FURNITURE_ITEMS` 8, `TOP_LIGHT_ITEMS` 1, `NON_CATALOG_ITEMS` 2, `FLOOR_ITEMS` 5, `INDOOR_PLANT_ITEMS` 4, `WALL_MEDIA_ITEMS` 5, `COMPOSITE_ITEMS` 28. `listRegisteredItems()` = 96.
 
+> **Bayat (2026-10-27 denetimi):** `COMPOSITE_ITEMS` (2026-09-17 `c3dd1e9c`: kova map'ler kalktı); `WALL_MEDIA_ITEMS` (2026-09-17 `c3dd1e9c`: kova map'ler kalktı); `FURNITURE_ITEMS` (2026-09-17 `c3dd1e9c`: kova map'ler kalktı); `COMMERCIAL_ITEMS` (2026-09-17 `c3dd1e9c`: kova map'ler kalktı); `INDOOR_PLANT_ITEMS` (2026-09-17 `c3dd1e9c`: kova map'ler kalktı); `NON_CATALOG_ITEMS` (2026-09-17 `c3dd1e9c`: kova map'ler kalktı); `TOP_LIGHT_ITEMS` (2026-09-17 `c3dd1e9c`: kova map'ler kalktı); `FLOOR_ITEMS` (2026-09-17 `c3dd1e9c`: kova map'ler kalktı); `LEAF_ITEMS` (2026-09-17 `c3dd1e9c`: kova map'ler kalktı). Bu satır güncel kodla yeniden doğrulanmalı.
+
 Üst unique key’ler (script): `bodyItems`, `composition`, `connectorType`, `defaultColor`, `dimensions`, `eyeCount`, `itemKey`, `material`, `modelFile`, `modelRotationYDeg`, `name`, `paintable`, `panelRole`, `preserveModelScale`, `shape`, `stripOccupancy`, `type`, `unit`, `variant`, `videoWall`, `visualRotationYDeg`.
+
+> **Bayat (2026-10-27 denetimi):** `connectorType` (2026-09-22 `2929fbf8`: `connector_type` kolonu kaldırıldı). Bu satır güncel kodla yeniden doğrulanmalı.
 
 | alan / aksiyon | kod adı | kanıtlı değerler (yalnız kodda görülen) | sahip dosya | sınıf | not |
 |---|---|---|---|---|---|
@@ -89,18 +93,18 @@ Map sayıları: `LEAF_ITEMS` 39, `COMMERCIAL_ITEMS` 4, `FURNITURE_ITEMS` 8, `TOP
 | varsayılan renk | `defaultColor` | int `0xd0d3d4`, `0xc79b63`, `0xffffff`, `0xf8fafc`; zemin hex `#e9edf1`, `#8b8f94`, `#e8dfd1`, `#c4a480`, `#625f58` | `src/items.js` | `item-tanim` | asıl sahip; vitrin gövde rengi leaf `showcase_side_*` `0xffffff`; parent `bodySurface` uydurma çanta |
 | malzeme | `material` | `alüminyum`, `sunta`, `mdf`, `ahşap`, `cam` | `src/items.js` | `item-tanim` | asıl sahip |
 | panel rolü | `panelRole` | `straight`, `inner-corner` | `src/items.js` | `item-tanim` | asıl sahip |
-| konnektör tipi | `connectorType` | `start`, `single`, `double`, `corner` | `src/items.js` | `item-tanim` | asıl sahip |
+| konnektör tipi | `connectorType` | `start`, `single`, `double`, `corner` | `src/items.js` | `item-tanim` | asıl sahip  ⚠️ bayat: `connectorType` (2026-09-22 `2929fbf8`: `connector_type` kolonu kaldırıldı) |
 | şekil (tanım) | `shape` | `L` (`desk_banko_*_L`) | `src/items.js` | `item-tanim` | asıl sahip |
-| göz sayısı | `eyeCount` | `2` (`wall_showcase_100_2`), `3` (`wall_showcase_100_3`) | `src/items.js` | `item-tanim` | asıl sahip |
+| göz sayısı | `eyeCount` | `2` (`wall_showcase_100_2_350`), `3` (`wall_showcase_100_3_350`) | `src/items.js` | `item-tanim` | asıl sahip |
 | varyant | `variant` | `short-up-1`, `short-up-2` | `src/items.js` | `item-tanim` | asıl sahip |
 | şerit doluluk | `stripOccupancy` | `{ align, stripCount }` | `src/items.js` | `item-tanim` | asıl sahip |
 | şerit hizası | `stripOccupancy.align` | Item kaydında `top`; `normalizeStripOccupancy` ayrıca `bottom` kabul eder | `src/items.js` | `item-tanim` | asıl sahip |
 | şerit sayısı (occupancy) | `stripOccupancy.stripCount` | `1`, `2` (short-up) | `src/items.js` | `item-tanim` | asıl sahip |
-| GLB dosyası | `modelFile` | `coat_rack.glb`, `kettle.glb`, `80s_avanti_mini_fridge.glb`, `plastic_trash_bin.glb`, `saksi_bitkili_100x30x30.glb`, `saksi_bitkili_150x30x30.glb`, `saksi_bitkili_200x30x30.glb`, `wall_separator_50_sarmasik.glb`, `wall_separator_100_sarmasik.glb` | `src/items.js` | `item-tanim` | asıl sahip; `EXTRA_INDOOR_PLANT_1` kayıtta `modelFile` yok |
+| GLB dosyası | `modelFile` | `coat_rack.glb`, `kettle.glb`, `80s_avanti_mini_fridge.glb`, `plastic_trash_bin.glb`, `saksi_bitkili_100x30x30.glb`, `saksi_bitkili_150x30x30.glb`, `saksi_bitkili_200x30x30.glb`, `wall_separator_50_350_sarmasik.glb`, `wall_separator_100_350_sarmasik.glb` | `src/items.js` | `item-tanim` | asıl sahip; `extra_indoor_plant_1` kayıtta `modelFile` yok |
 | model Y dönüş | `modelRotationYDeg` | `0`, `90` | `src/items.js` | `item-tanim` | asıl sahip |
 | ölçek koru | `preserveModelScale` | `true`, `false` | `src/items.js` | `item-tanim` | asıl sahip |
 | görsel Y dönüş (tanım) | `visualRotationYDeg` | `-90`, `-135`, `-45` | `src/items.js` | `item-tanim` | asıl sahip |
-| boyanabilir | `paintable` | `true`, `false` (`FLOOR_ITEMS`) | `src/items.js` | `item-tanim` | asıl sahip |
+| boyanabilir | `paintable` | `true`, `false` (`FLOOR_ITEMS`) | `src/items.js` | `item-tanim` | asıl sahip  ⚠️ bayat: `FLOOR_ITEMS` (2026-09-17 `c3dd1e9c`: kova map'ler kalktı) |
 | birim | `unit` | yalnız `adet` (46 kayıtta var; 52 kayıtta alan yok) | `src/items.js` | `item-tanim` | asıl sahip |
 | gövde child çantası | `bodyItems` | nesne | `src/items.js` | `item-tanim` | asıl sahip (küme child kimlikleri) |
 | yan gövde item | `bodyItems.sideItemKey` | `showcase_side_94_6_30`, `showcase_side_143_5_30` | `src/items.js` | `item-tanim` | asıl sahip |
@@ -115,11 +119,11 @@ Map sayıları: `LEAF_ITEMS` 39, `COMMERCIAL_ITEMS` 4, `FURNITURE_ITEMS` 8, `TOP
 | bileşim seçenek | `composition.options` | nesne | `src/items.js` | `item-tanim` | DEPRECATED SCHEMA_ONLY |
 | bileşim şekil | `composition.options.shape` | `L` | `src/items.js` | `item-tanim` | DEPRECATED SCHEMA_ONLY; canlı `item.shape` |
 | video duvar | `videoWall` | nesne | `src/items.js` | `item-tanim` | asıl sahip |
-| video sütun | `videoWall.cols` | `2` (`VIDEO_WALL_2X2`), `3` (`VIDEO_WALL_3X3`) | `src/items.js` | `item-tanim` | asıl sahip |
+| video sütun | `videoWall.cols` | `2` (`video_wall_2x2`), `3` (`video_wall_3x3`) | `src/items.js` | `item-tanim` | asıl sahip |
 | video satır | `videoWall.rows` | `2`, `3` | `src/items.js` | `item-tanim` | asıl sahip |
-| panel Item | `videoWall.panelItemKey` | `VIDEO_WALL_PANEL` | `src/items.js` | `item-tanim` | asıl sahip; ölçü panel Item `dimensions` |
+| panel Item | `videoWall.panelItemKey` | `video_wall_panel` | `src/items.js` | `item-tanim` | asıl sahip; ölçü panel Item `dimensions` |
 
-`unit: 'adet'` olan 46 `itemKey`: 39 LEAF + `COAT_RACK`, `KETTLE`, `MINI_FRIDGE_AVANTI`, `PLASTIC_TRASH_BIN`, `door_100`, `wall_showcase_100_2`, `wall_showcase_100_3`.
+`unit: 'adet'` olan 46 `itemKey`: 39 LEAF + `coat_rack`, `kettle`, `mini_fridge_avanti`, `plastic_trash_bin`, `wall_door_100_350`, `wall_showcase_100_2_350`, `wall_showcase_100_3_350`.
 
 ---
 
@@ -131,7 +135,11 @@ Sözleşme: `MODULE_BEHAVIOR_STANDARD.md`. Kod: `src/moduleBehavior.js`.
 
 Görülen `placement`: `wall` (`WALL_BEHAVIOR`), `free` (`freeBehavior`), `wall-overlay` (`overlayBehavior`), `top` (`led-floodlight`).
 
+> **Bayat (2026-10-27 denetimi):** `WALL_BEHAVIOR` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı); `freeBehavior` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı); `overlayBehavior` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı). Bu satır güncel kodla yeniden doğrulanmalı.
+
 Görülen `moveSnapCm`: `50` (`WALL_BEHAVIOR` ve `freeBehavior` taban), `10` (çoğu free override + `overlayBehavior` + `PLASTIC_TRASH_BIN_BEHAVIOR`), `20` (`led-floodlight`).
+
+> **Bayat (2026-10-27 denetimi):** `WALL_BEHAVIOR` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı); `freeBehavior` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı); `overlayBehavior` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı); `PLASTIC_TRASH_BIN_BEHAVIOR` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı). Bu satır güncel kodla yeniden doğrulanmalı.
 
 Sahne Z dönüşü Item: `docs/refactor/ROTATION.md`. `TYPE_BEHAVIORS` rotation taşımaz.
 Görülen `collision`: `segment`, `footprint`, `none`.
@@ -171,7 +179,7 @@ Görülen `overlapWithTypes`: `['kettle']`, `['mini-fridge']`, `['flat-panel','p
 | sınır snap | `boundarySnap` | `stand-edge`, `wall-inner-face` | `src/moduleBehavior.js` | `type-davranis` | asıl sahip |
 | yan ek dönüş kipi | `sideInsertRotation` | Item | `docs/refactor/ROTATION.md` | `item-tanim` | asıl sahip |
 | overlay bindirme type | `overlapWithTypes` | yukarıdaki diziler | `src/moduleBehavior.js` | `type-davranis` | asıl sahip |
-| overlay montaj | `supportsWallOverlayMount` | `true` (`WALL_BEHAVIOR`), `false` (overlay/upright/top/free taban) | `src/moduleBehavior.js` | `type-davranis` | asıl sahip |
+| overlay montaj | `supportsWallOverlayMount` | `true` (`WALL_BEHAVIOR`), `false` (overlay/upright/top/free taban) | `src/moduleBehavior.js` | `type-davranis` | asıl sahip  ⚠️ bayat: `WALL_BEHAVIOR` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı) |
 | duvar kapasitesi | `wallCapacity` | `include`, `exclude` (`upright`, `led-floodlight`) | `src/moduleBehavior.js` | `type-davranis` | asıl sahip |
 | çarpışma yükseklik kipi | `collisionHeight` | `full` | `src/moduleBehavior.js` | `type-davranis` | kod alanı; `MODULE_BEHAVIOR_STANDARD.md` listesinde yok |
 | ghost siluet kipi | `ghost.kind` | `silhouette` | `src/moduleBehavior.js` | `type-davranis` | asıl sahip |
@@ -308,6 +316,8 @@ Sözleşme görünüm (`src/moduleContracts.js`):
 
 `DEFAULT_PANEL_COLOR = '#ffffff'`. Tam boy şerit sayısı stand zarfındandır (`docs/refactor/STAND_DIMENSIONS.md`). `createDefaultImageTransform()`: `mode` `single`, `offsetX`/`offsetY` `0`, `repeatX`/`repeatY` `1`, `rotation` `0`.
 
+> **Bayat (2026-10-27 denetimi):** `DEFAULT_PANEL_COLOR` (2026-09-25 `6bf223b9`: renk Item `default_color` alanında). Bu satır güncel kodla yeniden doğrulanmalı.
+
 `createEditablePanelState`: `id`, `stripIndex`, `color`, `imageAssetId` `null`, `imageTransform`.
 
 Showcase `bodySurface`: `{ id, color }` — `color` leaf `bodyItems.sideItemKey` `defaultColor` (`0xffffff` → `#ffffff`). **Uydurma çanta.** `imageAssetId` yazılmaz (`normalize` siler).
@@ -376,16 +386,16 @@ LED floodlight `surface.color` `'#17191c'`.
 |---|---|---|---|---|---|
 | reçete çözümü | `composition.mode === 'recipe'` | `true` → recipe; değilse leaf | `src/itemBom.js` | `bom-recipe` | asıl sahip (çözüm) |
 | leaf BOM birim | `item.unit` | `adet` (yoksa TypeError) | `src/itemBom.js` | `bom-recipe` | |
-| BOM policy recipe | `mode: 'recipe'` | `source: 'src/moduleRecipes.js'` | `src/moduleContracts.js` | `bom-recipe` | sözleşme; `itemBom` string’i değil |
-| BOM policy self | `mode: 'self'` | `source: 'src/itemBom.js'` | `src/moduleContracts.js` | `bom-recipe` | self örnek atama: `upright_346_5`, `profile_*`, `MINI_FRIDGE_AVANTI`, `KETTLE`, `COAT_RACK`, `PLASTIC_TRASH_BIN` |
+| BOM policy recipe | `mode: 'recipe'` | `source: 'src/moduleRecipes.js'` | `src/moduleContracts.js` | `bom-recipe` | sözleşme; `itemBom` string’i değil  ⚠️ bayat: `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)) |
+| BOM policy self | `mode: 'self'` | `source: 'src/itemBom.js'` | `src/moduleContracts.js` | `bom-recipe` | self örnek atama: `upright_346_5`, `profile_*`, `mini_fridge_avanti`, `kettle`, `coat_rack`, `plastic_trash_bin` |
 | BOM policy karar | `mode: 'decision-required'` | `source: null` | `src/moduleContracts.js` | `bom-recipe` | mobilya/bitki/TV/foam/led |
-| reçete id | `recipeId` | örn. `wall-straight-100`, `showcase-2-100` | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip |
-| reçete modül tipi | `moduleType` | `wall`, `wall-short-up-2`, `wall-short-up-1`, `separator`, `door`, `showcase-2`, `showcase-3`, `counter`, `base` | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip |
-| reçete genişlik | `nominalWidthCm` | 50, 100, 150, 200 | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip |
-| bağlantı kipi | `connectionMode` | `straight` | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip |
-| reçete şekil | `shape` | `L` (`counter-l:*`) | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip |
-| reçete satır item | `items[].itemKey` | | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip |
-| reçete satır miktar | `items[].quantity` | sayı (alan var; değer bu tur kopyalanmaz) | `src/moduleRecipes.js` | `bom-recipe` | |
+| reçete id | `recipeId` | örn. `wall-straight-100`, `showcase-2-100` | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip  ⚠️ bayat: `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)) |
+| reçete modül tipi | `moduleType` | `wall`, `wall-short-up-2`, `wall-short-up-1`, `separator`, `door`, `showcase-2`, `showcase-3`, `counter`, `base` | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip  ⚠️ bayat: `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)) |
+| reçete genişlik | `nominalWidthCm` | 50, 100, 150, 200 | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip  ⚠️ bayat: `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)) |
+| bağlantı kipi | `connectionMode` | `straight` | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip  ⚠️ bayat: `connectionMode` (2026-09-17 `0db4af90`: moduleRecipes ürün tabloları silindi); `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)) |
+| reçete şekil | `shape` | `L` (`counter-l:*`) | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip  ⚠️ bayat: `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)) |
+| reçete satır item | `items[].itemKey` | | `src/moduleRecipes.js` | `bom-recipe` | asıl sahip  ⚠️ bayat: `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)) |
+| reçete satır miktar | `items[].quantity` | sayı (alan var; değer bu tur kopyalanmaz) | `src/moduleRecipes.js` | `bom-recipe` |  ⚠️ bayat: `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)) |
 | küme BOM (mode yok) | `composition.items` | sofa/eames set | `src/items.js` | `bom-recipe` | `itemBom` recipe dalına girmez |
 
 ---
@@ -396,6 +406,8 @@ LED floodlight `surface.color` `'#17191c'`.
 
 Resolve alias: `moduleType`, `counterShape` (`normalizeCatalogDescriptor`).
 
+> **Bayat (2026-10-27 denetimi):** `normalizeCatalogDescriptor` (2026-09-16 `7211164a`: catalog domain sınırı runtime'dan ayrıldı). Bu satır güncel kodla yeniden doğrulanmalı.
+
 | alan / aksiyon | kod adı | kanıtlı değerler (yalnız kodda görülen) | sahip dosya | sınıf | not |
 |---|---|---|---|---|---|
 | katalog kimliği | `itemKey` | 55 kart | `src/catalog.js` | `katalog` | `items.js` ile çift satır |
@@ -405,8 +417,8 @@ Resolve alias: `moduleType`, `counterShape` (`normalizeCatalogDescriptor`).
 | kart yükseklik | `heightCm` | | `src/catalog.js` | `katalog` | kopya / düz |
 | kart derinlik | `depthCm` | | `src/catalog.js` | `katalog` | kopya / düz |
 | kart şekil | `shape` | `L` | `src/catalog.js` | `katalog` | kopya; düz bankoda alan yok |
-| banko şekil alias | `counterShape` | `normalizeCatalogDescriptor` | `src/catalog.js` | `katalog` | alias |
-| modül tipi alias | `moduleType` | `normalizeCatalogDescriptor` | `src/catalog.js` | `katalog` | alias |
+| banko şekil alias | `counterShape` | `normalizeCatalogDescriptor` | `src/catalog.js` | `katalog` | alias  ⚠️ bayat: `normalizeCatalogDescriptor` (2026-09-16 `7211164a`: catalog domain sınırı runtime'dan ayrıldı) |
+| modül tipi alias | `moduleType` | `normalizeCatalogDescriptor` | `src/catalog.js` | `katalog` | alias  ⚠️ bayat: `normalizeCatalogDescriptor` (2026-09-16 `7211164a`: catalog domain sınırı runtime'dan ayrıldı) |
 | kart şerit occupancy | `stripOccupancy` | `{align:'top', stripCount: 1 veya 2}` | `src/catalog.js` | `katalog` | kopya |
 | kart göz | `eyeCount` | `2`, `3` | `src/catalog.js` | `katalog` | kopya |
 | kart model | `modelFile` | | `src/catalog.js` | `katalog` | kopya |
@@ -445,7 +457,7 @@ Resolve alias: `moduleType`, `counterShape` (`normalizeCatalogDescriptor`).
 | otomatik depo sözleşmesi | `FEATURE_CONTRACTS.automaticDepot` | `id` `automatic-depot` | `src/featureContracts.js` | `stand-proje` | |
 | depo girdi | `inputs` | `standType`, `standXCm`, `standYCm`, `sizeKey`, `includeContents` | `src/featureContracts.js` | `stand-proje` | |
 | depo içerik type | `creates.contentKinds` | `mini-fridge`, `kettle`, `coat-rack`, `plastic-trash-bin` | `src/featureContracts.js` | `stand-proje` | |
-| depo içerik key | `creates.contentCatalogKeys` | `MINI_FRIDGE_AVANTI`, `KETTLE`, `COAT_RACK`, `PLASTIC_TRASH_BIN` | `src/featureContracts.js` | `stand-proje` | |
+| depo içerik key | `creates.contentCatalogKeys` | `mini_fridge_avanti`, `kettle`, `coat_rack`, `plastic_trash_bin` | `src/featureContracts.js` | `stand-proje` | |
 | otomatik duvar sözleşmesi | `FEATURE_CONTRACTS.automaticWall` | `id` `automatic-wall` | `src/featureContracts.js` | `stand-proje` | |
 | otomatik duvar girdi | `inputs` | `wallWidthCm`, `standType`, `standXCm`, `standYCm` | `src/featureContracts.js` | `stand-proje` | |
 | otomatik duvar yapı type | `creates.structuralKinds` | `flat-panel` | `src/featureContracts.js` | `stand-proje` | |
@@ -471,7 +483,7 @@ Resolve alias: `moduleType`, `counterShape` (`normalizeCatalogDescriptor`).
 | çoğul gövde yok | `bodySurfaces` | `undefined` | `test/showcaseBodyColorRegression.test.js` | `ornek-state` | anti-alan |
 | gövde renk regress | `defaultColor` | `0xffffff` → `#ffffff` | `test/showcaseBodyColorRegression.test.js` | `item-tanim` | asıl sahip leaf |
 | Item kimlik ayrımı | `itemKey` / `type` / `id` | belge | `docs/items/contract/ITEM_CONTRACT.md` | `item-tanim` | yeni kural yok |
-| vitrin tanım MD | `wall_showcase_100_2` | `type` `showcase-2`, `unit` `adet`, `eyeCount` `2`, `bodySurface` ezme | `docs/items/definitions/wall_showcase_100_2.md` | `item-tanim` | |
+| vitrin tanım MD | `wall_showcase_100_2_350` | `type` `showcase-2`, `unit` `adet`, `eyeCount` `2`, `bodySurface` ezme | `docs/items/definitions/wall_showcase_100_2.md` | `item-tanim` | |
 
 ---
 
@@ -489,15 +501,15 @@ Aşağıdaki token’lar taranan dosyada geçiyor ve **ayrı yetenek satırı de
 | `GLASS_APPEARANCE`, `MESH_FABRIC_OPACITY` | `src/scene3d.js` | malzeme sabiti; yetenek adı değil |
 | `overlay.userData.fabricState` | `src/scene3d.js` | kılıf state kopyası (`FABRIC_KEYS` satırda) |
 | `createId('module'/'surface')` | `src/designState.js` | uuid üretimi |
-| `WALL_WIDTH_TO_ITEM_KEY` vb. resolver map | `src/designState.js` | `itemKey` çözüm tablosu; yeni alan değil |
+| `WALL_WIDTH_TO_ITEM_KEY` vb. resolver map | `src/designState.js` | `itemKey` çözüm tablosu; yeni alan değil  ⚠️ bayat: `WALL_WIDTH_TO_ITEM_KEY` (2026-09-24 `4c2886d5`: anahtar Item registry'den çözülür) |
 | `module-picker-*` DOM | `src/moduleContextMenu.js` | `add-right`/`add-left` katalog seçici UI |
-| reçete `items[].quantity` sayıları | `src/moduleRecipes.js` | alan satırda; sayı kopyası uydurma yasağı |
+| reçete `items[].quantity` sayıları | `src/moduleRecipes.js` | alan satırda; sayı kopyası uydurma yasağı  ⚠️ bayat: `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)) |
 | `self` / `decision-required` string | `src/itemBom.js` içinde **yok** | yalnız `src/moduleContracts.js` policy |
 | `floorType` / `depot` factory | `src/designState.js` içinde **yok** | stand `index.html` / `scene3d.setFloorType` |
 | `#load-project` | `index.html` içinde **yok** | `#open-project` |
 | `parseHexInput` | `src/colorEditorInputs.js` içinde **yok** | `syncFromHex` |
 | `canApplyColorToSelection` | `src/selectionFeedback.js` içinde **yok** | `describeSurfaceSelection` |
-| `collisionHeight` okuma dalı | `getModuleCollisionHeightRangeCm` içinde **yok** | alan yine `WALL_BEHAVIOR` kaydında `full` |
+| `collisionHeight` okuma dalı | `getModuleCollisionHeightRangeCm` içinde **yok** | alan yine `WALL_BEHAVIOR` kaydında `full`  ⚠️ bayat: `WALL_BEHAVIOR` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı) |
 | `bodySurfaces` | runtime **yok** | test anti-alan |
 | `ROG` | bu tur taranmadı | dokunulmadı |
 

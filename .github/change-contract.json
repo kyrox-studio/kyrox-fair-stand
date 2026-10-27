@@ -1,16 +1,17 @@
 {
   "schemaVersion": 2,
-  "id": "security-p1-stand-audit",
-  "kind": "bugfix",
-  "summary": "F-S8/D-18: 33 admin mutasyonu ve proje silme Core audit API'sine fair_stand.* olayı olarak gider (commit sonrası, best-effort, sırsız). K-STAND-02/D-12: tenant veri envanteri ve customer_id bağlantı kuralı belgelenir; askıdaki organizasyon zaten Core authorization/check ile reddedildiği için ayrı lifecycle kapısı eklenmez. Üretimde veri silen worker yok.",
+  "id": "docs-items-arsiv-temizlik",
+  "kind": "refactor",
+  "summary": "docs/items temizliği: tarihî audit/** (313 md + 12 veri), current-system/** (94) ve ITEM_CONSOLIDATION_PLAN, ITEM_LIST, door_100_full_system_audit kyrox-platform/archive/fair-stand/docs-items altına sha256 manifestiyle kayıpsız taşındı. definitions/ içinde 2026-09-25 e00544eb yeniden adlandırmaları (wall_*_350, wall_door_100_350) ve 2026-09-22 9a4333de küçük harf itemKey'leri uygulandı; koddan kalkmış adlar (kova map'ler, WALL_BEHAVIOR, moduleRecipes tabloları, renk sabitleri) güncel sahiplerle değiştirildi, karşılığı doğrulanamayanlara bayat notu eklendi. audit/ hedefli iki betik scripts/archive altına alındı. Çalışan koda dokunulmadı.",
   "owners": [
-    "backend/app/integrations/kyrox_core/audit.py",
-    "backend/app/modules/fair_stand/api/dependencies.py"
+    "docs/items/contract/ITEM_CONTRACT.md",
+    "test/itemDocsRuntimeAlignment.test.js"
   ],
   "sourceOfTruth": [
-    "backend/app/integrations/kyrox_core/audit.py",
-    "backend/app/modules/fair_stand/api/dependencies.py",
-    "docs/refactor/DATABASE.md"
+    "docs/items/contract/ITEM_CONTRACT.md",
+    "MODULE_BEHAVIOR_STANDARD.md",
+    "backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py",
+    "test/fixtures/itemCatalogSeed.json"
   ],
   "impact": {
     "catalog": "not-applicable",
@@ -28,150 +29,45 @@
     "performance": "not-applicable",
     "accessibility": "not-applicable",
     "architecture": "affected",
-    "security": "affected",
+    "security": "not-applicable",
     "tests": "affected"
   },
   "impactAnalysis": {
     "mode": "full-system",
     "affectedFiles": [],
     "affectedTests": [
-      "backend/tests/modules/fair_stand/test_core_audit.py"
+      "test/itemDocsRuntimeAlignment.test.js",
+      "test/doorCompositeItemContract.test.js",
+      "test/developerEntrypointDocs.test.js",
+      "test/pythonPatchArchive.test.js"
     ],
     "affectedDocs": [],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": []
     },
-    "notes": "Backend-only. Full-system sweep yalnız JS/JSON/HTML/CSS/YAML sembollerini tarar; Python dosyaları için çağıranlar elle tarandı: admin route'ları (routes.py, 33 mutasyon), proje silme route'u ve bunları kullanan backend testleri. conftest Core audit'i mevcut FakeCoreHttp/AllowAll kalıbıyla taklit eder; mevcut yetki ve davranış testleri değişmeden geçer. Frontend değişmez. Audit yalnız commit sonrası gönderilir, best-effort'tur (platform projects/fair-crm/decisions/KNOWN_DECISIONS.md §6 ve kyrox-core PRODUCT_INTEGRATION_GUIDE §7 ile aynı; kullanıcı kararı 2026-10-27). Sistem kataloğu olayları isteğin X-Organization-Id organizasyonuna metadata.scope=system_catalog ile yazılır (CRM fair_crm.system_backup.* ile aynı kalıp; kullanıcı kararı 2026-10-27). Askıdaki/silinmiş organizasyon Core authorization/check ile zaten reddedilir; ayrı lifecycle kapısı eklenmedi. Tenant veri envanteri ve customer_id bağlantı kuralı docs/refactor/DATABASE.md'ye yazıldı. Veri silen worker eklenmedi. Alembic head ve şema değişmez."
-  },
-  "security": {
-    "controls": {
-      "SEC-01": {
-        "status": "na",
-        "reason": "Route permission dependencies are unchanged; audit is recorded only after the existing Core permission check."
-      },
-      "SEC-02": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_project_customer.py::test_customer_filter_and_reassign_stay_inside_the_organization",
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_admin_create_sends_event_after_commit",
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_project_delete_records_identity_only"
-        ]
-      },
-      "SEC-03": {
-        "status": "na",
-        "reason": "JWT decode, Core session validation and permission checks are unchanged."
-      },
-      "SEC-04": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_core_audit_failure_is_best_effort_and_never_logs_token",
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_sanitize_drops_secrets_nested_and_long_values"
-        ]
-      },
-      "SEC-05": {
-        "status": "na",
-        "reason": "No database role, schema, migration or network access change; no new table or column."
-      },
-      "SEC-06": {
-        "status": "na",
-        "reason": "No SQL, sort, filter or shell construction changes; audit uses a fixed Core path with UUID path values."
-      },
-      "SEC-07": {
-        "status": "na",
-        "reason": "Upload byte/pixel limits, storage path handling and asset routes are unchanged."
-      },
-      "SEC-08": {
-        "status": "na",
-        "reason": "Request schemas of all touched routes are unchanged; audit values are derived from already validated bodies."
-      },
-      "SEC-09": {
-        "status": "na",
-        "reason": "No dependency added or upgraded; httpx and SQLAlchemy are existing requirements."
-      },
-      "SEC-10": {
-        "status": "na",
-        "reason": "No workflow, CI permission, action source or release path is changed."
-      },
-      "SEC-11": {
-        "status": "na",
-        "reason": "Core base URL and httpx certificate verification defaults are unchanged; no new outbound host."
-      },
-      "SEC-12": {
-        "status": "na",
-        "reason": "No backup, restore or retention behavior changes; no destructive worker is added."
-      },
-      "SEC-13": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_every_admin_mutation_route_records_core_audit",
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_audit_actions_use_fair_stand_prefix_and_core_naming",
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_admin_create_sends_event_after_commit",
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_failed_admin_mutation_records_nothing",
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_rolled_back_mutation_never_reaches_core",
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_project_delete_records_identity_only",
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_http_adapter_posts_to_core_audit_events",
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_core_audit_failure_is_best_effort_and_never_logs_token",
-          "backend/tests/modules/fair_stand/test_core_audit.py::test_preview_markup_and_secret_like_fields_stay_out_of_audit"
-        ]
-      },
-      "SEC-14": {
-        "status": "na",
-        "reason": "No HTML or script output path changes; preview markup handling is untouched and excluded from audit values."
-      },
-      "SEC-15": {
-        "status": "na",
-        "reason": "Stand authenticates with bearer tokens; no cookie is set, read or changed."
-      },
-      "SEC-16": {
-        "status": "na",
-        "reason": "No new public endpoint or expensive operation; audit adds one post-commit Core call per admin mutation or project delete."
-      },
-      "SEC-17": {
-        "status": "na",
-        "reason": "No HTTP response header is produced or changed by the backend routes."
-      },
-      "SEC-18": {
-        "status": "na",
-        "reason": "CORS configuration is not touched; Stand is served behind the CRM proxy."
-      },
-      "SEC-19": {
-        "status": "na",
-        "reason": "No cookie-authenticated state-changing request exists in Stand; bearer tokens only."
-      },
-      "SEC-20": {
-        "status": "na",
-        "reason": "No new fail-closed path; audit is best-effort by decision (CRM parity, 2026-10-27) and never blocks the committed mutation."
-      },
-      "SEC-21": {
-        "status": "na",
-        "reason": "Audit requests go only to the configured Core base URL; no user-supplied URL is fetched."
-      },
-      "SEC-22": {
-        "status": "na",
-        "reason": "Organization lifecycle behavior is unchanged: Core authorization/check already denies non-active organizations (Core sqlalchemy_permission_checker); no Stand-side lifecycle gate is added."
-      }
-    }
+    "notes": "Yalnız belge, bir test ve iki arşiv betiği değişir. itemDocsRuntimeAlignment testi arşive taşınan current-system/ ve door_100_full_system_audit.md dosyalarını okumayı bırakır; eski productionParts adları kontrolü definitions/ üzerinde aynen sürer. doorCompositeItemContract (definitions/ içinde DOOR_100.md yok) ve developerEntrypointDocs (ITEM_CONTRACT.md) değişmeden geçer. pythonPatchArchive testi arşive alınan iki betiği (scripts/archive) ve aktif scripts/ altında olmadıklarını da doğrular."
   },
   "tests": {
     "targeted": [
-      "backend/tests/modules/fair_stand/test_core_audit.py"
+      "test/itemDocsRuntimeAlignment.test.js",
+      "test/pythonPatchArchive.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": false,
       "targeted": [],
-      "reason": "Yalnız backend değişir; frontend kodu ve tarayıcıdaki kayıt akışı değişmez. Playwright koşusu backend'siz Vite sunucusuna karşı çalışır, bu yolu kapsamaz. Yeni ret yolları pytest ile doğrulanır."
+      "reason": "Tarayıcıda çalışan kod, asset ve UI değişmez; yalnız Markdown belgeler, bir node testi ve çalıştırılmayan arşiv betikleri değişir."
     }
   },
   "risk": {
     "level": "low",
-    "notes": "Audit best-effort olduğundan Core audit kesintisi işlemleri durdurmaz. Canlıda yeni ortam değişkeni gerekmez."
+    "notes": "Runtime/CI dışı betikler arşive alındı; package.json ve CI onları çağırmıyordu. Arşiv kopyaları sha256 ile birebir doğrulandı."
   },
   "migration": {
     "required": false,
-    "notes": "Veritabanı şeması değişmez; Alembic head aynı kalır. Yeni ortam değişkeni yok."
+    "notes": "Veritabanı şeması ve Alembic head değişmez."
   },
-  "rollback": "Bu dalın commit'lerini geri al: route'lar audit bağımlılığı olmadan çalışır, audit modülü kalkar. Veri veya şema geri dönüşü gerekmez."
+  "rollback": "Bu dalın commit'ini geri al: silinen belgeler ve betikler geri gelir, test eski dosya listesine döner. Platform arşivi ayrı PR'dır; geri alınması Stand'i etkilemez."
 }

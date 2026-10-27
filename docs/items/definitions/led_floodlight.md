@@ -1,10 +1,10 @@
 # led_floodlight — Kanonik Item
 
-Migration öncesi tam envanter: [current-system/LED_FLOODLIGHT](../current-system/LED_FLOODLIGHT.md).
+Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/LED_FLOODLIGHT.md`.
 Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
 
 ## Kimlik, özellikler ve ölçüler
-`src/items.js > TOP_LIGHT_ITEMS.led_floodlight` kanonik itemKey/name/type/dimensions sahibidir. Tekil Item; `itemKey = led_floodlight`. Type `led-floodlight`. Footprint `50 × 20 × 35 cm`; `mountHeightCm=350`. Eski katalog anahtarı `LED_FLOODLIGHT` idi; ürün kararı ile küçük harfe alındı. Unit / BOM uydurulmadı (`decision-required`).
+Kanonik itemKey/name/type/dimensions sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Tekil Item; `itemKey = led_floodlight`. Type `led-floodlight`. Footprint `50 × 20 × 35 cm`; `mountHeightCm=350`. Eski katalog anahtarı `LED_FLOODLIGHT` idi; ürün kararı ile küçük harfe alındı. Unit / BOM uydurulmadı (`decision-required`).
 
 ## Oluşturma, state ve kalıcılık
 `createLedFloodlightModuleState` Item’dan default üretir; `itemKey` damgalar; `surface.color=#17191c` korunur. Yüklemede `normalizeModuleItemState` type `led-floodlight` için doldurur. Recipe yok.

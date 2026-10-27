@@ -1,6 +1,6 @@
 # connector_start — Item Contract Migration
 
-Bu belge `docs/items/current-system/connector_start.md` içindeki migration öncesi kod haritasını `docs/items/contract/ITEM_CONTRACT.md` ve `ITEM_CONTRACT_CHECKLIST.md` ile eşler ve uygulanmış kanonik geçiş durumunu kaydeder.
+Bu belge `kyrox-platform/archive/fair-stand/docs-items/current-system/connector_start.md` (arşiv) içindeki migration öncesi kod haritasını `docs/items/contract/ITEM_CONTRACT.md` ve `ITEM_CONTRACT_CHECKLIST.md` ile eşler ve uygulanmış kanonik geçiş durumunu kaydeder.
 
 Bu belge yeni behavior, relationship, quantity veya renderer kuralı icat etmez. Yalnız doğrulanmış mevcut runtime ile uygulanmış Item Contract migrationını kayıt altına alır.
 
@@ -14,7 +14,7 @@ Bu belge yeni behavior, relationship, quantity veya renderer kuralı icat etmez.
 | Item yapısı | Tekil Item |
 | Parametrik | Hayır |
 | `unit` | `adet` |
-| Item üstveri | `connectorType = start` |
+| Item üstveri | `connectorType = start`  ⚠️ bayat: `connectorType` (2026-09-22 `2929fbf8`: `connector_type` kolonu kaldırıldı) |
 | Proje örneği `id` | Uygulanmıyor |
 | Oluşturucu / oluşturulma noktası | Uygulanmıyor; bağımsız proje örneği oluşturulmuyor |
 | Catalog bağlantısı | Doğrudan catalog Item değildir; parent module recipe içinde production Item olarak kullanılır |
@@ -47,7 +47,7 @@ Bu nedenle checklist karşılıkları:
 - Persistent state: **uygulanmıyor**.
 - Save/load migration: **uygulanmıyor**; connector ayrı state olarak kaydedilmez.
 
-Production üstveri `src/items.js`; miktar state'i ise parent recipe içinde `src/moduleRecipes.js` tarafından tutulur.
+Production üstveri `src/items.js`; miktar parent Item kaydının `components` listesinde tutulur (`composition.items`).
 
 ## 3. Behavior
 
@@ -160,7 +160,9 @@ BOM checklist karşılıkları:
 
 - BOM var mı?: **Evet**.
 - BOM policy: parent module tarafında `mode = recipe`.
-- Recipe kaynağı: `src/moduleRecipes.js`.
+- Recipe kaynağı: parent Item `components` (`composition.items`); `src/moduleRecipes.js` yalnız `expandRecipe` genişletmesidir.
+
+> **Bayat (2026-10-27 denetimi):** `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)). Bu satır güncel kodla yeniden doğrulanmalı.
 - Production lookup: `getItem()` / `src/items.js`.
 - Alt Item listesi: **yok**; Tekil Item.
 - Quantity: parent recipe tarafından açıkça verilir.
@@ -186,6 +188,8 @@ Bu migration pricing sistemi eklemez.
 
 - `src/items.js`: `partId` kaldırıldı; kanonik `itemKey = connector_start` oldu.
 - `src/moduleRecipes.js`: 27/27 recipe kullanımı `{ itemKey: 'connector_start', quantity: N }` oldu.
+
+> **Bayat (2026-10-27 denetimi):** `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)). Bu satır güncel kodla yeniden doğrulanmalı.
 - `getItem()` kanonik lookup olarak kullanılır.
 - Tek kayıt lookup `getItem()`dır; `getProductionPart` / `getProductionItem` yoktur.
 - Existing recipe quantity'leri değiştirilmedi.
@@ -200,6 +204,8 @@ Mevcut regression sözleşmesi şunları doğrular:
 - `partId` kanonik production tanımında yoktur.
 - `type === 'connector'`.
 - `connectorType === 'start'`.
+
+> **Bayat (2026-10-27 denetimi):** `connectorType` (2026-09-22 `2929fbf8`: `connector_type` kolonu kaldırıldı). Bu satır güncel kodla yeniden doğrulanmalı.
 - `unit === 'adet'`.
 - 27 recipe'nin tamamında identity `itemKey`dir.
 - Migration sonrası recipe quantity aynı yapı korunur.
@@ -230,7 +236,7 @@ connectorType = start
 unit = adet
 recipe identity cutover = 27/27
 legacy recipe partId occurrence = 0
-quantity ownership = src/moduleRecipes.js
+quantity ownership = parent Item components (composition.items)
 production metadata ownership = src/items.js
 project instance/state/persistence = uygulanmıyor
 behavior/interaction/renderer identity = uygulanmıyor

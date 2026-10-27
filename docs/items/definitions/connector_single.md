@@ -1,6 +1,6 @@
 # connector_single — Item Contract Migration
 
-Bu belge `docs/items/current-system/connector_single.md` içindeki migration öncesi kod haritasını Item Contract'a map eder ve uygulanan geçiş durumunu kaydeder.
+Bu belge `kyrox-platform/archive/fair-stand/docs-items/current-system/connector_single.md` (arşiv) içindeki migration öncesi kod haritasını Item Contract'a map eder ve uygulanan geçiş durumunu kaydeder.
 
 ## 1. Kanonik kimlik
 
@@ -12,7 +12,7 @@ Bu belge `docs/items/current-system/connector_single.md` içindeki migration ön
 | Item yapısı | Tekil Item |
 | Parametrik | Hayır |
 | `unit` | `adet` |
-| Metadata | `connectorType = single` |
+| Metadata | `connectorType = single`  ⚠️ bayat: `connectorType` (2026-09-22 `2929fbf8`: `connector_type` kolonu kaldırıldı) |
 | Proje örneği | Uygulanmıyor |
 | Renderer / yerleşim identity | Uygulanmıyor |
 
@@ -20,7 +20,7 @@ Migration öncesi stabil kimlik `partId = connector_single` idi. Cutover ile ayn
 
 ## 2. Mevcut recipe sahipliği
 
-`connector_single` mevcut çalışan sistemde 27 recipe'nin tamamında sabit miktarlı production kalemidir. Miktarların kanonik sahibi `src/moduleRecipes.js` olarak korunmuştur.
+`connector_single` mevcut çalışan sistemde 27 recipe'nin tamamında sabit miktarlı production kalemidir. Miktarların kanonik sahibi parent Item kayıtlarının `components` listesidir (`composition.items`); BOM `src/itemBom.js` `resolveItemBom(itemKey)`.
 
 Migration miktarları değiştirmez; yalnız recipe kimlik alanını `partId` → `itemKey` olarak taşır.
 
@@ -46,6 +46,8 @@ Mevcut sistemde bağımsız `connector_single` proje örneği/state/kalıcılık
 
 - `src/items.js`: kanonik `itemKey = connector_single`.
 - `src/moduleRecipes.js`: 27/27 recipe kullanımı `itemKey` oldu.
+
+> **Bayat (2026-10-27 denetimi):** `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)). Bu satır güncel kodla yeniden doğrulanmalı.
 - Tek kayıt lookup `getItem()`dır; eski `getProductionPart` / `getProductionItem` yoktur.
 - Diğer production Item'lar bu migration nedeniyle topluca `itemKey`e geçirilmez.
 - Recipe quantity aynı yapı korunur.
@@ -68,6 +70,6 @@ parametric = hayır
 itemKey = connector_single
 unit = adet
 recipe identity cutover = 27/27
-quantity ownership = moduleRecipes.js
+quantity ownership = parent Item components (composition.items)
 state/persistence/renderer identity = yok
 ```

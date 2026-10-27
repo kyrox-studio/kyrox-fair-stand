@@ -24,7 +24,7 @@ defaultColor = 0xc79b63
 ## Varsayılan state tüketicisi
 Leaf Item bağımsız proje örneği değildir. Parent `separator` state'i oluşturulurken `src/designState.js#createSeparatorModuleState(100)` kanonik Item `defaultColor` değerini okur ve UI/render state formatı olan `#c79b63` değerine dönüştürür.
 
-Ayrı `DEFAULT_SEPARATOR_COLOR` business constant'ı kanonik kaynak değildir ve kullanılmaz.
+Ayrı renk sabiti yoktur; renk Item `default_color` alanındadır (`#c79b63`, DB).
 
 ## Bileşim / BOM
 `separator_panel_98` nihai fiziksel BOM Item'ıdır ve başka Item'lardan oluşmaz.
@@ -33,10 +33,12 @@ Ayrı `DEFAULT_SEPARATOR_COLOR` business constant'ı kanonik kaynak değildir ve
 separator:100 → separator_panel_98 × 7
 ```
 
-Quantity owner parent recipe'dir (`src/moduleRecipes.js`). Recipe identity kanonik `itemKey` üzerinden çözülür.
+Quantity owner parent Item kaydının `components` listesidir (`composition.items`); BOM `src/itemBom.js` `resolveItemBom(itemKey)`. Recipe identity kanonik `itemKey` üzerinden çözülür.
 
 ## Davranış / state / kalıcılık sahipliği
 Yerleşim, move, rotation, snap, collision, connection, selection, context-menu, delete/duplicate ve kalıcılık leaf Item davranışı değildir. Bunlar parent `separator` module/state katmanında yürür. `separator` mevcut `WALL_BEHAVIOR` sözleşmesini kullanır.
+
+> **Bayat (2026-10-27 denetimi):** `WALL_BEHAVIOR` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı). Bu satır güncel kodla yeniden doğrulanmalı.
 
 ## Renderer / ezme sınırı
 `src/scene3d.js#createSeparatorModule()` prosedürel separator geometrisini üretir ve `surfaceState.color` tüketir. Renderer production ölçülerini geometry tek kaynak olarak okumak zorunda değildir; specialized render geometry ayrı ezme sınırıdır.

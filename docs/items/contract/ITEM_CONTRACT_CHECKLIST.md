@@ -98,7 +98,7 @@ Aynı BOM kuralı controller, renderer, UI veya başka yardımcı dosyalarda iki
 ## 4. Item tekil veya bileşiktir; ayrıca parametrik olabilir
 
 - **Tekil Item:** sistem açısından başka Item'lardan oluşmayan Item'dır. Örn. kettle, `connector_start`, panel, TV. Başka bir Item'ın reçetesinde kullanılması onu farklı bir sınıfa dönüştürmez; o bağlamda yalnızca parent Item'ın alt Item'ıdır.
-- **Bileşik Item:** başka Item'lardan oluşan Item'dır. Kanonik composition/reçetesi hangi alt Item'lardan ve hangi miktarlardan oluştuğunu tanımlar. Örn. `wall_200`; vitrinli bir sistem aynı temel Item'lara ek olarak cam, raf ve vitrine özel başka Item'lar içerebilir.
+- **Bileşik Item:** başka Item'lardan oluşan Item'dır. Kanonik composition/reçetesi hangi alt Item'lardan ve hangi miktarlardan oluştuğunu tanımlar. Örn. `wall_200_350`; vitrinli bir sistem aynı temel Item'lara ek olarak cam, raf ve vitrine özel başka Item'lar içerebilir.
 - **Parametrik:** ayrı bir üçüncü Item sınıfı değildir. Tekil veya bileşik bir Item'ın ölçü, state veya konfigürasyona göre miktarının/bileşiminin değişebildiğini belirtir.
 
 Bir Item yapısal olarak ya tekil ya bileşiktir; her iki yapı da parametrik olabilir.
@@ -114,7 +114,7 @@ Her Item tanımı tek ve stabil bir kanonik `itemKey` taşır.
 Örnek:
 
 ```text
-itemKey = TV_42
+itemKey = tv_42
 type    = tv
 id      = item-<project-instance>
 ```
@@ -853,7 +853,11 @@ Tahmin edilen davranış veya BOM değeri kabul edilmez. Item'a özgü değerler
 
 # current-system/<ITEM>.md minimum kapsamı
 
+> **Bayat (2026-10-27 denetimi):** `current-system` (2026-10-27: current-system belgeleri `kyrox-platform/archive/fair-stand/docs-items/current-system/` altına taşındı). Bu satır güncel kodla yeniden doğrulanmalı.
+
 Her `docs/items/current-system/<ITEM>.md` dosyası en az aşağıdaki başlıkların tamamını sistemden çıkararak kayıt altına almalıdır. Başlık geçerli değilse yine açık sonuç yazılır:
+
+> **Bayat (2026-10-27 denetimi):** `current-system` (2026-10-27: current-system belgeleri `kyrox-platform/archive/fair-stand/docs-items/current-system/` altına taşındı). Bu satır güncel kodla yeniden doğrulanmalı.
 
 1. identity / type / unit / classification
 2. ürüne özgü/default property envanteri
@@ -875,6 +879,8 @@ Her `docs/items/current-system/<ITEM>.md` dosyası en az aşağıdaki başlıkla
 18. açık gap / karar bekleyen alanlar
 
 `current-system/<ITEM>.md` yalnız “kod zinciri özeti” değildir; migration öncesi Item'ın mevcut sistemdeki **tam envanteridir**.
+
+> **Bayat (2026-10-27 denetimi):** `current-system` (2026-10-27: current-system belgeleri `kyrox-platform/archive/fair-stand/docs-items/current-system/` altına taşındı). Bu satır güncel kodla yeniden doğrulanmalı.
 
 # definitions/<ITEM>.md minimum kapsamı
 
@@ -904,7 +910,7 @@ Bugünkü module tabanlı sistem incelenirken başlıca canonical/aktif kaynakla
 - State oluşturucu/default/örnek verileri: `src/designState.js`
 - Yerleşim/move/collision/snap/ghost: `src/moduleBehavior.js` ve ilgili yerleşim akışı
 - Sahne Z rotation: Item kolonları, `docs/refactor/ROTATION.md`
-- Recipe BOM: `src/moduleRecipes.js`
+- Recipe BOM: Item `components` (`composition.items`) + `src/itemBom.js` `resolveItemBom`
 - Tekil üretim kalemleri/production Item metadata'sı, dimensions ve intrinsic/default properties: `src/items.js`
 - Context menu: `src/moduleContextMenu.js`
 - Scene/selection/render interaction'ları: `src/scene3d.js` ve ilgili interaction dosyaları

@@ -11,7 +11,7 @@
 
 ## Sahiplik
 
-Kanonik kimlik ve mevcut üstveri tek kaynağı `LEAF_ITEMS.shelf_leg` kaydıdır. `shelf_leg` ayrı project entity değildir; yerleşim, move, rotation, snap/collision/connection, selection/drag, context menu, delete/duplicate/keyboard, kalıcılık ve reflow parent `shelf` module/type tarafından uygulanır.
+Kanonik kimlik ve mevcut üstveri tek kaynağı Fair Stand ilişkisel Item store'daki `shelf_leg` kaydı kaydıdır. `shelf_leg` ayrı project entity değildir; yerleşim, move, rotation, snap/collision/connection, selection/drag, context menu, delete/duplicate/keyboard, kalıcılık ve reflow parent `shelf` module/type tarafından uygulanır.
 
 ## BOM / bileşim
 
