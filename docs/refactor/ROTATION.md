@@ -31,7 +31,7 @@ Leaf (panel, connector, zemin, kapak, `VIDEO_WALL_PANEL`…) üçü `null`. Sahn
 
 Sistemde kalan: `placement.rotationZDeg`, merkez dönüş, normalize, `rotationLocked`, 90/270 dikey duvar, kardinal manyetik snap.
 
-`docs/items/current-system/` ve `audit/evidence/` tarihsel envanterdir; rotation sahibi değildir. Yaşayan sözleşme bu dosya.
+`kyrox-platform/archive/fair-stand/docs-items/current-system/` (2026-10-27'de Stand'den platform arşivine taşındı) ve `audit/evidence/` tarihsel envanterdir; rotation sahibi değildir. Yaşayan sözleşme bu dosya.
 
 ---
 

@@ -17,6 +17,8 @@ Intrinsic ürün gerçeğinin tek kaynağı Item kaydıdır. Leaf ayrı scene/pr
 
 `innerCornerPanelItemKey` üzerinden matching `panel_147_5 × N` satırını `panel_corner_142_5 × N` olarak 1:1 değiştirir. Quantity parent recipe'den korunur.
 
+> **Bayat (2026-10-27 denetimi):** `innerCornerPanelItemKey` (2026-09-20 `86bffc35`: legacy inner-corner recipe yolu kaldırıldı; iç köşe Item composition'da (`0db4af90`)). Bu satır güncel kodla yeniden doğrulanmalı.
+
 ## Regresyon
 
 Corner panel contract testleri + `test/boardMaterialItemContract.test.js`.

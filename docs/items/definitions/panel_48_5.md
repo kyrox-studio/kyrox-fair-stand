@@ -12,7 +12,7 @@
 
 ## Sahiplik
 
-Intrinsic ürün gerçeğinin tek kaynağı `LEAF_ITEMS.panel_48_5` kaydıdır. State, yerleşim, move, rotation, snap, collision, selection, context-menu, delete/duplicate ve kalıcılık parent module/type tarafından uygulanır. Renderer specialized ezme yapabilir ancak `material` dahil product tek kaynağı değiştirmez.
+Intrinsic ürün gerçeğinin tek kaynağı Fair Stand ilişkisel Item store'daki `panel_48_5` kaydı kaydıdır. State, yerleşim, move, rotation, snap, collision, selection, context-menu, delete/duplicate ve kalıcılık parent module/type tarafından uygulanır. Renderer specialized ezme yapabilir ancak `material` dahil product tek kaynağı değiştirmez.
 
 ## BOM / ilişki
 

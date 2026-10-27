@@ -83,7 +83,7 @@ Aynı BOM kuralı controller, renderer, UI veya başka yardımcı dosyalarda iki
 ## 4. Item tekil veya bileşiktir; ayrıca parametrik olabilir
 
 - **Tekil Item:** sistem açısından başka Item'lardan oluşmayan Item'dır. Örn. kettle, `connector_start`, panel, TV. Başka bir Item'ın reçetesinde kullanılması onu farklı bir sınıfa dönüştürmez; o bağlamda yalnızca parent Item'ın alt Item'ıdır.
-- **Bileşik Item:** başka Item'lardan oluşan Item'dır. Kanonik composition/reçetesi hangi alt Item'lardan ve hangi miktarlardan oluştuğunu tanımlar. Örn. `wall_200`; vitrinli bir sistem aynı temel Item'lara ek olarak cam, raf ve vitrine özel başka Item'lar içerebilir.
+- **Bileşik Item:** başka Item'lardan oluşan Item'dır. Kanonik composition/reçetesi hangi alt Item'lardan ve hangi miktarlardan oluştuğunu tanımlar. Örn. `wall_200_350`; vitrinli bir sistem aynı temel Item'lara ek olarak cam, raf ve vitrine özel başka Item'lar içerebilir.
 - **Parametrik:** ayrı bir üçüncü Item sınıfı değildir. Tekil veya bileşik bir Item'ın ölçü, state veya konfigürasyona göre miktarının/bileşiminin değişebildiğini belirtir.
 
 Bir Item yapısal olarak ya tekil ya bileşiktir; her iki yapı da parametrik olabilir.
@@ -99,7 +99,7 @@ Her Item tanımı tek ve stabil bir kanonik `itemKey` taşır.
 Örnek:
 
 ```text
-itemKey = TV_42
+itemKey = tv_42
 type    = tv
 id      = item-<project-instance>
 ```

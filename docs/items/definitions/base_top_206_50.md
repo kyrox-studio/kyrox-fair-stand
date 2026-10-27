@@ -22,7 +22,7 @@ defaultColor              0xffffff
 Bu değerler Item'ın ürün tanımıdır. `material` ve `defaultColor` genel Item şemasında zorunlu değildir; bu Item için doğrulandıkları için tanımlıdır. Explicit project/runtime veya specialized renderer ezme uygulanabilir; ezme kanonik default'u değiştirmez.
 
 ## 3. Oluşturma / katalog / state / kalıcılık
-Bağımsız leaf proje örneği oluşturucu, mutable state, project `id` ve kalıcılık entity'si **UYGULANMIYOR**. Parent catalog Item'ı `BASE_200`'dır. Leaf production identity recipe + `getItem()` üzerinden çözülür.
+Bağımsız leaf proje örneği oluşturucu, mutable state, project `id` ve kalıcılık entity'si **UYGULANMIYOR**. Parent catalog Item'ı `base_200`'dır. Leaf production identity recipe + `getItem()` üzerinden çözülür.
 
 ## 4. Davranış / etkileşim yetenekleri
 Leaf top ayrı scene Item örneği olmadığı için yerleşim, move, rotation, snap, collision, selection, drag, context-menu, delete, duplicate ve keyboard yetenek'leri **UYGULANMIYOR**. Bu interaction'lar parent base/base-wall seviyesindedir.
@@ -37,7 +37,7 @@ Tam bir parent recipe kanonik Item'ı `×1` tüketir:
 Recipe satırı `{ itemKey: 'base_top_206_50', quantity: 1 }` biçimindedir. Expansion `getRecipeItemKey()` → `getItem()` üzerinden kanonik üstveriyi tüketir. Recursive composition **UYGULANMIYOR**.
 
 ## 7. Renderer / ezme politikası
-Renderer prosedürel ve specialized temsil kullanabilir. `src/scene3d.js` içindeki render kalınlığı/overhang/rengi kanonik production property değildir. Renderer görsel amaçla ezebilir; BOM/business tek kaynak `LEAF_ITEMS.base_top_206_50` olarak kalır.
+Renderer prosedürel ve specialized temsil kullanabilir. `src/scene3d.js` içindeki render kalınlığı/overhang/rengi kanonik production property değildir. Renderer görsel amaçla ezebilir; BOM/business tek kaynak Fair Stand ilişkisel Item store'daki `base_top_206_50` kaydı olarak kalır.
 
 ## 8. Regresyon sözleşmesi
 `test/baseTopsItemContract.test.js` şu hard gate'leri kilitler:

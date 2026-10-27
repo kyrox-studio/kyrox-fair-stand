@@ -21,16 +21,11 @@ function collectMarkdown(relativeDir) {
 }
 
 describe('Item tanım metinleri runtime sahibi ile hizalıdır', () => {
-  const files = [
-    ...collectMarkdown('docs/items/definitions'),
-    ...collectMarkdown('docs/items/current-system'),
-    {
-      path: 'docs/items/door_100_full_system_audit.md',
-      text: readFileSync(new URL('../docs/items/door_100_full_system_audit.md', import.meta.url), 'utf8'),
-    },
-  ];
+  // current-system/ ve door_100_full_system_audit.md tarihî envanterdir; 2026-10-27'de
+  // kyrox-platform/archive/fair-stand/docs-items/ altına taşındı ve bu depoda yoktur.
+  const files = collectMarkdown('docs/items/definitions');
 
-  test('tanım ve current-system dosyaları eski productionParts sahibini yazmaz', () => {
+  test('tanım dosyaları eski productionParts sahibini yazmaz', () => {
     const hits = [];
     for (const file of files) {
       for (const token of STALE_TOKENS) {

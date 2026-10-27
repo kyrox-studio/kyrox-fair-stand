@@ -13,7 +13,7 @@ Sistemde BOM, üretim veya maliyet hesabına giren her fiziksel öğe Item'dır.
 ```text
 connector_start   → ilk pilot / alt Item
 ...               → diğer doğrulanan alt Item'lar
-wall_200          → alt Item'ları hazır olduğunda bileşik Item olarak ele alınır
+wall_200_350          → alt Item'ları hazır olduğunda bileşik Item olarak ele alınır
 ```
 
 Bir Item tamamlanmadan sıradaki Item'ın eski runtime yolu sökülmez. Bir parent/bileşik Item migrate edilirken henüz migrate edilmemiş alt Item'lar varsa mevcut compatibility yolu korunabilir.
@@ -56,7 +56,7 @@ Her Item için parity kapsamı o Item'ın mevcut runtime kodundan çıkarılır;
 - Item-by-Item migration izolasyonu,
 - ilgili regression testleri.
 
-`wall_200` gibi scene/editor davranışı olan bileşik bir Item ele alındığında ise mevcut kodda gerçekten çalışan creation, state, placement, move/rotation, collision, reflow, renderer, selection, persistence, BOM ve diğer davranışların tamamı parity kapsamına girer.
+`wall_200_350` gibi scene/editor davranışı olan bileşik bir Item ele alındığında ise mevcut kodda gerçekten çalışan creation, state, placement, move/rotation, collision, reflow, renderer, selection, persistence, BOM ve diğer davranışların tamamı parity kapsamına girer.
 
 Bu örnekler yeni davranış tanımlamaz. Her Item için gerçek kapsamın source of truth'u mevcut runtime kodudur.
 ---
@@ -70,7 +70,7 @@ Migration süresince bazı Item'lar yeni Item mimarisinden, diğer Item'lar mevc
 ```text
 connector_start  → yeni Item kimlik/yolu
 connector_single → mevcut yapı
-wall_200         → mevcut yapı
+wall_200_350         → mevcut yapı
 ...              → mevcut yapı
 ```
 

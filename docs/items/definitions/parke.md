@@ -7,3 +7,5 @@ ITEM_LIST’teki eski tek “Parke” satırı runtime’da üç zemin `itemKey`
 - [parke-beton](parke-beton.md)
 
 Tek `itemKey=parke` yoktur. Migration öncesi profil: [current-system/parke](../current-system/parke.md).
+
+> **Bayat (2026-10-27 denetimi):** `current-system` (2026-10-27: current-system belgeleri `kyrox-platform/archive/fair-stand/docs-items/current-system/` altına taşındı). Bu satır güncel kodla yeniden doğrulanmalı.

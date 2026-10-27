@@ -19,7 +19,7 @@ material = ahşap
 defaultColor = 0xffffff
 ```
 
-Bu değerlerin product/default tek kaynağı `LEAF_ITEMS.door_leaf_100` kaydıdır.
+Bu değerlerin product/default tek kaynağı Fair Stand ilişkisel Item store'daki `door_leaf_100` kaydı kaydıdır.
 
 ## Yüzey yetenek sözleşmesi
 
@@ -50,7 +50,7 @@ surface.imageTransform = canonical image transform default
 
 ## Davranış / etkileşim sahipliği
 
-Yerleşim, move, rotation, snap, collision, ghost, side insert, delete ve duplicate top-level leaf davranışı değildir; parent `door` module `WALL_BEHAVIOR` zinciri sahibidir. Leaf surface tekil olarak renk/görsel düzenlemesi için seçilebilir. Sağ click parent module context menüsünü açar; special panel modes bu leaf için kapalıdır.
+Yerleşim, move, rotation, snap, collision, ghost, side insert, delete ve duplicate top-level leaf davranışı değildir; parent `door` tipinin davranışı (`fair_stand_item_type`) sahibidir. Leaf surface tekil olarak renk/görsel düzenlemesi için seçilebilir. Sağ click parent module context menüsünü açar; special panel modes bu leaf için kapalıdır.
 
 ## BOM / ilişki
 
@@ -60,7 +60,7 @@ Yerleşim, move, rotation, snap, collision, ghost, side insert, delete ve duplic
 door:100 → door_leaf_100 × 1 adet
 ```
 
-Eski `door_100` production `partId` kimliği kaldırılmıştır; paralel ikinci leaf kimliği tutulmaz.
+Eski `wall_door_100_350` production `partId` kimliği kaldırılmıştır; paralel ikinci leaf kimliği tutulmaz.
 
 ## Renderer sınırı
 
@@ -69,3 +69,5 @@ Door renderer child `surface.itemKey` üzerinden kanonik Item'ı ve `door-leaf` 
 ## Regresyon
 
 `test/doorLeafItemContract.test.js`, `test/designState.test.js` ve `test/moduleRecipes.test.js` kanonik özellikler, yetenek, default tüketici, ezme/kalıcılık migration, BOM identity/quantity ve renderer tüketici bağlantısını korur.
+
+> **Bayat (2026-10-27 denetimi):** `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)). Bu satır güncel kodla yeniden doğrulanmalı.

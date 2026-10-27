@@ -10,7 +10,7 @@
 
 ## Sahiplik
 
-Intrinsic ürün gerçeğinin tek kaynağı `LEAF_ITEMS.glass_shelf` kaydıdır. Cam raf ayrı project entity değildir; yerleşim, move, rotation, snap/collision/connection, selection/drag, context menu, delete/duplicate/keyboard, kalıcılık ve reflow parent `showcase-2` / `showcase-3` module/type tarafından uygulanır.
+Intrinsic ürün gerçeğinin tek kaynağı Fair Stand ilişkisel Item store'daki `glass_shelf` kaydı kaydıdır. Cam raf ayrı project entity değildir; yerleşim, move, rotation, snap/collision/connection, selection/drag, context menu, delete/duplicate/keyboard, kalıcılık ve reflow parent `showcase-2` / `showcase-3` module/type tarafından uygulanır.
 
 `createShowcaseModule()` kanonik Item'dan `widthCm`, `depthCm`, `heightCm` ve `material` tüketir. `material=cam` ortak `GLASS_APPEARANCE` standardına çözülür. Normal cam görünümü product ölçüsü değildir; `theme.js` renderer appearance kaynağıdır. Masa camı `TABLE_GLASS_APPEARANCE` ile explicit specialized render ezme kullanır; panel camı ortak normal cam yüzeyine ek olarak panel-only `PANEL_GLASS_BACKING_APPEARANCE` backing efekti kullanır. Projektör lensi özel optik/emissive renderer olarak bu standardın dışındadır.
 
