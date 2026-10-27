@@ -4,9 +4,7 @@ Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archiv
 Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
 
 ## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type/dimensions sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Item kümesi; `itemKey = furniture_sofa_set_classic`. Type `sofa-set-classic`; oturum alanı 150×150×78 cm. Üyelik aynı Item’dadır: `1 × furniture_sofa_double_classic` + `2 × furniture_sofa_single_classic` + `1 × furniture_coffee_table_classic`. Miktarlar mevcut takım renderer yerleşiminden (1 ikili mesh + 2 tekli mesh + 1 sehpa). `moduleRecipes.js` kullanılmaz. Üst birim / BOM uydurulmadı (`decision-required`).
-
-> **Bayat (2026-10-27 denetimi):** `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)). Bu satır güncel kodla yeniden doğrulanmalı.
+Kanonik itemKey/name/type/dimensions sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Item kümesi; `itemKey = furniture_sofa_set_classic`. Type `sofa-set-classic`; oturum alanı 150×150×78 cm. Üyelik aynı Item’dadır: `1 × furniture_sofa_double_classic` + `2 × furniture_sofa_single_classic` + `1 × furniture_coffee_table_classic`. Miktarlar mevcut takım renderer yerleşiminden (1 ikili mesh + 2 tekli mesh + 1 sehpa). `composition.mode` `recipe` olmadığı için `resolveItemBom` (`src/itemBom.js`) takımı alt kalemlere açmaz; BOM satırı takımın kendisidir. Üst birim uydurulmadı (`decision-required`).
 
 ## Oluşturma, state ve kalıcılık
 `createBeigeSofaSetModuleState` Item’dan default üretir; `itemKey` damgalar; editable `surface` korunur (`free-model-color`). Yüklemede `normalizeModuleItemState` doldurur; takma ad yok. Sahne tek modül kalır.

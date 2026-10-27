@@ -8,6 +8,16 @@ const STALE_TOKENS = [
   'getDoorLeafProductionItem',
   'getShelfProductionItem',
   'listProductionParts',
+  // 2026-10-27 denetimi: aşağıdakiler koddan kaldırıldı; belgede geçmeleri bayat bilgi demektir.
+  'resolveConnectorBom',
+  'innerCornerPanelItemKey',
+  'WALL_BEHAVIOR',
+  'overlayBehavior',
+  'freeBehavior',
+  'PLASTIC_TRASH_BIN_BEHAVIOR',
+  'normalizeCatalogDescriptor',
+  'DEFAULT_PANEL_COLOR',
+  'Bayat (',
 ];
 
 function collectMarkdown(relativeDir) {
@@ -23,7 +33,7 @@ function collectMarkdown(relativeDir) {
 describe('Item tanım metinleri runtime sahibi ile hizalıdır', () => {
   // current-system/ ve door_100_full_system_audit.md tarihî envanterdir; 2026-10-27'de
   // kyrox-platform/archive/fair-stand/docs-items/ altına taşındı ve bu depoda yoktur.
-  const files = collectMarkdown('docs/items/definitions');
+  const files = [...collectMarkdown('docs/items/definitions'), ...collectMarkdown('docs/items/contract')];
 
   test('tanım dosyaları eski productionParts sahibini yazmaz', () => {
     const hits = [];

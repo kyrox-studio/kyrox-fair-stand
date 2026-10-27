@@ -851,40 +851,9 @@ Tahmin edilen davranış veya BOM değeri kabul edilmez. Item'a özgü değerler
 
 ---
 
-# current-system/<ITEM>.md minimum kapsamı
-
-> **Bayat (2026-10-27 denetimi):** `current-system` (2026-10-27: current-system belgeleri `kyrox-platform/archive/fair-stand/docs-items/current-system/` altına taşındı). Bu satır güncel kodla yeniden doğrulanmalı.
-
-Her `docs/items/current-system/<ITEM>.md` dosyası en az aşağıdaki başlıkların tamamını sistemden çıkararak kayıt altına almalıdır. Başlık geçerli değilse yine açık sonuç yazılır:
-
-> **Bayat (2026-10-27 denetimi):** `current-system` (2026-10-27: current-system belgeleri `kyrox-platform/archive/fair-stand/docs-items/current-system/` altına taşındı). Bu satır güncel kodla yeniden doğrulanmalı.
-
-1. identity / type / unit / classification
-2. ürüne özgü/default property envanteri
-3. dimensions: width / height / depth / length / thickness / aileye özgü ölçüler
-4. defaultColor / material / diğer product üstveri
-5. oluşturucu / creation / catalog bağlantısı
-6. örnek state / defaults / configurable-ezmes
-7. yerleşim / move / snap
-8. rotation / collision / connection / overlap / ghost
-9. selection / drag / sağ click / context menu / keyboard
-10. delete / duplicate / diğer yetenekler
-11. kalıcılık / save-load / migration / örnek ID
-12. relationships / parent-child / host / neighbor / reflow
-13. BOM / recipe / quantity / unit / tüketici
-14. renderer / asset / image / specialized ezme sınırı
-15. kanonik property ve behavior tüketicileri / runtime owners
-16. duplicate tek kaynak ve ezme ayrımı
-17. mevcut regression/test kapsamı
-18. açık gap / karar bekleyen alanlar
-
-`current-system/<ITEM>.md` yalnız “kod zinciri özeti” değildir; migration öncesi Item'ın mevcut sistemdeki **tam envanteridir**.
-
-> **Bayat (2026-10-27 denetimi):** `current-system` (2026-10-27: current-system belgeleri `kyrox-platform/archive/fair-stand/docs-items/current-system/` altına taşındı). Bu satır güncel kodla yeniden doğrulanmalı.
-
 # definitions/<ITEM>.md minimum kapsamı
 
-Her migrated Item'ın `docs/items/definitions/<ITEM>.md` dosyası current-system envanterini kanonik modele map etmeli ve en az şunları açıkça kaydetmelidir:
+Her migrated Item'ın `docs/items/definitions/<ITEM>.md` dosyası kanonik modeli koddan doğrulayarak en az şunları açıkça kaydetmelidir:
 
 1. kanonik identity/type/unit,
 2. kanonik ürüne özgü/default özellikler,
@@ -897,7 +866,7 @@ Her migrated Item'ın `docs/items/definitions/<ITEM>.md` dosyası current-system
 9. gerçek tüketici geçiş durumu,
 10. regression ve açık gap'ler.
 
-`definitions/<ITEM>.md` içinde `UYGULANMIYOR` yalnız current-system analiziyle gerçekten geçerli olmadığı doğrulanmış alanlar için kullanılabilir.
+`definitions/<ITEM>.md` içinde `UYGULANMIYOR` yalnız kodda gerçekten karşılığı olmadığı doğrulanmış alanlar için kullanılabilir.
 
 ---
 
