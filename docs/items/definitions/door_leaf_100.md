@@ -69,5 +69,3 @@ Door renderer child `surface.itemKey` üzerinden kanonik Item'ı ve `door-leaf` 
 ## Regresyon
 
 `test/doorLeafItemContract.test.js`, `test/designState.test.js` ve `test/moduleRecipes.test.js` kanonik özellikler, yetenek, default tüketici, ezme/kalıcılık migration, BOM identity/quantity ve renderer tüketici bağlantısını korur.
-
-> **Bayat (2026-10-27 denetimi):** `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)). Bu satır güncel kodla yeniden doğrulanmalı.

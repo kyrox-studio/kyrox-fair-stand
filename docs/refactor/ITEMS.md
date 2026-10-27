@@ -99,7 +99,7 @@ Item master Catalog’dan bağımsızdır. Bir Item’ın `getItem(itemKey)` ile
 
 ## Kayıt
 
-Tek tablo `export const ITEMS` (`src/items.js`). Bütün Item satırları bu bloğun içindedir. Lookup `getItem(itemKey)` = `ITEMS[itemKey] ?? null`. `listRegisteredItems()` = `Object.values(ITEMS)`. Kova map (`LEAF_ITEMS` vb.) yoktur.
+Item satırları PostgreSQL `fair_stand` Item store'undadır. `src/catalogBootstrap.js` katalog yükünü alıp `initializeItemRegistry(items)` (`src/items.js`) ile tek kayıt tablosuna yazar. Lookup `getItem(itemKey)` = kayıt tablosu, yoksa duvar yüksekliği türevleri (`buildWallHeightVariants`), yoksa `null`. `listRegisteredItems()` kayıt tablosunun değerleridir. Bootstrap yapılmadan okuma hata verir. Kova map (`LEAF_ITEMS` vb.) yoktur.
 
 ---
 

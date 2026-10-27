@@ -10,9 +10,7 @@ Kanonik itemKey/name/type/dimensions sahibi Fair Stand ilişkisel Item store'udu
 Oluşturma yolu SVG asset sağ tık `Işıklı Strafora Dönüştür`. `createIlluminatedFoamModuleState` Item defaultlarını ve `itemKey` damgasını yazar. `imageAssetId` zorunludur. `haloColor` default `#ffffff`. Load hydrate `itemKey` doldurur. `Tüm Özellikleri Kaldır` bu type’ı sahneden çıkarır.
 
 ## Davranış ve renderer sınırı
-`overlayBehavior()`: `wall-overlay`, snap `10 cm`. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). SVG extrude + halo renderer temsilidir.
-
-> **Bayat (2026-10-27 denetimi):** `overlayBehavior` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı). Bu satır güncel kodla yeniden doğrulanmalı.
+Tip davranışı `fair_stand_item_type` kaydındadır (seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`): `wall-overlay`, snap `10 cm`. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). SVG extrude + halo renderer temsilidir.
 
 ## Regresyon
 `test/lightingItemsContract.test.js`; `test/illuminatedFoamModule.test.js`; `test/moduleStateConstructionRegistry.test.js`; E2E `e2e/lighting-items-contract.spec.mjs` (katalogda olmadığını doğrular) ve mevcut `e2e/f028-reset-features.spec.mjs`.

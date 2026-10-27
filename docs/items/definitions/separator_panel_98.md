@@ -36,9 +36,7 @@ separator:100 → separator_panel_98 × 7
 Quantity owner parent Item kaydının `components` listesidir (`composition.items`); BOM `src/itemBom.js` `resolveItemBom(itemKey)`. Recipe identity kanonik `itemKey` üzerinden çözülür.
 
 ## Davranış / state / kalıcılık sahipliği
-Yerleşim, move, rotation, snap, collision, connection, selection, context-menu, delete/duplicate ve kalıcılık leaf Item davranışı değildir. Bunlar parent `separator` module/state katmanında yürür. `separator` mevcut `WALL_BEHAVIOR` sözleşmesini kullanır.
-
-> **Bayat (2026-10-27 denetimi):** `WALL_BEHAVIOR` (2026-09-24 `3943dd8a`: tip davranışı `fair_stand_item_type`'a taşındı). Bu satır güncel kodla yeniden doğrulanmalı.
+Yerleşim, move, rotation, snap, collision, connection, selection, context-menu, delete/duplicate ve kalıcılık leaf Item davranışı değildir. Bunlar parent `separator` module/state katmanında yürür. `separator` tipinin davranışı `fair_stand_item_type` kaydındadır: `wall` yerleşim, `segment` çarpışma, 10 cm snap.
 
 ## Renderer / ezme sınırı
 `src/scene3d.js#createSeparatorModule()` prosedürel separator geometrisini üretir ve `surfaceState.color` tüketir. Renderer production ölçülerini geometry tek kaynak olarak okumak zorunda değildir; specialized render geometry ayrı ezme sınırıdır.

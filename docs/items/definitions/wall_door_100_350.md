@@ -23,9 +23,7 @@ Parent kapı kümesine material veya `defaultColor` eklenmez; küme farklı malz
 
 ## Kanonik bileşim — baza
 
-`wall_door_100_350.composition` mevcut `door:100` recipe’sine bağlanır. Miktarların tek tek kaynağı `src/moduleRecipes.js`dir:
-
-> **Bayat (2026-10-27 denetimi):** `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)). Bu satır güncel kodla yeniden doğrulanmalı.
+Miktarların kaynağı Item kaydının `components` listesidir (`composition.items`, `composition.mode=recipe`); `src/itemBom.js` `resolveItemBom` açar:
 
 ```text
 profile_91            ×1
@@ -60,9 +58,7 @@ connector_single ×5  → connector_single ×3 + connector_corner ×2
 connector_start ×2   → değişmez
 ```
 
-Bu fark `src/moduleRecipes.js` içindeki `door:100` variant üstverisinde tutulur. Unchanged kalemler ikinci kez tam recipe olarak kopyalanmaz; base recipe'den korunur. Böylece door corner BOM için ikinci hardcoded business tek kaynak yaratılmaz.
-
-> **Bayat (2026-10-27 denetimi):** `moduleRecipes` (2026-09-17 `0db4af90`: ürün reçete tabloları silindi; `src/moduleRecipes.js` yalnız `expandRecipe` (composition.items)). Bu satır güncel kodla yeniden doğrulanmalı.
+Bu dönüşüm `src/relationshipBom.js` içinde iç köşe ilişkisinden hesaplanır (`cornerSide`: panel bandı ek yeri kadar tekli aparat köşe aparatına döner; `applyCornerPanelSwap`: panel değişimi). Item kaydında ikinci bir köşe reçetesi tutulmaz.
 
 ## Recipe varyant API
 
