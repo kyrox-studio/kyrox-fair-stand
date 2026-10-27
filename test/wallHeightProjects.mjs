@@ -26,19 +26,3 @@ export function buildWallHeightProjectModules(wallHeightCm) {
     return state;
   });
 }
-
-export function buildWallHeightProjectStand(wallHeightCm) {
-  return {
-    ok: true,
-    xCm: 600,
-    yCm: 400,
-    depot: { enabled: false, sizeKey: null, includeContents: false },
-    depthM: 4,
-    widthM: 6,
-    itemKey: 'karolaj',
-    standType: 'l-left',
-    sceneDepthM: 6,
-    sceneWidthM: 8,
-    wallHeightCm,
-  };
-}

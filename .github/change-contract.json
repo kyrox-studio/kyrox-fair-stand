@@ -1,17 +1,16 @@
 {
   "schemaVersion": 2,
-  "id": "docs-items-arsiv-temizlik",
+  "id": "olu-kod-temizlik",
   "kind": "refactor",
-  "summary": "docs/items temizliği: tarihî audit/** (313 md + 12 veri), current-system/** (94) ve ITEM_CONSOLIDATION_PLAN, ITEM_LIST, door_100_full_system_audit kyrox-platform/archive/fair-stand/docs-items altına sha256 manifestiyle kayıpsız taşındı. definitions/ içinde 2026-09-25 e00544eb yeniden adlandırmaları (wall_*_350, wall_door_100_350) ve 2026-09-22 9a4333de küçük harf itemKey'leri uygulandı; koddan kalkmış adlar (kova map'ler, WALL_BEHAVIOR, moduleRecipes tabloları, renk sabitleri) güncel sahiplerle değiştirildi, karşılığı doğrulanamayanlara bayat notu eklendi. audit/ hedefli iki betik scripts/archive altına alındı. Çalışan koda dokunulmadı.",
+  "summary": "Kod haritasında (kyrox-map) adı tanımı dışında depoda hiç geçmediği doğrulanan ölü kod silindi: src/toastNotifications.js dismissToast/clearToasts (import eden yok), src/scene3d.js iç fonksiyonlar formatMeasureCm ve createMeshBrandaAlphaMap (çağrılmıyor), CostItemService.get_cost_item (route/servis çağırmıyor), test/wallHeightProjects.mjs buildWallHeightProjectStand (kullanılmıyor). package.json, CI ve belgelerin çağırmadığı tek seferlik betikler silindi: scripts/export-catalog-seed.mjs (artık olmayan CRM catalog_seed_data.py dosyasına yazıyordu), scripts/strip-legacy-dimension-columns.mjs (kolonlar 0021'de kalktı), scripts/screenshot-glb-compare.mjs (P0m tek seferlik), backend/scripts/ensure_db.py, backend/scripts/verify_dimension_backfill.py. Davranış değişmez.",
   "owners": [
-    "docs/items/contract/ITEM_CONTRACT.md",
-    "test/itemDocsRuntimeAlignment.test.js"
+    "src/scene3d.js",
+    "src/toastNotifications.js"
   ],
   "sourceOfTruth": [
-    "docs/items/contract/ITEM_CONTRACT.md",
-    "MODULE_BEHAVIOR_STANDARD.md",
-    "backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py",
-    "test/fixtures/itemCatalogSeed.json"
+    "src/scene3d.js",
+    "src/toastNotifications.js",
+    "backend/app/modules/fair_stand/application/cost_items.py"
   ],
   "impact": {
     "catalog": "not-applicable",
@@ -36,38 +35,34 @@
     "mode": "full-system",
     "affectedFiles": [],
     "affectedTests": [
-      "test/itemDocsRuntimeAlignment.test.js",
-      "test/doorCompositeItemContract.test.js",
-      "test/developerEntrypointDocs.test.js",
-      "test/pythonPatchArchive.test.js"
+      "test/wallHeightProjectBom.test.js"
     ],
     "affectedDocs": [],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": []
     },
-    "notes": "Yalnız belge, bir test ve iki arşiv betiği değişir. itemDocsRuntimeAlignment testi arşive taşınan current-system/ ve door_100_full_system_audit.md dosyalarını okumayı bırakır; eski productionParts adları kontrolü definitions/ üzerinde aynen sürer. doorCompositeItemContract (definitions/ içinde DOOR_100.md yok) ve developerEntrypointDocs (ITEM_CONTRACT.md) değişmeden geçer. pythonPatchArchive testi arşive alınan iki betiği (scripts/archive) ve aktif scripts/ altında olmadıklarını da doğrular."
+    "notes": "Silinen her ad için depo genelinde (src, test, e2e, backend, scripts, belgeler, package.json, workflow) tanım dışı referans aranıp sıfır bulundu. wallHeightProjectBom testi yalnız buildWallHeightProjectModules'ü kullanır, değişmeden geçer."
   },
   "tests": {
     "targeted": [
-      "test/itemDocsRuntimeAlignment.test.js",
-      "test/pythonPatchArchive.test.js"
+      "test/wallHeightProjectBom.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": false,
       "targeted": [],
-      "reason": "Tarayıcıda çalışan kod, asset ve UI değişmez; yalnız Markdown belgeler, bir node testi ve çalıştırılmayan arşiv betikleri değişir."
+      "reason": "Çağrılmayan fonksiyonlar ve çalıştırılmayan betikler silinir; çalışan kod yolu değişmez. Tam node test paketi ve build doğrular."
     }
   },
   "risk": {
     "level": "low",
-    "notes": "Runtime/CI dışı betikler arşive alındı; package.json ve CI onları çağırmıyordu. Arşiv kopyaları sha256 ile birebir doğrulandı."
+    "notes": "Silinenlerin hiçbir çağıranı yoktu; yanlış çıkarsa build/test kırılır."
   },
   "migration": {
     "required": false,
     "notes": "Veritabanı şeması ve Alembic head değişmez."
   },
-  "rollback": "Bu dalın commit'ini geri al: silinen belgeler ve betikler geri gelir, test eski dosya listesine döner. Platform arşivi ayrı PR'dır; geri alınması Stand'i etkilemez."
+  "rollback": "Bu dalın commit'ini geri al: silinen fonksiyonlar ve betikler geri gelir."
 }

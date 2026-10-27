@@ -92,12 +92,3 @@ export function reportError(message, error = null, { warn = console.warn } = {})
   else warn(`${message}:`, error);
   return showToast(message, { kind: 'error' });
 }
-
-/** Belirli bir bildirimi kapatır (ör. sürükleme geçerli yere gelince uyarı kalkar). */
-export function dismissToast(message) {
-  removeToast(normalizeMessage(message));
-}
-
-export function clearToasts() {
-  for (const text of [...active.keys()]) removeToast(text);
-}
