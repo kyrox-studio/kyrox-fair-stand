@@ -40,7 +40,7 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 
 ## 2026-10-22 — Dikey hareket ve taban referansı DB'den; zemin/tavan ölçüsü; dikme boyu (migration 0076)
 
-**DB:** `fair_stand_items.vertical_move` ve `z_reference` (`0076_vertical_move`; seed `item_vertical_seed.py`, test aynası `test/itemVerticalSeed.mjs`; admin okur/yazar/kopyalar). Kural: TV, strafor, tül, raf, küp blok, LED projektör, profil ve kısa duvarlar dikey taşınır; profil ve kısa duvar `wall-top`.
+**DB:** `fair_stand_items.vertical_move` ve `z_reference` (`0076_vertical_move`; seed `item_vertical_seed.py`, test aynası `test/itemVerticalSeed.mjs`; admin okur/yazar/kopyalar). Kural: TV, strafor, tül, raf, küp blok, LED projektör, profil, kısa duvarlar ve dikmeler (`0088_upright_vertical_move`) dikey taşınır; profil ve kısa duvar `wall-top`.
 
 **Kod:** `itemMovesVertically` (items.js). Ok tuşunda dikey adaylar yalnız bu ayar açıkken (`verticalAllowed`); kısa duvar yolu artık "duvar yerleşimli ve dikey hareketli" her öğede (profil dahil). `resolveItemDefaultZCm` kısa duvar varyant kontrolü yerine `zReference === 'wall-top'`. Profil 250 cm duvarda 240'ta gelir.
 

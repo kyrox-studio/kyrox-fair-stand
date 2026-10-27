@@ -7174,6 +7174,13 @@ export function createStandScene(
         { xCm: 0, yCm: stepCm, world: new THREE.Vector3(0, 0, worldStepM) },
         { xCm: 0, yCm: -stepCm, world: new THREE.Vector3(0, 0, -worldStepM) },
       ];
+      // Serbest öğede (dikme) vertical_move açıksa ↑/↓ ekranda dikeye denk gelince Z adımı.
+      if (canMoveVertically && getModuleBehavior(moduleState).placement === 'free') {
+        candidates.push(
+          { xCm: 0, yCm: 0, zCm: stepCm, world: new THREE.Vector3(0, worldStepM, 0) },
+          { xCm: 0, yCm: 0, zCm: -stepCm, world: new THREE.Vector3(0, -worldStepM, 0) },
+        );
+      }
       const bestArrowMove = candidates
         .map((candidate) => {
           const projectedTarget = moduleWorldPosition.clone().add(candidate.world).project(camera);
@@ -7189,6 +7196,21 @@ export function createStandScene(
         })
         .sort((a, b) => b.score - a.score)[0];
       if (!bestArrowMove || !Number.isFinite(bestArrowMove.score)) return;
+
+      if (bestArrowMove.zCm) {
+        const currentZCm = Number(moduleState.placement.zCm || 0);
+        const nextZCm = stepWallShortFloorZCm(currentZCm, bestArrowMove.zCm, moduleState.heightCm);
+        if (nextZCm === currentZCm) {
+          showPlacementFeedback('Bu yönde stand sınırına ulaştı.', { durationMs: 900 });
+          return;
+        }
+        const liftedPlacement = { ...moduleState.placement, zCm: nextZCm };
+        moduleState.placement = { ...liftedPlacement };
+        moduleGroup.userData.placement = { ...liftedPlacement };
+        applyPlacementToGroup(moduleGroup, liftedPlacement, moduleState.widthCm);
+        clearPlacementFeedback();
+        return;
+      }
 
       const desiredPlacement = createModulePlacement({
         ...moduleState.placement,

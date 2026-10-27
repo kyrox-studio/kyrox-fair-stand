@@ -1,5 +1,5 @@
-// backend item_vertical_seed.py ile aynı kural (migration 0076).
-const VERTICAL_MOVE_TYPES = new Set(['tv', 'illuminated-foam', 'tulle-fabric', 'shelf', 'box-block', 'led-floodlight', 'profile']);
+// backend item_vertical_seed.py ile aynı kural (migration 0076, dikme 0088).
+const VERTICAL_MOVE_TYPES = new Set(['tv', 'illuminated-foam', 'tulle-fabric', 'shelf', 'box-block', 'led-floodlight', 'profile', 'upright']);
 const WALL_SHORT_VARIANTS = new Set(['wall-short-1', 'wall-short-2']);
 
 export function verticalFieldsFor(type, variant) {

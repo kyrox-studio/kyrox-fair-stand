@@ -196,6 +196,8 @@ Project state ve asset blob storage ayrı katmanlarda tutulur. Project switch/sa
 
 Dönüş adımı ve movement snap global sabit değildir. Modül davranışı `src/moduleBehavior.js` üzerinden okunmalıdır.
 
+Seçili öğe ok tuşlarıyla tip `moveSnapCm` adımında taşınır; tuşun yönü kameraya göre en yakın eksene gider. Dikey (Z) adım yalnız DB `fair_stand_items.vertical_move` açık öğede vardır (TV, strafor, tül, raf, küp blok, LED projektör, profil, kısa duvar, dikme): ↑/↓ ekranda dikeye denk gelince öğe Z'de taşınır. Yerden tabanlı öğede taban 0'ın altına inmez, tepesi stand tavanını geçmez (`getWallShortFloorZBoundsCm`).
+
 ## Yeni modül / feature eklerken
 
 Yeni iş yalnız katalog satırı veya UI butonu eklemek değildir.
