@@ -50,6 +50,7 @@ import { createModuleDragSidebar } from './moduleDragSidebar.js';
 import { createColorEditorController } from './colorEditorController.js';
 import { STAND_TYPE_LABELS, validateStandSetup } from './standSetup.js';
 import {
+  clampFloorRelativeBottomZCm,
   createModulePlacement,
   getModuleGroundSegments,
   getPlacementInterval,
@@ -1298,6 +1299,13 @@ function applyUprightItemKey(moduleState, itemKey) {
   moduleState.widthCm = upright.widthCm;
   moduleState.depthCm = upright.depthCm;
   moduleState.heightCm = upright.heightCm;
+  // Yükseltilmiş dikme uzayınca tepesi stand tavanını geçmez.
+  if (moduleState.placement) {
+    moduleState.placement = {
+      ...moduleState.placement,
+      zCm: clampFloorRelativeBottomZCm(Number(moduleState.placement.zCm || 0), upright.heightCm),
+    };
+  }
   return true;
 }
 

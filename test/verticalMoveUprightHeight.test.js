@@ -14,6 +14,7 @@ import {
   readUprightHeightPreference,
   writeUprightHeightPreference,
 } from '../src/uprightHeight.js';
+import { getModulePlacementSnapCm, getWallShortFloorZBoundsCm, stepWallShortFloorZCm } from '../src/modulePlacement.js';
 
 const scene = readFileSync(new URL('../src/scene3d.js', import.meta.url), 'utf8');
 const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
@@ -29,10 +30,10 @@ function memoryStorage() {
 }
 
 test('dikey hareket Item ayarıdır (DB vertical_move)', () => {
-  for (const itemKey of ['tv_42', 'tulle_fabric', 'box_block', 'led_floodlight', 'profile_190', 'wall_100_short_2']) {
+  for (const itemKey of ['tv_42', 'tulle_fabric', 'box_block', 'led_floodlight', 'profile_190', 'wall_100_short_2', 'upright_346_5', 'upright_297']) {
     assert.equal(itemMovesVertically(itemKey), true, itemKey);
   }
-  for (const itemKey of ['wall_100_350', 'desk_banko_100', 'upright_346_5', 'glass_table']) {
+  for (const itemKey of ['wall_100_350', 'desk_banko_100', 'glass_table']) {
     assert.equal(itemMovesVertically(itemKey), false, itemKey);
   }
   assert.equal(itemMovesVertically({ itemKey: 'profile_190', type: 'profile' }), true);
@@ -92,6 +93,20 @@ test('ok tuşlarında dikey adaylar yalnız vertical_move açık öğede; profil
   assert.equal((scene.match(/\.filter\(verticalAllowed\)/g) ?? []).length, 5);
   assert.match(scene, /if \(moduleState\.type === 'tulle-fabric' && canMoveVertically\) \{/);
   assert.match(scene, /if \(canMoveVertically && getModuleBehavior\(moduleState\)\.placement === 'wall'\) \{/);
+});
+
+test('dikme (serbest yerleşim) ↑/↓ ile moveSnapCm adımında dikey taşınır; taban 0, tepe tavanı geçmez', () => {
+  assert.match(scene, /if \(canMoveVertically && getModuleBehavior\(moduleState\)\.placement === 'free'\) \{\r?\n\s+candidates\.push\(/);
+  assert.match(scene, /const nextZCm = stepWallShortFloorZCm\(currentZCm, bestArrowMove\.zCm, moduleState\.heightCm\);/);
+  assert.equal(getModulePlacementSnapCm('upright'), 10);
+  // upright_297 sahnede 300 cm: 350 cm standda 0…50; boyu tavana eşit öğe yerinde kalır.
+  assert.deepEqual(getWallShortFloorZBoundsCm(300, 350), { minZCm: 0, maxZCm: 50 });
+  assert.equal(stepWallShortFloorZCm(40, 10, 300, 350), 50);
+  assert.equal(stepWallShortFloorZCm(50, 10, 300, 350), 50);
+  assert.equal(stepWallShortFloorZCm(0, -10, 300, 350), 0);
+  assert.equal(stepWallShortFloorZCm(0, 10, 350, 350), 0);
+  // Yükseltilmiş dikmenin boyu uzayınca tepesi tavana sıkıştırılır.
+  assert.match(main, /zCm: clampFloorRelativeBottomZCm\(Number\(moduleState\.placement\.zCm \|\| 0\), upright\.heightCm\),/);
 });
 
 test('ölçü etiketleri sahne ölçüsünden; dikey öğede zemin ve tavan uzaklığı', () => {

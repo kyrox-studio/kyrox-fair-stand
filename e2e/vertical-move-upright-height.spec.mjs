@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
 
-// Profil ↑/↓ ile dikey taşınır ve zemin/tavan uzaklığı gösterilir; dikme bırakılırken boy
+// Profil ve dikme ↑/↓ ile dikey taşınır ve zemin/tavan uzaklığı gösterilir; dikme bırakılırken boy
 // sorulur, "Bir daha sorma" işaretlenince sorulmaz, Özellikler panelindeki dikme boyu alanı çentiği kaldırır.
 
 async function exposeScene(page) {
@@ -169,6 +169,36 @@ test('profil ↑/↓ ile dikey taşınır; zemin ve tavan uzaklığı gösterili
   await page.keyboard.press('ArrowDown');
   const lowered = await saveAndReadProject(page);
   expect(lowered.modules[0].placement.zCm).toBe(190);
+  expect(errors).toEqual([]);
+});
+
+test('dikme ↑/↓ ile 10 cm adımla dikey taşınır; taban 0, tepe stand tavanı', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await exposeScene(page);
+  // upright_297 sahnede 300 cm: 350 cm standda taban 0…50; upright_346_5 sahnede 346,5: tepe tavana değince (3,5) durur.
+  await createIslandProject(page, 'E2E Dikme Dikey', [
+    { itemKey: 'upright_297', place: { xCm: 150, yCm: 250, zCm: 0, rotationZDeg: 0, wallId: 'free' } },
+    { itemKey: 'upright_346_5', place: { xCm: 350, yCm: 250, zCm: 0, rotationZDeg: 0, wallId: 'free' } },
+  ]);
+  const [short, full] = (await readLatestProject(page)).modules;
+  const zOf = (project, id) => project.modules.find((module) => module.id === id).placement.zCm;
+
+  let point = await moduleScreenPoint(page, short.id);
+  await page.mouse.dblclick(point.x, point.y);
+  await page.keyboard.press('ArrowUp');
+  expect(zOf(await saveAndReadProject(page), short.id)).toBe(10);
+  for (let step = 0; step < 6; step += 1) await page.keyboard.press('ArrowUp');
+  expect(zOf(await saveAndReadProject(page), short.id)).toBe(50);
+  for (let step = 0; step < 7; step += 1) await page.keyboard.press('ArrowDown');
+  expect(zOf(await saveAndReadProject(page), short.id)).toBe(0);
+
+  point = await moduleScreenPoint(page, full.id);
+  await page.mouse.dblclick(point.x, point.y);
+  await page.keyboard.press('ArrowUp');
+  expect(zOf(await saveAndReadProject(page), full.id)).toBe(3.5);
+  await page.keyboard.press('ArrowUp');
+  expect(zOf(await saveAndReadProject(page), full.id)).toBe(3.5);
   expect(errors).toEqual([]);
 });
 
