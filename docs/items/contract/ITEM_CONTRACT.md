@@ -128,6 +128,42 @@ Sahip: `src/floorArea.js`. Proje sürümü bu alan için artmaz.
 
 ---
 
+## 6A. Her Item'ın kanonik oluşturulma mekanizması tanımlıdır
+
+Bir Item'ın proje örneğina nasıl dönüştürüldüğü tek ve izlenebilir bir oluşturulma yolu üzerinden tanımlanmalıdır.
+
+Bu oluşturulma mekanizması oluşturucu, resolver, builder veya eşdeğer bir kanonik üretim noktası olabilir; isimden bağımsız olarak aynı Item için paralel ve çelişen örnek oluşturma kuralları bulunmaz.
+
+Oluşturulma mekanizması en az şu sorumlulukları açıkça çözmelidir:
+
+- kanonik `itemKey` ve `type` bilgisinden doğru Item örneğinı üretmek,
+- gerekli default state/ölçü/parametreleri kanonik Item'dan uygulamak,
+- izin verilen project/runtime ezme'larını default değerlerden ayrı çözmek,
+- yeni proje örnek `id` değerini üretmek veya bağlamak,
+- Item'a özgü alt state/child state gerekiyorsa bunları kanonik kurala göre oluşturmak,
+- catalog veya başka giriş noktalarından gelen tanımı tek kanonik Item kimliğine çözmek.
+
+Oluşturucu/oluşturma mantığı UI, renderer veya farklı controller akışlarında ikinci kez kopyalanmaz.
+
+---
+
+## 6B. Her Item'ın kalıcılık sözleşmesi tanımlıdır
+
+Bir Item'ın hangi proje verilerinin kalıcı olduğu ve save/load sonrasında nasıl geri kurulduğu açıkça tanımlanmalıdır.
+
+Persistence sözleşmesi en az şunları belirtmelidir:
+
+- hangi Item state/ezme alanlarının proje state'ine kaydedildiği,
+- kanonik default ile project ezmenin nasıl ayrıldığı,
+- hangi alanların runtime/geçici olduğu ve kaydedilmediği,
+- proje yeniden açıldığında kanonik Item kimliği ile örnek state'in nasıl tekrar eşleştirildiği,
+- alt Item/alt state/relationship referanslarının nasıl korunduğu,
+- eski veya geçersiz state için validation/migration kuralının nerede olduğu.
+
+Renderer, mesh veya geçici UI state'i persistent business state'in yerine geçmez.
+
+---
+
 ## 7. Item davranışı `type` seviyesinde tanımlanır
 
 Yerleşim, move, side insert, collision, ghost, context-menu yetenek ve benzeri Item'a özgü editor/runtime davranışları kanonik olarak davranış ailesi (`type`) seviyesinde tanımlanır.
@@ -141,6 +177,41 @@ Davranış gerçekten farklıysa yeni bir davranış ailesi/type tanımlanır. I
 Item tanımı hangi `type` / behavior family / yetenek contract'ını kullandığını açıkça taşır veya tek kanonik resolver üzerinden çözer. UI, context menu ve runtime aynı kanonik behavior/yetenek kaynağını tüketir.
 
 Mevcut module behavior altyapısında bu sorumluluğun kanonik runtime sahibi `src/moduleBehavior.js`, sözleşme belgesi `MODULE_BEHAVIOR_STANDARD.md` dosyasıdır; Item mimarisine geçiş bu tek-kaynak ilkesini bozmaz.
+
+---
+
+## 7A. Item-to-Item spatial relationship kanonik olarak tanımlanır
+
+Bir Item'ın başka Item'larla sahnedeki fiziksel/uzamsal ilişkisi business rule veya BOM sonucunu etkiliyorsa bu ilişki açık bir kanonik relationship modeliyle temsil edilmelidir.
+
+Bu ilişki modeli ihtiyaç oldukça şu tür ilişkileri taşıyabilir:
+
+- parent / child,
+- komşuluk / neighbor,
+- bağlı / connected,
+- üzerinde / bağlı olduğu host,
+- köşe / corner,
+- aynı continuous chain içinde olma,
+- başka bir Item'a göre yön veya konum bağımlılığı.
+
+Relationship bilgisi yalnızca renderer mesh'inden, ekrandaki yakınlıktan veya UI tahmininden türetilen geçici bir bilgi olarak bırakılmaz. Proje state'i ve business kuralları için gerekli olan ilişki kanonik veri/resolver üzerinden çözülebilmelidir.
+
+Bir relationship Item'ın davranışını, konfigürasyonunu veya BOM'unu değiştiriyorsa bu dönüşüm relationship resolver tarafından belirlenir; aynı kural farklı controller veya UI katmanlarında yeniden tanımlanmaz.
+
+### Relationship-derived reflow / davranış
+
+Bir Item'ın eklenmesi, taşınması, döndürülmesi, silinmesi veya başka Item'la ilişki kurması komşu Item'ların konumunu veya durumunu etkiliyorsa bu etki kanonik relationship/behavior kuralları üzerinden çözülmelidir.
+
+Reflow veya benzeri zincir etkileri:
+
+- hangi ilişkide tetiklendiğini,
+- hangi Item'ların etkilenebileceğini,
+- hangi yerleşim/collision/boundary kurallarına uyacağını,
+- ilişki kalktığında veya Item silindiğinde ne olacağını
+
+açıkça tanımlamalıdır.
+
+Relationship-derived davranış ile relationship-derived BOM aynı ilişki bilgisini tüketebilir; ancak behavior sonucu ile BOM sonucu ayrı sorumluluklar olarak kalır.
 
 ---
 
@@ -165,6 +236,15 @@ Her nihai BOM kalemi en az şunları taşır:
 Örnek birimler: `adet`, `m2`, `mt`, `paket`.
 
 Miktar çıplak sayı olarak yorumlanmaz; birim tahmin edilmez.
+
+Örnekler:
+
+- TV: `2 adet`
+- Baskı: `12.4 m2`
+- Profil: `37.5 mt`
+- Halı: alan + rulo enine göre gereken lineer metre
+- Parke: alan + ürün geometrisine göre adet/paket
+- Karolaj: köşe + kenar + orta eleman + sunta adetleri
 
 ---
 
@@ -209,7 +289,11 @@ Yeni bir fiziksel ürün, zemin, malzeme, kombinasyon veya üretilebilir öğe e
 11. Nihai BOM kalemlerinin birimleri nelerdir?
 12. Render/asset temsili nedir; renderer ezmesi kanonik Item özellik sahipliğinden nasıl ayrılır?
 13. BOM, özellik tüketimi, davranış, state, kalıcılık ve tarayıcı akışı için hangi regresyon testleri gerekir?
-14. Çift ürün/varsayılan tek kaynak kalmış mı?
+14. Item'ın kanonik oluşturma mekanizması nedir ve hangi girişleri çözer?
+15. Hangi state/ezme alanları kalıcı, hangileri geçicidir; kaydet/yükle ve migration nasıl çalışır?
+16. Item'ın parent/child, komşu, bağlantı, host, köşe veya başka uzamsal ilişki kuralı var mı; kanonik çözümleyicisi nedir?
+17. İlişki değişince reflow veya ilişkiden türeyen başka davranış oluşuyor mu; tetiklenme ve etki kuralları nelerdir?
+18. Çift ürün/varsayılan tek kaynak kalmış mı?
 
 Bu sorular cevaplanmadan yeni Item işi tamamlanmış sayılamaz.
 
@@ -233,8 +317,12 @@ Proje
   -> Item'lar
       -> kanonik itemKey
       -> kanonik ürün/varsayılan özellikler
+      -> oluşturma (kanonik varsayılan + proje ezmesi)
       -> type / davranış ailesi / yetenekler
       -> proje örneği state + ezmeler
+      -> kalıcılık
+      -> ilişkiler
+          -> ilişkiden türeyen davranış / reflow
       -> BOM çözümleyici
           -> alt Item'lar / bileşim
               -> nihai BOM kalemleri (itemKey + quantity + unit)
