@@ -1,15 +1,12 @@
-# Fair Stand — Ertelenmiş kararlar ve backlog
+# Fair Stand — Ertelenmiş kararlar
 
-> **Ertelenmiş Item / zarf / davranış kararlarının kanonik listesi.** Audit F-* burada tutulmaz → `audit/FINDINGS.md`.
-> Özet harita: `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md`.
-
-Henüz çözülmemiş veya bilinçli ertelenmiş **Item property**, **stand zarfı / DB**, **runtime davranış** ve **pose/tavan–şerit** işlerinin tek takip listesi.
+> **Ertelenmiş Item / zarf / davranış kararlarının gerekçesi, kuralı ve yasakları.** İş listesi, sıra ve durum yalnız `kyrox-platform/projects/fair-stand/ROADMAP.md` içindedir; audit F-* → `audit/FINDINGS.md`.
 
 - Kaynak: ürün kararı + `DATABASE.md`, `ITEMS.md`, `SCENE_POSE.md`, mevcut kod. Tahmin yazılmaz.
-- Yeni madde buraya eklenir; gizli paralel liste yok.
+- Yeni ertelenmiş karar buraya madde olarak, işi ROADMAP'e satır olarak eklenir.
 - **Yasak (genel):** Bu dosyada karar değişmeden veya kaldırma sırası dışında ilgili alan/tablo/kolon silinmez, taşınmaz, yeniden adlandırılmaz.
 - **Implementasyon izni:** Bu dosya + ilgili konu belgesi (`SCENE_POSE.md` pose/snap hedefi); tek başına yeterli değildir.
-- **Kapalı maddeler** tekrar listelenmez — yalnız `REFACTOR.md` + § F özeti.
+- **Kapalı maddeler** tekrar açılmaz — `REFACTOR.md` + § F özeti.
 
 **İlgili belgeler:** `FAIR_STAND_DB_KULLANIM_KILAVUZU.md` (CRM kullanım), `SCENE_POSE.md` (duruş/snap hedef), `DATABASE.md` (tablo envanteri), `ITEMS.md` (onaylı şema + runtime field kuyruğu), `STAND_DIMENSIONS.md` (zarf), `ITEM_FIRST_ROADMAP.md` (item-first checklist), `README.md` (dizin).
 
@@ -281,20 +278,3 @@ Aşağıdakiler **onaylı şemada değil**; karar verilince B veya C’ye madde 
 | `nominalModuleWidthCm` / inner-corner recipe | `REFACTOR.md` 2026-09-20 |
 | `composition.moduleType` / `composition.options.shape` / DB `composition_module_type` | Migration `0014`; dump + fixture temiz; bootstrap yalnız `mode` + `items` |
 | SCENE_POSE pose adım 7 (ortak kutu primitive) | Örnek; sistemde yok, atlandı |
-
----
-
-## G. Hızlı çapraz tablo (çakışma kontrolü)
-
-| Konu | PENDING | SCENE_POSE | DATABASE / ITEMS |
-|---|---|---|---|
-| strip occupancy | B.4–B.5 KALDIRILACAK, § A.4 | Hedefte yok | Tablo + 8 satır |
-| mount vs default Z | B.3 ARAŞTIRILACAK | defaultZ drop hedefi | İki kolon |
-| wallGap vs panel boşluğu | B.2 koru, B.6 KAPANDI | Standart boşluk = panel_rail | wall_gap_cm ayrı |
-| TYPE_BEHAVIORS | C.3 KAPANDI | — | `FAIR_STAND_DB_KULLANIM_KILAVUZU.md` + `TYPE_BEHAVIORS_DB_ROADMAP.md` |
-| Contract allowlist | C.5 KAPANDI | — | tip’ten türet (`moduleContracts.js`) |
-| Item snap (Profile host) | B.9 UYGULAMA | snap face/edge kuralda | rule FK; legacy `snap_target_item_type` / `snap_anchor` nullable |
-| BOM ↔ leaf fit uyarı | B.7 KARAR (admin kod yok; sahne clamp kalktı) | zarf item’da | recipe `quantity` + leaf dims |
-| Panel ray boşluğu | B.6 KAPANDI | — | `panel_rail_height_cm` |
-| Kaldırma sırası | § A canonical | Hedef metin | strip kolonları § C.1 |
-

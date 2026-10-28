@@ -4,7 +4,7 @@
 >
 > - Açık bulgu: yalnız `audit/FINDINGS.md`
 > - Ertelenmiş karar: yalnız `docs/refactor/PENDING_ITEM_DECISIONS.md`
-> - Özet harita: `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md`
+> - İş listesi: `kyrox-platform/projects/fair-stand/ROADMAP.md`
 > - Mutabakat: `audit/SISTEM_MUTABAKAT_RAPORU.md`
 >
 > A00–A24 maddeleri tarihî denetim şablonudur. Resume bloğundaki A03.01 / F-001…009 OPEN / IN_PROGRESS **bayat**; A00–A24 incelendi (`audit/evidence/A24_FINAL_CLOSURE.md`). Bu dosyadaki OPEN/IN_PROGRESS satırlarını güncel backlog sanma.

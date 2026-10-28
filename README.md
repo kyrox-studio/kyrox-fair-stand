@@ -233,7 +233,7 @@ Bir feature birden fazla modülü/domaini koordine ediyorsa `src/featureContract
 
 Dağınık not / bayat sayaç karışıklığını önlemek için:
 
-1. **Özet harita** — `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md` (iş kuyruğu değil; harita)
+1. **İş listesi (tek)** — `kyrox-platform/projects/fair-stand/ROADMAP.md`
 2. **Açık audit bulguları** — `audit/FINDINGS.md` (F-* aç/kapa yalnız burada)
 3. **Ertelenmiş kararlar** — `docs/refactor/PENDING_ITEM_DECISIONS.md`
 

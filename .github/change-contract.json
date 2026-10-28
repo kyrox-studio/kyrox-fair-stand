@@ -1,18 +1,17 @@
 {
   "schemaVersion": 2,
-  "id": "item-belge-bayat-temizlik",
+  "id": "tek-is-listesi",
   "kind": "refactor",
-  "summary": "docs/items belgelerindeki 37 'Bayat (2026-10-27 denetimi)' notu kaldırıldı; notların işaret ettiği satırlar güncel koda göre yeniden yazıldı (iç köşe panel değişimi src/relationshipBom.js applyCornerPanelSwap, kapı iç köşe dönüşümü cornerSide, tip davranışı fair_stand_item_type, takım BOM'u resolveItemBom). Konnektör tanımları (connector_start/single/double/corner) yeni scripts/gen-item-definitions.py ile seed ve kaynak koddan üretildi. Tarihî 2026-09-15 ITEM_CAPABILITY_INVENTORY.md platform arşivine taşındı; ITEM_CONTRACT_CHECKLIST'ten arşivlenmiş current-system bölümü çıkarıldı; docs/refactor/ITEMS.md kayıt bölümü bootstrap gerçeğine göre düzeltildi. test/itemDocsRuntimeAlignment.test.js kaldırılmış adları ve 'Bayat (' notunu definitions ve contract belgelerinde yasaklar. Uygulama davranışı değişmez.",
+  "summary": "Açık iş listesi platformdaki projects/fair-stand/ROADMAP.md'de tek yerde toplandı. AGENTS.md, README.md, SYSTEM_AUDIT_CHECKLIST.md ve docs/refactor/README.md silinen OPEN_WORK_INVENTORY.md yerine ROADMAP'i gösterir. PENDING_ITEM_DECISIONS.md kararların gerekçesini ve yasaklarını tutar; durum/sıra ve § G çapraz tablosu kaldırıldı. ITEM_FIRST_ROADMAP.md'nin açık maddeleri ROADMAP'e taşındı. RELEASE_HARDENING_ROADMAP.md platform arşivine taşındı; docs/refactor/PERFORMANCE_ROADMAP.md yönlendirmesi silindi. Uygulama davranışı değişmez.",
   "owners": [
-    "docs/items/definitions",
-    "scripts/gen-item-definitions.py"
+    "AGENTS.md",
+    "docs/refactor"
   ],
   "sourceOfTruth": [
-    "test/fixtures/itemCatalogSeed.json",
-    "backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py",
+    "src/main.js",
+    "src/modulePlacement.js",
     "src/relationshipBom.js",
-    "src/itemBom.js",
-    "src/items.js"
+    "backend/app/modules/fair_stand/api/routes.py"
   ],
   "impact": {
     "catalog": "not-applicable",
@@ -37,125 +36,131 @@
     "mode": "full-system",
     "affectedFiles": [],
     "affectedTests": [
-      "test/itemDocsRuntimeAlignment.test.js"
+      "test/roadmapProductionSourceOfTruth.test.js",
+      "test/systemChangeGate.test.js",
+      "test/itemDocsRuntimeAlignment.test.js",
+      "test/developerEntrypointDocs.test.js"
     ],
     "affectedDocs": [],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": []
     },
-    "notes": "Her bayat notun işaret ettiği ad için src, test, backend ve belgeler tarandı; adlar kodda yok (git grep sıfır). Yeniden yazılan satırlar kaynak koda göre doğrulandı."
+    "notes": "Taşınan her açık madde koda göre doğrulandı (git grep): eyeCount, strip_occupancy, TODO(DB), frame_width_cm, dblclick, variant_families, foam ışık mesajı; kapanmış bulunanlar (syncWallLengthFromSetup, lisans F-043, referanssız asset yok) listeye alınmadı."
   },
   "tests": {
     "targeted": [
-      "test/itemDocsRuntimeAlignment.test.js"
+      "test/roadmapProductionSourceOfTruth.test.js",
+      "test/systemChangeGate.test.js",
+      "test/itemDocsRuntimeAlignment.test.js",
+      "test/developerEntrypointDocs.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": false,
       "targeted": [],
-      "reason": "Yalnız belgeler, belge testi ve belge üretici betik değişir; tarayıcıda yüklenen kod değişmez."
+      "reason": "Yalnız belgeler değişir; tarayıcıda yüklenen kod değişmez."
     }
   },
   "risk": {
     "level": "low",
-    "notes": "Uygulama kodu değişmez. Belge testi sıkılaştı; yeni token'lar definitions ve contract belgelerinde sıfır."
+    "notes": "Uygulama kodu ve testler değişmez."
   },
   "migration": {
     "required": false,
     "notes": "Veritabanı şeması ve Alembic head değişmez."
   },
-  "rollback": "Bu dalın commit'ini geri al: silinen fonksiyonlar ve betikler geri gelir.",
+  "rollback": "Bu dalın commit'ini geri al: belgeler ve silinen dosyalar geri gelir.",
   "security": {
     "controls": {
       "SEC-01": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-02": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-03": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-04": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-05": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-06": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-07": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-08": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-09": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-10": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-11": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-12": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-13": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-14": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-15": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-16": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-17": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-18": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-19": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-20": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-21": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-22": {
         "status": "na",
-        "reason": "Yalnız belge, belge testi ve yerel belge üretici betik değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       }
     }
   }
