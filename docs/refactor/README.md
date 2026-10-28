@@ -2,7 +2,7 @@
 
 Kod doğrulanmış canlı sözleşmeler. Audit dökümü / item tanımları (`docs/items/**`, ~500 md) buraya karışmaz; tarihsel snapshot — **silinmez / regenerate edilmeden güncellenmez** (kod doğrulaması gerekir). Canlı kaynak: bu dizin + CRM kılavuzu.
 
-**Açık iş okuma sırası:** özet harita `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md` → audit `../../audit/FINDINGS.md` → bu dizinde [`PENDING_ITEM_DECISIONS.md`](PENDING_ITEM_DECISIONS.md). Checklist / FULL_SWEEP bayat sayaçtır.
+**Açık iş okuma sırası:** iş listesi `kyrox-platform/projects/fair-stand/ROADMAP.md` → audit `../../audit/FINDINGS.md` → bu dizinde [`PENDING_ITEM_DECISIONS.md`](PENDING_ITEM_DECISIONS.md). Checklist / FULL_SWEEP bayat sayaçtır.
 
 | Belge | Rol |
 |---|---|

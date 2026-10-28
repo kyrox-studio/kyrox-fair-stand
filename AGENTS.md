@@ -29,9 +29,9 @@ Her değişiklikten önce işin kapsamına göre aşağıdaki canonical belgeler
 
 “Ne açık / ne ertelendi?” sorusunda:
 
-1. Özet → `kyrox-platform/projects/fair-stand/OPEN_WORK_INVENTORY.md`
+1. İş listesi (tek) → `kyrox-platform/projects/fair-stand/ROADMAP.md`
 2. Audit F-* → `audit/FINDINGS.md`
-3. Ertelenmiş karar → `docs/refactor/PENDING_ITEM_DECISIONS.md`
+3. Ertelenmiş kararın gerekçesi ve yasakları → `docs/refactor/PENDING_ITEM_DECISIONS.md`
 
 `SYSTEM_AUDIT_CHECKLIST.md` ve `audit/FULL_SWEEP_STATE.md` tarihîdir; oturum oradan başlamaz, OPEN sayaçları backlog değildir.
 
