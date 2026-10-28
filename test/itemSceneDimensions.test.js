@@ -2,13 +2,11 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  listCatalogItems,
   getCatalogItem,
 } from '../src/catalog.js';
 import {
   createProfileModuleState,
   createUprightModuleState,
-  normalizeModuleItemState,
 } from '../src/designState.js';
 import {
   clampHeightToStandCeilingCm,
@@ -16,7 +14,6 @@ import {
   getItem,
   listRegisteredItems,
   requireModuleSceneBoxCm,
-  resolveItemKey,
   resolveModuleSceneBoxCm,
   resolveSceneDimensions,
   SCENE_DIMENSION_FIELDS,

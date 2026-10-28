@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
-import { colorIntToCss, readItemBoxCm } from './itemAssembly.js';
+import { colorIntToCss } from './itemAssembly.js';
 import {
   ASSEMBLY_CORNERS,
   localCornerOffsetMeters,
@@ -1125,24 +1125,3 @@ export function envelopeFromForm({
   };
 }
 
-export function partFromChildRecord(child, instanceIndex, pose = {}) {
-  const box = readItemBoxCm({
-    dimensions: child?.dimensions,
-  });
-  return {
-    childItemKey: child.itemKey,
-    instanceIndex,
-    widthCm: box.widthCm,
-    depthCm: box.depthCm,
-    heightCm: box.heightCm,
-    colorCss: Number.isInteger(child?.defaultColor)
-      ? colorIntToCss(child.defaultColor)
-      : '#9ca3af',
-    xCm: Number.isFinite(Number(pose.xCm)) ? Number(pose.xCm) : 0,
-    yCm: Number.isFinite(Number(pose.yCm)) ? Number(pose.yCm) : 0,
-    zCm: Number.isFinite(Number(pose.zCm)) ? Number(pose.zCm) : instanceIndex * box.heightCm,
-    rotationXDeg: Number.isFinite(Number(pose.rotationXDeg)) ? Number(pose.rotationXDeg) : 0,
-    rotationYDeg: Number.isFinite(Number(pose.rotationYDeg)) ? Number(pose.rotationYDeg) : 0,
-    rotationZDeg: Number.isFinite(Number(pose.rotationZDeg)) ? Number(pose.rotationZDeg) : 0,
-  };
-}

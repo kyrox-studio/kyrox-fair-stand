@@ -1310,15 +1310,6 @@ export function applyColorOverride(surfaceState, color) {
  * Otomatik duvar yeniden oluşturulurken aynı sıradaki aynı genişlikteki
  * modülleri tekrar kullanır. Böylece mevcut renk/görsel state'i korunur.
  */
-export function reconcileWallModules(previousModules, widthsCm) {
-  return widthsCm.map((widthCm, index) => {
-    const previous = previousModules[index];
-    if (previous?.type === 'flat-panel' && previous.widthCm === widthCm) {
-      return previous;
-    }
-    return createFlatPanelModuleState(widthCm);
-  });
-}
 
 export function totalWallWidthCm(modules) {
   return modules.reduce(

@@ -3,15 +3,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   listCatalogGroups,
-  listCatalogItems,
   getCatalogItem,
 } from '../src/catalog.js';
 import {
   createModuleStateFromDescriptor,
-  MODULE_STATE_TYPES,
   normalizeModuleItemState,
 } from '../src/designState.js';
-import { getItem, resolveItemKey, resolveSceneDimensions } from '../src/items.js';
+import { getItem, resolveItemKey } from '../src/items.js';
 import { countsTowardWallCapacity, usesPanelSeamOverlaySnap } from '../src/moduleBehavior.js';
 import { resolveModuleContract } from '../src/moduleContracts.js';
 import {

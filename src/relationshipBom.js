@@ -638,11 +638,6 @@ function foldRelationshipJoints(pairRecords, interiorHits) {
 /**
  * Collinear end-to-end joints between eligible modules. Order-independent.
  */
-export function detectEndToEndJoints(modules = []) {
-  return Object.freeze(
-    detectRelationshipJoints(modules).filter((joint) => joint.kind === 'end-to-end'),
-  );
-}
 
 function lineKey(itemKey, unit) {
   return `${itemKey}\u0000${unit}`;

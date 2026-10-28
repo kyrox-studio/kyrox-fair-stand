@@ -63,16 +63,6 @@ export function karolajTileQuantityFromCells(cellCount) {
 }
 
 /** Explicit rectangles share one 100×100 tile pool. 50×50 is not a BOM unit. */
-export function karolajTileQuantityForRectangles(rectangles) {
-  if (!Array.isArray(rectangles) || !rectangles.length) return 0;
-  let cells = 0;
-  for (const rectangle of rectangles) {
-    const count = floorCellCount(rectangle?.widthCm, rectangle?.depthCm);
-    if (count == null) return null;
-    cells += count;
-  }
-  return karolajTileQuantityFromCells(cells);
-}
 
 export function defaultOverrideItemKey(baseKey) {
   const preferred = baseKey === 'parke-acik' ? 'hali' : 'parke-acik';

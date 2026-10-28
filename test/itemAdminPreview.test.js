@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { envelopeFromForm, partFromChildRecord } from '../src/itemAdminPreview.js';
+import { envelopeFromForm } from '../src/itemAdminPreview.js';
 import { readFileSync } from 'node:fs';
 
 test('envelopeFromForm uses dimensions only (ignores scene override args if passed)', () => {
@@ -29,21 +29,6 @@ test('envelopeFromForm returns null when dimensions incomplete', () => {
   );
 });
 
-test('partFromChildRecord ignores child sceneDimensions', () => {
-  const part = partFromChildRecord(
-    {
-      itemKey: 'panel_100',
-      defaultColor: 0x00ff00,
-      dimensions: { widthCm: 100, depthCm: 10, heightCm: 50 },
-      sceneDimensions: { widthCm: 200, depthCm: 8, heightCm: 350 },
-    },
-    0,
-  );
-  assert.equal(part.widthCm, 100);
-  assert.equal(part.depthCm, 10);
-  assert.equal(part.heightCm, 50);
-  assert.equal(part.colorCss, '#00ff00');
-});
 
 test('admin assembly preview does not draw parent wire ghost envelope', () => {
   const source = readFileSync(new URL('../src/itemAdminPreview.js', import.meta.url), 'utf8');
