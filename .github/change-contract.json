@@ -1,17 +1,14 @@
 {
   "schemaVersion": 2,
-  "id": "tek-is-listesi",
+  "id": "kullanilmayan-betikler",
   "kind": "refactor",
-  "summary": "Açık iş listesi platformdaki projects/fair-stand/ROADMAP.md'de tek yerde toplandı. AGENTS.md, README.md, SYSTEM_AUDIT_CHECKLIST.md ve docs/refactor/README.md silinen OPEN_WORK_INVENTORY.md yerine ROADMAP'i gösterir. PENDING_ITEM_DECISIONS.md kararların gerekçesini ve yasaklarını tutar; durum/sıra ve § G çapraz tablosu kaldırıldı. ITEM_FIRST_ROADMAP.md'nin açık maddeleri ROADMAP'e taşındı. RELEASE_HARDENING_ROADMAP.md platform arşivine taşındı; docs/refactor/PERFORMANCE_ROADMAP.md yönlendirmesi silindi. Uygulama davranışı değişmez.",
+  "summary": "Hiçbir koddan, CI'dan, npm betiğinden veya sunucu betiğinden çağrılmayan üç betik silindi: backend/scripts/copy_from_fair_crm.py ve scripts/sync_catalog_seed_dimensions_from_dump.py (tek seferlik veri taşıma), scripts/sync-item-docs-whd-from-seed.py (Item belgeleri scripts/gen-item-definitions.py ile üretilir). Uygulama davranışı değişmez.",
   "owners": [
-    "AGENTS.md",
-    "docs/refactor"
+    "scripts"
   ],
   "sourceOfTruth": [
-    "src/main.js",
-    "src/modulePlacement.js",
-    "src/relationshipBom.js",
-    "backend/app/modules/fair_stand/api/routes.py"
+    "package.json",
+    ".github/workflows/ci.yml"
   ],
   "impact": {
     "catalog": "not-applicable",
@@ -29,38 +26,34 @@
     "performance": "not-applicable",
     "accessibility": "not-applicable",
     "architecture": "affected",
-    "security": "not-applicable",
+    "security": "affected",
     "tests": "affected"
   },
   "impactAnalysis": {
     "mode": "full-system",
     "affectedFiles": [],
     "affectedTests": [
-      "test/roadmapProductionSourceOfTruth.test.js",
-      "test/systemChangeGate.test.js",
-      "test/itemDocsRuntimeAlignment.test.js",
-      "test/developerEntrypointDocs.test.js"
+      "test/developerEntrypointDocs.test.js",
+      "test/systemChangeGate.test.js"
     ],
     "affectedDocs": [],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": []
     },
-    "notes": "Taşınan her açık madde koda göre doğrulandı (git grep): eyeCount, strip_occupancy, TODO(DB), frame_width_cm, dblclick, variant_families, foam ışık mesajı; kapanmış bulunanlar (syncWallLengthFromSetup, lisans F-043, referanssız asset yok) listeye alınmadı."
+    "notes": "Her dosyanın adı altı depoda (Core, CRM, Stand, web, brand, platform) arandı; kod, CI, package.json ve sunucu betiklerinde atıf yok."
   },
   "tests": {
     "targeted": [
-      "test/roadmapProductionSourceOfTruth.test.js",
-      "test/systemChangeGate.test.js",
-      "test/itemDocsRuntimeAlignment.test.js",
-      "test/developerEntrypointDocs.test.js"
+      "test/developerEntrypointDocs.test.js",
+      "test/systemChangeGate.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": false,
       "targeted": [],
-      "reason": "Yalnız belgeler değişir; tarayıcıda yüklenen kod değişmez."
+      "reason": "Yalnız çağrılmayan betikler silinir; tarayıcıda yüklenen kod değişmez."
     }
   },
   "risk": {
@@ -71,96 +64,96 @@
     "required": false,
     "notes": "Veritabanı şeması ve Alembic head değişmez."
   },
-  "rollback": "Bu dalın commit'ini geri al: belgeler ve silinen dosyalar geri gelir.",
+  "rollback": "Bu dalın commit'ini geri al: silinen betikler geri gelir.",
   "security": {
     "controls": {
       "SEC-01": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-02": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-03": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-04": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-05": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-06": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-07": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-08": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-09": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-10": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-11": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-12": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-13": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-14": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-15": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-16": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-17": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-18": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-19": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-20": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-21": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       },
       "SEC-22": {
         "status": "na",
-        "reason": "Yalnız belgeler değişir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
+        "reason": "Yalnız çağrılmayan betikler silinir; route, veri, sır, bağımlılık ve çalışma zamanı davranışı değişmez."
       }
     }
   }
