@@ -224,7 +224,7 @@ test('guarded paths cover runtime, UI, assets, unit tests, E2E, governance docs,
   assert.equal(isGuardedChangeFile('backend/tests/test_health.py'), true);
   assert.equal(isGuardedChangeFile('index.html'), true);
   assert.equal(isGuardedChangeFile('public/models/example.glb'), true);
-  assert.equal(isGuardedChangeFile('scripts/install-server.sh'), true);
+  assert.equal(isGuardedChangeFile('scripts/verify-change-contract.mjs'), true);
   assert.equal(isGuardedChangeFile('test/systemChangeGate.test.js'), true);
   assert.equal(isGuardedChangeFile('tests/legacy-regression.test.js'), true);
   assert.equal(isGuardedChangeFile('e2e/smoke.spec.mjs'), true);
