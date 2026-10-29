@@ -9,8 +9,11 @@ test('projector and shelf spots are render-only; stand-top spot has its own stag
   assert.match(scene, /const STAGE_LIGHT_LAYER = 2;/);
   assert.equal((scene.match(/ spot\.layers\.set\(RENDER_ONLY_LIGHT_LAYER\);/g) ?? []).length, 2);
   assert.equal((scene.match(/standTopSpot\.layers\.set\(STAGE_LIGHT_LAYER\);/g) ?? []).length, 1);
+  // Sahne ışığının dört dolgu spotu da yalnız sahne katmanında yanar.
+  assert.match(scene, /const stageFillSpots = \[0, 1, 2, 3\]\.map\(/);
+  assert.equal((scene.match(/ spot\.layers\.set\(STAGE_LIGHT_LAYER\);/g) ?? []).length, 1);
   // Başka gerçek spot ışık yok: her SpotLight editör kamerasının varsayılan katmanı dışındadır.
-  assert.equal((scene.match(/new THREE\.SpotLight\(/g) ?? []).length, 3);
+  assert.equal((scene.match(/new THREE\.SpotLight\(/g) ?? []).length, 4);
   // Sahne Işığı önizlemesi yalnız tepe spotu katmanını açar; projektör/raf altı katmanı editörde kapalı.
   const apply = scene.slice(scene.indexOf('function applyStageLighting('), scene.indexOf('function setStageLightPreview('));
   assert.match(apply, /viewCamera\.layers\.enable\(STAGE_LIGHT_LAYER\)/);

@@ -377,3 +377,8 @@ test('kartta çakışan 45 dereceden sonraki basış 90 dereceye ilerler', async
   expect((await fridges(page))[0].placement.rotationZDeg).toBe(90);
   await panel.screenshot({ path: testInfo.outputPath('compact-rotation-card.png') });
 });
+
+// Yazılımsal Chromium çizimi CI’da çok adımlı kayıt/taşıma senaryolarını yavaşlatır.
+test.beforeEach(() => {
+  if (process.env.CI) test.slow();
+});
