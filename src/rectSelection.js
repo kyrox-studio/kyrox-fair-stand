@@ -263,17 +263,3 @@ export function createRectSelection(items, anchorPoint, targetPoint) {
   };
 }
 
-export function describeRectSelection(items) {
-  if (!Array.isArray(items) || !items.length) {
-    return { columnCount: 0, rowCount: 0, panelCount: 0 };
-  }
-
-  const moduleIndices = items.map((item) => item.moduleIndex);
-  const stripIndices = items.map((item) => item.stripIndex);
-
-  return {
-    columnCount: Math.max(...moduleIndices) - Math.min(...moduleIndices) + 1,
-    rowCount: Math.max(...stripIndices) - Math.min(...stripIndices) + 1,
-    panelCount: items.length,
-  };
-}

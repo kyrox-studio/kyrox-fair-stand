@@ -3,7 +3,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   getCatalogItem,
-  listCatalogItems,
 } from '../src/catalog.js';
 import {
   createDoorModuleState,
@@ -19,7 +18,6 @@ import {
   getRecipeItemKey,
 } from '../src/moduleRecipes.js';
 import {
-  getExpandedModuleRecipe,
   getModuleRecipe,
 } from './recipeParentItemKey.js';
 import { loadCanonicalItemCatalog } from './registerCanonicalItemCatalog.mjs';

@@ -1,4 +1,4 @@
-from sqlalchemy import inspect, select
+from sqlalchemy import select
 
 from app.modules.fair_stand.application.cycle_validation import CyclicItemCompositionError, assert_acyclic_components
 from app.modules.fair_stand.infrastructure.catalog_seed_data import CATALOG_SEED

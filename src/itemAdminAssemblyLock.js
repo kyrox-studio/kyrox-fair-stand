@@ -28,16 +28,6 @@ export function captureRelativePose(followerPose, hostPose) {
 }
 
 /** Host pose + relative → follower absolute pose. */
-export function applyRelativePose(hostPose, relative) {
-  return {
-    xCm: Number(hostPose.xCm) + Number(relative.xCm),
-    yCm: Number(hostPose.yCm) + Number(relative.yCm),
-    zCm: Number(hostPose.zCm) + Number(relative.zCm),
-    rotationXDeg: Number(hostPose.rotationXDeg) + Number(relative.rotationXDeg),
-    rotationYDeg: Number(hostPose.rotationYDeg) + Number(relative.rotationYDeg),
-    rotationZDeg: Number(hostPose.rotationZDeg) + Number(relative.rotationZDeg),
-  };
-}
 
 /** Sürüklenen parçanın delta’sı (grup hareketi). */
 export function poseDelta(fromPose, toPose) {
@@ -155,16 +145,3 @@ export function lockGroupFromParts(parts) {
 }
 
 /** Kilit üyelerine lockGroupId bas; diğerlerinde null. Tek aktif grup = 1. */
-export function stampLockGroupIdOnParts(parts, lock, groupId = 1) {
-  const memberKeys = new Set(
-    (lock?.members || []).map((m) => assemblyPartKey(m.childItemKey, m.instanceIndex)),
-  );
-  const id = Number.isInteger(Number(groupId)) && Number(groupId) >= 1 ? Number(groupId) : 1;
-  return (parts || []).map((part) => {
-    const key = assemblyPartKey(part.childItemKey, part.instanceIndex);
-    return {
-      ...part,
-      lockGroupId: memberKeys.has(key) ? id : null,
-    };
-  });
-}

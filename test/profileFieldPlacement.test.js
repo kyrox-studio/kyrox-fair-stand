@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 
 import {
   getCatalogItem,
-  listCatalogItems,
   listCatalogGroups,
 } from '../src/catalog.js';
 import { createModuleStateFromDescriptor, normalizeModuleItemState } from '../src/designState.js';

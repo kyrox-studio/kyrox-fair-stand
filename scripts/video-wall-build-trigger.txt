@@ -1,1 +1,0 @@
-Video wall 2x2 single-image renderer verification trigger.
