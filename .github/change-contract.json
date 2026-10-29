@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "zemin-dokulari-parke-referans",
   "kind": "feature",
-  "summary": "Halı ve parkeler CC0 dokularla çizilir (public/textures/floor; SOURCES.md), doku ortalaması ürün rengine eşitlenir. Parkede her lamel/plaka dokunun farklı yerinden desen ve farklı ton alır (scene3d.js floor plank shader). Beton parke kodla üretilmiş düşük kontrastlı beton dokusu kullanır; salon zemini değişmez. 0089_parquet_reference parke renklerini referans ürünlere (FC086 #c9cac5, FC066 #ad8e76, FT007 #6b6762) ve beton plaka ölçüsünü 120,6 × 40,2 cm yapar; 0090_carpet_anthracite halı varsayılan rengini #383e42 yapar. main.js zemin türü değişince yeni zemini katalog varsayılan rengiyle açar. scene3d.js OrbitControls 'change' olayında çizim ister: tekerlek zoom'u görüntüyü hemen günceller. Sahne ışığı stand ölçüsüne göre ölçeklenen tepe ve dört dolgu spotudur.",
+  "summary": "Halı ve parkeler CC0 dokularla çizilir (public/textures/floor; SOURCES.md), doku ortalaması ürün rengine eşitlenir. Parkede her lamel/plaka dokunun farklı yerinden desen ve farklı ton alır (scene3d.js floor plank shader). Beton parke kodla üretilmiş düşük kontrastlı beton dokusu kullanır; salon zemini değişmez. 0089_parquet_reference parke renklerini referans ürünlere (FC086 #c9cac5, FC066 #ad8e76, FT007 #6b6762) ve beton plaka ölçüsünü 120,6 × 40,2 cm yapar; 0090_carpet_anthracite halı varsayılan rengini #383e42 yapar. main.js zemin türü değişince yeni zemini katalog varsayılan rengiyle açar. scene3d.js OrbitControls 'change' olayında çizim ister: tekerlek zoom'u görüntüyü hemen günceller. Sahne ışığı stand ölçüsüne göre ölçeklenen tepe ve dört dolgu spotudur. CI dokunmatik testleri ürünün 350 ms çift dokunma ve 550 ms uzun basma eşiklerine göre kontrollü saat kullanır; çok adımlı E2E senaryoları CI yazılımsal çizimi için ek süre taşır. Davranış beklentileri korunur.",
   "owners": [
     "src/scene3d.js",
     "src/main.js",
@@ -338,7 +338,13 @@
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/floor-items-contract.spec.mjs"
+        "e2e/floor-items-contract.spec.mjs",
+        "e2e/double-click-select.spec.mjs",
+        "e2e/pinch-zoom-no-drag.spec.mjs",
+        "e2e/grouped-image-direction.spec.mjs",
+        "e2e/selection-toolbar.spec.mjs",
+        "e2e/shelf-rows-flow.spec.mjs",
+        "e2e/module-group.spec.mjs"
       ],
       "reason": "Zemin türü/rengi ve zemin malzemesi tarayıcıda değişir; zemin kontrat E2E'si seçim, renk ve kalıcılığı doğrular."
     }

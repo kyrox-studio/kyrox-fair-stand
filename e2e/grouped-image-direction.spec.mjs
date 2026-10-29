@@ -368,3 +368,8 @@ for (const kind of ['panel', 'legacy', 'lightbox', 'mesh']) {
     expect(errors).toEqual([]);
   });
 }
+
+// Yazılımsal Chromium çizimi CI’da çok adımlı kayıt/taşıma senaryolarını yavaşlatır.
+test.beforeEach(() => {
+  if (process.env.CI) test.slow();
+});

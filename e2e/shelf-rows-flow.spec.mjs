@@ -353,3 +353,8 @@ test('tablet boyutunda Raf kartı görünür, duvara takılır ve sıra panelden
   expect(shelf.widthCm).toBe(150);
   expect(errors).toEqual([]);
 });
+
+// Yazılımsal Chromium çizimi CI’da çok adımlı kayıt/taşıma senaryolarını yavaşlatır.
+test.beforeEach(() => {
+  if (process.env.CI) test.slow();
+});

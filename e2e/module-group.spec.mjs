@@ -129,7 +129,7 @@ function selectionFrames(page) {
 }
 
 test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, sil, çöz', async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(process.env.CI ? 240_000 : 120_000);
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await exposeScene(page);

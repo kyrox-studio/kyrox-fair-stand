@@ -71,6 +71,9 @@ async function cameraDistance(page) {
 
 // Gerçek dokunmatik giriş: önce yalnız ilk parmak, sonra iki parmak açılarak (yakınlaştırma).
 async function pinch(page, first, second, { firstWanders = false } = {}) {
+  // Komut gecikmesi 550 ms uzun basma üretmesin; hareketin süresini açıkça ilerlet.
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
   const cdp = await page.context().newCDPSession(page);
   const send = (type, touchPoints) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints });
   await send('touchStart', [{ x: first.x, y: first.y, id: 1 }]);
@@ -78,7 +81,7 @@ async function pinch(page, first, second, { firstWanders = false } = {}) {
     // İlk parmak öğeyi biraz sürükler (sürükleme başlar).
     for (let step = 1; step <= 4; step += 1) {
       await send('touchMove', [{ x: first.x + step * 6, y: first.y, id: 1 }]);
-      await page.waitForTimeout(16);
+      await page.clock.runFor(16);
     }
   }
   const a = { x: first.x + (firstWanders ? 24 : 0), y: first.y };
@@ -91,10 +94,11 @@ async function pinch(page, first, second, { firstWanders = false } = {}) {
       { x: a.x + sx * step * 12, y: a.y + sy * step * 6, id: 1 },
       { x: second.x - sx * step * 12, y: second.y - sy * step * 6, id: 2 },
     ]);
-    await page.waitForTimeout(16);
+    await page.clock.runFor(16);
   }
   await send('touchEnd', []);
   await cdp.detach();
+  await page.clock.resume();
   await page.waitForTimeout(300);
 }
 

@@ -172,6 +172,9 @@ test('tablet: double tap selects the whole module', async ({ page }) => {
   // boşluk üretebiliyor; bu, ürünün 350 ms çift dokunma sınırının dışında kalır.
   // Aynı Chromium oturumundan doğal touch olayları gönder: seçim beklentisi ve
   // ürünün süre sınırı değişmez, yalnız test gerçek bir çift dokunma oluşturur.
+  // CI çizim süresi ürünün 350 ms sınırını tüketmesin; doğal girişler aynı kalır.
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
   const touch = await page.context().newCDPSession(page);
   try {
     for (let i = 0; i < 2; i += 1) {
@@ -182,6 +185,7 @@ test('tablet: double tap selects the whole module', async ({ page }) => {
     }
   } finally {
     await touch.detach();
+    await page.clock.resume();
   }
   await expect(toolbar(page).getByRole('button', { name: 'Çoklu modül' })).toBeVisible();
   expect((await surfaces(page)).filter((s) => s.selected)).toEqual([]);
