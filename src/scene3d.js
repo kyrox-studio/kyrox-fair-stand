@@ -9153,10 +9153,6 @@ function createLedFloodlightModule(moduleState, moduleIndex) {
     });
   }
 
-  function roundedRectShape(width, height, radius) {
-    return floodlightRoundedRectShape(width, height, radius);
-  }
-
   addFloodlightMesh(group, assets.mount, assets.bodyMaterial, [0, 0.014, 0.012]);
 
   const bracket = new THREE.Group();

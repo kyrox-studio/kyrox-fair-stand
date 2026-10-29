@@ -59,7 +59,7 @@ test('panel backing remains a panel-only render effect', () => {
 
 test('projector lens remains specialized and does not consume the normal glass standard', () => {
   const start = scene.indexOf('function createLedFloodlightModule(');
-  const end = scene.indexOf('function roundedRectShape', start);
+  const end = scene.indexOf('addFloodlightMesh(group, assets.mount', start);
   const projector = scene.slice(start, end);
   assert.match(projector, /emissive: 0xf2ffe8/);
   assert.match(projector, /emissiveIntensity: 1\.65/);

@@ -7,7 +7,6 @@ import {
   canModulesOverlapByBehavior,
   countsTowardWallCapacity,
   getModuleBehavior,
-  getModuleCollisionHeightRangeCm,
   getModuleCollisionStrategy,
   getModuleMagneticSnapStrategy,
   isUprightJointSnapTarget,

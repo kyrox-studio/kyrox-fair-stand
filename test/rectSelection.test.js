@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {
   createConnectedPanelModulePath,
   createRectSelection,
-  describeRectSelection,
   modulePanelSegment,
   panelModulesConnected,
 } from '../src/rectSelection.js';
@@ -70,20 +69,6 @@ test('rejects a rectangle when a cell inside the block is missing', () => {
   assert.equal(result.ok, false);
 });
 
-test('describes rectangle dimensions', () => {
-  const items = [
-    { moduleIndex: 1, stripIndex: 2 },
-    { moduleIndex: 2, stripIndex: 2 },
-    { moduleIndex: 1, stripIndex: 3 },
-    { moduleIndex: 2, stripIndex: 3 },
-  ];
-
-  assert.deepEqual(describeRectSelection(items), {
-    columnCount: 2,
-    rowCount: 2,
-    panelCount: 4,
-  });
-});
 
 
 

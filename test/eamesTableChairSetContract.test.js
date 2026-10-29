@@ -4,7 +4,6 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   getCatalogItem,
-  listCatalogItems,
 } from '../src/catalog.js';
 import { createEamesTableChairSetModuleState } from '../src/designState.js';
 

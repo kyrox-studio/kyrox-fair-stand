@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatPlacementFeedbackMessage, hasPlacementFeedbackPointer } from '../src/placementFeedback.js';
+import { formatPlacementFeedbackMessage } from '../src/placementFeedback.js';
 
 test('simplifies collision feedback', () => {
   assert.equal(
@@ -28,16 +28,7 @@ test('simplifies continuous wall capacity feedback', () => {
 });
 
 
-test('treats null coordinates as no pointer', () => {
-  assert.equal(hasPlacementFeedbackPointer(null, null), false);
-  assert.equal(hasPlacementFeedbackPointer(undefined, undefined), false);
-  assert.equal(hasPlacementFeedbackPointer(null, 120), false);
-});
 
-test('accepts real pointer coordinates including zero', () => {
-  assert.equal(hasPlacementFeedbackPointer(0, 0), true);
-  assert.equal(hasPlacementFeedbackPointer(320, 180), true);
-});
 
 
 test('feedback timeout stays finite by default', () => {

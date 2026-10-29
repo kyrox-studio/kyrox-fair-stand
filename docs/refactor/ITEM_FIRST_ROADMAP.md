@@ -113,6 +113,8 @@ Kaynak: 2026-09-23 tespit; **2026-09-24** kod gerçeğine göre yeniden hizaland
 
 ## Checklist (öncelik)
 
+`[x]` uygulananları gösterir; açık maddeler yalnız `kyrox-platform/projects/fair-stand/ROADMAP.md` § 3'tedir.
+
 ### P0 — Sözleşme + şema
 
 - [x] Leaf / parent / BOM ayrımı yazılı
@@ -133,7 +135,6 @@ Kaynak: 2026-09-23 tespit; **2026-09-24** kod gerçeğine göre yeniden hizaland
 - ~~Create’te WDH/renk/`is_render`~~ — gerek yok; edit’te master alan kalır
 - [x] Catalog görünürlük: `catalogVisible=true` ⇒ category+index+preview zorunlu (API+CRM); false’ta alanlar silinmez
 - [x] `catalogItemIndex`: kategoride unique + görünürlerde 1..N (API shift/compact + CRM 1..N+1)
-- [ ] Leaf/parent BOM uyumu: **karar yazıldı** (`PENDING_ITEM_DECISIONS.md` § B.7) — soft-warning, auto-fix yok; sahne clamp borç; **şimdi kod yok**
 
 ### P2 — Parent = recipe only
 
@@ -142,14 +143,10 @@ Kod gerçeği: parent BOM + snap kuralı zaten Item/tip’te. P2 kalanı **yan k
 - [x] Parent BOM = `composition.items` + quantity (Item/DB); snap SKU-özel if değil (P0/P4 dilimi)
 - [x] Otomatik duvar width→SKU: Item registry (`resolveAutomaticWallFlatPanelItemKey`); hardcoded `WALL_WIDTH_TO_ITEM_KEY` yok
 - [x] `MODULE_CONTRACT_ASSIGNMENTS` erit / type’tan türet (`PENDING` § C.5)
-- [ ] Wall sanal hat yazılı kapanış + E2E (`top-rail` / `shelf-rail` host)
-- [ ] Self-parent / cycle: admin + seed tutarlı
 
 ### P3 — Rotate / defaultZ
 
-- [ ] Item rotation alanları tek kaynak (`ROTATION.md`) doğrulama
-- [ ] `defaultZCm` / mount Item’dan; type listesi eritme
-- [ ] Yeni leaf eklenince rotate için kod gerekmez
+Açık maddeler: `kyrox-platform/projects/fair-stand/ROADMAP.md` § 3.
 
 ### P4 — Snap capability (ince dilim devam)
 
@@ -157,7 +154,6 @@ Kod gerçeği: parent BOM + snap kuralı zaten Item/tip’te. P2 kalanı **yan k
 - [x] Örnek 2 iskeleti: raf ↔ `shelf-rail` / panel tip + seam geometrisi
 - [x] Seed: requires/provides + kural face/edge + tip linkleri
 - [x] Runtime kalıntı: `panel-seam` string → `requires: 'shelf-rail'` (`scene3d`)
-- [ ] Free leaf + wall sanal hat E2E doğrulama paketi
 
 ### P5 — Admin canlı preview (sonra)
 

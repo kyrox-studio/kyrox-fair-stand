@@ -11,7 +11,7 @@ Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit d�
 - Ertelenmiş kararlar / backlog (tavan–şerit, Item property; tip davranışı C.3 kapandı): `docs/refactor/PENDING_ITEM_DECISIONS.md`
 - Item-first checklist: `docs/refactor/ITEM_FIRST_ROADMAP.md`
 - Belge dizini: `docs/refactor/README.md`
-- Performans yol haritası (tek kaynak platformda; burada yönlendirme): `docs/refactor/PERFORMANCE_ROADMAP.md`
+- Performans yol haritası: `kyrox-platform/projects/fair-stand/PERFORMANCE_ROADMAP.md`
 
 ---
 

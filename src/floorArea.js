@@ -54,25 +54,8 @@ function tilesPerFloorItem(item) {
   return (tileW / STAND_DIMENSION_STEP_CM) * (tileD / STAND_DIMENSION_STEP_CM);
 }
 
-export function karolajTileQuantityFromCells(cellCount) {
-  const cells = Number(cellCount);
-  if (!Number.isFinite(cells) || cells <= 0) return 0;
-  const perTile = tilesPerFloorItem(getFloorItem('karolaj'));
-  if (!perTile) return null;
-  return Math.ceil(cells / perTile);
-}
 
 /** Explicit rectangles share one 100×100 tile pool. 50×50 is not a BOM unit. */
-export function karolajTileQuantityForRectangles(rectangles) {
-  if (!Array.isArray(rectangles) || !rectangles.length) return 0;
-  let cells = 0;
-  for (const rectangle of rectangles) {
-    const count = floorCellCount(rectangle?.widthCm, rectangle?.depthCm);
-    if (count == null) return null;
-    cells += count;
-  }
-  return karolajTileQuantityFromCells(cells);
-}
 
 export function defaultOverrideItemKey(baseKey) {
   const preferred = baseKey === 'parke-acik' ? 'hali' : 'parke-acik';

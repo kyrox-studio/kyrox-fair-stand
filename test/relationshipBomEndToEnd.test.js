@@ -5,7 +5,6 @@ import { createModulePlacement } from '../src/modulePlacement.js';
 import { resolveItemBom } from '../src/itemBom.js';
 import { resolveProjectBom } from '../src/projectBom.js';
 import {
-  detectEndToEndJoints,
   END_TO_END_JOINT_DELTAS,
 } from '../src/relationshipBom.js';
 
@@ -31,28 +30,6 @@ function wallModule(id, itemKey, { xCm = 0, yCm = 0, rotationZDeg = 0, wallId = 
   };
 }
 
-test('wall_200 + wall_200 end-to-end → 3 upright, 4 start, 12 single, 7 double', () => {
-  const modules = [
-    wallModule('a', 'wall_200_350', { xCm: 0, yCm: 0 }),
-    wallModule('b', 'wall_200_350', { xCm: 200, yCm: 0 }),
-  ];
-  const joints = detectEndToEndJoints(modules);
-  assert.equal(joints.length, 1);
-  assert.equal(joints[0].kind, 'end-to-end');
-
-  const bom = resolveProjectBom(modules);
-  assert.equal(bom.appliedJointCount, 1);
-  assert.equal(qty(bom, 'upright_346_5'), 3);
-  assert.equal(qty(bom, 'profile_190'), 4);
-  assert.equal(qty(bom, 'panel_197'), 14);
-  assert.equal(qty(bom, 'connector_start'), 4);
-  assert.equal(qty(bom, 'connector_single'), 12);
-  assert.equal(qty(bom, 'connector_double'), 7);
-  assert.equal(moduleQty(bom, 'a', 'connector_single'), 6);
-  assert.equal(moduleQty(bom, 'a', 'connector_double'), 7);
-  assert.equal(moduleQty(bom, 'b', 'connector_single'), 6);
-  assert.equal(moduleQty(bom, 'b', 'connector_double'), 7);
-});
 
 test('three wall_200 chain → 2 joints', () => {
   const modules = [

@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 
 import {
   defaultFloorAreaRect,
-  karolajTileQuantityForRectangles,
   rectangleFromCorners,
   resolveSplitFloorBomLines,
   validateFloorArea,
@@ -31,23 +30,6 @@ test('500x500 hali plus 200x300 karolaj bills 19 m2 and 6 tiles', () => {
   assert.equal(bom.modules.length, 0);
 });
 
-test('karolaj offcuts share one 100x100 tile', () => {
-  assert.equal(karolajTileQuantityForRectangles([
-    { widthCm: 50, depthCm: 100 },
-    { widthCm: 50, depthCm: 100 },
-  ]), 1);
-  assert.equal(karolajTileQuantityForRectangles([
-    { widthCm: 50, depthCm: 50 },
-    { widthCm: 50, depthCm: 50 },
-    { widthCm: 50, depthCm: 50 },
-    { widthCm: 50, depthCm: 50 },
-  ]), 1);
-  assert.equal(karolajTileQuantityForRectangles([
-    { widthCm: 50, depthCm: 100 },
-    { widthCm: 50, depthCm: 50 },
-    { widthCm: 50, depthCm: 50 },
-  ]), 1);
-});
 
 test('a stand without floorArea keeps the legacy single-floor bill', () => {
   const hali = resolveProjectBom([], { xCm: 500, yCm: 400, itemKey: 'hali' });

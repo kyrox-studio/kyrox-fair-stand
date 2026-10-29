@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   getCatalogItem,
-  listCatalogItems,
 } from '../src/catalog.js';
 import { createEamesChairModuleState, createEamesTableChairSetModuleState } from '../src/designState.js';
 import { getItem } from '../src/items.js';

@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 
 import { getItem, listRegisteredItems } from '../src/items.js';
 import {
-  expandRecipe,
   getRecipeItemKey,
 } from '../src/moduleRecipes.js';
 import {

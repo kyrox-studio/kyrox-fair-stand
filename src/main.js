@@ -590,10 +590,6 @@ const selectionToolbar = createSelectionToolbar({
 });
 
 // Sahnenin sol altında her zaman görünen stand özeti: "L Stand Sol · 4 × 3 m · duvar 3,5 m".
-function formatMeters(cm) {
-  return String(Math.round(Number(cm)) / 100).replace('.', ',');
-}
-
 function renderStandSummaryChip(setup) {
   if (!standSummaryChip) return;
   if (!setup?.ok) {

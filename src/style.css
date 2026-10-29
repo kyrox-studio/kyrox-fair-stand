@@ -167,14 +167,6 @@ textarea:focus {
   left: 10px;
 }
 
-.eyebrow {
-  margin: 0 0 6px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
 h1 {
   margin: 0;
   color: var(--text);
@@ -383,12 +375,6 @@ h2 {
 
 .row > button {
   flex: 1;
-}
-
-.button-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 7px;
 }
 
 .status {
@@ -1260,38 +1246,6 @@ button.asset-tile > span {
   white-space: nowrap;
 }
 
-.module-card-preview {
-  display: flex;
-  min-height: 150px;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #f5f7fa 0%, #eef2f6 100%);
-}
-
-.module-card-flat-panel {
-  display: flex;
-  height: 132px;
-  min-width: 30px;
-  flex-direction: column;
-  overflow: hidden;
-  border: 5px solid var(--aluminum-profile-color);
-  background: #ffffff;
-  box-shadow: 5px 7px 12px rgba(15, 23, 42, 0.12);
-}
-
-.module-card-strip {
-  flex: 1;
-  border-bottom: 2px solid var(--aluminum-profile-color);
-  background: #ffffff;
-}
-
-.module-card-strip:last-child {
-  border-bottom: 0;
-}
-
 .module-picker-footer {
   display: flex;
   justify-content: flex-end;
@@ -1392,15 +1346,6 @@ button.asset-tile > span {
   .module-catalog-card {
     min-height: 116px;
     padding: 8px;
-  }
-
-  .module-card-preview {
-    min-height: 132px;
-    padding: 7px;
-  }
-
-  .module-card-flat-panel {
-    height: 116px;
   }
 }
 
@@ -1505,7 +1450,6 @@ button.asset-tile > span {
 @keyframes project-loading-spin {
   to { transform: rotate(360deg); }
 }
-
 
 /* Phase 3 final polish: sidebar hierarchy, selection feedback and status tones */
 .sidebar-back {
@@ -1636,7 +1580,6 @@ button.asset-tile > span {
   background: #fff5f4;
   border-color: #fecaca;
 }
-
 
 /* Phase 3: unified buttons, async feedback and compact-screen behaviour */
 button {
@@ -1811,7 +1754,6 @@ button[aria-busy="true"]::after {
   }
 }
 
-
 /* Mobile editor layout polish */
 @media (max-width: 680px) {
   body {
@@ -1978,11 +1920,6 @@ button[aria-busy="true"]::after {
     min-height: 116px;
     gap: 7px;
     padding: 8px;
-  }
-
-  .module-card-preview {
-    min-height: 112px;
-    padding: 6px;
   }
 
   .module-context-menu {
