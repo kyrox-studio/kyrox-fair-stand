@@ -43,7 +43,7 @@ test('floor Items use existing floorType keys and stay off the module catalog', 
   assert.equal(karolaj.dimensions.depthCm, 100);
   assert.equal(karolaj.defaultColor, 0xe9edf1);
   assert.equal(karolaj.paintable, true);
-  assert.equal(hali.defaultColor, 0x8b8f94);
+  assert.equal(hali.defaultColor, 0x383e42);
   assert.equal(hali.paintable, true);
   assert.equal(Object.hasOwn(hali, 'dimensions'), false);
 
@@ -51,8 +51,8 @@ test('floor Items use existing floorType keys and stay off the module catalog', 
   assert.equal(getItem('parke-acik').dimensions.widthCm, 140);
   assert.equal(getItem('parke-acik').dimensions.depthCm, 16);
   assert.equal(getItem('parke-sari').dimensions.widthCm, 140);
-  assert.equal(getItem('parke-beton').dimensions.widthCm, 112);
-  assert.equal(getItem('parke-beton').dimensions.depthCm, 28);
+  assert.equal(getItem('parke-beton').dimensions.widthCm, 120.6);
+  assert.equal(getItem('parke-beton').dimensions.depthCm, 40.2);
   assert.equal(getItem('parke-beton').paintable, false);
   assert.equal(getFloorItem('parke'), null);
   assert.equal(isGridTileFloorItem(karolaj), true);

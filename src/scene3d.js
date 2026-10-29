@@ -257,22 +257,33 @@ const KEY_LIGHT_OFFSET = Object.freeze({ x: 1.2, y: 12, z: 3 });
 const KEY_LIGHT_SHADOW_MARGIN_M = 2;
 // Render Al'da standın tepesindeki sahne spotu: zemine stand merkezli ışık havuzu düşürür,
 // havuz kenarı stand köşelerinin biraz dışında yumuşakça kararır. Gölge atmaz (gölge ana ışıkta).
+// Sönüm (decay) fiziksel 2 değil, yumuşak tutulur: ışık havuzu stand boyunca dengeli kalır.
 const STAND_TOP_SPOT = Object.freeze({
-  heightM: 9,
-  intensityCd: 400,
+  heightM: 8,
+  intensityCd: 20,
   poolMarginM: 2,
-  penumbra: 0.75,
-  decay: 2,
+  penumbra: 0.8,
+  decay: 0.9,
+});
+// Sahne ışığında standın dört yanından içeri bakan dolgu spotları: duvarın her yüzü farklı
+// açıdan ışık alır, beyaz yüzeyler düz beyaz değil gölgeli görünür (ortam ışığı çok düşüktür).
+const STAGE_FILL_SPOT = Object.freeze({
+  minHeightM: 4.8,
+  minRadiusM: 7,
+  radiusMarginM: 5,
+  intensityCd: 11,
+  extraAngle: 0.6,
+  penumbra: 0.95,
+  decay: 0.9,
 });
 // Perspektif kameranın yakın kesme mesafesi bakılan noktaya uzaklığın bu oranıdır (sınırlar
 // arasında). Sabit 0.05 m'de derinlik hassasiyeti ~50 m'de 3 mm'ye düşer; panel yüzü ile gövde
 // arasındaki 3 mm boşluk uzaktan titrer (z-fighting). Uzaklaşınca near büyür, yakında 0.05 kalır.
 const PERSPECTIVE_NEAR = Object.freeze({ ratio: 0.01, minM: 0.05, maxM: 1 });
-// Sahne ışığında ortam ışığı (hemisphere) ters çevrilir: gök rengi (zemine düşer) koyu, yer rengi
-// (yere bakan yüzlere düşer) açık. Dikey yüzler ikisinin ortalamasını alır; alınlık gibi dışa bakan
-// yüzler aydınlık kalır, zemin ve hol karanlıktır. Ek ışık yoktur (her ışık her pikselde maliyettir;
-// yavaş cihazda dokunma gecikir). Renkler doğrusal (linear) çarpandır.
-const STAGE_HEMISPHERE = Object.freeze({ sky: 0.23, ground: 1, intensity: 5.3 });
+// Sahne ışığında ortam ışığı (hemisphere) yalnız gölgeyi siyahtan kurtaran zayıf dolgudur; ışığı
+// tepe ve dolgu spotları verir. Eşit ortam ışığı bütün yüzleri aynı parlaklığa çekip beyazı düz
+// beyaz yapıyordu. Gök (zemine düşen) yer renginden koyudur. Renkler doğrusal (linear) çarpandır.
+const STAGE_HEMISPHERE = Object.freeze({ sky: 0.5, ground: 1, intensity: 1.5 });
 // Render Al'da ana ışık gölge için yanar ve bu orana kısılır; editör sahne ışığında ana ışık kapalıdır
 // (tepeden ışığı spot verir, ışık sayısı sahne ışığı kapalı editörle aynı kalır).
 const RENDER_KEY_LIGHT_DIM = 0.45;
@@ -461,7 +472,7 @@ export function createStandScene(
   renderer.setPixelRatio(editorPixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.08;
+  renderer.toneMappingExposure = 1;
   // Editörde ışık gölgesi kapalı: her kare gölge haritası için ikinci kez çizilmez (döndürme
   // takılmaz) ve gölgenin karanlıkta bıraktığı köşeler aydınlık kalır. Render Al (captureCurrentViewPng)
   // çizerken gölgeyi açar; müşteriye giden görsel gölgeli ve derinlikli olur.
@@ -481,6 +492,9 @@ export function createStandScene(
   controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
   controls.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
   controls.mouseButtons.RIGHT = null;
+  // Tekerlek zoom'u kamerayı OrbitControls içinde hemen günceller; döngüdeki update() değişiklik
+  // görmez. Her kamera değişikliği çizim ister, yoksa görüntü bir sonraki tıklamaya kadar donar.
+  controls.addEventListener('change', requestEditorRender);
 
   // OrbitControls ends on pointerup/pointercancel, but does not handle blur or
   // a mouse move after a release that happened outside the browser window.
@@ -767,12 +781,12 @@ export function createStandScene(
   projectionButtons.get('orthographic').addEventListener('click', () => setCameraMode('orthographic'), { signal });
   styleProjectionButtons();
 
-  const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x7f8790, 2.1);
+  const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x7f8790, 1.8);
   scene.add(hemisphereLight);
 
   // Ana ışık fuar holündeki gibi tepeden gelir (bkz. aimKeyLightAtStand); hafif öne eğik
   // olduğu için panel yüzleri de aydınlanır, gölge öğenin altına kısa düşer.
-  const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
+  const keyLight = new THREE.DirectionalLight(0xffffff, 2.6);
   keyLight.position.set(KEY_LIGHT_OFFSET.x, KEY_LIGHT_OFFSET.y, KEY_LIGHT_OFFSET.z);
   keyLight.castShadow = true;
   // 2K editör için yeterli; yönsel gölge haritası bellek/dolgu maliyeti
@@ -782,7 +796,7 @@ export function createStandScene(
 
   // Render Al'da ve Sahne Işığı önizlemesinde yanar (STAGE_LIGHT_LAYER); kapalıyken editör aydınlık kalır.
   const standTopSpot = new THREE.SpotLight(
-    0xfff6e8,
+    0xfff2e2,
     STAND_TOP_SPOT.intensityCd,
     0,
     Math.PI / 4,
@@ -792,6 +806,13 @@ export function createStandScene(
   standTopSpot.castShadow = false;
   standTopSpot.layers.set(STAGE_LIGHT_LAYER);
   scene.add(standTopSpot, standTopSpot.target);
+  const stageFillSpots = [0, 1, 2, 3].map(() => {
+    const spot = new THREE.SpotLight(0xfff7ec, STAGE_FILL_SPOT.intensityCd, 0, Math.PI / 4, STAGE_FILL_SPOT.penumbra, STAGE_FILL_SPOT.decay);
+    spot.castShadow = false;
+    spot.layers.set(STAGE_LIGHT_LAYER);
+    scene.add(spot, spot.target);
+    return spot;
+  });
 
   // Sahne ışığı: tepe spotu yanar, ortam ışığı ters çevrilir (STAGE_HEMISPHERE). Editörde ana ışık
   // kapanır; Render Al'da (forRender) gölge için RENDER_KEY_LIGHT_DIM oranında yanar. Kapalıyken
@@ -840,6 +861,23 @@ export function createStandScene(
     standTopSpot.target.position.set(centerX, 0, centerZ);
     standTopSpot.target.updateMatrixWorld();
     standTopSpot.angle = Math.atan(poolRadiusM / STAND_TOP_SPOT.heightM);
+    // Büyük standda ışık uzaklaşır; güç uzaklığın sönüm üssüyle artırılır, beyaz her ölçüde aynı kalır.
+    const halfDiagonalM = Math.hypot(widthM, depthM) / 2;
+    const topReachM = Math.hypot(STAND_TOP_SPOT.heightM, halfDiagonalM / 2);
+    standTopSpot.intensity = STAND_TOP_SPOT.intensityCd
+      * Math.max(1, (topReachM / Math.hypot(STAND_TOP_SPOT.heightM, 1.6)) ** STAND_TOP_SPOT.decay);
+    const fillRadiusM = Math.max(Math.max(widthM, depthM) / 2 + STAGE_FILL_SPOT.radiusMarginM, STAGE_FILL_SPOT.minRadiusM);
+    const fillReachM = Math.hypot(fillRadiusM, STAGE_FILL_SPOT.minHeightM);
+    const fillBaseReachM = Math.hypot(STAGE_FILL_SPOT.minRadiusM, STAGE_FILL_SPOT.minHeightM);
+    const fillIntensity = STAGE_FILL_SPOT.intensityCd * (fillReachM / fillBaseReachM) ** STAGE_FILL_SPOT.decay;
+    [[0, fillRadiusM], [0, -fillRadiusM], [fillRadiusM, 0], [-fillRadiusM, 0]].forEach(([dx, dz], index) => {
+      const spot = stageFillSpots[index];
+      spot.position.set(centerX + dx, STAGE_FILL_SPOT.minHeightM, centerZ + dz);
+      spot.target.position.set(centerX, 0, centerZ);
+      spot.target.updateMatrixWorld();
+      spot.angle = Math.min(1.48, standTopSpot.angle + STAGE_FILL_SPOT.extraAngle);
+      spot.intensity = fillIntensity;
+    });
     keyLight.position.set(centerX + KEY_LIGHT_OFFSET.x, KEY_LIGHT_OFFSET.y, centerZ + KEY_LIGHT_OFFSET.z);
     keyLight.target.position.set(centerX, 0, centerZ);
     keyLight.target.updateMatrixWorld();
@@ -856,7 +894,8 @@ export function createStandScene(
   }
 
 
-  // Fixed exhibition-hall ground: 4K CC0 Damaged Concrete Floor 02 from Poly Haven.
+  // Fixed exhibition-hall ground: CC0 Damaged Concrete Floor 02 (Poly Haven), lekeleri kırpılmış gri
+  // kopya (textures/floor/concrete-color.jpg).
   // The source is seamless and repeated at a large physical scale so the hall reads as
   // one continuous floor instead of one stretched image or visible square tiles.
   // It is intentionally not user-configurable; the stand platform remains independent.
@@ -864,7 +903,7 @@ export function createStandScene(
   exhibitionHall.name = 'exhibition-hall-environment';
 
   const hallFloorTexture = new THREE.TextureLoader().load(
-    import.meta.env.BASE_URL + 'textures/exhibition-floor-optimized.jpg',
+    import.meta.env.BASE_URL + 'textures/floor/concrete-color.jpg',
     () => requestEditorRender(),
   );
   hallFloorTexture.colorSpace = THREE.SRGBColorSpace;
@@ -925,63 +964,97 @@ export function createStandScene(
   activeFloor.visible = false;
   scene.add(activeFloor);
 
-  // Lightweight procedural carpet texture: neutral fibers multiplied by the chosen
-  // carpet color, plus a subtle bump map so grazing light reads as real textile.
-  // Generated in-browser to avoid another heavy image asset or network request.
-  function createCarpetTexturePair() {
-    const size = 256;
-    const colorCanvas = document.createElement('canvas');
-    const bumpCanvas = document.createElement('canvas');
-    colorCanvas.width = colorCanvas.height = size;
-    bumpCanvas.width = bumpCanvas.height = size;
-
-    const colorCtx = colorCanvas.getContext('2d');
-    const bumpCtx = bumpCanvas.getContext('2d');
-    const colorImage = colorCtx.createImageData(size, size);
-    const bumpImage = bumpCtx.createImageData(size, size);
-
-    // Deterministic pseudo-random field keeps the texture stable across rebuilds.
-    let seed = 0x5f3759df;
-    const random = () => {
-      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-      return seed / 0xffffffff;
-    };
-
-    for (let y = 0; y < size; y += 1) {
-      for (let x = 0; x < size; x += 1) {
-        const i = (y * size + x) * 4;
-        const fine = (random() - 0.5) * 34;
-        const fiber = Math.sin((x * 0.72) + (y * 0.18)) * 5;
-        const value = Math.max(72, Math.min(184, 128 + fine + fiber));
-        const bump = Math.max(88, Math.min(168, 128 + fine * 0.9 + fiber * 1.5));
-
-        colorImage.data[i] = value;
-        colorImage.data[i + 1] = value;
-        colorImage.data[i + 2] = value;
-        colorImage.data[i + 3] = 255;
-        bumpImage.data[i] = bump;
-        bumpImage.data[i + 1] = bump;
-        bumpImage.data[i + 2] = bump;
-        bumpImage.data[i + 3] = 255;
-      }
-    }
-
-    colorCtx.putImageData(colorImage, 0, 0);
-    bumpCtx.putImageData(bumpImage, 0, 0);
-
-    const colorMap = new THREE.CanvasTexture(colorCanvas);
-    const bumpMap = new THREE.CanvasTexture(bumpCanvas);
-    [colorMap, bumpMap].forEach((texture) => {
-      texture.wrapS = THREE.MirroredRepeatWrapping;
-      texture.wrapT = THREE.MirroredRepeatWrapping;
-      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-      texture.needsUpdate = true;
-    });
-    colorMap.colorSpace = THREE.SRGBColorSpace;
-    return { colorMap, bumpMap };
+  // Zemin dokuları (CC0; kaynaklar public/textures/floor/SOURCES.md). Renk/normal/roughness
+  // gri tonludur; ürün rengi Item'daki defaultColor (halıda proje rengi) ile çarpılarak verilir.
+  // Dokunun ortalama rengi yüklenince ölçülür, böylece zeminin ortalaması seçilen renge eşit olur.
+  function srgbChannelToLinear(value) {
+    const c = value / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
   }
 
-  const carpetTextures = createCarpetTexturePair();
+  function measureLinearMean(image) {
+    const size = 32;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(image, 0, 0, size, size);
+    const { data } = ctx.getImageData(0, 0, size, size);
+    const sum = [0, 0, 0];
+    for (let i = 0; i < data.length; i += 4) {
+      sum[0] += srgbChannelToLinear(data[i]);
+      sum[1] += srgbChannelToLinear(data[i + 1]);
+      sum[2] += srgbChannelToLinear(data[i + 2]);
+    }
+    const count = data.length / 4;
+    return new THREE.Color(sum[0] / count, sum[1] / count, sum[2] / count);
+  }
+
+  function loadFloorTextureSet(files, { tileSizeM }) {
+    const loader = new THREE.TextureLoader();
+    const set = { tileSizeM, mean: new THREE.Color(1, 1, 1) };
+    const load = (key, file, colorSpace) => {
+      const texture = loader.load(import.meta.env.BASE_URL + file, (loaded) => {
+        if (key === 'colorMap') set.mean = measureLinearMean(loaded.image);
+        refreshTexturedFloors();
+      });
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      texture.colorSpace = colorSpace;
+      set[key] = texture;
+    };
+    load('colorMap', files.color, THREE.SRGBColorSpace);
+    if (files.normal) load('normalMap', files.normal, THREE.NoColorSpace);
+    if (files.roughness) load('roughnessMap', files.roughness, THREE.NoColorSpace);
+    return set;
+  }
+
+  // Halı repeat 0.7 m renderer ölçeğidir (docs/items/definitions/hali.md).
+  const carpetTextures = loadFloorTextureSet({
+    color: 'textures/floor/carpet-color.jpg',
+    normal: 'textures/floor/carpet-normal.jpg',
+    roughness: 'textures/floor/carpet-roughness.jpg',
+  }, { tileSizeM: 0.7 });
+  // Meşe dokusunda bir tekrar 8 lamel sırasıdır; tekrar boyu lamel genişliğinden (depthCm) gelir.
+  const OAK_TEXTURE_PLANK_ROWS = 8;
+  const oakTextures = loadFloorTextureSet({
+    color: 'textures/floor/oak-color.jpg',
+    normal: 'textures/floor/oak-normal.jpg',
+    roughness: 'textures/floor/oak-roughness.jpg',
+  }, { tileSizeM: null });
+  // Beton parke kendi beton dokusunu kullanır: sıva izi, ince kum ve gözenek; döşenince ek
+  // yeri görünmez. Salon zemininin dokusu neredeyse düzdür, beton gibi görünmez.
+  const concreteParquetTextures = loadFloorTextureSet({
+    color: 'textures/floor/concrete-parquet-color.jpg',
+  }, { tileSizeM: 2.4 });
+
+  function floorTextureSetFor(floorItem) {
+    if (isCarpetFloorItem(floorItem)) return carpetTextures;
+    if (!isParquetFloorItem(floorItem)) return null;
+    return matchesConcreteParquetVisual(floorItem) ? concreteParquetTextures : oakTextures;
+  }
+
+  function floorTextureTileSizeM(set, floorItem) {
+    if (set.tileSizeM) return set.tileSizeM;
+    return (Number(floorItem.dimensions.depthCm) / 100) * OAK_TEXTURE_PLANK_ROWS;
+  }
+
+  function cloneFloorTextureSet(set) {
+    if (!set) return null;
+    const clone = { ...set };
+    ['colorMap', 'normalMap', 'roughnessMap'].forEach((key) => {
+      if (set[key]) clone[key] = set[key].clone();
+    });
+    return clone;
+  }
+
+  function tintForFloorTexture(colorValue, set) {
+    const tint = new THREE.Color(colorValue);
+    tint.r /= Math.max(set.mean.r, 0.001);
+    tint.g /= Math.max(set.mean.g, 0.001);
+    tint.b /= Math.max(set.mean.b, 0.001);
+    return tint;
+  }
 
   let grid = null;
   let standFloorGrid = null;
@@ -1057,7 +1130,8 @@ export function createStandScene(
       collectSurfaceCuts(depthM, stepM).forEach((z) => {
         positions.push(0, topY, z, widthM, topY, z);
       });
-    } else if (isParquetFloorItem(floorItem)) {
+    } else if (isParquetFloorItem(floorItem) && matchesConcreteParquetVisual(floorItem)) {
+      // Ahşap parkede derzler dokunun içindedir; çizgiyle yalnız beton plakalar ayrılır.
       const parquet = floorItem;
       const plankDepthM = Number(parquet.dimensions.depthCm) / 100;
       const plankLengthM = Number(parquet.dimensions.widthCm) / 100;
@@ -1067,7 +1141,8 @@ export function createStandScene(
       let row = 0;
       for (let z = 0; z < depthM - 0.000001; z += plankDepthM, row += 1) {
         const rowEnd = Math.min(depthM, z + plankDepthM);
-        const offset = (row % 3) * (plankLengthM / 3);
+        // Beton plakalar yarım boy kaydırmalı döşenir.
+        const offset = (row % 2) * (plankLengthM / 2);
         for (let x = -offset; x < widthM; x += plankLengthM) {
           const seamX = x + plankLengthM;
           if (seamX <= 0.000001 || seamX >= widthM - 0.000001) continue;
@@ -1097,60 +1172,133 @@ export function createStandScene(
     return lines;
   }
 
-  function configureFloorMaterial(material, floorItem, widthM, depthM, colorValue, texturePair, { repeat = false } = {}) {
-    if (isCarpetFloorItem(floorItem)) {
-      material.color.set(colorValue);
-      material.roughness = 1;
-      material.metalness = 0;
-      material.emissive.set('#000000');
-      material.emissiveIntensity = 0;
-      material.map = texturePair.colorMap;
-      material.bumpMap = texturePair.bumpMap;
-      material.bumpScale = 0.018;
+  // Parkede her lamel/plaka dokunun farklı yerinden desen alır ve hafif farklı tondadır; tek
+  // fotoğrafın tekrarı tek parça yüzey gibi görünmez. Meşe dokusundaki lamel sıraları 128/1024
+  // aralıklı ve 66,5 px kaymalıdır; kayma bu sıralara hizalı tutulur. Beton plakalar zemin
+  // köşesinden ölçülür, çizilen derzlerle (createFloorPattern) aynı ızgaraya oturur.
+  const FLOOR_PLANK_MODE = Object.freeze({ none: 0, oak: 1, concrete: 2 });
+  const FLOOR_PLANK_TONE = Object.freeze({ oak: 0.14, concrete: 0.06 });
+  const OAK_TEXTURE_ROW_PHASE = ((1 - 66.5 / 1024) * OAK_TEXTURE_PLANK_ROWS) % 1;
+  const FLOOR_PLANK_SHADER = `
+uniform int floorPlankMode;
+uniform float floorPlankTileM;
+uniform vec2 floorPlankSizeM;
+uniform vec2 floorPlankAreaM;
+uniform float floorPlankTone;
+float floorPlankHash( vec2 p ) {
+  return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 );
+}
+vec2 floorPlankId( vec2 uv ) {
+  float lengthT = floorPlankSizeM.x / floorPlankTileM;
+  if ( floorPlankMode == 1 ) {
+    float row = floor( uv.y * ${OAK_TEXTURE_PLANK_ROWS.toFixed(1)} - ${OAK_TEXTURE_ROW_PHASE.toFixed(6)} );
+    float offset = floorPlankHash( vec2( row, 7.0 ) ) * lengthT;
+    return vec2( row, floor( ( uv.x + offset ) / lengthT ) );
+  }
+  float zM = floorPlankAreaM.y - uv.y * floorPlankTileM;
+  float row = floor( zM / floorPlankSizeM.y );
+  float offset = mod( row, 2.0 ) * floorPlankSizeM.x * 0.5;
+  return vec2( row, floor( ( uv.x * floorPlankTileM + offset ) / floorPlankSizeM.x ) );
+}
+vec2 floorPlankUv( vec2 uv ) {
+  if ( floorPlankMode == 0 ) return uv;
+  vec2 id = floorPlankId( uv );
+  if ( floorPlankMode == 1 ) {
+    float rows = ${OAK_TEXTURE_PLANK_ROWS.toFixed(1)};
+    return uv + vec2( floorPlankHash( id + 1.3 ), floor( floorPlankHash( id + 5.1 ) * rows ) / rows );
+  }
+  return uv + vec2( floorPlankHash( id + 1.3 ), floorPlankHash( id + 5.1 ) );
+}
+float floorPlankShade( vec2 uv ) {
+  if ( floorPlankMode == 0 ) return 1.0;
+  return 1.0 + ( floorPlankHash( floorPlankId( uv ) + 9.7 ) * 2.0 - 1.0 ) * floorPlankTone;
+}
+vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
+  return textureGrad( tex, floorPlankUv( uv ), dFdx( uv ), dFdy( uv ) );
+}
+`;
+
+  function ensureFloorPlankShader(material) {
+    if (material.userData.floorPlankUniforms) return material.userData.floorPlankUniforms;
+    const uniforms = {
+      floorPlankMode: { value: FLOOR_PLANK_MODE.none },
+      floorPlankTileM: { value: 1 },
+      floorPlankSizeM: { value: new THREE.Vector2(1, 1) },
+      floorPlankAreaM: { value: new THREE.Vector2(1, 1) },
+      floorPlankTone: { value: 0 },
+    };
+    material.userData.floorPlankUniforms = uniforms;
+    material.customProgramCacheKey = () => 'floor-plank';
+    material.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, uniforms);
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', `#include <common>\n${FLOOR_PLANK_SHADER}`)
+        .replace('#include <map_fragment>', `${THREE.ShaderChunk.map_fragment
+          .replace('texture2D( map, vMapUv )', 'floorPlankSample( map, vMapUv )')}
+#ifdef USE_MAP
+\tdiffuseColor.rgb *= floorPlankShade( vMapUv );
+#endif`)
+        .replace('#include <normal_fragment_maps>', THREE.ShaderChunk.normal_fragment_maps
+          .replaceAll('texture2D( normalMap, vNormalMapUv )', 'floorPlankSample( normalMap, vNormalMapUv )'))
+        .replace('#include <roughnessmap_fragment>', THREE.ShaderChunk.roughnessmap_fragment
+          .replace('texture2D( roughnessMap, vRoughnessMapUv )', 'floorPlankSample( roughnessMap, vRoughnessMapUv )'));
+    };
+    return uniforms;
+  }
+
+  function configureFloorPlankShader(material, floorItem, widthM, depthM, textureSet) {
+    const uniforms = ensureFloorPlankShader(material);
+    if (!textureSet || !isParquetFloorItem(floorItem)) {
+      uniforms.floorPlankMode.value = FLOOR_PLANK_MODE.none;
+      return;
+    }
+    const concrete = matchesConcreteParquetVisual(floorItem);
+    uniforms.floorPlankMode.value = concrete ? FLOOR_PLANK_MODE.concrete : FLOOR_PLANK_MODE.oak;
+    uniforms.floorPlankTone.value = concrete ? FLOOR_PLANK_TONE.concrete : FLOOR_PLANK_TONE.oak;
+    uniforms.floorPlankTileM.value = floorTextureTileSizeM(textureSet, floorItem);
+    uniforms.floorPlankSizeM.value.set(
+      Number(floorItem.dimensions.widthCm) / 100,
+      Number(floorItem.dimensions.depthCm) / 100,
+    );
+    uniforms.floorPlankAreaM.value.set(widthM, depthM);
+  }
+
+  function configureFloorMaterial(material, floorItem, widthM, depthM, colorValue, textureSet, { repeat = false } = {}) {
+    configureFloorPlankShader(material, floorItem, widthM, depthM, textureSet);
+    material.metalness = 0;
+    material.emissive.set('#000000');
+    material.emissiveIntensity = 0;
+    material.bumpMap = null;
+    material.bumpScale = 0;
+    if (textureSet) {
+      const isConcrete = matchesConcreteParquetVisual(floorItem);
+      const baseColor = isParquetFloorItem(floorItem) ? floorItem.defaultColor : colorValue;
+      material.color.copy(tintForFloorTexture(baseColor, textureSet));
+      material.map = textureSet.colorMap;
+      material.normalMap = textureSet.normalMap ?? null;
+      material.roughnessMap = textureSet.roughnessMap ?? null;
+      material.normalScale.set(0.35, 0.35);
+      material.roughness = isConcrete || isCarpetFloorItem(floorItem) ? 0.96 : 1;
       if (repeat) {
-        // Restore the earlier compact carpet-tile scale the editor used before the RIP pass.
-        const repeatX = Math.max(2, widthM / 0.7);
-        const repeatY = Math.max(2, depthM / 0.7);
-        texturePair.colorMap.repeat.set(repeatX, repeatY);
-        texturePair.bumpMap.repeat.set(repeatX, repeatY);
+        const tileSizeM = floorTextureTileSizeM(textureSet, floorItem);
+        ['colorMap', 'normalMap', 'roughnessMap'].forEach((key) => {
+          textureSet[key]?.repeat.set(widthM / tileSizeM, depthM / tileSizeM);
+        });
       }
-    } else if (isParquetFloorItem(floorItem)) {
-      material.map = null;
-      material.bumpMap = null;
-      material.bumpScale = 0;
-      material.color.set(floorItem.defaultColor);
-      material.roughness = matchesConcreteParquetVisual(floorItem) ? 0.98 : 0.78;
-      material.metalness = 0;
-      // Beton parke, güçlü sahne ışığında rengini yıkamadan daha mat ve dengeli kalsın.
-      material.emissive.set(matchesConcreteParquetVisual(floorItem) ? floorItem.defaultColor : '#000000');
-      material.emissiveIntensity = matchesConcreteParquetVisual(floorItem) ? 0.06 : 0;
     } else {
       material.color.set(colorValue);
       material.roughness = 0.92;
-      material.metalness = 0;
-      material.emissive.set('#000000');
-      material.emissiveIntensity = 0;
       material.map = null;
-      material.bumpMap = null;
-      material.bumpScale = 0;
+      material.normalMap = null;
+      material.roughnessMap = null;
     }
     material.needsUpdate = true;
   }
 
-  function cloneCarpetTexturePair() {
-    const colorMap = carpetTextures.colorMap.clone();
-    const bumpMap = carpetTextures.bumpMap.clone();
-    colorMap.wrapS = THREE.MirroredRepeatWrapping;
-    colorMap.wrapT = THREE.MirroredRepeatWrapping;
-    bumpMap.wrapS = THREE.MirroredRepeatWrapping;
-    bumpMap.wrapT = THREE.MirroredRepeatWrapping;
-    colorMap.colorSpace = THREE.SRGBColorSpace;
-    return { colorMap, bumpMap };
-  }
-
   function disposeFloorAreaTextures() {
     floorAreaTextures?.colorMap?.dispose?.();
-    floorAreaTextures?.bumpMap?.dispose?.();
+    floorAreaTextures?.normalMap?.dispose?.();
+    floorAreaTextures?.roughnessMap?.dispose?.();
     floorAreaTextures = null;
   }
 
@@ -1197,7 +1345,7 @@ export function createStandScene(
     mesh.receiveShadow = true;
     mesh.castShadow = false;
     mesh.userData.kind = 'floor-area';
-    const texturePair = isCarpetFloorItem(floorItem) ? cloneCarpetTexturePair() : null;
+    const texturePair = cloneFloorTextureSet(floorTextureSetFor(floorItem));
     floorAreaTextures = texturePair;
     configureFloorMaterial(
       mesh.material,
@@ -1263,7 +1411,7 @@ export function createStandScene(
       stageLayout?.widthM ?? 1,
       stageLayout?.depthM ?? 1,
       colorValue,
-      carpetTextures,
+      floorTextureSetFor(floorItem),
       { repeat: Boolean(stageLayout) },
     );
 
@@ -1277,6 +1425,13 @@ export function createStandScene(
     return resolved;
   }
 
+  // Doku yüklenince ortalama renk değişir; açık zeminler yeni çarpanla yeniden kurulur.
+  function refreshTexturedFloors() {
+    requestEditorRender();
+    if (stageLayout) setFloorType(currentFloorType);
+    if (currentFloorArea) rebuildFloorAreaVisual();
+  }
+
   function setFloorColor(color) {
     requestEditorRender();
     if (!getFloorItem(currentFloorType)?.paintable) return null;
@@ -1285,7 +1440,8 @@ export function createStandScene(
     const resolved = normalized.toLowerCase();
     floorColors[currentFloorType] = resolved;
     if (stageLayout) stageLayout.floorColor = resolved;
-    activeFloor.material.color.set(resolved);
+    const textureSet = floorTextureSetFor(getFloorItem(currentFloorType));
+    activeFloor.material.color.copy(textureSet ? tintForFloorTexture(resolved, textureSet) : new THREE.Color(resolved));
     activeFloor.material.needsUpdate = true;
     return resolved;
   }

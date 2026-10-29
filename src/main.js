@@ -2892,8 +2892,12 @@ createStageButton.addEventListener('click', async () => {
 
 floorTypeSelect.addEventListener('change', () => {
   if (!currentStand) return;
-  currentStand = assignStandFloorItem(currentStand, floorTypeSelect.value);
+  // Zemin türü değişince eski renk taşınmaz; yeni zemin katalogdaki varsayılan renkle gelir.
+  const { floorColor: _previousFloorColor, ...stand } = currentStand;
+  currentStand = assignStandFloorItem(stand, floorTypeSelect.value);
   scene3d.setFloorType(floorTypeSelect.value);
+  const defaultColor = floorDefaultColorHex(currentStand.itemKey);
+  if (getFloorItem(currentStand.itemKey)?.paintable && defaultColor) scene3d.setFloorColor(defaultColor);
   if (productionBomPanel.isOpen()) productionBomPanel.refresh();
 });
 

@@ -4046,7 +4046,7 @@ CATALOG_SEED = {
             "catalog_item_index": None,
             "preview_id": None,
             "material": None,
-            "default_color": 9146260,
+            "default_color": 3685954,
             "preserve_model_scale": None,
             "model_rotation_y_deg": None,
             "visual_rotation_y_deg": None,
@@ -4079,7 +4079,7 @@ CATALOG_SEED = {
             "catalog_item_index": None,
             "preview_id": None,
             "material": None,
-            "default_color": 15261649,
+            "default_color": 13224645,
             "preserve_model_scale": None,
             "model_rotation_y_deg": None,
             "visual_rotation_y_deg": None,
@@ -4121,7 +4121,7 @@ CATALOG_SEED = {
             "catalog_item_index": None,
             "preview_id": None,
             "material": None,
-            "default_color": 12887168,
+            "default_color": 11374198,
             "preserve_model_scale": None,
             "model_rotation_y_deg": None,
             "visual_rotation_y_deg": None,
@@ -4163,7 +4163,7 @@ CATALOG_SEED = {
             "catalog_item_index": None,
             "preview_id": None,
             "material": None,
-            "default_color": 6446936,
+            "default_color": 7038818,
             "preserve_model_scale": None,
             "model_rotation_y_deg": None,
             "visual_rotation_y_deg": None,
@@ -4174,8 +4174,8 @@ CATALOG_SEED = {
             "eye_count": None,
             
             "dimensions": {
-                "width_cm": 112,
-                "depth_cm": 28,
+                "width_cm": 120.6,
+                "depth_cm": 40.2,
                 "height_cm": None,
 
 
