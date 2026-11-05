@@ -209,6 +209,6 @@ Playwright E2E de bütün olası kullanıcı kombinasyonlarını matematiksel ol
 13. Build çalıştır.
 14. Playwright E2E çalıştır.
 15. PR CI tamamen yeşil olmadan tamamlandı deme.
-16. Merge sonrası required CI doğrulanmadan finding kapatma.
+16. PR CI yeşil geçip merge edilmeden finding kapatma (merge sonrası `main`'de CI tekrar koşmaz; `main` ruleset'i strict zorunlu kontrol ister).
 
 **Kural:** Etki alanı implementation'dan sonra tahmin edilmez; implementation'dan önce keşfedilir ve implementation değiştikçe yeniden hesaplanır. Browser-visible etki varsa gerçek kullanıcı akışı da kod kabul edilmeden önce çalıştırılır.

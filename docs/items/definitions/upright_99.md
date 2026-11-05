@@ -1,31 +1,70 @@
-# upright_99 — Item Contract
+# upright_99
 
-## Kanonik kimlik
-- `itemKey`: `upright_99`
-- `name`: `Dikme 99`
-- `type`: `upright`
-- `unit`: `adet`
-- structure: Tekil Item
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kanonik ürüne özgü özellikler
-- `dimensions.widthCm = 99`
-- `dimensions.depthCm = 8`
-- `material = 'alüminyum'`
-- `defaultColor = 0xd0d3d4`
+## Kimlik
 
-These values are product defaults owned by the Item. Explicit project/runtime/render ezmes may replace presentation where applicable without changing the kanonik default.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('upright_99')`).
+
+| Alan | Değer |
+|---|---|
+| itemKey | `upright_99` |
+| Ad | Dikme 99 |
+| Tip | `upright` |
+| Birim | `adet` |
+| Malzeme | alüminyum |
+| Katalog | görünmez |
+| Ölçü | `width_cm=8`, `depth_cm=8`, `height_cm=99` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#d0d3d4` |
+| Yüzey | — |
 
 ## Bileşim / BOM
-Leaf BOM Item. Straight counter recipes `100/150/200` consume quantity `4`; L-counter recipes `100/150/200` consume quantity `5`. Parent recipes own quantity; Item owns product üstveri.
 
-## Davranış / state / kalıcılık
-Standalone yerleşim, move, rotation, snap/collision, selection, context-menu, delete/duplicate, oluşturucu, kalıcılık and reflow are `UYGULANMIYOR`. Parent counter runtime owns those yetenekler.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-## Renderer ezme sınırı
-Renderer creates prosedürel counter posts and does not use `upright_99` as mesh identity. Production dimensions/material/defaultColor remain Item truth; specialized renderer geometry/material/color may explicitly ezme presentation.
+Alt kalem olarak kullanıldığı Item'lar: `desk_banko_100`, `desk_banko_100_l`, `desk_banko_150`, `desk_banko_150_l`, `desk_banko_200`, `desk_banko_200_l`, `wall_100_short_2`, `wall_150_short_2`, `wall_200_short_2`, `wall_50_short_2`.
 
-## Regresyon sözleşmesi
-`test/upright99And495ItemContract.test.js` protects kanonik identity/dimensions and six recipe quantities. `test/uprightIntrinsicProperties.test.js` protects `material='alüminyum'` and `defaultColor=0xd0d3d4`.
+## Tip davranışı
 
-## Tamamlanma
-Kanonik product contract is complete for the currently doğrulanmış system. No renderer/state/kalıcılık migration is introduced by this property decision.
+`upright` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `footprint` |
+| moveSnapCm | `10` |
+| magneticSnap | `short-up-joint` |
+| allowSideInsert | `False` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `exclude` |
+| overlapWithTypes | `('flat-panel', 'profile', 'counter')` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/relationshipBom.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_item_length_parts_migration.py`
+- `backend/tests/modules/fair_stand/test_item_scene_pose.py`
+- `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
+- `e2e/short-joint-structural-upright.spec.mjs`
+- `test/catalogDomainBoundary.test.js`
+- `test/counterRecipes.test.js`
+- `test/illuminatedFoamInteraction.test.js`
+- `test/itemAdminAssemblyLock.test.js`
+- `test/itemIsRenderFactory.test.js`
+- `test/itemLengthParts.test.js`
+- `test/itemScenePose.test.js`
+- `test/lCounter150Contract.test.js`
+- `test/lCounter200Contract.test.js`
+- `test/recipeCompositionItemsContract.test.js`
+- `test/sceneBomAcceptance.test.js`
+- `test/shortJointStructuralUpright.test.js`
+- `test/upright3465ItemContract.test.js`
+- `test/upright99And495ItemContract.test.js`
+- `test/uprightIntrinsicProperties.test.js`
+- `test/wallShortCanonicalRename.test.js`
+- `test/wallShortRelationshipBom.test.js`

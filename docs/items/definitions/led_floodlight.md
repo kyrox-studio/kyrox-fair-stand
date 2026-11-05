@@ -1,18 +1,66 @@
-# led_floodlight — Kanonik Item
+# led_floodlight
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/LED_FLOODLIGHT.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type/dimensions sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Tekil Item; `itemKey = led_floodlight`. Type `led-floodlight`. Footprint `50 × 20 × 35 cm`; `mountHeightCm=350`. Eski katalog anahtarı `LED_FLOODLIGHT` idi; ürün kararı ile küçük harfe alındı. Unit / BOM uydurulmadı (`decision-required`).
+## Kimlik
 
-## Oluşturma, state ve kalıcılık
-`createLedFloodlightModuleState` Item’dan default üretir; `itemKey` damgalar; `surface.color=#17191c` korunur. Yüklemede `normalizeModuleItemState` type `led-floodlight` için doldurur. Recipe yok.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('led_floodlight')`).
 
-## Davranış ve renderer sınırı
-`moduleBehavior.js > led-floodlight`: yerleşim `top`, snap `20 cm`, `collision: none`, `wallCapacity: exclude`. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). Prosedürel gövde/45 LED noktası/spotlight renderer temsilidir; BOM değildir. Mesh metre ölçüleri değiştirilmedi.
+| Alan | Değer |
+|---|---|
+| itemKey | `led_floodlight` |
+| Ad | LED Projektör |
+| Tip | `led-floodlight` |
+| Birim | — |
+| Malzeme | — |
+| Katalog | görünür, Elektronik & Aydınlatma |
+| Ölçü | `width_cm=50`, `depth_cm=20`, `height_cm=35`, `mount_height_cm=350` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#17191c` |
+| Yüzey | `color` kabul eder |
 
-Non-island stand kurulunca `appendAutomaticWallLamps` bu Item’ı otomatik yazar. Aralık `AUTOMATIC_WALL_LAMP_INTERVAL_CM` (150). Kesintisiz sırt, sol ve sağ `flat-panel` koşusunun her 150 cm’sine bir lamba gelir. Depo arka duvarı ve depo yanı sayılmaz. 150 cm’den kısa koşuya lamba konmaz. Ada standta bu lamba oluşmaz. State `itemKey` `led_floodlight` kalır; ad ve birim kopyalanmaz. Yerleşim üst profile snap edilir.
+## Bileşim / BOM
 
-## Regresyon
-`test/lightingItemsContract.test.js`; `test/ledFloodlightModule.test.js`; `test/automaticWall.test.js`; E2E `e2e/lighting-items-contract.spec.mjs`, `e2e/f010-module-construction.spec.mjs`, `e2e/wall-reflow-u-stand.spec.mjs`.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+## Tip davranışı
+
+`led-floodlight` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `top` |
+| collision | `none` |
+| moveSnapCm | `10` |
+| magneticSnap | `none` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `exclude` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/items.js`
+- `src/scene3d.js`
+- `src/selectionFeedback.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_illuminated_foam_card_migration.py`
+- `backend/tests/modules/fair_stand/test_item_default_z.py`
+- `backend/tests/modules/fair_stand/test_item_snap.py`
+- `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `e2e/f010-module-construction.spec.mjs`
+- `e2e/lighting-items-contract.spec.mjs`
+- `e2e/scene-select-all.spec.mjs`
+- `e2e/wall-reflow-u-stand.spec.mjs`
+- `test/automaticWall.test.js`
+- `test/catalogCategories.test.js`
+- `test/catalogWidthFamily.test.js`
+- `test/itemCatalogFields.test.js`
+- `test/itemDefaultZCm.test.js`
+- `test/itemSnapAnchor.test.js`
+- `test/ledFloodlightModule.test.js`
+- `test/lightingItemsContract.test.js`
+- `test/moduleRotationPolicy.test.js`
+- `test/verticalMoveUprightHeight.test.js`

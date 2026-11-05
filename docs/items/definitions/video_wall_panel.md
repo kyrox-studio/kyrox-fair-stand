@@ -1,12 +1,39 @@
-# video_wall_panel — Kanonik Item
+# video_wall_panel
 
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-Kanonik kayıt Fair Stand ilişkisel Item store'undadır (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2). `itemKey = video_wall_panel`. `catalogVisible=false`. `name = Video Wall Panel`. `type = video-wall-panel` (ayrı factory/behavior yok; yerleştirilmez). Fiziksel panel: `dimensions.widthCm=108.5`, `dimensions.heightCm=61`. `depthCm` mevcut sistemde panel kaynağı olarak yok; yazılmadı. Unit/BOM tahmini yok.
+## Kimlik
 
-## Parent ilişki
-`video_wall_2x2` ve `video_wall_3x3` `videoWall.panelItemKey = 'video_wall_panel'` taşır. `rows` / `cols` parent’ta kalır. Panel genişlik/yükseklik parent `videoWall` içinde kopyalanmaz.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('video_wall_panel')`).
 
-## Tüketiciler
-`resolveWallMediaMetrics` ve `src/scene3d.js` `createTvModule` panel ölçüsünü `getItem(panelItemKey).dimensions` üzerinden okur. Catalog kartı yoktur.
+| Alan | Değer |
+|---|---|
+| itemKey | `video_wall_panel` |
+| Ad | Video Wall Panel |
+| Tip | `video-wall-panel` |
+| Birim | — |
+| Malzeme | — |
+| Katalog | görünmez |
+| Ölçü | `width_cm=108.5`, `height_cm=61` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | — |
+| Yüzey | — |
+
+## Bileşim / BOM
+
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+## Tip davranışı
+
+`video-wall-panel` tipi için ayrı sahne davranışı tanımlı değildir.
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_catalog_api.py`
+- `test/catalogDomainBoundary.test.js`
+- `test/itemIsRenderFactory.test.js`
+- `test/wallMediaItemsContract.test.js`

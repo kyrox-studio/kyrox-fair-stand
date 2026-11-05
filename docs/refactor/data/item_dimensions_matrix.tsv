@@ -1,25 +1,14 @@
 item_key	item_type	width_cm	height_cm	depth_cm	mount_height_cm	wall_gap_cm	scene_width_cm	scene_height_cm	scene_depth_cm
-BASE_100	base	100	50	50					
-BASE_150	base	150	50	50					
-BASE_200	base	200	50	50					
-COAT_RACK	coat-rack	43	180	43					
-EXTRA_INDOOR_PLANT_1	indoor-plant-1	60	120	60					
-EXTRA_LONG_PLANTER_100	indoor-plant-1	100	30	30					
-EXTRA_LONG_PLANTER_150	indoor-plant-1	150	30	30					
-EXTRA_LONG_PLANTER_200	indoor-plant-1	200	30	30					
-KETTLE	kettle	24	25	19					
-MINI_FRIDGE_AVANTI	mini-fridge	50	66	50					
-PLASTIC_TRASH_BIN	plastic-trash-bin	40	60	40					
-TV_42	tv	93	52.3	5				52.3	
-TV_55	tv	121.8	68.5	5				68.5	
-TV_65	tv	143.9	80.9	5				80.9	
-VIDEO_WALL_2X2	tv			5			217	122	
-VIDEO_WALL_3X3	tv			5			325.5	183	
-VIDEO_WALL_PANEL	video-wall-panel	108.5	61						
+base_100	base	100	50	50					
+base_150	base	150	50	50					
+base_200	base	200	50	50					
 base_top_107_50	base-top	107	1.8	50					
 base_top_157_50	base-top	157	1.8	50					
 base_top_206_50	base-top	206	1.8	50					
+box_block	box-block	100	50	50					
+brochure_stand	brochure-stand	30	150	30					
 chair_eames	chair	46	82	58					
+coat_rack	coat-rack	43	180	43					
 counter_top_102_60	counter-top	102	1.8	60					
 counter_top_110_60	counter-top	110	1.8	60					
 counter_top_150_60	counter-top	150	1.8	60					
@@ -27,65 +16,113 @@ counter_top_160_60	counter-top	160	1.8	60
 counter_top_210_60	counter-top	210	1.8	60					
 counter_top_52_60	counter-top	52	1.8	60					
 desk_banko_100	counter	100	100	50					
-desk_banko_100_L	counter	100	100	100					
+desk_banko_100_l	counter	100	100	100					
 desk_banko_150	counter	150	100	50					
-desk_banko_150_L	counter	150	100	150					
+desk_banko_150_l	counter	150	100	150					
 desk_banko_200	counter	200	100	50					
-desk_banko_200_L	counter	200	100	200					
-door_100	door	100						350	10
+desk_banko_200_l	counter	200	100	200					
 door_leaf_100	door-leaf	100	200	8					
+extra_indoor_plant_1	indoor-plant-1	60	120	60					
+extra_long_planter_100	indoor-plant-1	100	30	30					
+extra_long_planter_150	indoor-plant-1	150	30	30					
+extra_long_planter_200	indoor-plant-1	200	30	30					
+floor_showcase_100	floor-showcase	100	100	40					
 furniture_bar_stool_classic	bar-stool	60	121	55					
 furniture_coffee_table_classic	coffee-table-classic	60	38	42					
 furniture_sofa_double_classic	sofa-double-classic	150	78	45					
 furniture_sofa_set_classic	sofa-set-classic	150	78	150					
 furniture_sofa_single_classic	sofa-single-classic	65	78	45					
 furniture_table_chair_set_eames	table-chair-set-eames	150	82	150					
+glass_bar_table	table-glass	75	108	75					
 glass_shelf	showcase-accessory	87.3	0.6	28.5					
 glass_table	table-glass	75	74	75					
 illuminated-foam	illuminated-foam	200	50	3.5		1.5			
 karolaj	floor	100		100					
+kettle	kettle	24	25	19					
 led_floodlight	led-floodlight	50	35	20	350				
+metal_separator	panel-glass	98	47	0.8					
+mini_fridge_avanti	mini-fridge	50	66	50					
 panel_147_5	panel	147.5	47	0.8					
 panel_197	panel	197	47	0.8					
 panel_48_5	panel	48.5	47	0.8					
 panel_98	panel	98	47	0.8					
+panel_cam_147_5	panel-glass	147.5	47	0.8					
+panel_cam_197	panel-glass	197	47	0.8					
+panel_cam_48_5	panel-glass	48.5	47	0.8					
+panel_cam_98	panel-glass	98	47	0.8					
 panel_corner_142_5	panel	142.5	47	0.8					
 panel_corner_192	panel	192	47	0.8					
 panel_corner_42_5	panel	42.5	47	0.8					
 panel_corner_92	panel	92	47	0.8					
+panel_corner_cam_142_5	panel-glass	142.5	47	0.8					
+panel_corner_cam_192	panel-glass	192	47	0.8					
+panel_corner_cam_42_5	panel-glass	42.5	47	0.8					
+panel_corner_cam_92	panel-glass	92	47	0.8					
 parke-acik	floor	140		16					
 parke-beton	floor	120.6		40.2					
 parke-sari	floor	140		16					
+plastic_trash_bin	plastic-trash-bin	40	60	40					
 profile_140_5	profile	140.5	8	8			150	350	8
 profile_190	profile	190	8	8			200	350	8
+profile_239_5	profile	239.5	8	8			250	350	8
+profile_289	profile	289	8	8			300	350	8
+profile_346_5	profile	346.5	8	8			350	350	8
+profile_388	profile	388	8	8			400	350	8
 profile_41_5	profile	41.5	8	8			50	350	8
+profile_487	profile	487	8	8			500	350	8
+profile_8	profile	8	8	8			8	350	8
 profile_91	profile	91	8	8			100	350	8
 separator_panel_48_5	separator-panel	48.5	47	0.8					
 separator_panel_98	separator-panel	98	47	0.8					
 shelf_100	shelf	100	1.8	38			100	1.8	
+shelf_100_self	shelf	100	1.8	38			100	1.8	
 shelf_150	shelf	150	1.8	38			150	1.8	
+shelf_150_self	shelf	150	1.8	38			150	1.8	
 shelf_200	shelf	200	1.8	38			200	1.8	
+shelf_200_self	shelf	200	1.8	38			200	1.8	
+shelf_row_1	shelf	100	1.8	38			100	1.8	
+shelf_row_2	shelf	100	51.8	38			100	51.8	
+shelf_row_2_100	shelf	100	51.8	38			100	51.8	
+shelf_row_2_150	shelf	150	51.8	38			150	51.8	
+shelf_row_2_200	shelf	200	51.8	38			200	51.8	
+shelf_row_3	shelf	100	101.8	38			100	101.8	
+shelf_row_3_100	shelf	100	101.8	38			100	101.8	
+shelf_row_3_150	shelf	150	101.8	38			150	101.8	
+shelf_row_3_200	shelf	200	101.8	38			200	101.8	
 showcase_horizontal_87_4_30	showcase-board	87.4	1.8	30					
 showcase_side_143_5_30	showcase-board	143.5	1.8	30					
 showcase_side_94_6_30	showcase-board	94.6	1.8	30					
+tulle_fabric	tulle-fabric	200	100	0.4					
+tv_42	tv	93	52.3	5				52.3	
+tv_55	tv	121.8	68.5	5				68.5	
+tv_65	tv	143.9	80.9	5				80.9	
+upright_247_5	upright	8	247.5	8			8	250	8
+upright_297	upright	8	297	8			8	300	8
 upright_346_5	upright	8	346.5	8			8	346.5	8
+upright_396	upright	8	396	8			8	400	8
+upright_445_5	upright	8	445.5	8			8	450	8
+upright_495	upright	8	495	8			8	500	8
 upright_49_5	upright	8	49.5	8					
 upright_99	upright	8	99	8					
-wall_100	flat-panel	100						350	10
-wall_100_short_up_1	flat-panel	100							10
-wall_100_short_up_2	flat-panel	100							10
-wall_150	flat-panel	150						350	10
-wall_150_short_up_1	flat-panel	150							10
-wall_150_short_up_2	flat-panel	150							10
-wall_200	flat-panel	200						350	10
-wall_200_short_up_1	flat-panel	200							10
-wall_200_short_up_2	flat-panel	200							10
-wall_50	flat-panel	50						350	10
-wall_50_short_up_1	flat-panel	50							10
-wall_50_short_up_2	flat-panel	50							10
-wall_separator_100	separator	100						350	10
-wall_separator_100_sarmasik	separator	100						350	10
-wall_separator_50	separator	50						350	10
-wall_separator_50_sarmasik	separator	50						350	10
-wall_showcase_100_2	showcase-2	100						350	10
-wall_showcase_100_3	showcase-3	100						350	10
+video_wall_2x2	tv			5			217	122	
+video_wall_3x3	tv			5			325.5	183	
+video_wall_panel	video-wall-panel	108.5	61						
+wall_100_350	flat-panel	100						350	10
+wall_100_short_1	flat-panel	100							10
+wall_100_short_2	flat-panel	100							10
+wall_150_350	flat-panel	150						350	10
+wall_150_short_1	flat-panel	150							10
+wall_150_short_2	flat-panel	150							10
+wall_200_350	flat-panel	200						350	10
+wall_200_short_1	flat-panel	200							10
+wall_200_short_2	flat-panel	200							10
+wall_50_350	flat-panel	50						350	10
+wall_50_short_1	flat-panel	50							10
+wall_50_short_2	flat-panel	50							10
+wall_door_100_350	door	100						350	10
+wall_separator_100_350	separator	100						350	10
+wall_separator_100_350_sarmasik	separator	100						350	10
+wall_separator_50_350	separator	50						350	10
+wall_separator_50_350_sarmasik	separator	50						350	10
+wall_showcase_100_2_350	showcase-2	100						350	10
+wall_showcase_100_3_350	showcase-3	100						350	10

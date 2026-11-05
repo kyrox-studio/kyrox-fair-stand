@@ -22,7 +22,7 @@ Her değişiklikten önce işin kapsamına göre aşağıdaki canonical belgeler
 3. `SYSTEM_DEVELOPMENT_CONTRACT.md`
 4. `PROJECT_RULES.md`
 5. `ARCHITECTURE_RULES.md`
-6. **`ITEM_CONTRACT.md`** — fiziksel ürün, zemin, malzeme, BOM, üretim, maliyet, katalog, runtime item/module, context-menu behavior veya item state ile ilgili her işte zorunludur.
+6. **`docs/items/contract/ITEM_CONTRACT.md`** — fiziksel ürün, zemin, malzeme, BOM, üretim, maliyet, katalog, runtime item/module, context-menu behavior veya item state ile ilgili her işte zorunludur.
 7. `MODULE_BEHAVIOR_STANDARD.md` — type bazlı editor/runtime davranışı etkileniyorsa zorunludur. Sahne Z dönüşü için ayrıca `docs/refactor/ROTATION.md`.
 
 ## Açık iş haritası (dağıntı yok)

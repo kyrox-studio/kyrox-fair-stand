@@ -1,19 +1,68 @@
-# desk_banko_150_l — Kanonik Item
+# desk_banko_150_l
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/desk_banko_150_L.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type/shape/dimensions sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Bileşik Item; `itemKey = desk_banko_150_l`. Type ailesi `counter`; `shape=L`; ölçü 150×150×100 cm. Üst öğe üzerinde unit uydurulmadı.
+## Kimlik
+
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('desk_banko_150_l')`).
+
+| Alan | Değer |
+|---|---|
+| itemKey | `desk_banko_150_l` |
+| Ad | Köşe Banko 150×150 |
+| Tip | `counter` |
+| Birim | — |
+| Malzeme | — |
+| Katalog | görünmez |
+| Ölçü | `width_cm=150`, `depth_cm=150`, `height_cm=100` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | — |
+| Yüzey | `color`, `image` kabul eder |
 
 ## Bileşim / BOM
-`composition.mode=recipe`, `shape=L`. Alt kalemler ve miktarları Item kaydının `components` listesindedir (`composition.items`); BOM `src/itemBom.js` `resolveItemBom(itemKey)` ile çözülür. Mevcut recipe miktarları değişmez.
 
-## Oluşturma, state ve kalıcılık
-`createCounterModuleState` Item’dan default üretir; 8 face. Load hydrate; takma ad yok.
+`composition_mode=recipe`. BOM `src/itemBom.js` `resolveItemBom('desk_banko_150_l')` ile bu satırlardan çözülür.
 
-## Davranış ve renderer sınırı
-Type `counter` placement/snap. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). Prosedürel L renderer iş tek kaynağı değildir.
+| Alt kalem | Miktar |
+|---|---|
+| `profile_140_5` | 5 |
+| `profile_91` | 1 |
+| `profile_41_5` | 4 |
+| `upright_99` | 5 |
+| `panel_147_5` | 4 |
+| `panel_48_5` | 4 |
+| `connector_start` | 8 |
+| `connector_single` | 16 |
+| `counter_top_160_60` | 1 |
+| `counter_top_102_60` | 1 |
 
-## Regresyon
-`test/deskBankoItemsContract.test.js`, `test/lCounter150Contract.test.js`; E2E `e2e/desk-banko-items-contract.spec.mjs`.
+## Tip davranışı
+
+`counter` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `footprint` |
+| moveSnapCm | `10` |
+| magneticSnap | `standard` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `include` |
+| connection_endpoint | `logical-fixture` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `backend/app/modules/fair_stand/infrastructure/item_rotation_seed.py`
+- `src/designState.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_banko_base_cards_migration.py`
+- `e2e/desk-banko-items-contract.spec.mjs`
+- `test/deskBankoItemsContract.test.js`
+- `test/lCounter150Contract.test.js`
+- `test/moduleBehavior.test.js`
+- `test/rawBomSelectionParser.test.js`
+- `test/sceneBomAcceptance.test.js`

@@ -1,10 +1,41 @@
-# parke-sari — Kanonik Item
+# parke-sari
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/parke.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
 ## Kimlik
-Fair Stand ilişkisel Item store'daki `parke-sari` kaydı. `itemKey = parke-sari`. Name `Sarı Meşe`. Type `floor`. Lamel `140 × 16 cm`. `defaultColor=#ad8e76` (Floorpan Classic Alaska Meşe FC066 görselinin ortalaması; `0089_parquet_reference`). `paintable=false`. Katalog/recipe/unit yok. Persist `stand.itemKey`; eski `floorType` hydrate.
 
-## Render
-Ortak meşe dokusu `defaultColor` ile çarpılır ([parke-acik](parke-acik.md#render)).
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('parke-sari')`).
+
+| Alan | Değer |
+|---|---|
+| itemKey | `parke-sari` |
+| Ad | Sarı Meşe |
+| Tip | `floor` |
+| Birim | `m2` |
+| Malzeme | — |
+| Katalog | görünmez |
+| Ölçü | `width_cm=140`, `depth_cm=16` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#ad8e76` |
+| Yüzey | — |
+
+## Bileşim / BOM
+
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+## Tip davranışı
+
+`floor` tipi için ayrı sahne davranışı tanımlı değildir.
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_item_unit_fk_migration.py`
+- `backend/tests/modules/fair_stand/test_parquet_reference_migration.py`
+- `e2e/floor-items-contract.spec.mjs`
+- `test/floorArea.test.js`
+- `test/floorItemsContract.test.js`
+- `test/projectBom.test.js`

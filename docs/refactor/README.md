@@ -1,8 +1,8 @@
 # Fair Stand — refactor belgeleri (dizin)
 
-Kod doğrulanmış canlı sözleşmeler. Audit dökümü / item tanımları (`docs/items/**`, ~500 md) buraya karışmaz; tarihsel snapshot — **silinmez / regenerate edilmeden güncellenmez** (kod doğrulaması gerekir). Canlı kaynak: bu dizin + CRM kılavuzu.
+Kod doğrulanmış canlı sözleşmeler. Item belgeleri ayrı dizindedir: `docs/items/contract/` ortak Item kuralları, `docs/items/definitions/` her Item için `scripts/gen-item-definitions.py` ile seed'den (`test/fixtures/itemCatalogSeed.json`) üretilen tanım (elle düzenlenmez; seed değişince yeniden üretilir).
 
-**Açık iş okuma sırası:** iş listesi `kyrox-platform/projects/fair-stand/ROADMAP.md` → audit `../../audit/FINDINGS.md` → bu dizinde [`PENDING_ITEM_DECISIONS.md`](PENDING_ITEM_DECISIONS.md). Checklist / FULL_SWEEP bayat sayaçtır.
+**Açık iş okuma sırası:** iş listesi `kyrox-platform/projects/fair-stand/ROADMAP.md` → audit `../../audit/FINDINGS.md` → bu dizinde [`PENDING_ITEM_DECISIONS.md`](PENDING_ITEM_DECISIONS.md). 
 
 | Belge | Rol |
 |---|---|
@@ -18,7 +18,6 @@ Kod doğrulanmış canlı sözleşmeler. Audit dökümü / item tanımları (`do
 | [`ITEM_DIMENSIONS.md`](ITEM_DIMENSIONS.md) | W/H/D mapping |
 | [`ITEM_FIRST_ROADMAP.md`](ITEM_FIRST_ROADMAP.md) | Item-first checklist |
 | [`TYPE_BEHAVIORS_DB_ROADMAP.md`](TYPE_BEHAVIORS_DB_ROADMAP.md) | Tip davranışı → DB **migration arşivi** (uygulandı 0030–0033) |
-| [`PERFORMANCE_ROADMAP.md`](PERFORMANCE_ROADMAP.md) | **Performans backlog** — proje açma, orbit, 100 eşzamanlı tasarım |
 | [`STAND_FRAME_REMOVAL.md`](STAND_FRAME_REMOVAL.md) | Frame kolon tarihçesi |
 | [`REFACTOR.md`](REFACTOR.md) | Uygulanan adımlar günlüğü |
 

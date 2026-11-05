@@ -217,7 +217,7 @@ Her item kendi ölçü/BOM’unu taşır; stand tavanı yalnız **max zarf** (ö
 - **Durum:** KAPANDI — kesit 1+2+3 + overlap FK; JS map yok; motor DB-only
 - **Operatör kılavuzu:** `FAIR_STAND_DB_KULLANIM_KILAVUZU.md` (§ tip vs snap)
 - **Migration arşivi:** `TYPE_BEHAVIORS_DB_ROADMAP.md`
-- **Karar (analiz 2026-09-24):** Snap dilimi şablon. Davranış paketi **`fair_stand_item_type` kolonlarına**. Item override / snap çoklu requires-provides ayrı epic. Export etkilenmez.
+- **Karar (analiz 2026-09-24):** Snap dilimi şablon. Davranış paketi **`fair_stand_item_type` kolonlarına** (0030–0033); `0053` ile 1:1 `fair_stand_item_type_scene_behavior` tablosuna ayrıldı. Item override / snap çoklu requires-provides ayrı epic. Export etkilenmez.
 - **Kaynak:** `DATABASE.md`; `moduleBehavior.js`; `SCENE_POSE.md` snap şablonu
 - **Yasak:** Tip davranışını JS map’e geri almak; enum rename; placement’ı proje ZIP’e gömmek
 
@@ -246,7 +246,7 @@ Aşağıdakiler **onaylı şemada değil**; karar verilince B veya C’ye madde 
 |---|---|---|
 | `type`, `name`, `unit` | KUYRUK | Davranış/BOM; `type` → C.3 ile ilişkili |
 | `composition` / `composition.items` | KUYRUK | Recipe BOM; onaylı parça, tam şema değil |
-| `paintable` | KUYRUK | 5 Item; Color mekanizması yok (§ D.1) |
+| `paintable` | KUYRUK | 2 Item; Color mekanizması yok (§ D.1) |
 | `modelFile`, `modelRotationYDeg`, `preserveModelScale`, `visualRotationYDeg` | KUYRUK | GLB Item’ları |
 | `bodyItems.*` | KUYRUK | Vitrin yan/yatay/cam; B.1 ile kesişir |
 | `videoWall.*` | KUYRUK | 2 Item |

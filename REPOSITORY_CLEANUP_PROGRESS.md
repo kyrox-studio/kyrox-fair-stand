@@ -4,7 +4,7 @@
 >
 > Bu dosya eski cleanup döneminde “nerede kalındı / sırada ne var” kaydı olarak kullanılmıştır. İçindeki pending/next-work ifadeleri artık güncel değildir ve yeni iş planı olarak kullanılmamalıdır.
 >
-> Güncel audit/remediation durumu için `audit/FULL_SWEEP_STATE.md` ve `audit/FINDINGS.md` kullanılır. Aktif ürün planı için `ROADMAP.md`; canonical geliştirme kuralları için `SYSTEM_DEVELOPMENT_CONTRACT.md` ve `SYSTEM_CHANGE_GATE.md` kullanılır. Bu dosya yalnız geçmiş cleanup sırasını ve PR geçmişini korur.
+> Açık audit bulguları `audit/FINDINGS.md`'dedir; `audit/FULL_SWEEP_STATE.md` A00–A24 tarihî mührüdür. İş listesi `kyrox-platform/projects/fair-stand/ROADMAP.md`; canonical geliştirme kuralları için `SYSTEM_DEVELOPMENT_CONTRACT.md` ve `SYSTEM_CHANGE_GATE.md` kullanılır. Bu dosya yalnız geçmiş cleanup sırasını ve PR geçmişini korur.
 
 ---
 

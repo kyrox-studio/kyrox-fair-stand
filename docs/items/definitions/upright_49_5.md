@@ -1,31 +1,64 @@
-# upright_49_5 — Item Contract
+# upright_49_5
 
-## Kanonik kimlik
-- `itemKey`: `upright_49_5`
-- `name`: `Dikme 49,5`
-- `type`: `upright`
-- `unit`: `adet`
-- yapı: Tekil Item
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kanonik ürüne özgü özellikler
-- `dimensions.widthCm = 49.5`
-- `dimensions.depthCm = 8`
-- `material = 'alüminyum'`
-- `defaultColor = 0xd0d3d4`
+## Kimlik
 
-Bu değerler Item'ın sahip olduğu ürün varsayılanlarıdır. Açık proje/runtime/render ezmeleri, kanonik varsayılanı değiştirmeden görünümü değiştirebilir.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('upright_49_5')`).
+
+| Alan | Değer |
+|---|---|
+| itemKey | `upright_49_5` |
+| Ad | Dikme 49,5 |
+| Tip | `upright` |
+| Birim | `adet` |
+| Malzeme | alüminyum |
+| Katalog | görünmez |
+| Ölçü | `width_cm=8`, `depth_cm=8`, `height_cm=49.5` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#d0d3d4` |
+| Yüzey | — |
 
 ## Bileşim / BOM
-Yaprak BOM Item. `base:100/150/200` miktar `4` tüketir. Miktar üst recipe'nindir; ürün üstverisi Item'ındır.
 
-## Davranış / state / kalıcılık
-Bağımsız yerleşim, move, rotation, snap/collision, selection, context-menu, delete/duplicate, oluşturucu, kalıcılık ve reflow `UYGULANMIYOR`. Bu yetenekler üst baza / baza-duvar runtime'ındadır.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-## Renderer ezme sınırı
-Renderer prosedürel baza / baza-duvar dikmeleri üretir; mesh kimliği olarak `upright_49_5` kullanmaz. Üretim ölçü/malzeme/defaultColor Item gerçeğidir; özel renderer geometri/malzeme/renk görünümü açıkça ezebilir.
+Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, `wall_100_short_1`, `wall_150_short_1`, `wall_200_short_1`, `wall_50_short_1`.
 
-## Regresyon sözleşmesi
-`test/upright99And495ItemContract.test.js` kanonik kimlik/ölçü ve üç base recipe miktarını korur. `test/uprightIntrinsicProperties.test.js` `material='alüminyum'` ve `defaultColor=0xd0d3d4` değerlerini korur.
+## Tip davranışı
 
-## Tamamlanma
-Kanonik ürün sözleşmesi, şu an doğrulanmış sistem için tamamdır. Bu özellik kararı renderer/state/kalıcılık migration'ı eklemez.
+`upright` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `footprint` |
+| moveSnapCm | `10` |
+| magneticSnap | `short-up-joint` |
+| allowSideInsert | `False` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `exclude` |
+| overlapWithTypes | `('flat-panel', 'profile', 'counter')` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/baseRunBom.js`
+- `src/relationshipBom.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_item_length_parts_migration.py`
+- `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
+- `e2e/short-joint-structural-upright.spec.mjs`
+- `test/baseRecipes.test.js`
+- `test/baseRunBom.test.js`
+- `test/recipeCompositionItemsContract.test.js`
+- `test/sceneBomAcceptance.test.js`
+- `test/shortJointStructuralUpright.test.js`
+- `test/upright3465ItemContract.test.js`
+- `test/upright99And495ItemContract.test.js`
+- `test/uprightIntrinsicProperties.test.js`
+- `test/wallShortCanonicalRename.test.js`
+- `test/wallShortProfileSnapCollision.test.js`
+- `test/wallShortRelationshipBom.test.js`

@@ -1,19 +1,17 @@
 # Stand `frame_width_cm` / `frame_depth_cm`
 
-**Durum (2026-10-21):** Sahne kesiti item-first: `resolveProceduralFrameCrossSectionCm` modül reçetesindeki ilk `profile` Item'ının sahne ölçüsünü (`depthCm` × `heightCm`) okur; panel duvarı, kapı ve vitrin çerçevesinin dört kenarı (dikmeler dahil) bu kesitle çizilir. Reçetesinde profil olmayan modülde kesit stand `frame_depth_cm` ile kare kutudur. Stand `frame_width_cm` sahnede okunmaz; kolon ve CRM alanı şimdilik durur.
+## Sahne kesiti (kod)
 
-**Önceki durum (2026-09-23):** Kolonlar **geri geldi** (`0023_restore_stand_frame_columns`). Prosedürel aluminyum kesiti `STAND_DIMENSIONS.frameWidthCm/DepthCm` ← DB. Seed varsayılan **5,5 × 10 cm**.
+`resolveProceduralFrameCrossSectionCm` (`src/items.js`) modül reçetesindeki ilk `profile` Item'ının sahne ölçüsünü okur: kesit = `depthCm` × `heightCm` (`crossSectionCmFromFrameItem`). Panel duvarı, kapı ve vitrin çerçevesinin dört kenarı (dikmeler dahil) bu kesitle çizilir (`getProceduralFrameCrossSectionM`, `src/scene3d.js`).
 
-Leaf upright/profile BOM kesiti (örn. 8×8) ayrı kalır; sahne çerçevesi şimdilik stand zarfından okunur (`resolveProceduralFrameCrossSectionCm`).
+Reçetesinde profil olmayan modülde kesit kare kutudur: genişlik = derinlik = stand `frame_depth_cm`.
 
-## Neden geçici stand kaynağı
-
-Leaf 8×8 sahnede kalın duruyordu. Kalıcı item-first hedef (leaf kesit = görünüm) ayrı iş; canlı 3D doğrulama oturana kadar stand `frame_*` tek görsel kaynak.
+Stand `frame_width_cm` sahne kesitine girmez. Kolon, admin API (`PUT` Temel Ayarlar, `admin_settings.py`) ve bootstrap alanı (`frameWidthCm`) durur.
 
 ## Kaynak (runtime)
 
-- Bootstrap / admin: `heightCm`, `depthCm`, `frameWidthCm`, `frameDepthCm`
-- `src/standDimensions.js` + `getProceduralFrameCrossSectionM` → stand frame
+- Bootstrap / admin: `heightCm`, `depthCm`, `frameWidthCm`, `frameDepthCm`, `panelRailHeightCm`
+- Seed varsayılanı (`stand_dimensions_seed.py`): `frame_width_cm` 5,5, `frame_depth_cm` 10
 - CRM Temel Ayarlar: çerçeve alanları düzenlenebilir
 
 ## Alembic

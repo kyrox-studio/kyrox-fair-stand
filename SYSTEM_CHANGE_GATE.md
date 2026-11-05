@@ -148,7 +148,7 @@ Path/domain kuralları:
 - `public/**` → `assets`,
 - `test/**`, legacy `tests/**` ve `e2e/**` → `tests`,
 - `playwright.config*` → `architecture + tests`,
-- `README.md`, `PROJECT_RULES.md`, `ARCHITECTURE_RULES.md`, `SYSTEM_DEVELOPMENT_CONTRACT.md`, `SYSTEM_CHANGE_GATE.md`, `SYSTEM_IMPACT_SWEEP.md`, `MODULE_BEHAVIOR_STANDARD.md`, `SYSTEM_AUDIT_CHECKLIST.md` → `architecture`,
+- `AGENTS.md`, `ITEM_CONTRACT.md`, `README.md`, `PROJECT_RULES.md`, `ARCHITECTURE_RULES.md`, `SYSTEM_DEVELOPMENT_CONTRACT.md`, `SYSTEM_CHANGE_GATE.md`, `SYSTEM_IMPACT_SWEEP.md`, `MODULE_BEHAVIOR_STANDARD.md`, `SYSTEM_AUDIT_CHECKLIST.md` → `architecture` (`GOVERNANCE_DOCUMENT_REQUIRED_DOMAINS`),
 - `package.json`, `package-lock.json`, `scripts/**`, `.github/workflows/**`, `vite.config*` → `architecture`,
 - `index.html` → `ui`.
 
@@ -247,7 +247,7 @@ Bu gate mevcut contract'ların yerine geçmez.
 
 Ardından canonical CI sırası:
 
-`contract gate → npm ci → npm test → python -m pytest → npm run build → Playwright runner → Chromium → npm run e2e`
+`contract gate → npm ci → npm run audit:deps → npm run syntax:check → npm test → python -m pytest → pip-audit (yalnız uyarı) → npm run build → Playwright runner → Chromium → npm run e2e`
 
 E2E failure olursa `playwright-report/` ve `test-results/` trace/screenshot/video kanıtı GitHub Actions artifact olarak saklanır.
 
@@ -291,7 +291,7 @@ Bu dosya:
 
 Static discovery zorunlu minimum tabandır. Browser-impact olduğunda değişen davranışa özel targeted E2E ayrıca zorunludur.
 
-Bu belge yeni değişikliklerin kabul kapısını tanımlar. Mevcut sistemin audit/remediation durumu `SYSTEM_AUDIT_CHECKLIST.md` ve `audit/` kayıtlarında tutulur.
+Bu belge yeni değişikliklerin kabul kapısını tanımlar. Açık audit bulguları yalnız `audit/FINDINGS.md`'dedir; `SYSTEM_AUDIT_CHECKLIST.md` tarihî metodoloji şablonudur.
 
 ---
 

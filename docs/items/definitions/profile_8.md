@@ -1,30 +1,50 @@
-# profile_8 — Item Contract Definition
+# profile_8
 
-## 1. Kanonik kimlik
-- `itemKey`: `profile_8`
-- `name`: `Profil 8`
-- `type`: `profile`
-- `unit`: `adet`
-- structure: Tekil Item
-- parametric: hayır
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## 2. Kanonik ürüne özgü özellikler
-```js
-{
-  itemKey: 'profile_8',
-  type: 'profile',
-  unit: 'adet',
-  dimensions: { widthCm: 8, depthCm: 8, heightCm: 8 },
-  material: 'alüminyum',
-}
-```
-Migration `0080_item_length_parts` ile `profile_190` satırından kopyalanır; boy 8 cm.
+## Kimlik
 
-## 3. Kullanım
-Yalnız uzun parça bölünüşünün parçasıdır: `upright_495` = 346,5 + 8 + 140,5. Katalogda kartı yoktur, sahnede çizilmez (`is_render = false`), profil boy penceresinde listelenmez.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('profile_8')`).
 
-## 4. BOM / composition
-Kendi başına BOM satırı üretmez; bölünüş yalnız etikettir (`fair_stand_item_length_parts`). Uzun parçanın BOM satırı tek kalır.
+| Alan | Değer |
+|---|---|
+| itemKey | `profile_8` |
+| Ad | Profil 8 |
+| Tip | `profile` |
+| Birim | `adet` |
+| Malzeme | alüminyum |
+| Katalog | görünmez |
+| Ölçü | `width_cm=8`, `depth_cm=8`, `height_cm=8` |
+| Sahne ölçüsü | `width_cm=8`, `depth_cm=8`, `height_cm=350` |
+| Varsayılan renk | `#d0d3d4` |
+| Yüzey | — |
 
-## 5. Regresyon sözleşmesi
-`test/itemLengthParts.test.js`, `backend/tests/modules/fair_stand/test_item_length_parts_migration.py`.
+## Bileşim / BOM
+
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+## Tip davranışı
+
+`profile` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `wall` |
+| collision | `segment` |
+| moveSnapCm | `10` |
+| magneticSnap | `standard` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `True` |
+| wallCapacity | `include` |
+| overlapWithTypes | `('separator',)` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_item_length_parts_migration.py`
+- `e2e/long-part-split-label.spec.mjs`
+- `test/itemLengthParts.test.js`
+- `test/itemSurfaceFlagAudit.test.js`

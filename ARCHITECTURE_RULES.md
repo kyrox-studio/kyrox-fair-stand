@@ -4,10 +4,10 @@ Bu doküman sistemin **mimari sınırlarını ve source-of-truth dağılımını
 
 ## 1. Canonical kaynaklar
 
-- `ITEM_CONTRACT.md` — BOM, üretim veya maliyet hesabına giren fiziksel öğelerin kök `Item` semantiği; `itemKey` / `type` / instance ayrımı; BOM sahipliği; quantity+unit; bileşik/parametrik/recursive Item kuralları.
-- `src/moduleBehavior.js` — module-type editor davranışları: placement mode, move snap, rotation step, default rotation, side insert, collision strategy ve ghost behavior.
+- `docs/items/contract/ITEM_CONTRACT.md` — BOM, üretim veya maliyet hesabına giren fiziksel öğelerin kök `Item` semantiği; `itemKey` / `type` / instance ayrımı; BOM sahipliği; quantity+unit; bileşik/parametrik/recursive Item kuralları.
+- `src/moduleBehavior.js` — module-type editor davranışlarının runtime erişimi: placement mode, move snap, side insert, collision strategy ve ghost behavior (veri DB `fair_stand_item_type_scene_behavior`), rotation step ve default rotation (veri Item kolonları, `docs/refactor/ROTATION.md`).
 - Placement/core dosyaları — koordinat doğrulaması, duvar snap'i, komşu snap'i, collision, connection ve reflow algoritmaları.
-- `src/catalog.js` — katalog kimliği, kullanıcıya sunulan nominal ölçüler ve katalog metadata'sı.
+- Katalog — DB kategorileri, önizleme türleri ve Item `catalog*` alanları; runtime `src/catalog.js` (`docs/refactor/CATALOG.md`). Item kimliği ve ölçüleri DB Item kaydıdır (`src/items.js` / `getItem()`).
 - State factory dosyaları — runtime module/item state yapıları ve editable surface state'leri.
 - Recipe / production-parts katmanı — BOM, üretim adetleri ve gerçek kesim/parça ölçüleri.
 - Regresyon testleri — bu contract'ların uygulanmaya devam ettiğini doğrular.

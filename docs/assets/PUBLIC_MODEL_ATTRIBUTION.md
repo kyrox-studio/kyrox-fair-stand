@@ -1,6 +1,6 @@
 # Public modeller — köken / atıf envanteri
 
-Kaynak: `public/models/` dizin listesi + `src/items.js` `modelFile` + `src/scene3d.js` yükleme yolları. Lisans metni uydurulmaz.
+Kaynak: `public/models/` dizin listesi + DB `fair_stand_item_assets` (`asset_role = 'model'`, `relative_path`; seed `catalog_seed_data.py`). Lisans metni uydurulmaz. Listedeki 13 GLB'nin hepsi bir Item'a bağlıdır.
 
 ## Atıf dosyası olanlar
 

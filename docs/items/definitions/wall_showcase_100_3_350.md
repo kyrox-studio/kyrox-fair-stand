@@ -1,43 +1,75 @@
 # wall_showcase_100_3_350
 
-## Kanonik Item
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-- `itemKey`: `wall_showcase_100_3_350`
-- `type`: `showcase-3`
-- `unit`: `adet`
-- `dimensions.widthCm`: `100`
-- `eyeCount`: `3`
-- Bileşik Item / Item kümesi; `showcase_3_100` diye arada aggregate Item yoktur.
+## Kimlik
 
-## BASE composition
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('wall_showcase_100_3_350')`).
 
-- `profile_91 ×4`
-- `upright_346_5 ×2`
-- `panel_98 ×4`
-- `connector_start ×4`
-- `connector_single ×7`
-- `showcase_side_143_5_30 ×2`
-- `showcase_horizontal_87_4_30 ×2`
-- `glass_shelf ×2`
+| Alan | Değer |
+|---|---|
+| itemKey | `wall_showcase_100_3_350` |
+| Ad | 3 Gözlü Vitrin 100 |
+| Tip | `showcase-3` |
+| Birim | `adet` |
+| Malzeme | — |
+| Katalog | görünür, Panel & Duvar |
+| Ölçü | `width_cm=100` |
+| Sahne ölçüsü | `depth_cm=10`, `height_cm=350` |
+| Varsayılan renk | — |
+| Yüzey | `color`, `image`, `lightbox`, `glass`, `mesh` kabul eder |
 
-## Inner-corner composition
+## Bileşim / BOM
 
-`panelVariant: 'inner-corner'` recipe context'i verildiğinde doğrulanmış köşe BOM'u kanonik recipe üzerinden çözülür:
+`composition_mode=recipe`. BOM `src/itemBom.js` `resolveItemBom('wall_showcase_100_3_350')` ile bu satırlardan çözülür.
 
-- `panel_98 ×4 → panel_corner_92 ×4`
-- `connector_start ×4` değişmez
-- `connector_single ×7 → connector_single ×5 + connector_corner ×4`
-- Diğer BASE child Item miktarları değişmez.
+| Alt kalem | Miktar |
+|---|---|
+| `profile_91` | 4 |
+| `upright_346_5` | 2 |
+| `panel_98` | 4 |
+| `connector_start` | 4 |
+| `connector_single` | 7 |
+| `showcase_side_143_5_30` | 2 |
+| `showcase_horizontal_87_4_30` | 2 |
+| `glass_shelf` | 2 |
 
-Bu varyant `wall_showcase_100_3_350` kanonik parent Item'ının aynı recipe zinciridir; ayrı `showcase_3_100` aggregate Item oluşturulmaz. Relationship bilgisinden `panelVariant` context'inin otomatik üretilmesi bu Item'a özel olarak eklenmemiştir.
+## Tip davranışı
 
-## Runtime sahipliği
+`showcase-3` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
 
-- Catalog key ve kanonik Item identity aynıdır: `wall_showcase_100_3_350`.
-- `showcase-3` tip davranışı `fair_stand_item_type` kaydından gelir (`src/moduleBehavior.js` `getModuleBehavior`, DB bootstrap `itemTypes`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`): `placement=wall`, `collision=segment`, 10 cm snap; yerleşim/move/snap/collision/reflow motoru ortaktır. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`).
-- State kanonik `itemKey` + `eyeCount` taşır.
-- `bodySurface` tek project-örnek color ezme'dır; iki yan + iki yatay sunta birlikte renklenir. Alt showcase-board Items ayrı ayrı editable değildir.
-- Default body color child Items'dan `0xffffff` gelir.
-- `glass_shelf` bu renk ezmesinden etkilenmez.
-- Renderer board ölçülerini kanonik child Items'dan okur ve yalnız kanonik gövde board'ları ile `glass_shelf` geometrisini gösterir; BOM'da olmayan sahte beyaz ön kenar/çerçeve mesh'i eklemez.
-- Eski persisted showcase state load sırasında kanonik `wall_showcase_100_3_350` identity/bodySurface'a normalize edilir.
+| Alan | Değer |
+|---|---|
+| placement | `wall` |
+| collision | `segment` |
+| moveSnapCm | `10` |
+| magneticSnap | `standard` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `True` |
+| wallCapacity | `include` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/relationshipBom.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_panel_separator_cards_migration.py`
+- `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `e2e/helpers/catalogWidth.mjs`
+- `e2e/wall-height-matrix.spec.mjs`
+- `e2e/wall-height.spec.mjs`
+- `e2e/wall-showcase-item-contract.spec.mjs`
+- `test/catalogCategories.test.js`
+- `test/catalogPreviewConfig.test.js`
+- `test/catalogWidthFamily.test.js`
+- `test/itemCatalogFields.test.js`
+- `test/relationshipBomJoints.test.js`
+- `test/sceneBomAcceptance.test.js`
+- `test/shelfCatalogPanelSeam.test.js`
+- `test/showcaseAppearance.test.js`
+- `test/showcaseBodyColorRegression.test.js`
+- `test/showcaseRecipes.test.js`
+- `test/wallShortRelationshipBom.test.js`
+- `test/wallShowcaseItemContract.test.js`

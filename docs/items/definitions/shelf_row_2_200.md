@@ -1,0 +1,53 @@
+# shelf_row_2_200
+
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
+
+## Kimlik
+
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('shelf_row_2_200')`).
+
+| Alan | Değer |
+|---|---|
+| itemKey | `shelf_row_2_200` |
+| Ad | 2 sıralı raf 200 cm |
+| Tip | `shelf` |
+| Birim | `adet` |
+| Malzeme | sunta |
+| Katalog | görünmez, Raf & Vitrin |
+| Ölçü | `width_cm=200`, `depth_cm=38`, `height_cm=51.8` |
+| Sahne ölçüsü | `width_cm=200`, `height_cm=51.8` |
+| Varsayılan renk | `#ffffff` |
+| Yüzey | `color` kabul eder |
+
+## Bileşim / BOM
+
+`composition_mode=recipe`. BOM `src/itemBom.js` `resolveItemBom('shelf_row_2_200')` ile bu satırlardan çözülür.
+
+| Alt kalem | Miktar |
+|---|---|
+| `shelf_200` | 2 |
+
+## Tip davranışı
+
+`shelf` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `wall-overlay` |
+| collision | `none` |
+| moveSnapCm | `10` |
+| magneticSnap | `none` |
+| allowSideInsert | `False` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `exclude` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_catalog_api.py`
+- `backend/tests/modules/fair_stand/test_catalog_seed.py`
+- `e2e/shelf-rows-flow.spec.mjs`
+- `e2e/shelf-width-variant.spec.mjs`

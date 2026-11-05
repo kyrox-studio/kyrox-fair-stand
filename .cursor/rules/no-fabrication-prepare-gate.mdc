@@ -26,4 +26,4 @@ Onay yoksa kod yok. “Tamam abi” kendi kendine onay sayılmaz.
 MD açıklama, yorum, commit/PR metni **Türkçe**. Kimlikler İngilizce (`itemKey`, method adları).
 
 ## 5. Item
-`AGENTS.md` + `ITEM_CONTRACT.md` + `ITEM_MIGRATION_RULES.md` geçerli. Parent unit/recipe miktarı/Raw BOM uydurulmaz.
+`AGENTS.md` + `docs/items/contract/ITEM_CONTRACT.md` + `docs/items/ITEM_MIGRATION_RULES.md` geçerli. Parent unit/recipe miktarı/Raw BOM uydurulmaz.

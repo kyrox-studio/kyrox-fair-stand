@@ -1,18 +1,61 @@
-# glass_table — Kanonik Item
+# glass_table
 
-Aynı ailede `glass_bar_table` "Bar Masası" vardır (migration `0075_glass_bar_table`): tür, çizim, davranış ve BOM politikası aynıdır; yalnız yükseklik 108 cm. Çizim `createGlassTableModule` modülün `itemKey`'inden okunur, ayak masa yüksekliğine göre uzar.
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/glass_table.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
+## Kimlik
 
-## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type/dimensions sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Tekil Item; `itemKey = glass_table`. Type `table-glass`; çap `dimensions.widthCm=75`; oturum alanı 75×75×74 cm. ModelFile yok; renderer prosedürel cam masa. Unit / BOM uydurulmadı (`decision-required`).
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('glass_table')`).
 
-## Oluşturma, state ve kalıcılık
-`createGlassTableModuleState` Item’dan default üretir; `itemKey` damgalar; surface yok (`free-model-fixed`). Yüklemede `normalizeModuleItemState` doldurur; takma ad yok.
+| Alan | Değer |
+|---|---|
+| itemKey | `glass_table` |
+| Ad | Cam Masa |
+| Tip | `table-glass` |
+| Birim | — |
+| Malzeme | — |
+| Katalog | görünür, Extra |
+| Ölçü | `width_cm=75`, `depth_cm=75`, `height_cm=74` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | — |
+| Yüzey | — |
 
-## Davranış ve renderer sınırı
-`moduleBehavior.js > table-glass`: free, snap 10, `collision: none`, `magneticSnap: none`, boundary `stand-edge`. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). Tabla/sap/taban ayrı Item değildir.
+## Bileşim / BOM
 
-## Regresyon
-`test/furnitureItemsContract.test.js`; `test/glassTableContract.test.js`; E2E `e2e/furniture-items-contract.spec.mjs`.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+Alt kalem olarak kullanıldığı Item'lar: `furniture_table_chair_set_eames`.
+
+## Tip davranışı
+
+`table-glass` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `none` |
+| moveSnapCm | `10` |
+| magneticSnap | `none` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `include` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/designState.js`
+- `src/scene3d.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_glass_bar_table_migration.py`
+- `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `e2e/glass-bar-table.spec.mjs`
+- `e2e/scene-select-all.spec.mjs`
+- `test/catalogCategories.test.js`
+- `test/catalogWidthFamily.test.js`
+- `test/chairEamesContract.test.js`
+- `test/furnitureItemsContract.test.js`
+- `test/glassBarTable.test.js`
+- `test/glassTableContract.test.js`
+- `test/itemCatalogFields.test.js`
+- `test/verticalMoveUprightHeight.test.js`

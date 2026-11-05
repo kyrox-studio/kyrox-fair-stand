@@ -4,7 +4,7 @@
 >
 > Checkbox'lar yalnız source code ve regression testleriyle doğrulanmış mevcut implementasyonu gösterir. Kısmi altyapı varsa madde tamamlandı sayılmaz; açıklama notuyla belirtilir.
 >
-> **Production dataset kuralı:** Fiziksel parça ölçüleri ve recipe adetleri bu roadmap içinde kopyalanmaz. Canonical üretim ve recipe verisi PostgreSQL `fair_stand` Item / `composition` kayıtlarıdır; runtime'da `src/items.js` (bootstrap edilen registry) ve `src/moduleRecipes.js` (`expandRecipe` resolver) üzerinden okunur. BOM politika sahibi `src/moduleContracts.js`'dir.
+> **Production dataset kuralı:** Fiziksel parça ölçüleri ve recipe adetleri bu roadmap içinde kopyalanmaz. Canonical üretim ve recipe verisi PostgreSQL `fair_stand` Item / `composition` kayıtlarıdır; runtime'da `src/items.js` (bootstrap edilen registry) ve `src/moduleRecipes.js` (`expandRecipe` resolver) üzerinden okunur. BOM politika sözleşmesi `src/moduleContracts.js`'dedir (governance; runtime BOM `src/itemBom.js` / `src/projectBom.js`).
 
 ## FAZ 4 ana hedefi
 

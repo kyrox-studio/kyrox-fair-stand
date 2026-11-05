@@ -1,23 +1,56 @@
-# panel_147_5 — Item Contract Definition
+# panel_147_5
 
-## Kanonik Item
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-- `itemKey`: `panel_147_5`
-- `type`: `panel`
-- `unit`: `adet`
-- dimensions: `147.5 × 47 × 0.8 cm`
-- `material`: `sunta`
-- `panelRole`: `straight`
-- `defaultColor`: ürün default'u doğrulanmadığı için tanımlı değil; editor `#ffffff` değeri ezme/default-surface katmanıdır.
+## Kimlik
 
-## Sahiplik
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('panel_147_5')`).
 
-Intrinsic ürün gerçeğinin tek kaynağı Fair Stand ilişkisel Item store'daki `panel_147_5` kaydı kaydıdır. State, yerleşim, move, rotation, snap, collision, selection, context-menu, delete/duplicate ve kalıcılık parent module/type tarafından uygulanır. Renderer specialized ezme yapabilir ancak `material` dahil product tek kaynağı değiştirmez.
+| Alan | Değer |
+|---|---|
+| itemKey | `panel_147_5` |
+| Ad | Panel 147,5 × 47 cm |
+| Tip | `panel` |
+| Birim | `adet` |
+| Malzeme | sunta |
+| Katalog | görünmez |
+| Ölçü | `width_cm=147.5`, `depth_cm=0.8`, `height_cm=47` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#ffffff` |
+| Yüzey | `color`, `image`, `lightbox`, `glass`, `mesh` kabul eder |
 
-## BOM / ilişki
+## Bileşim / BOM
 
-Tekil Item'dır; quantity parent recipe sahibidir. Inner-corner konfigürasyonunda matching straight panel quantity'si 1:1 kanonik corner Item'a aktarılabilir.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-## Regresyon
+Alt kalem olarak kullanıldığı Item'lar: `base_150`, `desk_banko_150`, `desk_banko_150_l`, `wall_150_350`, `wall_150_short_1`, `wall_150_short_2`.
 
-Mevcut panel contract testleri + `test/boardMaterialItemContract.test.js`.
+## Tip davranışı
+
+`panel` tipi için ayrı sahne davranışı tanımlı değildir.
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/baseRunBom.js`
+
+## Testler
+
+- `test/baseItemsContract.test.js`
+- `test/baseRecipes.test.js`
+- `test/baseRunBom.test.js`
+- `test/boardMaterialItemContract.test.js`
+- `test/cornerPanelsItemContract.test.js`
+- `test/counterModule.test.js`
+- `test/flatPanelBackStrips.test.js`
+- `test/lCounter150Contract.test.js`
+- `test/moduleRecipes.test.js`
+- `test/panelCamFamily.test.js`
+- `test/printAreaBom.test.js`
+- `test/recipeCompositionItemsContract.test.js`
+- `test/relationshipBomJoints.test.js`
+- `test/sceneBomAcceptance.test.js`
+- `test/straightPanelsItemContract.test.js`
+- `test/wallHeightRecipe.test.js`
+- `test/wallShortCanonicalRename.test.js`
+- `test/wallShortRelationshipBom.test.js`

@@ -1,4 +1,4 @@
-"""Emit docs/refactor/data/item_dimensions_matrix.tsv from alembic catalog dump."""
+"""Emit docs/refactor/data/item_dimensions_matrix.tsv from the Item store seed (test/fixtures/itemCatalogSeed.json)."""
 from __future__ import annotations
 
 import json
@@ -6,7 +6,7 @@ from decimal import Decimal
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DUMP = ROOT / "backend" / "alembic" / "data" / "0002_fair_stand_catalog_dump.json"
+SEED = ROOT / "test" / "fixtures" / "itemCatalogSeed.json"
 OUT = ROOT / "docs" / "refactor" / "data" / "item_dimensions_matrix.tsv"
 
 
@@ -21,11 +21,13 @@ def fmt(value: object) -> str:
 
 
 def main() -> None:
-    payload = json.loads(DUMP.read_text(encoding="utf-8"))
-    tables = payload["tables"]
-    types = {r["item_key"]: r["item_type"] for r in tables["fair_stand_items"]}
-    dims = sorted(tables["fair_stand_item_dimensions"], key=lambda r: r["item_key"])
-    scene = {r["item_key"]: r for r in tables.get("fair_stand_item_scene_dimensions") or []}
+    items = json.loads(SEED.read_text(encoding="utf-8"))["items"]
+    types = {i["item_key"]: i["item_type"] for i in items}
+    dims = sorted(
+        ({"item_key": i["item_key"], **i["dimensions"]} for i in items if i.get("dimensions")),
+        key=lambda r: r["item_key"],
+    )
+    scene = {i["item_key"]: i["scene_dimensions"] for i in items if i.get("scene_dimensions")}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     header = [
         "item_key",

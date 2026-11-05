@@ -2,9 +2,9 @@
 
 > **HISTORICAL SNAPSHOT — CURRENT SOURCE OF TRUTH DEĞİLDİR.**
 >
-> Bu dosya repository'nin daha önceki bir durumuna ait inceleme kaydıdır. İçindeki “mevcut”, “şu anda”, öncelik ve öneri ifadeleri **bugünkü ROG durumunu temsil etmez** ve yeni iş planı olarak kullanılmamalıdır.
+> Bu dosya repository'nin daha önceki bir durumuna ait inceleme kaydıdır. İçindeki “mevcut”, “şu anda”, öncelik ve öneri ifadeleri **bugünkü durumu temsil etmez** ve yeni iş planı olarak kullanılmamalıdır.
 >
-> Güncel durum için sırasıyla `audit/FULL_SWEEP_STATE.md`, `audit/FINDINGS.md`, `PROJECT_RULES.md`, `ARCHITECTURE_RULES.md`, `SYSTEM_DEVELOPMENT_CONTRACT.md` ve `SYSTEM_CHANGE_GATE.md` okunmalıdır. Bu historical kayıt yalnız geçmiş kararların/tespitlerin bağlamını korumak için tutulur.
+> Güncel durum: iş listesi `kyrox-platform/projects/fair-stand/ROADMAP.md`, açık bulgular `audit/FINDINGS.md`, kurallar `PROJECT_RULES.md`, `ARCHITECTURE_RULES.md`, `SYSTEM_DEVELOPMENT_CONTRACT.md` ve `SYSTEM_CHANGE_GATE.md`. `audit/FULL_SWEEP_STATE.md` A00–A24 tarihî mührüdür. Bu historical kayıt yalnız geçmiş kararların/tespitlerin bağlamını korumak için tutulur.
 
 ---
 

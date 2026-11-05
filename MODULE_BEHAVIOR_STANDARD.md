@@ -28,15 +28,15 @@ Policy selection belongs here; the geometric algorithms implementing those strat
 
 ## Explicit catalog behavior contract
 
-Every module type exposed through `MODULE_CATALOG` must have an explicit entry in the behavior registry, even when that type intentionally uses the standard wall behavior.
+Every module type in the catalog (`listCatalogItems()` → `getItem(itemKey).type`) must have a scene behavior row (`fair_stand_item_type_scene_behavior`, bootstrap `itemTypes[]`), even when that type intentionally uses the standard wall behavior.
 
-`hasExplicitModuleBehavior()` exposes whether a type is declared by the registry. `test/moduleBehaviorContract.test.js` compares all unique catalog module types against this contract, so adding a new catalog type without declaring its behavior fails CI.
+`hasExplicitModuleBehavior()` returns true when the type is in `KNOWN_BEHAVIOR_TYPE_KEYS` or its bootstrap `itemTypes` row carries `placement`. `test/moduleBehaviorContract.test.js` compares all unique catalog module types against this contract, so adding a new catalog type without a behavior row fails CI.
 
 This prevents a newly added catalog type from silently inheriting fallback behavior by accident.
 
 ## Defaults
 
-Unknown or undeclared non-catalog module types still fall back to the default behavior defined in `src/moduleBehavior.js`.
+A type that is unknown to the bootstrap and not in `KNOWN_BEHAVIOR_TYPE_KEYS` falls back to the default behavior defined in `src/moduleBehavior.js`. A registered type without a scene behavior row, or a known type whose bootstrap fields are missing, throws (fail-fast).
 
 The current default behavior is wall placement with the default movement/collision/connection contract declared in code. Documentation should not duplicate those numeric defaults as a separate source of truth. Leaf Item rotation columns stay null; placeable rows must carry the trio.
 
@@ -54,7 +54,7 @@ Every module has a ghost definition. Missing/unknown module types currently rece
 }
 ```
 
-For modules that need a specific real-model or custom preview, declare the behavior on the CRM **Item Type** (`fair_stand_item_type` / bootstrap `itemTypes`) rather than introducing a new module-type decision elsewhere.
+For modules that need a specific real-model or custom preview, declare the behavior on the CRM **Item Type** (`fair_stand_item_type_scene_behavior` / bootstrap `itemTypes`) rather than introducing a new module-type decision elsewhere.
 
 `scene3d.js` must route ghost creation through `getModuleGhostBehavior()` and the declared renderer strategy.
 
@@ -105,7 +105,7 @@ Call the helpers instead of hard-coding module-specific values:
 When adding a new module:
 
 1. Add its catalog entry when applicable.
-2. Declare its type explicitly in `src/moduleBehavior.js`, even if it intentionally uses the standard wall behavior.
+2. Give its type a scene behavior row on the CRM **Item Type** (`fair_stand_item_type_scene_behavior`), even if it intentionally uses the standard wall behavior.
 3. Express special placement/interaction selection with a named strategy/capability in the behavior contract instead of adding a type list to placement, scene, or controller code.
 4. Keep the geometric implementation in the placement/core layer.
 5. Add a regression test for any non-default placement, snap, rotation, collision, connection, overlap, support, capacity, or ghost behavior.

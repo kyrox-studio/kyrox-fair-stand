@@ -1,19 +1,63 @@
-# wall_separator_100_350_sarmasik — Kanonik Item
+# wall_separator_100_350_sarmasik
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/wall_separator_100_sarmasik.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type/modelFile/dimensions sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Bileşik Item; `itemKey = wall_separator_100_350_sarmasik`. Type ailesi `separator`; genişlik 100 cm; `modelFile = wall_separator_100_350_sarmasik.glb`. Üst öğe üzerinde unit uydurulmadı.
+## Kimlik
+
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('wall_separator_100_350_sarmasik')`).
+
+| Alan | Değer |
+|---|---|
+| itemKey | `wall_separator_100_350_sarmasik` |
+| Ad | Separatör 100 Sarmaşık |
+| Tip | `separator` |
+| Birim | — |
+| Malzeme | — |
+| Katalog | görünmez |
+| Ölçü | `width_cm=100` |
+| Sahne ölçüsü | `depth_cm=10`, `height_cm=350` |
+| Varsayılan renk | — |
+| Yüzey | `color` kabul eder |
 
 ## Bileşim / BOM
-`composition.mode=recipe`, `moduleType=separator`; recipe lookup `item.dimensions.widthCm=100`. Miktar tek kaynak: aynı `separator:100` (düz 100 ile paylaşır). Recipe miktarları değişmez. Raw BOM UI dokunulmadı.
 
-## Oluşturma, state ve kalıcılık
-`createSeparatorModuleState` Item’dan default üretir; `modelFile` damgalanır. Catalog ayrımı `modelFile` ile. Yüklemede hydrate; takma ad yok.
+`composition_mode=recipe`. BOM `src/itemBom.js` `resolveItemBom('wall_separator_100_350_sarmasik')` ile bu satırlardan çözülür.
 
-## Davranış ve renderer sınırı
-`separator` tip davranışı `fair_stand_item_type` kaydından gelir (`src/moduleBehavior.js` `getModuleBehavior`, DB bootstrap `itemTypes`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`): `placement=wall`, `collision=segment`, 10 cm snap. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). GLB vine mesh’leri renderer detayıdır; iş tek kaynağı değildir.
+| Alt kalem | Miktar |
+|---|---|
+| `profile_91` | 2 |
+| `upright_346_5` | 2 |
+| `separator_panel_98` | 7 |
+| `connector_start` | 2 |
+| `connector_single` | 13 |
 
-## Regresyon
-`test/wallSeparatorItemsContract.test.js`; E2E `e2e/wall-separator-items-contract.spec.mjs`.
+## Tip davranışı
+
+`separator` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `wall` |
+| collision | `segment` |
+| moveSnapCm | `10` |
+| magneticSnap | `standard` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `True` |
+| wallCapacity | `include` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_panel_separator_cards_migration.py`
+- `e2e/wall-height-matrix.spec.mjs`
+- `test/catalogSingleSource.test.js`
+- `test/catalogWidthFamily.test.js`
+- `test/moduleStateConstructionRegistry.test.js`
+- `test/relationshipBomJoints.test.js`
+- `test/sceneBomAcceptance.test.js`
+- `test/wallHeightRecipe.test.js`
+- `test/wallSeparatorItemsContract.test.js`
+- `test/wallShortRelationshipBom.test.js`

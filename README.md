@@ -16,7 +16,7 @@ Repository ilk MVP taslağının ötesindedir. Mevcut uygulama aşağıdaki ana 
 - Hata ve uyarılar sağ altta üst üste dizilen kısa bildirimlerdir (`src/toastNotifications.js`); hata için `window.alert` kullanılmaz, ayrıntı konsola da yazılır.
 - Sahnenin sol altında stand özeti görünür ("L Stand Sol · 4 × 3 m · duvar 3,5 m"). Üretim listesinde parça kodu ekranda yazmaz (ipucu ve `data-item-key`); kopyalanan üretim metni kodu taşır.
 - Yardım rehberi "5 Dakikada İlk Standın" adımlarıyla açılır. Tek açılır/kapanır "Gelişmiş > Ayarlar" bölümü Herşeyi Kilitle, Ölçüleri göster ve Otomatik kayıt kontrollerini anlatır.
-- Sol menüde tek Basit / Gelişmiş seçici bulunur. Ayarlar, Gruplar, Şablonlarım ve Standartlar yalnız Gelişmiş modda görünür. Ölçüler Basitte kapalı, Gelişmişte açık başlar; ölçü tercihi oturumluktur. Herşeyi Kilitle mevcut öğeleri topluca kilitler veya öğe/grup kilitlerini açar; grupları çözmez.
+- Sol menüde tek Basit / Gelişmiş seçici bulunur. Ayarlar, Gruplar, Şablonlarım ve Standartlar yalnız Gelişmiş modda görünür. Ölçülerin görünürlüğü moddan bağımsızdır (aşağıda). Herşeyi Kilitle mevcut öğeleri topluca kilitler veya öğe/grup kilitlerini açar; grupları çözmez.
 - Kurulumda genişlik, derinlik ve duvar yüksekliği metre gösterir; 4,5 / 6,5 gibi girişler desteklenir, proje ve hesap birimi cm kalır. Tek öğe/grup taşınırken veya yerleştirme önizlemesinde zemin ızgarası görünür.
 - Module type'a göre merkezi behavior registry.
 - Özellikler paneli (`src/moduleContextMenu.js`, `src/selectionSurfaceSummary.js`): öğeye/yüzeye tek tık sahnenin sağında seçimin desteklediği işlemleri açar; boş alana tık kapatır. Renk ve görsel (arşiv, Doldur / Sığdır / Kaldır) yalnız bu paneldedir; kutu blok, ışıklı strafor, tül, görsel ölçüsü, dikme ve profil boyu pencere açmadan panelde canlı değişir. Zemine tıklayınca zemin rengi ve kaplaması panelde seçilir. Çoklu panelde sayı, Karışık değer ve kısmi destekte gerekçeli pasif işlem gösterilir; seçim çubuğu (Döndür / Kopyala / Sil / Çoklu) korunur.
@@ -107,8 +107,11 @@ Canonical CI şu sırayı çalıştırır:
 checkout (full git history)
 → npm run contract:verify
 → npm ci
+→ npm run audit:deps (npm audit --audit-level=high)
+→ npm run syntax:check
 → npm test
 → python -m pytest (backend/)
+→ pip-audit (backend/requirements.txt; yalnız uyarı)
 → npm run build
 → Playwright runner kurulumu
 → Chromium kurulumu
@@ -127,13 +130,13 @@ Sistem, tek bir dosyanın bütün ürün kurallarını taşıması yerine soruml
 
 `src/catalog.js`
 
-Kullanıcıya sunulan katalog kimlikleri, nominal ölçüler ve catalog metadata burada tutulur. Nominal katalog/placement ölçüsü ile gerçek üretim kesim ölçüsü aynı kavram değildir.
+Katalog DB'den gelir (kategoriler, önizleme türleri, Item `catalog*` alanları); `src/catalog.js` bootstrap edilen Item registry'den katalog listesini kurar (`docs/refactor/CATALOG.md`). Nominal katalog/placement ölçüsü ile gerçek üretim kesim ölçüsü aynı kavram değildir.
 
 ### Module contract
 
 `src/moduleContracts.js`
 
-Her katalog anahtarının profile, state/appearance/renderer/runtime/composition ve BOM policy sözleşmesini açıklar. Katalog dışı explicit runtime modülleri de burada ayrı registry üzerinden contract taşır.
+Modül sözleşmesini (profile, state/appearance/renderer/runtime/composition ve BOM policy) Item'dan türetir: profil Item tipinden, BOM policy Item `composition`'dan (`resolveModuleContract`). Item'a özel atama yoktur (`MODULE_CONTRACT_ASSIGNMENTS` boş). Katalog dışı runtime modülleri `NON_CATALOG_MODULE_CONTRACTS` registry'sindedir.
 
 ### Feature contract
 
@@ -153,7 +156,7 @@ Module type'a göre değişen editor davranışlarının canonical kaynağıdır
 - collision strategy,
 - ghost strategy.
 
-Sahne Z dönüş adımı / varsayılan / yan ek Item kolonlarıdır: `docs/refactor/ROTATION.md`. `TYPE_BEHAVIORS` rotation taşımaz. Getter'lar `src/moduleBehavior.js` içindedir.
+Sahne Z dönüş adımı / varsayılan / yan ek Item kolonlarıdır: `docs/refactor/ROTATION.md`. Tip davranışı (`fair_stand_item_type_scene_behavior`) rotation taşımaz. Getter'lar `src/moduleBehavior.js` içindedir.
 
 Katalogdaki her mevcut runtime type explicit behavior coverage taşımak zorundadır.
 
@@ -180,7 +183,7 @@ Kamera derinliği: perspektif kameranın `near` değeri bakılan noktaya uzaklı
 - PostgreSQL `fair_stand` — Item master ve Item `composition` (reçete/part miktarı) verisi; Fair Stand API (`:8002`) üzerinden bootstrap edilir.
 - `src/items.js` — bootstrap edilen runtime Item registry'si: leaf/production metadata, commercial, wall-media ve composite parents. Statik master değildir.
 - `src/moduleRecipes.js` — `composition` satırlarını `itemKey` üzerinden açan resolver.
-- `src/moduleContracts.js` — modülün BOM policy'si.
+- `src/moduleContracts.js` — modülün BOM policy sözleşmesi (governance; runtime BOM `src/itemBom.js` / `src/projectBom.js`, onu import etmez).
 
 Roadmap veya README bu verilerin ikinci sabit kopyası değildir.
 

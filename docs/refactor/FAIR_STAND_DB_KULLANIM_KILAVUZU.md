@@ -32,7 +32,7 @@ Kod: `get_catalog_bootstrap.py` → `routes.py`; stand `catalogBootstrap.js` ile
 | `categories` | `fair_stand_categories` | `catalog.js` | `is_active=true` |
 | `items` | `fair_stand_items` + child tablolar | `items.js` registry | `items.is_active=true` (**`catalog_visible=false` gizli SKU’lar dahil**) |
 | `previewKinds` | `fair_stand_catalog_preview_kinds` | kart silüeti | **filtre yok** (pasif önizlemeler de gelir) |
-| `itemTypes` | `fair_stand_item_type` + overlap junction | `initializeItemTypeRegistry` | `is_active=true` |
+| `itemTypes` | `fair_stand_item_type` + `fair_stand_item_type_scene_behavior` + overlap junction | `initializeItemTypeRegistry` | `is_active=true` |
 | `ruleTypes` | `fair_stand_rule_type` | API’de var; stand JS ayrı registry **açmaz** | `is_active=true` |
 | `rules` | `fair_stand_rule` + `fair_stand_rule_item_type` | `initializeSnapRuleRegistry` | `is_active=true` |
 | `standDimensions` | `fair_stand_dimensions` id=1 | `standDimensions.js` | singleton |
@@ -44,21 +44,24 @@ Item bootstrap alanları mapper’dan: `snapRequiresRuleId` + denorm `snapRequir
 
 ### 1.2 Tablo envanteri (ürün şeması)
 
-`models.py` + Alembic head **`0067_group_templates`**. `0067_group_templates` organizasyon grup şablonlarını (`fair_stand_group_templates`) ekler. `0043` / `0044` kolon eklemez; cam panel SKU satırıdır. `0065_metal_separator` gizli `metal_separator` kalemini ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve maliyet bayrağını açar. Katalogda görünmez. Junction’lar ayrı tablo sayılır.
+`models.py` + Alembic head **`0090_carpet_anthracite`** (27 tablo). `0067_group_templates` organizasyon grup şablonlarını (`fair_stand_group_templates`) ekler. `0043` / `0044` kolon eklemez; cam panel SKU satırıdır. `0065_metal_separator` gizli `metal_separator` kalemini ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve maliyet bayrağını açar. Katalogda görünmez. Junction’lar ayrı tablo sayılır.
 
 | Tablo | Rol |
 |---|---|
 | `fair_stand_categories` | Katalog grupları |
 | `fair_stand_catalog_preview_kinds` | Kart silüeti |
-| `fair_stand_item_type` | Tip davranış paketi |
+| `fair_stand_item_type` | Tip kimliği (`key`, ad, aktif) |
+| `fair_stand_item_type_scene_behavior` | Tipin sahne davranışı; satır yoksa tip sahnede değildir |
 | `fair_stand_item_type_overlap` | Tip ↔ tip çakışma izni (M:N) |
 | `fair_stand_rule_type` | Kural ailesi (bugün `snap`) |
 | `fair_stand_rule` | Snap kuralı (key, face, edge) |
 | `fair_stand_rule_item_type` | Kural ↔ tip provides link (M:N) |
 | `fair_stand_items` | SKU kökü |
-| `fair_stand_item_*` | Ölçü, recipe, asset, vitrin parçaları… |
+| `fair_stand_units` | Birim kataloğu (`fair_stand_items.unit` FK) |
+| `fair_stand_item_*` | Ölçü, recipe, asset, vitrin parçaları, genişlik varyantları, uzunluk parça bölünüşü (`fair_stand_item_length_parts`) |
 | `fair_stand_dimensions` / `fair_stand_settings` | Stand zarfı + runtime UI |
-| `fair_stand_projects` / `fair_stand_project_assets` | Müşteri projesi |
+| `fair_stand_projects` / `fair_stand_project_assets` / `fair_stand_project_revisions` | Müşteri projesi, görselleri ve revizyonları |
+| `fair_stand_cost_items` | Organizasyonun Item fiyatı ve manuel maliyet kalemi |
 | `fair_stand_group_templates` | Organizasyon grup şablonu (Item değil; görsel/kumaş yok) |
 | `alembic_version` | Migrasyon kilidi (ürün değil) |
 
@@ -66,11 +69,11 @@ Item bootstrap alanları mapper’dan: `snapRequiresRuleId` + denorm `snapRequir
 
 ## 2. İki ayrı dil (karıştırma)
 
-Sahne davranışının büyük kısmı **Item tipi** (`fair_stand_item_type`) ve **Snap kuralı** (`fair_stand_rule`) ile tanımlanır. Birbirinin yerine geçmez.
+Sahne davranışının büyük kısmı **Item tipi** (`fair_stand_item_type` + 1:1 `fair_stand_item_type_scene_behavior`) ve **Snap kuralı** (`fair_stand_rule`) ile tanımlanır. Birbirinin yerine geçmez.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│  TİP DAVRANIŞI (fair_stand_item_type)                           │
+│  TİP DAVRANIŞI (fair_stand_item_type_scene_behavior)            │
 │  Aynı tipteki TÜM SKU’lar aynı paketi miras alır.                │
 │  Örn: placement=wall, move_snap_cm=10, magnetic_snap=standard   │
 │  → duvara mı oturur, sürüklerken 10 cm ızgara, manyetik joint   │
@@ -99,7 +102,7 @@ Sahne davranışının büyük kısmı **Item tipi** (`fair_stand_item_type`) ve
 
 ### 2.1 Tip alanı → motor (kod doğrulaması)
 
-| `fair_stand_item_type` | Stand fonksiyon / etki |
+| `fair_stand_item_type_scene_behavior` | Stand fonksiyon / etki |
 |---|---|
 | `placement` | Yerleştirme planlayıcı / duvar vs free vs overlay |
 | `move_snap_cm` | `getModuleMoveSnapCm` |
@@ -132,7 +135,7 @@ Sahne davranışının büyük kısmı **Item tipi** (`fair_stand_item_type`) ve
 |---|---|---|
 | Katalog kategorileri | `fair_stand_categories` | Sol menü grupları |
 | Önizleme türleri | `fair_stand_catalog_preview_kinds` | Kart silüeti HTML/CSS |
-| Item tipleri | `fair_stand_item_type` (+ overlap) | Davranış paketi (placement, collision, …) |
+| Item tipleri | `fair_stand_item_type` + `fair_stand_item_type_scene_behavior` (+ overlap) | Davranış paketi (placement, collision, …) |
 | Kural türleri | `fair_stand_rule_type` | Bugün yalnız `snap` |
 | Kurallar | `fair_stand_rule`, `fair_stand_rule_item_type` | top-rail, shelf-rail, face/edge, hangi tip provides |
 | Items | `fair_stand_items` + child tablolar | SKU, tip, snap, ölçü, recipe; **Kopyala**; 3D montaj (pose + kilit grubu) |

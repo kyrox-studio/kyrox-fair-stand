@@ -4,7 +4,7 @@
 >
 > Roadmap maddeleri yalnız isim benzerliğine göre tamamlandı sayılmaz. Durum işaretleri repository source code + regression testleriyle doğrulanır.
 >
-> **Production dataset kuralı:** Fiziksel parça ölçüleri, `itemKey` kimlikleri ve recipe miktarları roadmap içinde ikinci bir canonical veri seti olarak tutulmaz. Bu verilerin canonical sahibi PostgreSQL `fair_stand` (Fair Stand API `:8002`) Item / composition kayıtlarıdır. Runtime'da `src/items.js` bu veriden bootstrap edilen Item registry'yi, `src/moduleRecipes.js` Item `composition` satırlarını açan resolver'ı taşır. BOM politika sahibi `src/moduleContracts.js`'dir.
+> **Production dataset kuralı:** Fiziksel parça ölçüleri, `itemKey` kimlikleri ve recipe miktarları roadmap içinde ikinci bir canonical veri seti olarak tutulmaz. Bu verilerin canonical sahibi PostgreSQL `fair_stand` (Fair Stand API `:8002`) Item / composition kayıtlarıdır. Runtime'da `src/items.js` bu veriden bootstrap edilen Item registry'yi, `src/moduleRecipes.js` Item `composition` satırlarını açan resolver'ı taşır. BOM politika sözleşmesi `src/moduleContracts.js`'dedir (governance; runtime BOM `src/itemBom.js` / `src/projectBom.js`).
 
 ## Proje durumu
 
@@ -126,7 +126,7 @@ Roadmap, üretim veri tablosu değildir. Güncel üretim gerçekleri aşağıdak
 - PostgreSQL `fair_stand` (Fair Stand API `:8002`) — kanonik `itemKey` kimlikleri, type, birim, fiziksel metadata ve Item `composition` (reçete) satırları,
 - `src/items.js` — bu veriden bootstrap edilen runtime Item registry'si (`getItem()`); ikinci master değildir,
 - `src/moduleRecipes.js` — `composition` satırlarını `itemKey` üzerinden açan resolver (`expandRecipe`),
-- `src/moduleContracts.js` — modülün BOM politikası (`recipe`, `decision-required` vb.),
+- `src/moduleContracts.js` — modülün BOM politika sözleşmesi (`recipe`, `decision-required` vb.; governance, runtime BOM `src/itemBom.js` / `src/projectBom.js` onu import etmez),
 - `test/moduleRecipes.test.js` ve ilgili contract testleri — bu veri/ilişkilerin regresyon güvencesi.
 
 Roadmap içinde sabit panel/profil/dikme ölçüleri veya belirli bir duvarın parça adetleri tekrar yazılmaz. Üretim dataset'i değişirse yalnız canonical veri (Alembic migration / Admin) ve onu doğrulayan testler değiştirilir; roadmap yalnız plan/acceptance durumunu anlatır.

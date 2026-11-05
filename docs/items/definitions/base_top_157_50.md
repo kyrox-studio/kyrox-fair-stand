@@ -1,52 +1,43 @@
-# base_top_157_50 — Item Contract Definition
+# base_top_157_50
 
-## 1. Kanonik kimlik
-- `itemKey = base_top_157_50`
-- `type = base-top`
-- `unit = adet`
-- yapı: Tekil Item
-- parametrik: hayır
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## 2. Kanonik ürüne özgü / varsayılan özellikler
-Kanonik source: `src/items.js`.
+## Kimlik
 
-```text
-name                      Baza Üstü 157 × 50 cm
-widthCm                   157
-depthCm                   50
-heightCm                  1.8
-material                  sunta
-defaultColor              0xffffff
-```
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('base_top_157_50')`).
 
-Bu değerler Item'ın ürün tanımıdır. `material` ve `defaultColor` genel Item şemasında zorunlu değildir; bu Item için doğrulandıkları için tanımlıdır. Explicit project/runtime veya specialized renderer ezme uygulanabilir; ezme kanonik default'u değiştirmez.
+| Alan | Değer |
+|---|---|
+| itemKey | `base_top_157_50` |
+| Ad | Baza Üstü 157 × 50 cm |
+| Tip | `base-top` |
+| Birim | `adet` |
+| Malzeme | sunta |
+| Katalog | görünmez |
+| Ölçü | `width_cm=157`, `depth_cm=50`, `height_cm=1.8` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#ffffff` |
+| Yüzey | `color` kabul eder |
 
-## 3. Oluşturma / katalog / state / kalıcılık
-Bağımsız leaf proje örneği oluşturucu, mutable state, project `id` ve kalıcılık entity'si **UYGULANMIYOR**. Parent catalog Item'ı `base_150`'dır. Leaf production identity recipe + `getItem()` üzerinden çözülür.
+## Bileşim / BOM
 
-## 4. Davranış / etkileşim yetenekleri
-Leaf top ayrı scene Item örneği olmadığı için yerleşim, move, rotation, snap, collision, selection, drag, context-menu, delete, duplicate ve keyboard yetenek'leri **UYGULANMIYOR**. Bu interaction'lar parent base/base-wall seviyesindedir.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-## 5. İlişkiler
-Leaf için ayrı kanonik relationship/reflow state'i **UYGULANMIYOR**. Parent composition sahiplik recipe'dedir.
+Alt kalem olarak kullanıldığı Item'lar: `base_150`.
 
-## 6. BOM / bileşim
-Tam bir parent recipe kanonik Item'ı `×1` tüketir:
-- `base-150`
+## Tip davranışı
 
-Recipe satırı `{ itemKey: 'base_top_157_50', quantity: 1 }` biçimindedir. Expansion `getRecipeItemKey()` → `getItem()` üzerinden kanonik üstveriyi tüketir. Recursive composition **UYGULANMIYOR**.
+`base-top` tipi için ayrı sahne davranışı tanımlı değildir.
 
-## 7. Renderer / ezme politikası
-Renderer prosedürel ve specialized temsil kullanabilir. `src/scene3d.js` içindeki render kalınlığı/overhang/rengi kanonik production property değildir. Renderer görsel amaçla ezebilir; BOM/business tek kaynak Fair Stand ilişkisel Item store'daki `base_top_157_50` kaydı olarak kalır.
+## Kaynak kodda geçtiği yerler
 
-## 8. Regresyon sözleşmesi
-`test/baseTopsItemContract.test.js` şu hard gate'leri kilitler:
-1. kanonik `itemKey`, `type`, `unit`,
-2. `157 × 50 × 1.8 cm`,
-3. `material = sunta`,
-4. `defaultColor = 0xffffff`,
-5. tam bir kanonik parent recipe ve `×1` eşyapı,
-6. expanded recipe'nin aynı kanonik Item üstverisinı resolve etmesi.
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/baseRunBom.js`
 
-## Tamamlanma
-Intrinsic/default property sahiplik **VAR**; kanonik BOM tüketici geçiş **VAR**; renderer ezme sınırı **VAR ve izinli**. Ayrı leaf state/behavior/kalıcılık **UYGULANMIYOR**.
+## Testler
+
+- `test/baseItemsContract.test.js`
+- `test/baseRecipes.test.js`
+- `test/baseRunBom.test.js`
+- `test/boardMaterialItemContract.test.js`
+- `test/recipeCompositionItemsContract.test.js`
