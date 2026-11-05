@@ -156,6 +156,12 @@ Toplam görünür Item: **35**. Kayıtlı Item: **133**.
 
 ---
 
+## Stand tipine göre süzme
+
+`listCatalogGroups` ve `listCatalogItems` açık stand tipinin Item'larını döner (`setCatalogBoothType`). `boothTypeKeys` null ise Item bütün tiplerde görünür; liste varsa yalnız o tiplerde. Sol menü kartları bir kez kurulur (`allBoothTypes: true`), `refreshBoothTypeFilter` tipe göre gizler. Süzme yalnız yeni ekleneni etkiler: `getCatalogItem`, projede duran Item'lar ve BOM süzülmez.
+
+İlk eşleme (`0091_booth_types`): Extra ile Elektronik & Aydınlatma null; katalogda görünen diğer Item'lar Maksima; katalogda görünmeyen Item'lar null.
+
 ## Sıralama
 
 1. **Kategori sırası** = `Catalog.catalogIndex`

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// Yeni proje sihirbazı: boş sahnede 3 adım (stand tipi, ölçü, özet + Oluştur). Mevcut kurulum
+// Yeni proje sihirbazı: boş sahnede 4 adım (stand tipi, yerleşim, ölçü, özet + Oluştur). Mevcut kurulum
 // alanlarını ve "Sahneyi Oluştur" akışını kullanır. İlk kullanım ipuçları bir kez çıkar.
 
 const wizard = (page) => page.getByRole('dialog', { name: 'Yeni proje sihirbazı' });
@@ -13,19 +13,27 @@ async function finishNameDialog(page, name) {
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
 }
 
-test('new project wizard sets up an L stand in three steps', async ({ page }) => {
+test('new project wizard sets up a Maksima L stand in four steps', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   const dialog = wizard(page);
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('Adım 1 / 3');
+  await expect(dialog).toContainText('Adım 1 / 4');
   const next = dialog.getByRole('button', { name: /İleri|Oluştur/ });
+  await expect(dialog.getByRole('button', { name: 'Maksima Stand' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(dialog.getByRole('button', { name: /Özel Tasarım/ })).toBeDisabled();
+  await expect(dialog.getByRole('button', { name: /Paket Stand/ })).toBeDisabled();
+  await expect(next).toBeEnabled();
+  await next.click();
+
+  await expect(dialog).toContainText('Adım 2 / 4');
   await expect(next).toBeDisabled();
+
 
   await dialog.getByRole('button', { name: 'L Stand Sol' }).click();
   await next.click();
-  await expect(dialog).toContainText('Adım 2 / 3');
+  await expect(dialog).toContainText('Adım 3 / 4');
   await dialog.locator('#wizard-size-x').fill('6,5');
   await dialog.locator('#wizard-size-y').fill('4,5');
   await dialog.locator('#wizard-wall-height').selectOption('300');
@@ -37,26 +45,29 @@ test('new project wizard sets up an L stand in three steps', async ({ page }) =>
   await expect(page.locator('#stand-size-x')).toHaveValue('6,5');
   await expect(page.locator('#wall-height')).toHaveValue('300');
   await next.click();
-  await expect(dialog).toContainText('Adım 3 / 3');
-  await expect(dialog).toContainText('L Stand Sol');
+  await expect(dialog).toContainText('Adım 4 / 4');
+  await expect(dialog).toContainText('Maksima Stand · L Stand Sol');
   await expect(dialog).toContainText('6,5 × 4,5 m · duvar 3 m');
 
   await dialog.getByRole('button', { name: 'Oluştur' }).click();
   await finishNameDialog(page, 'E2E Sihirbaz');
   await expect(page.locator('#stage-result')).toContainText('L Stand Sol · 650 × 450 cm');
   await expect(dialog).toBeHidden();
+  expect((await savedProject(page)).stand.boothType).toBe('maxima');
   expect(errors).toEqual([]);
 });
 
 test('wizard shows the size error on the step and close falls back to the sidebar card', async ({ page }) => {
   await page.goto('/');
   const dialog = wizard(page);
+  await dialog.getByRole('button', { name: 'İleri →' }).click();
+
   await dialog.getByRole('button', { name: 'Ada Stand' }).click();
   await dialog.getByRole('button', { name: 'İleri →' }).click();
   await dialog.locator('#wizard-size-x').fill('0.55');
   await dialog.locator('#wizard-size-y').fill('4');
   await dialog.getByRole('button', { name: 'İleri →' }).click();
-  await expect(dialog).toContainText('Adım 2 / 3');
+  await expect(dialog).toContainText('Adım 3 / 4');
   await expect(dialog.locator('.wizard-error')).toBeVisible();
 
   await dialog.getByRole('button', { name: 'Sihirbazı kapat' }).click();
@@ -70,6 +81,8 @@ test.describe('first-use tips', () => {
   test('tips show once after the first stand and never again', async ({ page }) => {
     await page.goto('/');
     const dialog = wizard(page);
+    await dialog.getByRole('button', { name: 'İleri →' }).click();
+
     await dialog.getByRole('button', { name: 'Ada Stand' }).click();
     await dialog.getByRole('button', { name: 'İleri →' }).click();
     await dialog.locator('#wizard-size-x').fill('5');
@@ -88,6 +101,7 @@ test.describe('first-use tips', () => {
     expect(await page.evaluate(() => localStorage.getItem('fairStandTipsSeen'))).toBe('1');
 
     await page.reload();
+    await page.getByRole('button', { name: 'Menüyü aç' }).click();
     const standSetup = page.locator('details.stand-setup-card');
     if (!(await standSetup.evaluate((el) => el.open))) await standSetup.locator('summary').click();
     await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
@@ -100,12 +114,70 @@ test.describe('first-use tips', () => {
   });
 });
 
+test.describe('sol menü sihirbaz açıkken', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('sihirbazda kapalıdır, ✕ ile açılır', async ({ page }) => {
+    await page.goto('/');
+    const dialog = wizard(page);
+    await expect(dialog).toBeVisible();
+    const sidebar = page.locator('.sidebar');
+    await expect(sidebar).toBeHidden();
+    await page.getByRole('button', { name: 'Menüyü aç' }).click();
+    await expect(sidebar).toBeVisible();
+    await page.getByRole('button', { name: 'Menüyü kapat' }).click();
+    await expect(sidebar).toBeHidden();
+    await dialog.getByRole('button', { name: 'Sihirbazı kapat' }).click();
+    await expect(sidebar).toBeVisible();
+  });
+
+  test('sihirbaz seçimleri kapalı menüde de geçerlidir, Oluştur sonrası menü açılır', async ({ page }) => {
+    await page.goto('/');
+    const dialog = wizard(page);
+    const sidebar = page.locator('.sidebar');
+    await expect(sidebar).toBeHidden();
+    await dialog.getByRole('button', { name: 'İleri →' }).click();
+    await dialog.getByRole('button', { name: 'L Stand Sol' }).click();
+    await dialog.getByRole('button', { name: 'İleri →' }).click();
+    await dialog.locator('#wizard-size-x').fill('5');
+    await dialog.locator('#wizard-size-y').fill('4');
+    await dialog.getByRole('button', { name: 'İleri →' }).click();
+    await dialog.getByRole('button', { name: 'Oluştur' }).click();
+    await finishNameDialog(page, 'E2E Kapali Menu');
+    await expect(sidebar).toBeVisible();
+    await expect(page.locator('#stage-result')).toContainText('L Stand Sol · 500 × 400 cm');
+    expect((await savedProject(page)).stand.boothType).toBe('maxima');
+  });
+});
+
+for (const [height, label] of [['250', '2,5 m'], ['300', '3 m']]) {
+  test(`${label} duvarda otomatik projektörler duvar tepesindedir`, async ({ page }) => {
+    await page.goto('/');
+    const dialog = wizard(page);
+    await dialog.getByRole('button', { name: 'İleri →' }).click();
+    await dialog.getByRole('button', { name: 'U Stand' }).click();
+    await dialog.getByRole('button', { name: 'İleri →' }).click();
+    await dialog.locator('#wizard-size-x').fill('6');
+    await dialog.locator('#wizard-size-y').fill('4');
+    await dialog.locator('#wizard-wall-height').selectOption(height);
+    await dialog.getByRole('button', { name: 'İleri →' }).click();
+    await dialog.getByRole('button', { name: 'Oluştur' }).click();
+    await finishNameDialog(page, `E2E Projektor ${height}`);
+    const project = await savedProject(page);
+    const lamps = project.modules.filter((module) => module.itemKey === 'led_floodlight');
+    expect(lamps.length).toBeGreaterThan(0);
+    expect(new Set(lamps.map((lamp) => lamp.placement.zCm))).toEqual(new Set([Number(height)]));
+  });
+}
+
 test.describe('tablet', () => {
   test.use({ viewport: { width: 820, height: 1180 }, hasTouch: true });
 
   test('wizard works with taps on a tablet', async ({ page }) => {
     await page.goto('/');
     const dialog = wizard(page);
+    await dialog.getByRole('button', { name: 'İleri →' }).tap();
+
     await dialog.getByRole('button', { name: 'Sırt Duvar' }).tap();
     await dialog.getByRole('button', { name: 'İleri →' }).tap();
     await dialog.locator('#wizard-size-x').fill('4');
@@ -161,6 +233,8 @@ test('sidebar depot: "Depo yok" by default; picking a size enables contents and 
 test('wizard depot: the same list and contents box, mirrored to the sidebar and saved', async ({ page }) => {
   await page.goto('/');
   const dialog = wizard(page);
+  await dialog.getByRole('button', { name: 'İleri →' }).click();
+
   await dialog.getByRole('button', { name: 'Ada Stand' }).click();
   await dialog.getByRole('button', { name: 'İleri →' }).click();
   await dialog.locator('#wizard-size-x').fill('6');
@@ -204,6 +278,8 @@ for (const [rows, label, variant] of [['1', 'Tek sıra', 'short_1'], ['2', 'Çif
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto('/');
     const dialog = wizard(page);
+    await dialog.getByRole('button', { name: 'İleri →' }).click();
+
     await dialog.getByRole('button', { name: 'L Stand Sol' }).click();
     await dialog.getByRole('button', { name: 'İleri →' }).click();
     await dialog.locator('#wizard-size-x').fill('3');
@@ -241,6 +317,8 @@ for (const [rows, label, variant] of [['1', 'Tek sıra', 'short_1'], ['2', 'Çif
 test('wizard fascia 800 × 800: each open 8 m edge gets a middle upright (max 5 m span) and one profile per span', async ({ page }) => {
   await page.goto('/');
   const dialog = wizard(page);
+  await dialog.getByRole('button', { name: 'İleri →' }).click();
+
   await dialog.getByRole('button', { name: 'L Stand Sol' }).click();
   await dialog.getByRole('button', { name: 'İleri →' }).click();
   await dialog.locator('#wizard-size-x').fill('8');
@@ -292,4 +370,58 @@ test('sol menü metre ve virgüllü giriş kullanır; kayıt cm kalır ve açıl
   await expect(page.locator('#stand-size-x')).toHaveValue('6,5');
   await expect(page.locator('#stand-size-y')).toHaveValue('4,5');
   await expect(page.locator('#wall-height option:checked')).toHaveText('3,5 m');
+});
+
+test('sol menüden kurulan proje Maksima olur; alanı olmayan eski proje açılır; açık projenin tipi yeniden kurulumda korunur', async ({ page }) => {
+  const writeStand = (project, stand) => page.evaluate(async ([record, nextStand]) => {
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('fair-stand-configurator', 2);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('projects', 'readwrite');
+      tx.objectStore('projects').put({ ...record, stand: nextStand });
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  }, [project, stand]);
+  const open = async (id) => {
+    await page.reload();
+    await page.locator('#project-select').evaluate((select, value) => { select.value = value; }, id);
+    await page.locator('#open-project').click();
+    await expect(page.locator('#project-status')).toContainText('Açıldı:');
+  };
+
+  await page.goto('/');
+  await wizard(page).getByRole('button', { name: 'Sihirbazı kapat' }).click();
+  const panel = page.locator('details.stand-setup-card');
+  if (!(await panel.evaluate((element) => element.open))) await panel.locator('summary').click();
+  await panel.getByRole('button', { name: 'Ada Stand', exact: true }).click();
+  await page.getByLabel('Genişlik (m)', { exact: true }).fill('5');
+  await page.getByLabel('Derinlik (m)', { exact: true }).fill('5');
+  await page.locator('#create-stage').click();
+  await finishNameDialog(page, 'Eski Proje');
+  const saved = await savedProject(page);
+  expect(saved.stand.boothType).toBe('maxima');
+
+  const { boothType: _removed, ...legacyStand } = saved.stand;
+  await writeStand(saved, legacyStand);
+  await open(saved.id);
+  await expect(page.getByRole('heading', { name: 'Maksima Stand Yapılandırması' })).toBeVisible();
+
+  await writeStand(saved, { ...saved.stand, boothType: 'package' });
+  await open(saved.id);
+  await expect(page.getByRole('heading', { name: 'Paket Stand Yapılandırması' })).toBeVisible();
+  // Katalog açık tipe göre süzülür: Maksima ürünleri gizli, null ürünler görünür.
+  const groupDisplay = (name) => page.locator('.module-drag-group', { hasText: name }).evaluate((element) => element.style.display);
+  expect(await groupDisplay('Panel & Duvar')).toBe('none');
+  expect(await groupDisplay('Extra')).toBe('');
+  if (!(await panel.evaluate((element) => element.open))) await panel.locator('summary').click();
+  page.once('dialog', (confirm) => confirm.accept());
+  await page.locator('#create-stage').click();
+  await finishNameDialog(page, 'Eski Proje 2');
+  expect((await savedProject(page)).stand.boothType).toBe('package');
+  await expect(page.getByRole('heading', { name: 'Paket Stand Yapılandırması' })).toBeVisible();
 });

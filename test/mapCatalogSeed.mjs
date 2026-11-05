@@ -21,10 +21,19 @@ export const CANONICAL_RUNTIME_SETTINGS = Object.freeze({
   saveAsButtonVisible: true,
 });
 
+const BOOTH_TYPE_FIXTURE = [
+  { key: 'maxima', name: 'Maksima Stand', active: true },
+  { key: 'custom', name: 'Özel Tasarım', active: false },
+  { key: 'package', name: 'Paket Stand', active: false },
+];
+// 0091 kuralı: Extra (5) ile Elektronik & Aydınlatma (6) ve katalogda görünmeyenler null.
+const ALL_BOOTH_TYPES_CATEGORY_INDEXES = new Set([5, 6]);
+
 export function mapCatalogSeedToBootstrap(seed) {
   const items = seed.items.map(mapItem);
   return {
     revision: 'e2e-fixture',
+    boothTypes: BOOTH_TYPE_FIXTURE,
     categories: seed.categories.map((category) => ({
       id: category.catalog_index,
       catalogName: category.catalog_name,
@@ -50,6 +59,7 @@ function mapItem(row) {
     catalogVisible: row.catalog_visible,
     categoryId: row.category_index ?? null,
     catalogItemIndex: row.catalog_item_index ?? null,
+    boothTypeKeys: row.catalog_visible && !ALL_BOOTH_TYPES_CATEGORY_INDEXES.has(row.category_index) ? ['maxima'] : null,
   };
   const assign = (key, value) => {
     if (value != null) item[key] = value;

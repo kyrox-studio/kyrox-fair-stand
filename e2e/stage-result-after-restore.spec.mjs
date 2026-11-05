@@ -69,7 +69,7 @@ test('geçersiz import #stage-result’a success yazmaz', async ({ page }) => {
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
   await expect(page.locator('#stage-result')).toContainText(
-    'Stand tipi ile X ve Y ölçülerinin üçü de tamamlanmadan sahne oluşmaz.',
+    'Yerleşim ile X ve Y ölçülerinin üçü de tamamlanmadan sahne oluşmaz.',
   );
 
   const zip = new JSZip();
@@ -90,7 +90,7 @@ test('geçersiz import #stage-result’a success yazmaz', async ({ page }) => {
   await expect(page.locator('#project-status')).toContainText('Proje ZIP içe aktarılamadı');
   await expect(page.locator('#viewport-empty')).toBeVisible();
   await expect(page.locator('#stage-result')).toHaveText(
-    'Stand tipi ile X ve Y ölçülerinin üçü de tamamlanmadan sahne oluşmaz.',
+    'Yerleşim ile X ve Y ölçülerinin üçü de tamamlanmadan sahne oluşmaz.',
   );
   expect(pageErrors).toEqual([]);
 });

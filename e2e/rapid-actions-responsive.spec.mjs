@@ -119,7 +119,7 @@ test('dar viewport smoke: boot, katalog ve sahne erişilebilir', async ({ page }
   await page.setViewportSize({ width: 900, height: 700 });
   await createIslandStand(page, 'E2E Narrow Viewport');
 
-  await expect(page.getByRole('heading', { name: 'Maxima Konfigüratörü' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Maksima Stand Yapılandırması' })).toBeVisible();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
   await expect(page.locator('#viewport > canvas')).toBeVisible();
   await expect(page.locator('#clear-wall')).toBeEnabled();

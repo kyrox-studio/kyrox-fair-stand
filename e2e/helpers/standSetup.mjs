@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 
 // Otomatik stand mobilyaları varsayılan açıktır. Mobilyayla ilgisi olmayan akışlar boş
-// zeminde sınanır; kutu Stand Tipi kartı kapalıyken de kapatılabilsin diye olayla yazılır.
+// zeminde sınanır; kutu Yerleşim kartı kapalıyken de kapatılabilsin diye olayla yazılır.
 export async function disableAutoFurniture(page) {
   await page.locator('#auto-furniture').evaluate((input) => {
     input.checked = false;

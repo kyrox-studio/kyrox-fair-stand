@@ -1,3 +1,4 @@
+import { initializeBoothTypes } from './boothTypes.js';
 import { initializeCatalogCategories, initializeCatalogPreviews } from './catalog.js';
 import { getFairStandHostWindow } from './hostDocument.js';
 import { initializeItemRegistry, initializeItemTypeRegistry, initializeSnapRuleRegistry } from './items.js';
@@ -27,6 +28,7 @@ export async function bootstrapFairStandCatalog() {
     !payload
     || !Array.isArray(payload.items)
     || !Array.isArray(payload.categories)
+    || !Array.isArray(payload.boothTypes)
     || !Array.isArray(payload.previewKinds)
     || !payload.standDimensions
     || !payload.settings
@@ -35,6 +37,7 @@ export async function bootstrapFairStandCatalog() {
   }
   initializeStandDimensions(payload.standDimensions);
   initializeRuntimeSettings(payload.settings);
+  initializeBoothTypes(payload.boothTypes);
   initializeCatalogCategories(payload.categories);
   initializeCatalogPreviews(payload.previewKinds);
   initializeSnapRuleRegistry(Array.isArray(payload.rules) ? payload.rules : []);

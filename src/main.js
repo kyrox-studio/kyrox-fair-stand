@@ -44,7 +44,8 @@ import {
 import { createModuleContextMenu, allowsModuleSideInsert, resolveModuleSidePlacement } from './moduleContextMenu.js';
 import { createSelectionToolbar } from './selectionToolbar.js';
 import { summarizeSelectedSurfaces } from './selectionSurfaceSummary.js';
-import { createNewProjectWizard } from './newProjectWizard.js';
+import { createNewProjectWizard, WIZARD_KEEP_SIDEBAR_STORAGE_KEY } from './newProjectWizard.js';
+import { getBoothTypeHeading, normalizeBoothType } from './boothTypes.js';
 import { createOnboardingTips } from './onboardingTips.js';
 import { createModuleDragSidebar } from './moduleDragSidebar.js';
 import { createColorEditorController } from './colorEditorController.js';
@@ -115,7 +116,7 @@ import {
   listGroupTemplates,
   renameGroupTemplate,
 } from './groupTemplateRemote.js';
-import { getModuleCatalogLabel } from './catalog.js';
+import { setCatalogBoothType, getModuleCatalogLabel } from './catalog.js';
 import { createProjectLoadingController, setButtonBusy, setSaveProjectEnabled } from './projectUi.js';
 import { formatProjectSwitchMessage, shouldConfirmProjectSwitch } from './projectSwitch.js';
 import { observeSelectionFeedback, observeStatusTones } from './uiFeedback.js';
@@ -241,6 +242,8 @@ const newProjectWizard = createNewProjectWizard({
   container: viewportEmpty,
   validateSetup: () => readSceneSetupFromControls(),
   onCreate: () => createStageButton.click(),
+  onBoothTypeChange: () => syncBoothTypeHeading(),
+  onVisibilityChange: (visible) => syncSidebarForWizard(visible),
 });
 const onboardingTips = createOnboardingTips({ container: viewportEmpty?.closest('.viewport-wrap') });
 const viewportToolbar = document.querySelector('#viewport-toolbar');
@@ -363,10 +366,25 @@ function setProjectName(name) {
   return normalized;
 }
 
-createSidebarController({
+const sidebarController = createSidebarController({
   appElement,
   toggleButton: sidebarToggleButton,
-}).bind();
+});
+sidebarController.bind();
+
+// Sihirbaz açıkken sol menü kapalıdır; sihirbazdan çıkınca yalnız onun kapattığı menü geri açılır.
+let sidebarCollapsedByWizard = false;
+function syncSidebarForWizard(wizardVisible) {
+  if (wizardVisible) {
+    if (window.localStorage?.getItem(WIZARD_KEEP_SIDEBAR_STORAGE_KEY) === '1') return;
+    sidebarController.setCollapsed(true);
+    sidebarCollapsedByWizard = true;
+    return;
+  }
+  if (!sidebarCollapsedByWizard) return;
+  sidebarCollapsedByWizard = false;
+  sidebarController.setCollapsed(false);
+}
 
 createViewportToolbarController({
   toolbarElement: viewportToolbar,
@@ -638,7 +656,7 @@ function updateStageCreateState() {
   if (selectedStandType && xHasValue && yHasValue) {
     renderStageResult(result.message, true);
   } else if (!currentStand) {
-    renderStageResult('Stand tipi ile X ve Y ölçülerinin üçü de tamamlanmadan sahne oluşmaz.');
+    renderStageResult('Yerleşim ile X ve Y ölçülerinin üçü de tamamlanmadan sahne oluşmaz.');
   }
 }
 
@@ -931,6 +949,18 @@ function onCopyPasteKeyDown(event) {
   if (!copiedModule) return;
   event.preventDefault();
   startCopyPlacement();
+}
+
+function activeBoothType() {
+  return normalizeBoothType(currentStand?.boothType ?? newProjectWizard.getBoothType());
+}
+
+function syncBoothTypeHeading() {
+  const boothType = activeBoothType();
+  const heading = document.querySelector('#booth-config-title');
+  if (heading) heading.textContent = getBoothTypeHeading(boothType);
+  setCatalogBoothType(boothType);
+  moduleDragSidebar?.refreshBoothTypeFilter();
 }
 
 function assignStandFloorItem(stand, itemKey) {
@@ -2132,7 +2162,7 @@ function buildFloorPanelContext() {
   if (!areaSelected && !scene3d.isFloorSelected()) return null;
   const floorItem = getFloorItem(areaSelected ? currentStand?.floorArea?.itemKey : scene3d.getSelectedFloorType());
   const paintable = !floorItem || floorItem.paintable !== false;
-  // Kaplama seçimi Stand Tipi'ndeki mevcut zemin listesidir (tek kaynak): panel o listeyi sürer.
+  // Kaplama seçimi Yerleşim kartındaki mevcut zemin listesidir (tek kaynak): panel o listeyi sürer.
   const typeSelect = areaSelected ? floorAreaTypeSelect : floorTypeSelect;
   return {
     kind: 'floor',
@@ -2729,11 +2759,13 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fa
     return false;
   }
 
-  currentStand = assignStandFloorItem({ ...setup, depot: depotConfig, fascia: fasciaConfig, furniture: furnitureConfig }, floorTypeSelect.value);
+  // Sahneyi Oluştur o an açık olan tiple kurar; açık stand yoksa sihirbaz seçimi geçerlidir.
+  currentStand = assignStandFloorItem({ ...setup, boothType: activeBoothType(), depot: depotConfig, fascia: fasciaConfig, furniture: furnitureConfig }, floorTypeSelect.value);
   setActiveWallLineHeightCm(activeWallHeightCm());
   syncSaveProjectButton();
   scene3d.setFloorType(floorTypeSelect.value);
   viewportEmpty.hidden = true;
+  syncSidebarForWizard(false);
   viewportToolbar.hidden = false;
   setStandEditingEnabled(true);
 
@@ -3505,6 +3537,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
   setProjectName(project.name || 'Adsız Proje');
   currentModules = (cloneProjectState(project.modules) || []).map(normalizeModuleItemState);
   currentStand = cloneProjectState(project.stand);
+  syncBoothTypeHeading();
   setActiveWallLineHeightCm(activeWallHeightCm());
   syncSaveProjectButton();
   moduleContextMenu.close();
@@ -3524,7 +3557,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     standSizeYInput.value = formatMeters(currentStand.yCm);
     if (wallHeightSelect) wallHeightSelect.value = String(activeWallHeightCm());
     const resolvedFloor = resolveStandFloorItemKey(currentStand);
-    currentStand = assignStandFloorItem(currentStand, resolvedFloor);
+    currentStand = assignStandFloorItem({ ...currentStand, boothType: normalizeBoothType(currentStand.boothType) }, resolvedFloor);
     syncFloorTypeSelect(resolvedFloor);
     if (autoDepotSizeSelect) {
       autoDepotSizeSelect.value = currentStand.depot?.enabled ? (currentStand.depot.sizeKey || '100x100') : '';
@@ -3562,6 +3595,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     }
     syncFloorAreaControls();
     viewportEmpty.hidden = true;
+    syncSidebarForWizard(false);
     viewportToolbar.hidden = false;
     setStandEditingEnabled(true);
     rebuildWall({ resetView: true });

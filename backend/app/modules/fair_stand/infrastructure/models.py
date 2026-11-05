@@ -118,6 +118,32 @@ class FairStandUnitModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class FairStandBoothTypeModel(Base):
+    """Stand tipi (Maksima / Özel Tasarım / Paket). Yerleşim olan `standType` ile karıştırılmaz."""
+
+    __tablename__ = "fair_stand_booth_types"
+
+    booth_type_key: Mapped[str] = mapped_column(String(32), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    sort_index: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class FairStandItemBoothTypeModel(Base):
+    """Item'ın göründüğü stand tipleri. Item'ın satırı yoksa bütün tiplerde görünür."""
+
+    __tablename__ = "fair_stand_item_booth_types"
+
+    item_key: Mapped[str] = mapped_column(
+        String(128), ForeignKey("fair_stand_items.item_key", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True
+    )
+    booth_type_key: Mapped[str] = mapped_column(
+        String(32), ForeignKey("fair_stand_booth_types.booth_type_key", ondelete="RESTRICT"), primary_key=True
+    )
+
+    item: Mapped["FairStandItemModel"] = relationship(back_populates="booth_type_links")
+
+
 class FairStandItemTypeModel(Base):
     """Item type classification. Scene behavior is an optional 1:1 child row."""
 
@@ -437,6 +463,9 @@ class FairStandItemModel(Base):
     )
     snap_provides_rule: Mapped[FairStandRuleModel | None] = relationship(
         foreign_keys=[snap_provides_rule_id],
+    )
+    booth_type_links: Mapped[list["FairStandItemBoothTypeModel"]] = relationship(
+        back_populates="item", cascade="all, delete-orphan"
     )
     dimensions: Mapped["FairStandItemDimensionsModel | None"] = relationship(
         back_populates="item", cascade="all, delete-orphan"

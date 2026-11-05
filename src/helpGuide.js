@@ -356,7 +356,7 @@ function listGuideSections() {
     title: 'Proje Kaydetme, Açma ve Yedekleme',
     html: `
       <ul>
-        <li><strong>Yeni proje:</strong> Ayrı bir “Yeni” butonu yoktur. Stand Tipi bölümündeki <strong>Sahneyi Oluştur</strong> yeni proje başlatır ve yalnızca proje/stand adını sorar. Tam ad otomatik olarak <strong>Proje_adi-StandTipi_X_Y</strong> biçiminde oluşturulur; örneğin <strong>Ferromet-L_Sol_800_600</strong>.</li>
+        <li><strong>Yeni proje:</strong> Ayrı bir “Yeni” butonu yoktur. Yerleşim bölümündeki <strong>Sahneyi Oluştur</strong> yeni proje başlatır ve yalnızca proje/stand adını sorar. Tam ad otomatik olarak <strong>Proje_adi-StandTipi_X_Y</strong> biçiminde oluşturulur; örneğin <strong>Ferromet-L_Sol_800_600</strong>.</li>
         <li><strong>Proje adını değiştir:</strong> <strong>Değiştir</strong> butonu yalnızca tireden önceki proje/stand adı bölümünü düzenler. Otomatik <strong>StandTipi_X_Y</strong> bölümü korunur; örneğin <strong>Ferromet-L_Sol_800_600</strong> adı <strong>Umaay-L_Sol_800_600</strong> olarak değiştirilebilir.</li>
         <li><strong>Farklı Kaydet:</strong> sahne varken aktiftir. Mevcut sahneyi yeni proje UUID’si ve yeni görsel klasörüyle kopyalar; müşteri aynı kalır. Ad diyaloğu <strong>Yeni Proje</strong> ile aynı kuralı kullanır: stand adı + otomatik <strong>StandTipi_X_Y</strong>. Önerilen ön ek <strong>(1)</strong> ile biter. Eski proje olduğu gibi kalır. Sahne yokken kapalıdır.</li>
         <li><strong>Kaydet:</strong> üst araç çubuğundadır; sahne varken stand, modüller, yerleşimler ve proje durumunu kaydeder. Sahne yokken kapalıdır.</li>

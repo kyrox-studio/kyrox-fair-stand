@@ -1,3 +1,4 @@
+import { isKnownBoothType } from './boothTypes.js';
 import { MODULE_STATE_TYPES } from './designState.js';
 import { validateFloorArea } from './floorArea.js';
 import { getFloorItem, resolveStandFloorItemKey } from './items.js';
@@ -52,6 +53,9 @@ export function validateImportedStandState(stand) {
     yCm: stand.yCm,
   });
   if (!setup.ok) return setup;
+  if (stand.boothType != null && !isKnownBoothType(stand.boothType)) {
+    return { ok: false, message: 'Proje stand tipi geçersiz.' };
+  }
   const floorKey = resolveStandFloorItemKey(stand);
   if (!getFloorItem(floorKey)) {
     return { ok: false, message: 'Proje zemin öğesi geçersiz.' };

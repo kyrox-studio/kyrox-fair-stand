@@ -8,6 +8,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.modules.fair_stand.application.cycle_validation import assert_acyclic_components
+from app.modules.fair_stand.infrastructure.booth_type_seed import ensure_booth_types
 from app.modules.fair_stand.infrastructure.catalog_seed_data import CATALOG_SEED
 from app.modules.fair_stand.infrastructure.item_snap_seed import ensure_item_types, ensure_snap_catalog
 from app.modules.fair_stand.infrastructure.item_type_behavior_seed import ensure_type_behavior_slices
@@ -19,6 +20,7 @@ from app.modules.fair_stand.infrastructure.models import (
     FairStandCategoryModel,
     FairStandItemAssetModel,
     FairStandItemBodyPartModel,
+    FairStandItemBoothTypeModel,
     FairStandItemComponentModel,
     FairStandItemLengthPartModel,
     FairStandItemWidthVariantModel,
@@ -47,6 +49,7 @@ def _stable_uuid(*parts: str) -> UUID:
 
 
 def _clear_catalog(session: Session) -> None:
+    session.execute(delete(FairStandItemBoothTypeModel))
     session.execute(delete(FairStandItemBodyPartModel))
     session.execute(delete(FairStandItemVideoWallModel))
     session.execute(delete(FairStandItemLengthPartModel))
@@ -276,6 +279,8 @@ def seed_fair_stand_catalog(session: Session) -> None:
             )
 
     assert_acyclic_components(edges)
+    session.flush()
+    ensure_booth_types(session)
     ensure_stand_dimensions(session)
     ensure_runtime_settings(session)
     session.flush()

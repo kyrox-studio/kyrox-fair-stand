@@ -1,12 +1,16 @@
 import { metersInputToCm, formatMeters } from './standSizeInput.js';
 import { getFairStandHostDocument } from './hostDocument.js';
+import { DEFAULT_BOOTH_TYPE, getBoothTypeLabel, listBoothTypes } from './boothTypes.js';
 
-// Yeni proje sihirbazı: boş sahnenin (#viewport-empty) ortasında 3 adım — stand tipi, ölçü,
-// özet + Oluştur. Yeni bir kurulum yolu açmaz: seçimleri sol menüdeki mevcut alanlara yazar ve
+// Yeni proje sihirbazı: boş sahnenin (#viewport-empty) ortasında 4 adım — stand tipi (boothType),
+// yerleşim (standType), ölçü, özet + Oluştur. Yeni bir kurulum yolu açmaz: seçimleri sol menüdeki mevcut alanlara yazar ve
 // son adımda mevcut "Sahneyi Oluştur" düğmesine basar (proje adı penceresi, doğrulama ve kayıt
 // aynı kalır). Yalnız yeni projede gösterilir; ✕ ile kapatılınca bugünkü boş sahne kartı görünür.
 
 const STYLE_ID = 'new-project-wizard-styles';
+const STEP_COUNT = 4;
+// Yalnız E2E oturum durumu yazar; ürün yazmaz. Kurulu E2E akışları sol menüyü sihirbaz arkasında kullanır.
+export const WIZARD_KEEP_SIDEBAR_STORAGE_KEY = 'fairStandWizardKeepSidebar';
 
 function ensureStyles(document) {
   if (document.getElementById(STYLE_ID)) return;
@@ -44,6 +48,8 @@ function ensureStyles(document) {
     .new-project-wizard .wizard-next:disabled { opacity: 0.45; cursor: not-allowed; }
     .new-project-wizard .wizard-type:hover:not(:disabled) { border-color: #f97316; background: #fff8f2; }
     .new-project-wizard .wizard-type[aria-pressed="true"]:hover:not(:disabled) { background: #fff3e8; }
+    .new-project-wizard .wizard-type:disabled { opacity: 0.55; cursor: not-allowed; }
+    .new-project-wizard .wizard-type-soon { color: #667085; font-size: 11px; font-weight: 600; }
     .viewport-empty-card[hidden] { display: none; }
     .new-project-wizard .wizard-back { border: 1px solid #cbd3dc; background: #fff; color: #273142; }
     .new-project-wizard .wizard-back[hidden] { visibility: hidden; display: block; }
@@ -60,9 +66,11 @@ function setControlValue(control, value) {
   control.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
-export function createNewProjectWizard({ container, validateSetup, onCreate } = {}) {
+export function createNewProjectWizard({ container, validateSetup, onCreate, onBoothTypeChange, onVisibilityChange } = {}) {
   const document = getFairStandHostDocument();
-  if (!container || !document?.body) return { show() {}, dismiss() {}, element: null };
+  if (!container || !document?.body) {
+    return { show() {}, dismiss() {}, getBoothType: () => DEFAULT_BOOTH_TYPE, element: null };
+  }
   ensureStyles(document);
 
   const sidebar = {
@@ -102,6 +110,7 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
   const backButton = wizard.querySelector('.wizard-back');
   const nextButton = wizard.querySelector('.wizard-next');
   let step = 0;
+  let boothType = DEFAULT_BOOTH_TYPE;
 
   function selectedTypeButton() {
     return sidebar.typeButtons().find((button) => button.getAttribute('aria-pressed') === 'true') ?? null;
@@ -112,8 +121,41 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     error.hidden = !message;
   }
 
-  function renderTypes() {
+  function renderBoothTypes() {
     title.textContent = 'Stand tipini seç';
+    const grid = document.createElement('div');
+    grid.className = 'wizard-types';
+    listBoothTypes().forEach(({ key, name: label, active }) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'wizard-type';
+      button.dataset.wizardBoothType = key;
+      button.disabled = !active;
+      button.setAttribute('aria-pressed', String(key === boothType));
+      const name = document.createElement('span');
+      name.textContent = label;
+      button.appendChild(name);
+      if (!active) {
+        const soon = document.createElement('span');
+        soon.className = 'wizard-type-soon';
+        soon.textContent = 'Yakında';
+        button.appendChild(soon);
+      }
+      button.addEventListener('click', () => {
+        boothType = key;
+        onBoothTypeChange?.();
+        grid.querySelectorAll('.wizard-type').forEach((other) => {
+          other.setAttribute('aria-pressed', String(other === button));
+        });
+      });
+      grid.appendChild(button);
+    });
+    body.replaceChildren(grid);
+    nextButton.disabled = false;
+  }
+
+  function renderTypes() {
+    title.textContent = 'Yerleşimi seç';
     const grid = document.createElement('div');
     grid.className = 'wizard-types';
     sidebar.typeButtons().forEach((source) => {
@@ -262,7 +304,7 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     const furniture = sidebar.furniture?.checked ? 'Banko + tabure, masa takımı, broşürlük, çiçek' : 'Yok';
     const summary = document.createElement('p');
     summary.className = 'wizard-summary';
-    summary.innerHTML = `<strong>${type}</strong><br>${formatMeters(metersInputToCm(sidebar.sizeX?.value))} × ${formatMeters(metersInputToCm(sidebar.sizeY?.value))} m · duvar ${formatMeters(sidebar.wallHeight?.value)} m<br>Depo: ${depot}<br>Alınlık: ${fascia}<br>Mobilya: ${furniture}<br>Zemin: ${sidebar.floorType?.selectedOptions?.[0]?.textContent ?? '—'}`;
+    summary.innerHTML = `<strong>${getBoothTypeLabel(boothType)} · ${type}</strong><br>${formatMeters(metersInputToCm(sidebar.sizeX?.value))} × ${formatMeters(metersInputToCm(sidebar.sizeY?.value))} m · duvar ${formatMeters(sidebar.wallHeight?.value)} m<br>Depo: ${depot}<br>Alınlık: ${fascia}<br>Mobilya: ${furniture}<br>Zemin: ${sidebar.floorType?.selectedOptions?.[0]?.textContent ?? '—'}`;
     const hint = document.createElement('p');
     hint.className = 'wizard-hint';
     hint.textContent = 'Oluştur dediğinde proje adı sorulur, sahne kurulur ve proje kaydedilir.';
@@ -271,11 +313,11 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
   }
 
   function render() {
-    stepLabel.textContent = `Yeni proje · Adım ${step + 1} / 3`;
+    stepLabel.textContent = `Yeni proje · Adım ${step + 1} / ${STEP_COUNT}`;
     backButton.hidden = step === 0;
-    nextButton.textContent = step === 2 ? 'Oluştur' : 'İleri →';
+    nextButton.textContent = step === STEP_COUNT - 1 ? 'Oluştur' : 'İleri →';
     showError('');
-    [renderTypes, renderSize, renderSummary][step]();
+    [renderBoothTypes, renderTypes, renderSize, renderSummary][step]();
   }
 
   backButton.addEventListener('click', () => {
@@ -285,18 +327,23 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
 
   nextButton.addEventListener('click', () => {
     if (step === 0) {
-      if (!selectedTypeButton()) return;
       step = 1;
       render();
       return;
     }
     if (step === 1) {
+      if (!selectedTypeButton()) return;
+      step = 2;
+      render();
+      return;
+    }
+    if (step === 2) {
       const result = validateSetup?.();
       if (result && !result.ok) {
         showError(result.message ?? 'Ölçüler geçerli değil.');
         return;
       }
-      step = 2;
+      step = 3;
       render();
       return;
     }
@@ -308,15 +355,21 @@ export function createNewProjectWizard({ container, validateSetup, onCreate } = 
     if (emptyCard) emptyCard.hidden = false;
   }
 
-  wizard.querySelector('.wizard-close').addEventListener('click', dismiss);
+  wizard.querySelector('.wizard-close').addEventListener('click', () => {
+    dismiss();
+    onVisibilityChange?.(false);
+  });
 
   function show() {
     step = 0;
+    boothType = DEFAULT_BOOTH_TYPE;
+    onBoothTypeChange?.();
     wizard.hidden = false;
     if (emptyCard) emptyCard.hidden = true;
+    onVisibilityChange?.(true);
     render();
   }
 
   dismiss();
-  return { show, dismiss, element: wizard };
+  return { show, dismiss, getBoothType: () => boothType, element: wizard };
 }

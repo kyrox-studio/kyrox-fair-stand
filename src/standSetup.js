@@ -16,7 +16,7 @@ export const STAND_TYPES = Object.freeze(Object.keys(STAND_TYPE_LABELS));
 
 export function validateStandSetup({ standType, xCm, yCm } = {}) {
   if (!STAND_TYPES.includes(standType)) {
-    return { ok: false, message: 'Önce stand tipini seç.' };
+    return { ok: false, message: 'Önce yerleşimi seç.' };
   }
 
   if (String(xCm ?? '').trim() === '' || String(yCm ?? '').trim() === '') {

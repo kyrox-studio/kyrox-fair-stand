@@ -70,6 +70,9 @@ class AdminCatalogService:
     session: Session
     repository: SqlAlchemyFairStandCatalogRepository
 
+    def list_booth_types(self) -> list[dict]:
+        return self.repository.list_booth_types()
+
     def list_categories(self) -> list[dict]:
         return [_category_payload(row) for row in self.repository.list_categories()]
 
