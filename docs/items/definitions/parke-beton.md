@@ -1,7 +1,40 @@
-# parke-beton — Kanonik Item
+# parke-beton
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/parke.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
 ## Kimlik
-Fair Stand ilişkisel Item store'daki `parke-beton` kaydı. `itemKey = parke-beton`. Name `Beton Parke`. Type `floor`. Plaka `120,6 × 40,2 cm` (Floorpan Stonex Gri Beton FT007). `defaultColor=#6b6762` (FT007 ürün görseline göre koyulaştırıldı). İkisi `0089_parquet_reference` ile yazıldı. `paintable=false`. Katalog/recipe/unit yok. Persist `stand.itemKey`; eski `floorType` hydrate. Render: kendi beton dokusu (`public/textures/floor/concrete-parquet-color.jpg`) 2,4 m tekrarla `defaultColor` ile çarpılır; her plaka dokunun farklı yerinden desen ve ±%6 ton alır. Plaka derzleri çizgiyle, sıralar yarım boy kaydırmalı çizilir. Roughness/emissive renderer temsilidir.
+
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('parke-beton')`).
+
+| Alan | Değer |
+|---|---|
+| itemKey | `parke-beton` |
+| Ad | Beton Parke |
+| Tip | `floor` |
+| Birim | `m2` |
+| Malzeme | — |
+| Katalog | görünmez |
+| Ölçü | `width_cm=120.6`, `depth_cm=40.2` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#6b6762` |
+| Yüzey | — |
+
+## Bileşim / BOM
+
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+## Tip davranışı
+
+`floor` tipi için ayrı sahne davranışı tanımlı değildir.
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/scene3d.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_parquet_reference_migration.py`
+- `e2e/floor-items-contract.spec.mjs`
+- `test/floorArea.test.js`
+- `test/floorItemsContract.test.js`

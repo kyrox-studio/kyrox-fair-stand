@@ -94,6 +94,7 @@ def render(key):
              "> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: "
              "[ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).", "",
              "## Kimlik", "",
+             f"Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('{key}')`).", "",
              "| Alan | Değer |", "|---|---|",
              f"| itemKey | `{key}` |",
              f"| Ad | {it.get('name') or '—'} |",

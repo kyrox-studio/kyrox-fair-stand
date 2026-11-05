@@ -1,22 +1,50 @@
-# panel_corner_192 — Item Contract Definition
+# panel_corner_192
 
-## Kanonik Item
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-- `itemKey`: `panel_corner_192`
-- `type`: `panel`
-- `unit`: `adet`
-- dimensions: `192 × 47 × 0.8 cm`
-- `material`: `sunta`
-- `panelRole`: `inner-corner`
+## Kimlik
 
-## Sahiplik / davranış
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('panel_corner_192')`).
 
-Intrinsic ürün gerçeğinin tek kaynağı Item kaydıdır. Leaf ayrı scene/proje örneği değildir; yerleşim/move/rotation/snap/collision/context-menu/kalıcılık parent module/relationship zincirindedir. Renderer ezebilir fakat product `material` değişmez.
+| Alan | Değer |
+|---|---|
+| itemKey | `panel_corner_192` |
+| Ad | İç Köşe Paneli 192 × 47 cm |
+| Tip | `panel` |
+| Birim | `adet` |
+| Malzeme | sunta |
+| Katalog | görünmez |
+| Ölçü | `width_cm=192`, `depth_cm=0.8`, `height_cm=47` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#ffffff` |
+| Yüzey | `color`, `image`, `lightbox`, `glass`, `mesh` kabul eder |
 
-## İlişki / BOM
+## Bileşim / BOM
 
-İç köşede `src/relationshipBom.js` `applyCornerPanelSwap` köşeye bakan modülün `panel_197 × N` satırını `panel_corner_192 × N` olarak 1:1 değiştirir (`STRAIGHT_TO_CORNER_PANEL`); miktar korunur.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-## Regresyon
+## Tip davranışı
 
-Corner panel contract testleri + `test/boardMaterialItemContract.test.js`.
+`panel` tipi için ayrı sahne davranışı tanımlı değildir.
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/relationshipBom.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_catalog_api.py`
+- `backend/tests/modules/fair_stand/test_catalog_constraints.py`
+- `test/boardMaterialItemContract.test.js`
+- `test/counterModule.test.js`
+- `test/flatPanelBackStrips.test.js`
+- `test/panel197ItemContract.test.js`
+- `test/panelCamFamily.test.js`
+- `test/panelCorner192ItemContract.test.js`
+- `test/panelGlassBom.test.js`
+- `test/relationshipBomJoints.test.js`
+- `test/sceneBomAcceptance.test.js`
+- `test/straightPanelsItemContract.test.js`
+- `test/wallHeightProjectBom.test.js`
+- `test/wallShortRelationshipBom.test.js`

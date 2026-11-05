@@ -1,16 +1,61 @@
-# furniture_sofa_set_classic — Kanonik Item
+# furniture_sofa_set_classic
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/furniture_sofa_set_classic.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type/dimensions sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Item kümesi; `itemKey = furniture_sofa_set_classic`. Type `sofa-set-classic`; oturum alanı 150×150×78 cm. Üyelik aynı Item’dadır: `1 × furniture_sofa_double_classic` + `2 × furniture_sofa_single_classic` + `1 × furniture_coffee_table_classic`. Miktarlar mevcut takım renderer yerleşiminden (1 ikili mesh + 2 tekli mesh + 1 sehpa). `composition.mode` `recipe` olmadığı için `resolveItemBom` (`src/itemBom.js`) takımı alt kalemlere açmaz; BOM satırı takımın kendisidir. Üst birim uydurulmadı (`decision-required`).
+## Kimlik
 
-## Oluşturma, state ve kalıcılık
-`createBeigeSofaSetModuleState` Item’dan default üretir; `itemKey` damgalar; editable `surface` korunur (`free-model-color`). Yüklemede `normalizeModuleItemState` doldurur; takma ad yok. Sahne tek modül kalır.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('furniture_sofa_set_classic')`).
 
-## Davranış ve renderer sınırı
-`moduleBehavior.js > sofa-set-classic`: free, snap 10, boundary `wall-inner-face`. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). Takım yerleşim açıları mevcut renderer yerleşims’tır; parça Item’ların tekil `visualRotationYDeg` değeri takımı değiştirmez. GLB/material hedefi iş tek kaynağı değildir.
+| Alan | Değer |
+|---|---|
+| itemKey | `furniture_sofa_set_classic` |
+| Ad | Koltuk Takımı |
+| Tip | `sofa-set-classic` |
+| Birim | — |
+| Malzeme | — |
+| Katalog | görünür, Extra |
+| Ölçü | `width_cm=150`, `depth_cm=150`, `height_cm=78` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#ffffff` |
+| Yüzey | `color` kabul eder |
 
-## Regresyon
-`test/furnitureItemsContract.test.js`; `test/sofaClassicPiecesContract.test.js`; E2E `e2e/furniture-items-contract.spec.mjs`.
+## Bileşim / BOM
+
+`composition_mode=None`. BOM `src/itemBom.js` `resolveItemBom('furniture_sofa_set_classic')` ile bu satırlardan çözülür.
+
+| Alt kalem | Miktar |
+|---|---|
+| `furniture_sofa_double_classic` | 1 |
+| `furniture_sofa_single_classic` | 2 |
+| `furniture_coffee_table_classic` | 1 |
+
+## Tip davranışı
+
+`sofa-set-classic` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `footprint` |
+| moveSnapCm | `10` |
+| magneticSnap | `standard` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `include` |
+| boundary_snap | `wall-inner-face` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/scene3d.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_catalog_api.py`
+- `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `e2e/furniture-items-contract.spec.mjs`
+- `test/catalogCategories.test.js`
+- `test/itemCatalogFields.test.js`
+- `test/projectBom.test.js`
+- `test/recipeCompositionItemsContract.test.js`
+- `test/sofaClassicPiecesContract.test.js`

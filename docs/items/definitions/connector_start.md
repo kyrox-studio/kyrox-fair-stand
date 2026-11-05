@@ -4,6 +4,8 @@
 
 ## Kimlik
 
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('connector_start')`).
+
 | Alan | Değer |
 |---|---|
 | itemKey | `connector_start` |

@@ -1,20 +1,52 @@
-# upright_297 — Item Contract
+# upright_297
 
-## Kanonik kimlik
-- `itemKey`: `upright_297`
-- `name`: `Dikme 297`
-- `type`: `upright`
-- `unit`: `adet`
-- structure: Tekil Item, katalogda gizli
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kanonik ürüne özgü özellikler
-- `dimensions.heightCm = 297` (gerçek boy, ürün tablosu)
-- `sceneDimensions.heightCm = 300` (duvar yüksekliği)
-- `dimensions.widthCm = 8`, `dimensions.depthCm = 8`
-- `material` ve `defaultColor` `upright_346_5` ile aynı
+## Kimlik
+
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('upright_297')`).
+
+| Alan | Değer |
+|---|---|
+| itemKey | `upright_297` |
+| Ad | Dikme 297 |
+| Tip | `upright` |
+| Birim | `adet` |
+| Malzeme | alüminyum |
+| Katalog | görünmez |
+| Ölçü | `width_cm=8`, `depth_cm=8`, `height_cm=297` |
+| Sahne ölçüsü | `width_cm=8`, `depth_cm=8`, `height_cm=300` |
+| Varsayılan renk | `#d0d3d4` |
+| Yüzey | — |
 
 ## Bileşim / BOM
-Leaf BOM Item. 300 cm düz duvarda (`wall_*_300`, `0068` kuralıyla türetilir) `upright_346_5` yerine 2 adet; yan yana / köşe / T ekleminde 1 adet düşer. Fiyat atanmadı.
 
-## Regresyon sözleşmesi
-`test/wallHeightRecipe.test.js`, `test/wallHeightRelationshipBom.test.js`, `e2e/wall-height.spec.mjs`.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+## Tip davranışı
+
+`upright` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `footprint` |
+| moveSnapCm | `10` |
+| magneticSnap | `short-up-joint` |
+| allowSideInsert | `False` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `exclude` |
+| overlapWithTypes | `('flat-panel', 'profile', 'counter')` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
+- `e2e/vertical-move-upright-height.spec.mjs`
+- `test/shortJointStructuralUpright.test.js`
+- `test/verticalMoveUprightHeight.test.js`
+- `test/wallHeightProjectBom.test.js`
+- `test/wallHeightRecipe.test.js`

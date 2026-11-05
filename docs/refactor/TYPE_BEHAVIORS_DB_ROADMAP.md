@@ -1,6 +1,7 @@
 # TYPE_BEHAVIORS → DB yol haritası (migration arşivi)
 
-**Durum:** UYGULANDI (2026-09-24) — Alembic `0030`–`0033` + CRM + motor DB-only.  
+**Durum:** UYGULANDI (2026-09-24) — Alembic `0030`–`0033` + CRM + motor DB-only. Tarihçedir.  
+**Bugünkü şema:** `0053_item_type_scene_behavior` davranış kolonlarını `fair_stand_item_type` satırından ayırdı; kolonlar 1:1 `fair_stand_item_type_scene_behavior` tablosundadır (satır yoksa tip sahneye çizilmez). Aşağıda `fair_stand_item_type` kolonu diye geçen yerler 0030–0052 dönemidir. Güncel kolon listesi: `DATABASE.md`.  
 **Operatör kılavuzu (canlı):** [`FAIR_STAND_DB_KULLANIM_KILAVUZU.md`](FAIR_STAND_DB_KULLANIM_KILAVUZU.md).  
 **Amaç (tarihçe):** Snap dilimindeki gibi placement davranışını JS `TYPE_BEHAVIORS` map’inden çıkarıp DB + CRM + bootstrap’a taşımak.  
 **Kapsam dışı:** Export/import formatı değişmedi; proje ZIP davranış alanı taşımaz.
@@ -11,7 +12,7 @@
 
 ## 1. Bugün ne var? (ne işe yarar)
 
-Kaynak: eskiden `TYPE_BEHAVIORS[item.type]`; kesit 1–3 alanları artık `fair_stand_item_type` kolonları (`TYPE_BEHAVIORS` map kaldırıldı).
+Kaynak: eskiden `TYPE_BEHAVIORS[item.type]`; kesit 1–3 alanları artık `fair_stand_item_type_scene_behavior` kolonları (`TYPE_BEHAVIORS` map kaldırıldı).
 
 **Snap `fair_stand_rule` değil** — bunlar tip özelliği. Snap = iki tarafın eşleşmesi (requires/provides + face/edge).
 
@@ -236,7 +237,7 @@ Item edit ekranına (v1) **koyma** — tip’ten miras.
 
 ## 11. Karar özeti (onay kutusu)
 
-1. **Ev:** `fair_stand_item_type` kolonları (yeni davranış tablosu yok).  
+1. **Ev (2026-09-24):** `fair_stand_item_type` kolonları. `0053` ile 1:1 `fair_stand_item_type_scene_behavior` tablosuna ayrıldı.  
 2. **İlk kesit:** `placement` + `collision` + `move_snap_cm`.  
 3. **Overlap:** FK junction `fair_stand_item_type_overlap` (`0033`); bootstrap `overlapWithTypes: string[]`.  
 4. **Ghost:** v1 üç kolon veya seed’de sabit default.  

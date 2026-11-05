@@ -17,45 +17,45 @@ Item **Kopyala** (admin): shallow — yeni `item_key`/`name`; BOM/assembly/body/
 
 Karar verilmiş / ertelenmiş maddeler: `docs/refactor/PENDING_ITEM_DECISIONS.md` (§ B Item, § D kuyruk özeti, § A tavan–şerit sırası).
 
-`listRegisteredItems()` 96 satırında duran alanlar. Bu tablo **onaylı şema değildir**. Zamanla, her alan ayrı kararla aşağıdaki “Zorunlu / opsiyonel / Catalog” bölümlerine alınır veya PENDING’de kapatılır.
+`listRegisteredItems()` 133 satırında duran alanlar. Bu tablo **onaylı şema değildir**. Zamanla, her alan ayrı kararla aşağıdaki “Zorunlu / opsiyonel / Catalog” bölümlerine alınır veya PENDING’de kapatılır.
 
-Kaynak: `src/items.js` taraması (2026-09-17). N = kaç Item’da path var.
+Kaynak: `test/fixtures/itemCatalogSeed.json` (2026-10-30; `0090` sonrası). N = kaç Item’da alan dolu. `modelFile` ve `assembly.parts` satırları seed'de ayrı alan değildir (model yolu `assets`, montaj parçaları `fair_stand_item_assembly_parts`).
 
 Kimlik `getItem(itemKey)` ile okunur. Her field her mekanizmada işlenmez. Placement/collision/moveSnap → tip kaydı `getItemType(type)` (`fair_stand_item_type`); rotation Item; recipe BOM yalnız `composition.items`. Tip vs snap: `FAIR_STAND_DB_KULLANIM_KILAVUZU.md`.
 
 | Field | N | Src’de ne işe yarıyor |
 |---|---|---|
-| `itemKey` | 96 | Ürün kimliği. `getItem` / `resolveItemKey`. **Şemada onaylı.** |
-| `name` | 96 | İnsan adı. Catalog `label`, seçim metni, zemin select. |
-| `type` | 96 | Factory + `getItemType` (DB tip davranışı), recipe lookup, `resolveItemKey` adayı. Catalog kart tipi değil. |
-| `catalogVisible` | 96 | Katalogda görünsün mü. **Şemada onaylı.** |
-| `categoryId` | 96 | Katalog grubu integer id veya `null`. **Şemada onaylı.** |
-| `catalogItemIndex` | 96 | Grup içi sıra veya `null`. **Şemada onaylı.** |
-| `previewId` | 58 | Kart silüet key. Yalnız görünür Item. **Şemada onaylı.** |
-| `unit` | 46 | BOM satır birimi. Recipe’siz Item’da `itemBom` zorunlu sayar. 50 Item’da yok. |
-| `dimensions` | 90 | Fiziksel ölçü. 6 Item’da yok (4 connector, `shelf_leg`, `hali`). **Şemada onaylı (opsiyonel).** |
-| `dimensions.widthCm` | 71 | Kutu **W** (duvar boyunca). Recipe parent genişliği. |
-| `dimensions.depthCm` | 52 | Kutu **D** (içeri). |
-| `dimensions.heightCm` | 42 | Kutu **H** (dikey). |
+| `itemKey` | 133 | Ürün kimliği. `getItem` / `resolveItemKey`. **Şemada onaylı.** |
+| `name` | 133 | İnsan adı. Catalog `label`, seçim metni, zemin select. |
+| `type` | 133 | Factory + `getItemType` (DB tip davranışı), recipe lookup, `resolveItemKey` adayı. Catalog kart tipi değil. |
+| `catalogVisible` | 133 | Katalogda görünsün mü. **Şemada onaylı.** |
+| `categoryId` | 133 | Katalog grubu integer id veya `null`. **Şemada onaylı.** |
+| `catalogItemIndex` | 133 | Grup içi sıra veya `null`. **Şemada onaylı.** |
+| `previewId` | 47 | Kart silüet key. Yalnız görünür Item. **Şemada onaylı.** |
+| `unit` | 88 | BOM satır birimi. Recipe’siz Item’da `itemBom` zorunlu sayar. 45 Item’da yok. |
+| `dimensions` | 127 | Fiziksel ölçü. 6 Item’da yok (4 connector, `shelf_leg`, `hali`). **Şemada onaylı (opsiyonel).** |
+| `dimensions.widthCm` | 125 | Kutu **W** (duvar boyunca). Recipe parent genişliği. |
+| `dimensions.depthCm` | 107 | Kutu **D** (içeri). |
+| `dimensions.heightCm` | 102 | Kutu **H** (dikey). |
 | `dimensions.mountHeightCm` | 1 | `led_floodlight` montaj yüksekliği 350. |
 | `dimensions.wallGapCm` | 1 | `illuminated-foam` duvar boşluğu. |
-| `sceneDimensions` | 32 | Aynı field adıyla sahne override. **Şemada onaylı (opsiyonel).** |
-| `sceneDimensions.widthCm` | 10 | Effective scene width. |
-| `sceneDimensions.depthCm` | 24 | Effective scene depth. |
-| `sceneDimensions.heightCm` | 24 | Effective scene height. |
-| `defaultColor` | 30 | Varsayılan renk (integer hex; DB `default_color`). Zemin de aynı, string değil. |
-| `material` | 34 | Üretim malzemesi metni. Vitrin gövde `sunta` kilidi. |
-| `composition` | 30 | Bileşik yapı. |
-| `composition.mode` | 28 | `recipe` → `resolveItemBom`. |
-| `composition.items` | 30 | Çocuk listesi `{itemKey, quantity}`. 28 recipe parent + 2 mobilya kümesi. Recipe tablosu kopyası değil; tek kaynak Item. |
+| `sceneDimensions` | 55 | Aynı field adıyla sahne override. **Şemada onaylı (opsiyonel).** |
+| `sceneDimensions.widthCm` | 33 | Effective scene width. |
+| `sceneDimensions.depthCm` | 35 | Effective scene depth. |
+| `sceneDimensions.heightCm` | 47 | Effective scene height. |
+| `defaultColor` | 74 | Varsayılan renk (integer hex; DB `default_color`). Zemin de aynı, string değil. |
+| `material` | 66 | Üretim malzemesi metni. Vitrin gövde `sunta` kilidi. |
+| `composition` | 42 | Bileşik yapı. |
+| `composition.mode` | 37 | `recipe` → `resolveItemBom`. |
+| `composition.items` | 42 | Çocuk listesi `{itemKey, quantity}`. 28 recipe parent + 2 mobilya kümesi. Recipe tablosu kopyası değil; tek kaynak Item. |
 | `assembly.parts` | 0+ | Admin montaj pose + optional `lockGroupId`. BOM değil. **Şemada onaylı** (`fair_stand_item_assembly_parts`). |
 | `shape` | 3 | Kök `'L'` (köşe banko). |
-| `variant` | 8 | `wall-short-1` / `wall-short-2`. |
+| `variant` | 38 | `wall-short-1` / `wall-short-2`. |
 | `stripOccupancy.align` | 8 | wall-short `'top'`. |
 | `stripOccupancy.stripCount` | 8 | 1 veya 2 şerit. |
 | `modelFile` | 9 | GLB adı. |
 | `modelRotationYDeg` | 5 | Model Y dönüşü. |
-| `preserveModelScale` | 5 | GLB ölçek ezilmesin mi. |
+| `preserveModelScale` | 3 | GLB ölçek ezilmesin mi. |
 | `visualRotationYDeg` | 3 | Çöp/koltuk görsel Y. |
 | `eyeCount` | 2 | Vitrin 2/3 göz. |
 | `bodyItems.sideItemKey` | 2 | Vitrin yan sunta. |
@@ -63,10 +63,10 @@ Kimlik `getItem(itemKey)` ile okunur. Her field her mekanizmada işlenmez. Place
 | `bodyItems.glassShelfItemKey` | 2 | Cam raf Item. |
 | `videoWall.rows` / `videoWall.cols` | 2 | Video wall ızgara. |
 | `videoWall.panelItemKey` | 2 | `VIDEO_WALL_PANEL`. |
-| `paintable` | 5 | Zemin boyanır mı. |
-| `rotationStepDeg` | 61 | Shift+R adımı. Leaf’te yok. **Şemada onaylı (opsiyonel / nullable).** |
-| `defaultRotationDeg` | 61 | İlk sahne Z. Leaf’te yok. **Şemada onaylı (opsiyonel / nullable).** |
-| `sideInsertRotation` | 61 | `inherit` / `default`. Leaf’te yok. **Şemada onaylı (opsiyonel / nullable).** |
+| `paintable` | 2 | Zemin boyanır mı. |
+| `rotationStepDeg` | — | Shift+R adımı. Leaf’te yok. **Şemada onaylı (opsiyonel / nullable).** | Değer seed fixture'da yok; migration'larla yazılır (`0004`, `0050`, `0064`, `0072`, `0074`, `0087`).
+| `defaultRotationDeg` | — | İlk sahne Z. Leaf’te yok. **Şemada onaylı (opsiyonel / nullable).** | Değer seed fixture'da yok; migration'larla yazılır (`0004`, `0050`, `0064`, `0072`, `0074`, `0087`).
+| `sideInsertRotation` | — | `inherit` / `default`. Leaf’te yok. **Şemada onaylı (opsiyonel / nullable).** | Değer seed fixture'da yok; migration'larla yazılır (`0004`, `0050`, `0064`, `0072`, `0074`, `0087`).
 
 Aşağıdaki bölümler yalnız **karar verilmiş** şemadır. Kuyruktaki bir alan ancak ayrı refactor adımında kabul edilirse oraya geçer.
 
@@ -418,7 +418,7 @@ Item {
 - Effective scene field yalnız same-field: `sceneDimensions.field ?? dimensions.field ?? MISSING`
 - Aynı kategoride duplicate `catalogItemIndex` yasak
 - Index her kategoride `1..N` kesintisiz
-- Yerleşen 61 Item: `rotationStepDeg`, `defaultRotationDeg`, `sideInsertRotation` birlikte dolu
-- Leaf 35 Item: üç rotation alanı yok (null / omit)
+- Yerleşen Item (tip `test/itemRotationSeed.mjs` `PLACEABLE_ITEM_TYPES` içinde veya `SPECIAL` kaydı): `rotationStepDeg`, `defaultRotationDeg`, `sideInsertRotation` birlikte dolu
+- Diğer (leaf) Item: üç rotation alanı yok (null / omit)
 
 Test: `test/itemCatalogFields.test.js`, `test/itemSceneDimensions.test.js`, `test/itemRotation.test.js`

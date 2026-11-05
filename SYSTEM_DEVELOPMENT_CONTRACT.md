@@ -24,25 +24,25 @@ Universal gate gerçek etki alanını ve bağımlılıkları bulur; `ITEM_CONTRA
 
 | Konu | Canonical kaynak |
 |---|---|
-| Item kök semantiği / itemKey-type-instance / BOM ownership | `ITEM_CONTRACT.md` |
+| Item kök semantiği / itemKey-type-instance / BOM ownership | `docs/items/contract/ITEM_CONTRACT.md` |
 | Universal impact domain registry | `src/systemChangeContract.js > SYSTEM_IMPACT_DOMAINS` |
 | Browser E2E trigger registry | `src/systemChangeContract.js > SYSTEM_BROWSER_E2E_DOMAINS` |
 | Universal değişiklik kabul kapısı | `SYSTEM_CHANGE_GATE.md` + `.github/change-contract.json` |
 | Full dependency/test/finding discovery | `SYSTEM_IMPACT_SWEEP.md` + `scripts/change-impact-analysis.mjs` |
 | Global ürün invariantları | `PROJECT_RULES.md` |
 | Mimari sınırlar | `ARCHITECTURE_RULES.md` |
-| Katalog kimliği / nominal descriptor | `src/catalog.js` |
+| Katalog (kategori, önizleme, Item `catalog*` alanları) | DB; runtime `src/catalog.js` (`docs/refactor/CATALOG.md`) |
 | Modül contract profile / politika ataması (GOVERNANCE spec; runtime SoT değil) | `src/moduleContracts.js` |
 | Feature / composition contract (GOVERNANCE; planner runtime okumaz) | `src/featureContracts.js` |
-| Placement / move snap / collision / ghost | `src/moduleBehavior.js` + placement core (`wallReflow.js` production insert) |
+| Placement / move snap / collision / ghost | DB `fair_stand_item_type_scene_behavior`; getter `src/moduleBehavior.js` + placement core (`wallReflow.js` production insert) |
 | Sahne Z rotation (step / default / sideInsert) | Item kolonları → `docs/refactor/ROTATION.md`; getter `src/moduleBehavior.js` |
 | Runtime module state construction | `src/designState.js` |
-| Üretim reçetesi / runtime BOM | `src/moduleRecipes.js` + `src/itemBom.js` |
+| Üretim reçetesi / runtime BOM | `src/moduleRecipes.js` + `src/itemBom.js` + `src/projectBom.js` (`relationshipBom.js`, `baseRunBom.js`, `printAreaBom.js`) |
 | Üretim parçası / Item registry | `src/items.js` |
 | Item yüzey image/color yeteneği | `src/itemCapabilities.js` (`scene3d` `acceptsImage` türevi) |
 | Otomatik depo planı (runtime) | `src/autoDepot.js` |
 | Otomatik duvar planı (runtime) | `src/automaticWall.js` |
-| BOM kullanıcı UI | Yok (DEV `?rawBom` debug; production UI ertelendi) |
+| BOM kullanıcı UI | Üretim Listesi (`src/productionBomPanel.js`) |
 | Unit/integration regression | `test/` |
 | Real-browser regression | `e2e/` + `playwright.config.mjs` |
 
@@ -67,7 +67,7 @@ Catalog, renderer, GLB veya UI eklemek tek başına yeni Item implementasyonu de
 
 ## B. Yeni katalog modülü
 
-`MODULE_CATALOG` + explicit module contract + behavior + state construction + renderer + persistence + BOM policy + targeted regression + targeted E2E gerekir. Fiziksel/BOM kapsamındaysa ayrıca Item contract'ı zorunludur.
+DB Item kaydı (katalog alanları) + tipten türeyen module contract + tip sahne davranışı satırı + state construction + renderer + persistence + BOM policy + targeted regression + targeted E2E gerekir. Fiziksel/BOM kapsamındaysa ayrıca Item contract'ı zorunludur.
 
 ## C. Mevcut modül varyantı
 
@@ -207,9 +207,9 @@ Save/load etkileniyorsa persistence round-trip; BOM etkileniyorsa Item/recipe/BO
 İki katman kullanır:
 
 1. `MODULE_CONTRACT_PROFILES`
-2. `MODULE_CONTRACT_ASSIGNMENTS`
+2. `MODULE_CONTRACT_ASSIGNMENTS` (boş; contract Item tipinden ve `composition`'dan türetilir, SKU ataması yok)
 
-`test/systemDevelopmentContract.test.js` katalog öğelerinin explicit contract ataması taşımasını, gerekli policy bölümlerini resolve etmesini, recipe-backed modüllerin gerçek Item `composition.items` reçetesini çözmesini ve katalog dışı runtime modüllerinin explicit contract taşımasını zorlar.
+`test/systemDevelopmentContract.test.js` her katalog öğesinin tipinden bir module contract çözmesini (SKU allowlist yok), gerekli policy bölümlerini resolve etmesini, recipe-backed modüllerin gerçek Item `composition.items` reçetesini çözmesini ve katalog dışı runtime modüllerinin explicit contract taşımasını zorlar.
 
 Production `src/itemBom.js` ve `src/moduleBehavior.js` `moduleContracts.js` import etmez. Contract registry runtime’ın ikinci implementasyonu yapılmaz.
 
@@ -281,7 +281,7 @@ Depo içeriği değişirse yalnız renderer içine obje eklenmez.
 15. `npm run build` çalıştır.
 16. Playwright/Chromium hazır değilse local runner/browser dependency'lerini kur.
 17. `npm run e2e` çalıştır.
-18. PR aç; canonical CI'nın `contract:verify → npm ci → npm test → python -m pytest → npm run build → Chromium → npm run e2e` zinciri yeşil olmalı.
+18. PR aç; canonical CI'nın `contract:verify → npm ci → npm test → python -m pytest → npm run build → Chromium → npm run e2e` zinciri yeşil olmalı. CI ayrıca `npm ci`'dan sonra `npm run audit:deps` + `npm run syntax:check`, pytest'ten sonra `pip-audit` (yalnız uyarı) koşar.
 19. PR CI yeşil olmadan merge yapılmaz; `main` ruleset'i (zorunlu kontrol + strict) bunu zorlar. Merge edilen ağaç PR'da test edilen ağaçla aynıdır, merge sonrası `main`'de CI tekrar koşmaz.
 
 ---

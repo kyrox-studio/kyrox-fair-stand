@@ -1,25 +1,58 @@
-# coat_rack — Kanonik Item
+# coat_rack
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/COAT_RACK.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type/unit/dimensions/modelFile sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Tekil ticari Item; parametrik veya bileşik değildir. Canonical birim `adet`tir. Width/depth/height mevcut katalog/state değerlerinden taşındı; length/thickness/material/defaultColor için doğrulanmış business üstveri YOK, tahmin eklenmedi.
+## Kimlik
 
-## Oluşturma, state, ezme, kalıcılık
-`src/designState.js > createCommercialModuleState` type üzerinden kanonik Item'ı çözer. Mevcut public oluşturucu girişleri bu tek oluşturma yoluna bağlanır. Örnek `id`, itemKey, type ve ölçüler taşır; yerleşim/autoDepot proje alanlarıdır. Trash tanım ölçü/model ezme'ları açıkça default üzerine uygulanır; diğer üç ürün mevcut sabit oluşturucu davranışını korur.
-JSON snapshot/save/load örnek ID ve mevcut ezme'ları korur; duplicate yeni ID üretir. Renderer/ghost/geçici seçim persist edilmez. Kullanıcı kararı: eski DEPOT_ projeleri için alias veya geriye uyumluluk migrationı yok.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('coat_rack')`).
 
-## Davranış, yetenekler ve ilişkiler
-`src/moduleBehavior.js` placement/snap/collision type ailesidir: serbest yerleşim, move/snap, `collision: none` (yalnız stand sınırı), ghost ve kettle-fridge overlap. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). UI selection, drag, sağ click, silme, sağ/sol duplicate/insert ve klavye yolları ortak modül akışındadır. Fixed-model profile renk/image düzenlemeyi kapalı tutar.
-Otomatik depo yeni bir parent Item oluşturmaz; içerik örnek'larını planlar. Persistent host/child/neighbor ilişkisi ve host takip reflow'u yok. Kettle mevcut sabit yükseltilmiş görünümünü fridge Item yüksekliğinden alır; bu migration yeni stacking davranışı eklemez.
+| Alan | Değer |
+|---|---|
+| itemKey | `coat_rack` |
+| Ad | Askılık |
+| Tip | `coat-rack` |
+| Birim | `adet` |
+| Malzeme | — |
+| Katalog | görünür, Extra |
+| Ölçü | `width_cm=43`, `depth_cm=43`, `height_cm=180` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | — |
+| Yüzey | — |
 
-## BOM ve tüketiciler
-Kullanıcı kararıyla bu Item canonical leaf/self BOM'dur: `unit=adet`, `quantity=1`. `src/itemBom.js > resolveItemBom('coat_rack')` tek satır `coat_rack ×1 adet` üretir. `src/moduleContracts.js` BOM politikasını `mode: self`, `source: src/itemBom.js` olarak ilan eder. Child recipe/composition yoktur.
+## Bileşim / BOM
 
-## Tüketici geçişi ve renderer sınırı
-Catalog tanım, shared oluşturucu ve autoDepot ölçüleri kanonik Item kaynağından gelir. `selectionFeedback.js` gerçek state ölçülerini/defaultları gösterir. `scene3d.js` model path ve ölçü fallbacklarını Item'dan alır. GLB scaling, proxy, sidebar ikon renkleri ve trash gövdesindeki beyaz materyal uygulaması renderer temsilidir; business material/defaultColor değildir.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-## Regresyon ve açık kapsam
-`test/commercialItemsContract.test.js`: özellikler, `adet` unit, self BOM `×1`, state/save-load/duplicate, seçim metni, otomatik depo.
-`e2e/commercial-items-contract.spec.mjs`: dört katalog drag akışı ve otomatik depo kaydet/yeniden aç. Mevcut ürün/yerleşim testleri korunur.
+## Tip davranışı
+
+`coat-rack` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `none` |
+| moveSnapCm | `10` |
+| magneticSnap | `none` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `include` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/autoDepot.js`
+- `src/featureContracts.js`
+- `src/scene3d.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `e2e/commercial-items-contract.spec.mjs`
+- `e2e/free-props-collision-none.spec.mjs`
+- `e2e/rapid-actions-responsive.spec.mjs`
+- `test/catalogCategories.test.js`
+- `test/catalogDomainBoundary.test.js`
+- `test/coatRackModule.test.js`
+- `test/commercialItemsContract.test.js`
+- `test/itemCatalogFields.test.js`
+- `test/moduleRotationPolicy.test.js`

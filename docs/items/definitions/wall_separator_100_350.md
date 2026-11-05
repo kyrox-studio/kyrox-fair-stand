@@ -1,19 +1,74 @@
-# wall_separator_100_350 — Kanonik Item
+# wall_separator_100_350
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/wall_separator_100.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type/dimensions sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Bileşik Item; `itemKey = wall_separator_100_350`. Type ailesi `separator`; genişlik 100 cm; `modelFile` yok. Üst öğe üzerinde unit uydurulmadı.
+## Kimlik
+
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('wall_separator_100_350')`).
+
+| Alan | Değer |
+|---|---|
+| itemKey | `wall_separator_100_350` |
+| Ad | Separatör 100 |
+| Tip | `separator` |
+| Birim | — |
+| Malzeme | — |
+| Katalog | görünür, Panel & Duvar |
+| Ölçü | `width_cm=100` |
+| Sahne ölçüsü | `depth_cm=10`, `height_cm=350` |
+| Varsayılan renk | — |
+| Yüzey | `color` kabul eder |
 
 ## Bileşim / BOM
-`composition.mode=recipe`. Alt kalemler ve miktarları Item kaydının `components` listesindedir (`composition.items`); BOM `src/itemBom.js` `resolveItemBom(itemKey)` ile çözülür. Alt satırları Item kartında kopyalanmaz; mevcut recipe miktarları değişmez. Raw BOM UI dokunulmadı.
 
-## Oluşturma, state ve kalıcılık
-`createSeparatorModuleState` Item’dan default üretir; `itemKey` damgalar; tek `surface.color` (image yok). Default renk child `separator_panel_98` üzerinden. Yüklemede hydrate; takma ad yok.
+`composition_mode=recipe`. BOM `src/itemBom.js` `resolveItemBom('wall_separator_100_350')` ile bu satırlardan çözülür.
 
-## Davranış ve renderer sınırı
-`separator` tip davranışı `fair_stand_item_type` kaydından gelir (`src/moduleBehavior.js` `getModuleBehavior`, DB bootstrap `itemTypes`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`): `placement=wall`, `collision=segment`, 10 cm snap. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). Prosedürel renderer / GLB iş tek kaynağı değildir.
+| Alt kalem | Miktar |
+|---|---|
+| `profile_91` | 2 |
+| `upright_346_5` | 2 |
+| `separator_panel_98` | 7 |
+| `connector_start` | 2 |
+| `connector_single` | 13 |
 
-## Regresyon
-`test/wallSeparatorItemsContract.test.js`; E2E `e2e/wall-separator-items-contract.spec.mjs`.
+## Tip davranışı
+
+`separator` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `wall` |
+| collision | `segment` |
+| moveSnapCm | `10` |
+| magneticSnap | `standard` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `True` |
+| wallCapacity | `include` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/designState.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_panel_separator_cards_migration.py`
+- `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `e2e/helpers/catalogWidth.mjs`
+- `e2e/wall-height-matrix.spec.mjs`
+- `e2e/wall-separator-items-contract.spec.mjs`
+- `test/catalogCategories.test.js`
+- `test/catalogItemProjection.test.js`
+- `test/catalogPreviewConfig.test.js`
+- `test/catalogSingleSource.test.js`
+- `test/catalogWidthFamily.test.js`
+- `test/itemCatalogFields.test.js`
+- `test/itemSceneDimensions.test.js`
+- `test/moduleStateConstructionRegistry.test.js`
+- `test/profileFieldPlacement.test.js`
+- `test/relationshipBomJoints.test.js`
+- `test/sceneBomAcceptance.test.js`
+- `test/wallHeightProjects.mjs`
+- `test/wallHeightRecipe.test.js`
+- `test/wallSeparatorItemsContract.test.js`
+- `test/wallShortRelationshipBom.test.js`

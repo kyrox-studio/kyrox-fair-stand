@@ -1,16 +1,48 @@
-# karolaj — Kanonik Item
+# karolaj
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/karolaj.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Tekil Item. `itemKey = karolaj`. Type `floor`. Katalog kartı yoktur. Karo ızgarası `100 × 100 cm` (UI + 1 m grid). `defaultColor=#e9edf1`. `paintable=true`. Unit / BOM uydurulmadı.
+## Kimlik
 
-## Oluşturma, state ve kalıcılık
-Zemin `currentModules` içinde değildir. Persist alanı `stand.itemKey`. `assignStandFloorItem` `floorType` alanını siler; yüklemede eski kayıt `floorType` hydrate edilebilir. Bilinmeyen zemin `karolaj`e düşer. Varsa `floorColor` örnek ezme’dır.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('karolaj')`).
 
-## Davranış ve renderer sınırı
-Floor selection / `setFloorColor` Item `paintable` alanını kullanır. Material roughness ve grid çizgi rengi renderer temsilidir.
+| Alan | Değer |
+|---|---|
+| itemKey | `karolaj` |
+| Ad | Karolaj |
+| Tip | `floor` |
+| Birim | `adet` |
+| Malzeme | — |
+| Katalog | görünmez |
+| Ölçü | `width_cm=100`, `depth_cm=100` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#e9edf1` |
+| Yüzey | — |
 
-## Regresyon
-`test/floorItemsContract.test.js`; E2E `e2e/floor-items-contract.spec.mjs`.
+## Bileşim / BOM
+
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+## Tip davranışı
+
+`floor` tipi için ayrı sahne davranışı tanımlı değildir.
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/floorArea.js`
+- `src/items.js`
+- `src/main.js`
+- `src/scene3d.js`
+- `src/standStandardsCopy.js`
+
+## Testler
+
+- `e2e/floor-area.spec.mjs`
+- `e2e/floor-items-contract.spec.mjs`
+- `e2e/project-import-export-roundtrip.spec.mjs`
+- `e2e/stage-result-after-restore.spec.mjs`
+- `test/floorArea.test.js`
+- `test/floorItemsContract.test.js`
+- `test/projectBom.test.js`
+- `test/projectImportValidation.test.js`

@@ -6,17 +6,17 @@ Bu dosya insan/AI için **okunabilir katalog indeksi**dir. Runtime source-of-tru
 
 - Item ve Category verisi: PostgreSQL `fair_stand` (Fair Stand API `:8002`), runtime'a bootstrap edilir
 - Katalog projeksiyonu (Item ve Category bootstrap'inden): `src/catalog.js`
-- Modül contract/profile/BOM politikası: `src/moduleContracts.js`
+- Modül contract/profile/BOM politikası (governance; runtime import etmez): `src/moduleContracts.js`
 - Gerçek BOM reçeteleri: Item `composition` kaydı; resolver `src/moduleRecipes.js`
 - Üretim parçaları ve gerçek üretim ölçüleri: DB Item kaydı; runtime registry `src/items.js`
 - State factory/defaultları: `src/designState.js`
-- Placement/behavior: `src/moduleBehavior.js` + placement core
+- Placement/behavior: DB `fair_stand_item_type_scene_behavior`; getter `src/moduleBehavior.js` + placement core
 
 **Kural:** Bu dokümanda üretim reçetesi miktarları veya fiziksel parça ölçüleri ikinci bir canonical veri seti olarak tutulmaz. Böyle bir bilgi gerektiğinde yukarıdaki kod sahipleri okunur.
 
 ## Güncel katalog özeti
 
-Bu snapshot `Version2` üzerindeki `MODULE_CATALOG_KEYS` ve `MODULE_CONTRACT_ASSIGNMENTS` ile eşleşmek zorundadır; `test/systemModuleCatalogDoc.test.js` drift olduğunda CI'yi kırar.
+Bu snapshot runtime katalog (`listCatalogItems()`) ve `resolveModuleContract` ile eşleşmek zorundadır; `test/systemModuleCatalogDoc.test.js` drift olduğunda CI'yi kırar.
 
 - Catalog entries: **35**
 - BOM mode `recipe`: **9**
@@ -136,7 +136,7 @@ Bu kayıtlar için bu doküman **commercial-item / recipe / excluded** kararı u
 
 Yeni katalog modülü veya katalog kimliği değişikliği yapıldığında:
 
-1. canonical değişiklik `src/catalog.js` ve ilgili contract sahiplerinde yapılır;
+1. canonical değişiklik DB Item kaydında (Alembic migration / Admin) ve ilgili contract sahiplerinde yapılır;
 2. gerekli state/behavior/renderer/persistence/BOM etkileri change contract'ta beyan edilir;
 3. bu dokümandaki katalog anahtarı snapshot'ı güncellenir;
 4. `npm test` içindeki `systemModuleCatalogDoc` regresyonu snapshot ile runtime katalog arasında drift olmadığını doğrular;

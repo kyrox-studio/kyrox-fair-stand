@@ -1,29 +1,49 @@
-# shelf_leg — Item Contract Definition
+# shelf_leg
 
-## Kanonik Item
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-- `itemKey`: `shelf_leg`
-- `name`: `Raf Ayağı`
-- `type`: `shelf-accessory`
-- `unit`: `adet`
+## Kimlik
 
-Şu anda doğrulanmış `dimensions`, ağırlık, `material`, `defaultColor` veya başka fiziksel product üstveri yoktur. Bu alanlar tahmin edilmez; ürün gerçeği doğrulandığında kanonik Item'a eklenecektir.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('shelf_leg')`).
 
-## Sahiplik
+| Alan | Değer |
+|---|---|
+| itemKey | `shelf_leg` |
+| Ad | Raf Ayağı |
+| Tip | `shelf-accessory` |
+| Birim | `adet` |
+| Malzeme | — |
+| Katalog | görünmez |
+| Ölçü | — |
+| Sahne ölçüsü | — |
+| Varsayılan renk | — |
+| Yüzey | — |
 
-Kanonik kimlik ve mevcut üstveri tek kaynağı Fair Stand ilişkisel Item store'daki `shelf_leg` kaydı kaydıdır. `shelf_leg` ayrı project entity değildir; yerleşim, move, rotation, snap/collision/connection, selection/drag, context menu, delete/duplicate/keyboard, kalıcılık ve reflow parent `shelf` module/type tarafından uygulanır.
+## Bileşim / BOM
 
-## BOM / bileşim
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-- `shelf:100:2` → `shelf_leg ×4`
-- `shelf:150:2` → `shelf_leg ×4`
-- `shelf:200:2` → `shelf_leg ×6`
-- `shelf:100:3` → `shelf_leg ×6`
-- `shelf:150:3` → `shelf_leg ×6`
-- `shelf:200:3` → `shelf_leg ×9`
+Alt kalem olarak kullanıldığı Item'lar: `shelf_100`, `shelf_100_self`, `shelf_150`, `shelf_150_self`, `shelf_200`, `shelf_200_self`.
 
-Bu migration yalnız eski `partId` kimliğini kanonik `itemKey` kimliğine taşır; adet kuralları değişmez.
+## Tip davranışı
 
-## Renderer / kalıcılık
+`shelf-accessory` tipi için ayrı sahne davranışı tanımlı değildir.
 
-Ayrı `shelf_leg` render mesh'i veya persisted örneği yoktur. Renderer BOM tek kaynak değildir; parent shelf runtime davranışı değişmez.
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_admin_items_api.py`
+- `backend/tests/modules/fair_stand/test_catalog_api.py`
+- `e2e/shelf-rows-flow.spec.mjs`
+- `test/bomLineGroups.test.js`
+- `test/itemSceneDimensions.test.js`
+- `test/itemSurfaceFlagAudit.test.js`
+- `test/moduleRecipes.test.js`
+- `test/recipeCompositionItemsContract.test.js`
+- `test/sceneBomAcceptance.test.js`
+- `test/shelfLegItemContract.test.js`
+- `test/shelfRecipeBom.test.js`
+- `test/wallShelfItemsContract.test.js`

@@ -1,16 +1,59 @@
-# furniture_bar_stool_classic — Kanonik Item
+# furniture_bar_stool_classic
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/furniture_bar_stool_classic.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type/dimensions sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Tekil Item; `itemKey = furniture_bar_stool_classic`. Type `bar-stool`; oturum alanı 60×55×121 cm. Katalogda modelFile yoktu; renderer `bar_chair.glb` hardcode eder. Üst birim / BOM uydurulmadı (`decision-required`).
+## Kimlik
 
-## Oluşturma, state ve kalıcılık
-`createBarStoolModuleState` Item’dan default üretir; `itemKey` damgalar; editable `surface` korunur (`free-model-color`). Yüklemede `normalizeModuleItemState` doldurur; takma ad yok.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('furniture_bar_stool_classic')`).
 
-## Davranış ve renderer sınırı
-`moduleBehavior.js > bar-stool`: free, snap 10, `collision: none`, `magneticSnap: none`, boundary `stand-edge`. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). GLB/material hedefi iş tek kaynağı değildir.
+| Alan | Değer |
+|---|---|
+| itemKey | `furniture_bar_stool_classic` |
+| Ad | Bar Taburesi |
+| Tip | `bar-stool` |
+| Birim | — |
+| Malzeme | — |
+| Katalog | görünür, Extra |
+| Ölçü | `width_cm=60`, `depth_cm=55`, `height_cm=121` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#ffffff` |
+| Yüzey | `color` kabul eder |
 
-## Regresyon
-`test/furnitureItemsContract.test.js`; E2E `e2e/furniture-items-contract.spec.mjs`.
+## Bileşim / BOM
+
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+## Tip davranışı
+
+`bar-stool` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `none` |
+| moveSnapCm | `10` |
+| magneticSnap | `none` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `include` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `backend/app/modules/fair_stand/infrastructure/item_rotation_seed.py`
+- `src/autoFurniture.js`
+- `src/featureContracts.js`
+- `src/scene3d.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_catalog_api.py`
+- `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `test/barStool2.test.js`
+- `test/catalogCategories.test.js`
+- `test/itemCatalogFields.test.js`
+- `test/itemRotation.test.js`
+- `test/moduleBehavior.test.js`
+- `test/moduleBehaviorPolicy.test.js`
+- `test/modulePlacement.test.js`
+- `test/moduleRotationPolicy.test.js`

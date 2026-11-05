@@ -53,6 +53,6 @@ Profil sahne genişliği (50/100/150/200 cm şerit) **`fair_stand_item_scene_dim
 
 ## Tüm satırlar
 
-Canlı matris (dump’tan üretilir): `docs/refactor/data/item_dimensions_matrix.tsv`
+Matris (Item store seed'inden üretilir): `docs/refactor/data/item_dimensions_matrix.tsv`
 
 Üretim: `python kyrox-fair-stand/scripts/generate-item-dimensions-matrix.py`

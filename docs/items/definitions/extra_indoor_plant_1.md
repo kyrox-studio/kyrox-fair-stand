@@ -1,16 +1,58 @@
-﻿# extra_indoor_plant_1 — Kanonik Item
+# extra_indoor_plant_1
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/EXTRA_INDOOR_PLANT_1.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type/dimensions sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Tekil Item; `itemKey = extra_indoor_plant_1`. Type ailesi `indoor-plant-1`; ölçü 60×60×120 cm. Katalogda modelFile yoktu; runtime default `indoor_plants.glb` oluşturucu tarafında uygulanır. Üst birim / BOM uydurulmadı (`decision-required`).
+## Kimlik
 
-## Oluşturma, state ve kalıcılık
-`createIndoorPlantModuleState` Item'dan default üretir; `itemKey` damgalar; editable surface yoktur (`free-model-fixed`). Load hydrate; takma ad yok.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('extra_indoor_plant_1')`).
 
-## Davranış ve renderer sınırı
-`moduleBehavior.js > indoor-plant-1`: free, snap 10, oturum alanı, thin-wall-endpoint. Sahne Z Item kolonlarıdır (`docs/refactor/ROTATION.md`). GLB fit iş tek kaynağı değildir.
+| Alan | Değer |
+|---|---|
+| itemKey | `extra_indoor_plant_1` |
+| Ad | Yapay Çiçek 1 |
+| Tip | `indoor-plant-1` |
+| Birim | — |
+| Malzeme | — |
+| Katalog | görünür, Extra |
+| Ölçü | `width_cm=60`, `depth_cm=60`, `height_cm=120` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | — |
+| Yüzey | — |
 
-## Regresyon
-`test/indoorPlantItemsContract.test.js`; E2E `e2e/indoor-plant-items-contract.spec.mjs`.
+## Bileşim / BOM
+
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+## Tip davranışı
+
+`indoor-plant-1` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `footprint` |
+| moveSnapCm | `10` |
+| magneticSnap | `standard` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `include` |
+| endpointContact | `thin-wall-endpoint` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/autoFurniture.js`
+- `src/designState.js`
+- `src/featureContracts.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_catalog_api.py`
+- `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `e2e/project-open-wait-scene.spec.mjs`
+- `test/catalogCategories.test.js`
+- `test/indoorPlantItemsContract.test.js`
+- `test/indoorPlants.test.js`
+- `test/itemCatalogFields.test.js`
+- `test/moduleRotationPolicy.test.js`
+- `test/sceneBomAcceptance.test.js`

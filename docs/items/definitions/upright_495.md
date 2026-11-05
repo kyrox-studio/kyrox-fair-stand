@@ -1,24 +1,56 @@
-# upright_495 — Item Contract
+# upright_495
 
-## Kanonik kimlik
-- `itemKey`: `upright_495`
-- `name`: `Dikme 495`
-- `type`: `upright`
-- `unit`: `adet`
-- structure: Tekil Item, katalogda gizli
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kanonik ürüne özgü özellikler
-- `dimensions.heightCm = 495` (gerçek boy, ürün tablosu)
-- `sceneDimensions.heightCm = 500` (yeni eklenen veritabanında; bu Item migration öncesi varsa mevcut değer korunur)
-- Duvar yüksekliği eşlemesi gerçek boydan: gerçek boy = duvar yüksekliği × 0,99
-- `dimensions.widthCm = 8`, `dimensions.depthCm = 8`
-- `material` ve `defaultColor` `upright_346_5` ile aynı
+## Kimlik
+
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('upright_495')`).
+
+| Alan | Değer |
+|---|---|
+| itemKey | `upright_495` |
+| Ad | Dikme 495 |
+| Tip | `upright` |
+| Birim | `adet` |
+| Malzeme | alüminyum |
+| Katalog | görünmez |
+| Ölçü | `width_cm=8`, `depth_cm=8`, `height_cm=495` |
+| Sahne ölçüsü | `width_cm=8`, `depth_cm=8`, `height_cm=500` |
+| Varsayılan renk | `#d0d3d4` |
+| Yüzey | — |
 
 ## Bileşim / BOM
-Leaf BOM Item. 500 cm düz duvarda (`wall_*_500`, `0068` kuralıyla türetilir) `upright_346_5` yerine 2 adet; yan yana / köşe / T ekleminde 1 adet düşer. Fiyat atanmadı.
 
-## Regresyon sözleşmesi
-`test/wallHeightRecipe.test.js`, `test/wallHeightRelationshipBom.test.js`, `e2e/wall-height.spec.mjs`.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-## Parça bölünüşü (2026-10-22, migration `0080_item_length_parts`)
-Üretim listesinde satır tek kalır, adın yanına bölünüş yazılır: 346,5 + 8 + 140,5 (`upright_346_5` + `profile_8` + `profile_140_5`). Kaynak `fair_stand_item_length_parts` (sıralı); BOM miktarı, reçete ve maliyet değişmez (`src/items.js > formatItemLengthParts`).
+## Tip davranışı
+
+`upright` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `footprint` |
+| moveSnapCm | `10` |
+| magneticSnap | `short-up-joint` |
+| allowSideInsert | `False` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `exclude` |
+| overlapWithTypes | `('flat-panel', 'profile', 'counter')` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/relationshipBom.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_item_length_parts_migration.py`
+- `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
+- `e2e/long-part-split-label.spec.mjs`
+- `test/autoFascia.test.js`
+- `test/itemLengthParts.test.js`
+- `test/wallHeightProjectBom.test.js`
+- `test/wallHeightRecipe.test.js`
+- `test/wallHeightRelationshipBom.test.js`
+- `test/wallShortRelationshipBom.test.js`

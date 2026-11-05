@@ -1,37 +1,49 @@
-# profile_239_5 — Item Contract Definition
+# profile_239_5
 
-## 1. Kanonik kimlik
-- `itemKey`: `profile_239_5`
-- `name`: `Profil 239,5`
-- `type`: `profile`
-- `unit`: `adet`
-- structure: Tekil Item
-- parametric: hayır
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## 2. Kanonik ürüne özgü özellikler
-```js
-{
-  itemKey: 'profile_239_5',
-  type: 'profile',
-  unit: 'adet',
-  dimensions: { widthCm: 239.5, depthCm: 8, heightCm: 8 },
-  sceneDimensions: { widthCm: 250 },
-  material: 'alüminyum',
-}
-```
-Gerçek boy (BOM) 239,5 cm, sahnede 250 cm çizilir (`fair_stand_item_scene_dimensions`, kesit 10 × 10). Ölçüler migration `0078_profile_lengths` ile yazılır; diğer alanlar `profile_190` satırından kopyalanır.
+## Kimlik
 
-## 3. Oluşturma / state / kalıcılık
-Katalogda kartı yoktur; profil kartı (`profile_289`) bırakılırken boy penceresinden seçilir. Sahaya bırakılan her örnek ayrı instance'dır (`createProfileModuleState`); persist `itemKey` taşır.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('profile_239_5')`).
 
-## 4. Davranış / etkileşim
-Katalog grubu `Panel Ek Modül`; saha davranışı diğer profillerle aynıdır (`profile_190.md` §4). Bırakırken boy penceresi açılır (`src/profileLength.js`: "Bir daha sorma, aynı ölçüde getir", localStorage `fairStand.profileLengthItemKey`); sağ tık **Profil boyu…** boyu değiştirir.
+| Alan | Değer |
+|---|---|
+| itemKey | `profile_239_5` |
+| Ad | Profil 239,5 |
+| Tip | `profile` |
+| Birim | `adet` |
+| Malzeme | alüminyum |
+| Katalog | görünmez |
+| Ölçü | `width_cm=239.5`, `depth_cm=8`, `height_cm=8` |
+| Sahne ölçüsü | `width_cm=250`, `depth_cm=8`, `height_cm=350` |
+| Varsayılan renk | `#d0d3d4` |
+| Yüzey | — |
 
-## 5. BOM / composition
-Tekil production Item. Saha örneği `resolveItemBom` ile `profile_239_5 × 1 adet` üretir. Parent reçetelerde kullanılmaz.
+## Bileşim / BOM
 
-## 6. Renderer sınırı
-`is_render = true`; katalogda gizli, sahnede çizilir.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-## 7. Regresyon sözleşmesi
-`test/profileLength.test.js`, `backend/tests/modules/fair_stand/test_profile_lengths_migration.py`.
+## Tip davranışı
+
+`profile` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `wall` |
+| collision | `segment` |
+| moveSnapCm | `10` |
+| magneticSnap | `standard` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `True` |
+| wallCapacity | `include` |
+| overlapWithTypes | `('separator',)` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_profile_lengths_migration.py`
+- `test/profileFieldPlacement.test.js`
+- `test/profileLength.test.js`

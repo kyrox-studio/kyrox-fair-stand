@@ -1,16 +1,52 @@
-﻿# extra_long_planter_100 — Kanonik Item
+# extra_long_planter_100
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/EXTRA_LONG_PLANTER_100.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-Kanonik itemKey/name/type/dimensions/modelFile sahibi Fair Stand ilişkisel Item store'udur (catalog bootstrap; [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md) §2); `src/items.js` `getItem(itemKey)` bu kaydı okur. Tekil Item; `itemKey = extra_long_planter_100`. Type ailesi `indoor-plant-1`; ölçü 100×30×30 cm; `modelFile = saksi_bitkili_100x30x30.glb`; `modelRotationYDeg=90`; `preserveModelScale=true`. Üst birim / BOM uydurulmadı.
+## Kimlik
 
-## Oluşturma, state ve kalıcılık
-`createIndoorPlantModuleState` Item'dan default üretir; uzun saksıda `surface.color` vardır (`free-model-color`). Load hydrate; takma ad yok.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('extra_long_planter_100')`).
 
-## Davranış ve renderer sınırı
-`indoor-plant-1` free behavior. GLB görünümü iş tek kaynağı değildir.
+| Alan | Değer |
+|---|---|
+| itemKey | `extra_long_planter_100` |
+| Ad | Uzun Saksı 100 |
+| Tip | `indoor-plant-1` |
+| Birim | — |
+| Malzeme | — |
+| Katalog | görünür, Extra |
+| Ölçü | `width_cm=100`, `depth_cm=30`, `height_cm=30` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#ffffff` |
+| Yüzey | `color` kabul eder |
 
-## Regresyon
-`test/indoorPlantItemsContract.test.js`; E2E `e2e/indoor-plant-items-contract.spec.mjs`.
+## Bileşim / BOM
+
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+## Tip davranışı
+
+`indoor-plant-1` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `footprint` |
+| moveSnapCm | `10` |
+| magneticSnap | `standard` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `include` |
+| endpointContact | `thin-wall-endpoint` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `e2e/helpers/catalogWidth.mjs`
+- `test/catalogCategories.test.js`
+- `test/catalogWidthFamily.test.js`
+- `test/indoorPlantItemsContract.test.js`
+- `test/itemCatalogFields.test.js`

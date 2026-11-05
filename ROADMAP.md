@@ -4,7 +4,7 @@
 >
 > Roadmap maddeleri yalnız isim benzerliğine göre tamamlandı sayılmaz. Durum işaretleri repository source code + regression testleriyle doğrulanır.
 >
-> **Production dataset kuralı:** Fiziksel parça ölçüleri, `itemKey` kimlikleri ve recipe miktarları roadmap içinde ikinci bir canonical veri seti olarak tutulmaz. Bu verilerin canonical sahibi PostgreSQL `fair_stand` (Fair Stand API `:8002`) Item / composition kayıtlarıdır. Runtime'da `src/items.js` bu veriden bootstrap edilen Item registry'yi, `src/moduleRecipes.js` Item `composition` satırlarını açan resolver'ı taşır. BOM politika sahibi `src/moduleContracts.js`'dir.
+> **Production dataset kuralı:** Fiziksel parça ölçüleri, `itemKey` kimlikleri ve recipe miktarları roadmap içinde ikinci bir canonical veri seti olarak tutulmaz. Bu verilerin canonical sahibi PostgreSQL `fair_stand` (Fair Stand API `:8002`) Item / composition kayıtlarıdır. Runtime'da `src/items.js` bu veriden bootstrap edilen Item registry'yi, `src/moduleRecipes.js` Item `composition` satırlarını açan resolver'ı taşır. BOM politika sözleşmesi `src/moduleContracts.js`'dedir (governance; runtime BOM `src/itemBom.js` / `src/projectBom.js`).
 
 ## Proje durumu
 
@@ -13,7 +13,7 @@
 - **FAZ 3: KAPANDI — 26 Ağustos 2026**
 - **FAZ 4: AKTİF — Modül reçetesi + Parametrik / Custom / Yapısal Editör**
 - **FAZ 5: PLANLANDI — Final BOM / Gerçek Sahne Malzeme Listesi**
-- **FAZ 6: PLANLANDI — Maliyet / Fair CRM Entegrasyonu**
+- **FAZ 6: PLANLANDI — Maliyet**
 
 ### 3 Eylül 2026 implementasyon doğrulaması (veri kaynağı 13 Ekim 2026'da koda göre güncellendi)
 
@@ -83,14 +83,14 @@ Detay: `kyrox-platform/projects/fair-stand/ROADMAP_PHASE_5_6.md`
 
 ---
 
-# FAZ 6 — Maliyet / Fair CRM Entegrasyonu
+# FAZ 6 — Maliyet
 
 FAZ 5 Final BOM'u ticari veriye dönüştürülür.
 
 Ana işler:
 
-1. Fair CRM / Kyrox Core platform entegrasyonu.
-2. Part ID → Fair CRM catalog/fiyat eşlemesi.
+1. Kyrox Core platform entegrasyonu (kimlik ve oturum Core'dan; mevcut).
+2. `itemKey` → Fair Stand fiyat kalemi (`fair_stand_cost_items`) eşlemesi; fiyatın sahibi Fair Stand'dir.
 3. Hazır sahne objelerinin ticari miktarı.
 4. Fire / minimum sipariş kuralları.
 5. İşçilik, nakliye, kurulum, elektrik vb. ek maliyetler.
@@ -115,7 +115,7 @@ Detay: `kyrox-platform/projects/fair-stand/ROADMAP_PHASE_5_6.md`
 7. **FAZ 4 / Sprint 7 — Custom Library + Save/Load / Versioning**
 8. **FAZ 4 / Sprint 8 — Regresyon ve kapanış**
 9. **FAZ 5 — Final BOM / Assembly Normalization / Excel doğrulaması**
-10. **FAZ 6 — Fair CRM / Costing / Revision-Audit**
+10. **FAZ 6 — Costing / Revision-Audit**
 
 ---
 
@@ -126,7 +126,7 @@ Roadmap, üretim veri tablosu değildir. Güncel üretim gerçekleri aşağıdak
 - PostgreSQL `fair_stand` (Fair Stand API `:8002`) — kanonik `itemKey` kimlikleri, type, birim, fiziksel metadata ve Item `composition` (reçete) satırları,
 - `src/items.js` — bu veriden bootstrap edilen runtime Item registry'si (`getItem()`); ikinci master değildir,
 - `src/moduleRecipes.js` — `composition` satırlarını `itemKey` üzerinden açan resolver (`expandRecipe`),
-- `src/moduleContracts.js` — modülün BOM politikası (`recipe`, `decision-required` vb.),
+- `src/moduleContracts.js` — modülün BOM politika sözleşmesi (`recipe`, `decision-required` vb.; governance, runtime BOM `src/itemBom.js` / `src/projectBom.js` onu import etmez),
 - `test/moduleRecipes.test.js` ve ilgili contract testleri — bu veri/ilişkilerin regresyon güvencesi.
 
 Roadmap içinde sabit panel/profil/dikme ölçüleri veya belirli bir duvarın parça adetleri tekrar yazılmaz. Üretim dataset'i değişirse yalnız canonical veri (Alembic migration / Admin) ve onu doğrulayan testler değiştirilir; roadmap yalnız plan/acceptance durumunu anlatır.

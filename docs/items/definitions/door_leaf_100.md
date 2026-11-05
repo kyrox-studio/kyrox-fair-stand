@@ -1,71 +1,52 @@
-# door_leaf_100 — Item Contract Definition
+# door_leaf_100
 
-## Kanonik kimlik
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-- `itemKey`: `door_leaf_100`
-- `name`: `Ahşap Kapı Kanadı 100 × 200 cm`
-- `type`: `door-leaf`
-- `unit`: `adet`
-- yapı: tekil physical child Item
-- parametrik: hayır
+## Kimlik
 
-## Kanonik ürüne özgü / varsayılan özellikler
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('door_leaf_100')`).
 
-```text
-widthCm = 100
-heightCm = 200
-depthCm = 8
-material = ahşap
-defaultColor = 0xffffff
-```
+| Alan | Değer |
+|---|---|
+| itemKey | `door_leaf_100` |
+| Ad | Ahşap Kapı Kanadı 100 × 200 cm |
+| Tip | `door-leaf` |
+| Birim | `adet` |
+| Malzeme | ahşap |
+| Katalog | görünmez |
+| Ölçü | `width_cm=100`, `depth_cm=8`, `height_cm=200` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#ffffff` |
+| Yüzey | `color`, `image` kabul eder |
 
-Bu değerlerin product/default tek kaynağı Fair Stand ilişkisel Item store'daki `door_leaf_100` kaydı kaydıdır.
+## Bileşim / BOM
 
-## Yüzey yetenek sözleşmesi
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-`door-leaf` type yetenek kaynağı `src/itemCapabilities.js`dir:
+Alt kalem olarak kullanıldığı Item'lar: `wall_door_100_350`.
 
-```text
-color    = true
-image    = true
-glass    = false
-lightbox = false
-mesh     = false
-```
+## Tip davranışı
 
-Kapı kanadı `panel` Item değildir. Panel-range selection veya panel-only glass/Lightbox/Mesh davranışına sokulmaz.
+`door-leaf` tipi için ayrı sahne davranışı tanımlı değildir.
 
-## State / ezme / kalıcılık
+## Kaynak kodda geçtiği yerler
 
-Leaf bağımsız top-level proje örneği değildir; parent door module içinde child `surface` state'i taşır. Yeni state kanonik Item kimliğiyle oluşturulur:
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/designState.js`
 
-```text
-surface.itemKey = door_leaf_100
-surface.color = #ffffff
-surface.imageAssetId = null
-surface.imageTransform = canonical image transform default
-```
+## Testler
 
-`color`, `imageAssetId` ve `imageTransform` project/runtime ezme alanlarıdır ve save/load ile korunur. Eski persisted door surface state'leri restore sırasında `normalizeModuleItemState()` ile `door_leaf_100` child identity'sine bağlanır; mevcut kullanıcı renk/görsel ezme'ı korunur.
-
-## Davranış / etkileşim sahipliği
-
-Yerleşim, move, rotation, snap, collision, ghost, side insert, delete ve duplicate top-level leaf davranışı değildir; parent `door` tipinin davranışı (`fair_stand_item_type`) sahibidir. Leaf surface tekil olarak renk/görsel düzenlemesi için seçilebilir. Sağ click parent module context menüsünü açar; special panel modes bu leaf için kapalıdır.
-
-## BOM / ilişki
-
-`door_leaf_100` nihai fiziksel BOM Item'ıdır ve başka Item'lardan oluşmaz. Parent `door:100` recipe quantity sahibidir:
-
-```text
-door:100 → door_leaf_100 × 1 adet
-```
-
-Eski `wall_door_100_350` production `partId` kimliği kaldırılmıştır; paralel ikinci leaf kimliği tutulmaz.
-
-## Renderer sınırı
-
-Door renderer child `surface.itemKey` üzerinden kanonik Item'ı ve `door-leaf` yetenek contract'ını çözer. Effective renk/görsel state'ten gelir. Prosedürel mesh'in stand frame içine fit edilen teknik ölçüsü kanonik product dimensions'ın ikinci business tek kaynağı değildir; specialized renderer temsilidir.
-
-## Regresyon
-
-`test/doorLeafItemContract.test.js`, `test/designState.test.js` ve `test/moduleRecipes.test.js` kanonik özellikler, yetenek, default tüketici, ezme/kalıcılık migration, BOM identity/quantity ve renderer tüketici bağlantısını korur.
+- `backend/tests/modules/fair_stand/test_item_surface_flags.py`
+- `e2e/f010-module-construction.spec.mjs`
+- `test/designState.test.js`
+- `test/doorCompositeItemContract.test.js`
+- `test/doorLeafItemContract.test.js`
+- `test/itemSurfaceCapabilitySoT.test.js`
+- `test/moduleRecipes.test.js`
+- `test/printAreaBom.test.js`
+- `test/recipeCompositionItemsContract.test.js`
+- `test/relationshipBomJoints.test.js`
+- `test/sceneBomAcceptance.test.js`
+- `test/wallHeightProjectBom.test.js`
+- `test/wallHeightRelationshipBom.test.js`
+- `test/wallShortRelationshipBom.test.js`

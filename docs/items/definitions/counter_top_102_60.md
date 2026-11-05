@@ -1,14 +1,42 @@
-# counter_top_102_60 — Item Contract Definition
+# counter_top_102_60
 
-## Kanonik Item
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-- `itemKey`: `counter_top_102_60`
-- `type`: `counter-top`
-- `unit`: `adet`
-- dimensions: `102 × 60 × 1.8 cm`
-- `material`: `sunta`
-- `defaultColor`: `0xf8fafc`
+## Kimlik
 
-Intrinsic/default tek kaynak Item kaydıdır. Parent counter state/behavior/context-menu/kalıcılık zinciri leaf davranışını uygular. Renderer ezebilir; kanonik `material` ve default değerleri değiştirmez. Quantity parent counter recipe sahibidir.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('counter_top_102_60')`).
 
-Regression: counter-top contract/defaultColor testleri + `test/boardMaterialItemContract.test.js`.
+| Alan | Değer |
+|---|---|
+| itemKey | `counter_top_102_60` |
+| Ad | Banko Üstü 102 × 60 cm |
+| Tip | `counter-top` |
+| Birim | `adet` |
+| Malzeme | sunta |
+| Katalog | görünmez |
+| Ölçü | `width_cm=102`, `depth_cm=60`, `height_cm=1.8` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#f8fafc` |
+| Yüzey | `color` kabul eder |
+
+## Bileşim / BOM
+
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+Alt kalem olarak kullanıldığı Item'lar: `desk_banko_150_l`.
+
+## Tip davranışı
+
+`counter-top` tipi için ayrı sahne davranışı tanımlı değildir.
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+
+## Testler
+
+- `test/boardMaterialItemContract.test.js`
+- `test/counterRecipes.test.js`
+- `test/counterTopDefaultColor.test.js`
+- `test/lCounter150Contract.test.js`
+- `test/recipeCompositionItemsContract.test.js`

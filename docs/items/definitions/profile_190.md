@@ -1,50 +1,93 @@
-# profile_190 — Item Contract Definition
+# profile_190
 
-## 1. Kanonik kimlik
-- `itemKey`: `profile_190`
-- `name`: `Profil 190`
-- `type`: `profile`
-- `unit`: `adet`
-- structure: Tekil Item
-- parametric: hayır
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## 2. Kanonik ürüne özgü özellikler
-```js
-{
-  itemKey: 'profile_190',
-  type: 'profile',
-  unit: 'adet',
-  dimensions: { widthCm: 190, depthCm: 8, heightCm: 8 },
-  material: 'alüminyum',
-  defaultColor: 0xd0d3d4
-}
-```
-`widthCm`, `depthCm`, `heightCm`, `material` ve `defaultColor` kanonik product/default property'leridir; owner `src/items.js`dir. Project/runtime ezme açık bir karar mekanizmasıyla uygulanabilir ve kanonik değeri değiştirmez. `src/theme.js`/`scene3d.js` specialized renderer ezme kullanabilir.
+## Kimlik
 
-## 3. Oluşturma / state / kalıcılık
-Katalogda kartı yoktur (2026-10-22, migration `0078_profile_lengths`): profil kartı (`profile_289`) bırakılırken boy penceresinden seçilir. Sahaya konan her örnek ayrı instance'dır (`createProfileModuleState`). Parent reçete satırları ayrı kalır; persist parent module ile birlikte `itemKey` taşır.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('profile_190')`).
 
-## 4. Davranış / etkileşim
-Katalog grubu `Panel Ek Modül`. Saha davranışı `wall_200_350` ile aynıdır (`profile` tip davranışı `fair_stand_item_type`: `placement=wall`, `collision=segment`, 10 cm snap; taşıma, döndürme, uç uca/köşe snap). Duvar gövdesinin içine girmez. Aynı duvar yuvasındaki `separator` (ahşap slat) üst rayı engellemez (`overlapWithTypes: separator`). Saha dikmesi (`upright`) profil uçlarına `short-up-joint` ile snap olur.
+| Alan | Değer |
+|---|---|
+| itemKey | `profile_190` |
+| Ad | Profil 190 |
+| Tip | `profile` |
+| Birim | `adet` |
+| Malzeme | alüminyum |
+| Katalog | görünmez |
+| Ölçü | `width_cm=190`, `depth_cm=8`, `height_cm=8` |
+| Sahne ölçüsü | `width_cm=200`, `depth_cm=8`, `height_cm=350` |
+| Varsayılan renk | `#d0d3d4` |
+| Yüzey | — |
 
-## 5. BOM / composition
-Tekil production Item; 7 doğrulanmış parent recipe (wall/shelf/counter/L-counter/base/base-wall). Recipe identity kanonik `itemKey` kullanır, quantity parent recipe sahibidir, expansion üstveriyi `getItem()` üzerinden çözer. Saha örneği `resolveItemBom` ile `profile_190 × 1 adet` üretir; parent reçetelere otomatik eklenmez.
+## Bileşim / BOM
 
-## 6. Renderer sınırı
-Production ölçü ve üstveri business tek kaynak'tur; prosedürel renderer production profile mesh identity'sine zorla bağlanmaz. `defaultColor=0xd0d3d4` kanonik default; renk Item `default_color` alanındadır (DB); ayrı render renk sabiti `ALUMINUM_PROFILE_COLOR` 2026-09-25 `6bf223b9` ile kalktı.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-## 7. Regresyon sözleşmesi
-Regression `itemKey`, `type`, `unit`, `190 × 8 cm`, `material='alüminyum'`, `defaultColor=0xd0d3d4`, 7 parent recipe eşyapı ve kanonik expansion'ı korur.
+Alt kalem olarak kullanıldığı Item'lar: `base_200`, `desk_banko_200`, `desk_banko_200_l`, `wall_200_350`, `wall_200_short_1`, `wall_200_short_2`.
 
-## Sonuç
-```text
-canonical Item             TAMAM
-intrinsic properties       TAMAM
-material                   alüminyum
-defaultColor               0xd0d3d4
-recipe/BOM                 TAMAM
-leaf state/persistence     UYGULANMIYOR
-leaf behavior/interactions UYGULANMIYOR
-renderer override boundary TAMAM
-regression                 TAMAM
-```
+## Tip davranışı
+
+`profile` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `wall` |
+| collision | `segment` |
+| moveSnapCm | `10` |
+| magneticSnap | `standard` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `True` |
+| wallCapacity | `include` |
+| overlapWithTypes | `('separator',)` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/baseRunBom.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_item_default_z.py`
+- `backend/tests/modules/fair_stand/test_item_scene_pose.py`
+- `backend/tests/modules/fair_stand/test_item_snap.py`
+- `backend/tests/modules/fair_stand/test_item_surface_flags.py`
+- `backend/tests/modules/fair_stand/test_profile_346_5_migration.py`
+- `backend/tests/modules/fair_stand/test_profile_lengths_migration.py`
+- `backend/tests/modules/fair_stand/test_vertical_move_migration.py`
+- `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
+- `e2e/long-part-split-label.spec.mjs`
+- `e2e/new-project-wizard.spec.mjs`
+- `e2e/vertical-move-upright-height.spec.mjs`
+- `test/automaticWall.test.js`
+- `test/baseItemsContract.test.js`
+- `test/baseRecipes.test.js`
+- `test/baseRunBom.test.js`
+- `test/catalogPreviewConfig.test.js`
+- `test/itemBoxDimensions.test.js`
+- `test/itemDefaultZCm.test.js`
+- `test/itemSceneDimensions.test.js`
+- `test/itemScenePose.test.js`
+- `test/itemSnapAnchor.test.js`
+- `test/lCounter200Contract.test.js`
+- `test/moduleBehaviorPolicy.test.js`
+- `test/modulePlacement.test.js`
+- `test/moduleRecipes.test.js`
+- `test/profile190ItemContract.test.js`
+- `test/profileFieldPlacement.test.js`
+- `test/profileIntrinsicProperties.test.js`
+- `test/profileLength.test.js`
+- `test/profilesItemContract.test.js`
+- `test/recipeCompositionItemsContract.test.js`
+- `test/recipeWallPanelSlots.test.js`
+- `test/relationshipBomEndToEnd.test.js`
+- `test/relationshipBomJoints.test.js`
+- `test/sceneBomAcceptance.test.js`
+- `test/uprightFieldPlacement.test.js`
+- `test/verticalMoveUprightHeight.test.js`
+- `test/wallHeightProjectBom.test.js`
+- `test/wallHeightRecipe.test.js`
+- `test/wallHeightRelationshipBom.test.js`
+- `test/wallShortCanonicalRename.test.js`
+- `test/wallShortProfileSnapCollision.test.js`
+- `test/wallShortRelationshipBom.test.js`
+- `test/wallShortVerticalMove.test.js`

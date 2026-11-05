@@ -1,37 +1,60 @@
-# profile_289 — Item Contract Definition
+# profile_289
 
-## 1. Kanonik kimlik
-- `itemKey`: `profile_289`
-- `name`: `Profil 289`
-- `type`: `profile`
-- `unit`: `adet`
-- structure: Tekil Item
-- parametric: hayır
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## 2. Kanonik ürüne özgü özellikler
-```js
-{
-  itemKey: 'profile_289',
-  type: 'profile',
-  unit: 'adet',
-  dimensions: { widthCm: 289, depthCm: 8, heightCm: 8 },
-  sceneDimensions: { widthCm: 300 },
-  material: 'alüminyum',
-}
-```
-Gerçek boy (BOM) 289 cm, sahnede 300 cm çizilir (`fair_stand_item_scene_dimensions`, kesit 10 × 10). Ölçüler migration `0078_profile_lengths` ile yazılır; diğer alanlar `profile_190` satırından kopyalanır.
+## Kimlik
 
-## 3. Oluşturma / state / kalıcılık
-Katalogdaki tek profil kartıdır (dikmedeki `upright_346_5` gibi); bırakılırken boy sorulur ve seçilen boyun `itemKey`'iyle kaydedilir. Sahaya bırakılan her örnek ayrı instance'dır (`createProfileModuleState`); persist `itemKey` taşır. Admin ekranında açılmış `profile_289_scene` kartı migration `0078` ile bu anahtara çevrildi; tarayıcıda kayıtlı eski projeler açılırken `designState.js > LEGACY_PROFILE_ITEM_KEYS` ile çevrilir.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('profile_289')`).
 
-## 4. Davranış / etkileşim
-Katalog grubu `Panel Ek Modül`; saha davranışı diğer profillerle aynıdır (`profile_190.md` §4). Bırakırken boy penceresi açılır (`src/profileLength.js`: "Bir daha sorma, aynı ölçüde getir", localStorage `fairStand.profileLengthItemKey`); sağ tık **Profil boyu…** boyu değiştirir.
+| Alan | Değer |
+|---|---|
+| itemKey | `profile_289` |
+| Ad | Profil 289 |
+| Tip | `profile` |
+| Birim | `adet` |
+| Malzeme | alüminyum |
+| Katalog | görünür, Panel Ek Modül |
+| Ölçü | `width_cm=289`, `depth_cm=8`, `height_cm=8` |
+| Sahne ölçüsü | `width_cm=300`, `depth_cm=8`, `height_cm=350` |
+| Varsayılan renk | `#d0d3d4` |
+| Yüzey | — |
 
-## 5. BOM / composition
-Tekil production Item. Saha örneği `resolveItemBom` ile `profile_289 × 1 adet` üretir. Parent reçetelerde kullanılmaz.
+## Bileşim / BOM
 
-## 6. Renderer sınırı
-`is_render = true`; katalogda görünür (tek kart), sahnede çizilir.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-## 7. Regresyon sözleşmesi
-`test/profileLength.test.js`, `backend/tests/modules/fair_stand/test_profile_lengths_migration.py`.
+## Tip davranışı
+
+`profile` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `wall` |
+| collision | `segment` |
+| moveSnapCm | `10` |
+| magneticSnap | `standard` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `True` |
+| wallCapacity | `include` |
+| overlapWithTypes | `('separator',)` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/designState.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_profile_lengths_migration.py`
+- `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
+- `e2e/vertical-move-upright-height.spec.mjs`
+- `test/catalogCategories.test.js`
+- `test/catalogItemProjection.test.js`
+- `test/catalogPreviewConfig.test.js`
+- `test/itemCatalogFields.test.js`
+- `test/itemLengthParts.test.js`
+- `test/itemSceneDimensions.test.js`
+- `test/profileFieldPlacement.test.js`
+- `test/profileLength.test.js`
+- `test/uprightFieldPlacement.test.js`
+- `test/wallShortRelationshipBom.test.js`

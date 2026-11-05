@@ -2,7 +2,7 @@
 
 Bu dosya yalnızca **ürün genelinde geçerli, modül tipinden bağımsız invariant'ları** tanımlar.
 
-BOM, üretim veya maliyet hesabına girebilen fiziksel öğelerin kök semantiği `Item`dır. Bu sahipliğin canonical sözleşmesi `ITEM_CONTRACT.md` dosyasıdır. Yeni fiziksel ürün, zemin, malzeme, kombinasyon veya runtime öğesi bu sözleşmeye göre sınıflandırılmadan sisteme eklenmez.
+BOM, üretim veya maliyet hesabına girebilen fiziksel öğelerin kök semantiği `Item`dır. Bu sahipliğin canonical sözleşmesi `docs/items/contract/ITEM_CONTRACT.md` dosyasıdır. Yeni fiziksel ürün, zemin, malzeme, kombinasyon veya runtime öğesi bu sözleşmeye göre sınıflandırılmadan sisteme eklenmez.
 
 Modül tipine göre değişen move snap, placement, collision, side-insert ve ghost davranışları burada tekrar edilmez. Canonical runtime: `src/moduleBehavior.js`, sözleşme: `MODULE_BEHAVIOR_STANDARD.md`. Sahne Z dönüşü Item kolonlarıdır: `docs/refactor/ROTATION.md`.
 
@@ -43,7 +43,7 @@ Basit / Gelişmiş geçişi yalnız arayüz kontrollerini ve yardımcı gösteri
 - Module-type editor davranışları (placement/snap/collision): `src/moduleBehavior.js`
 - Sahne Z rotation: `docs/refactor/ROTATION.md`
 - Placement, snap, collision ve bağlantı algoritmaları: ilgili placement/core dosyaları ve regresyon testleri
-- Katalog kimliği ve nominal ölçüler: `src/catalog.js`
+- Katalog: DB kategorileri, önizleme türleri ve Item `catalog*` alanları; runtime `src/catalog.js` (`docs/refactor/CATALOG.md`). Item kimliği ve ölçüleri DB Item kaydıdır (`src/items.js` / `getItem()`)
 - Runtime state construction: `src/designState.js`
 - BOM / üretim verileri: recipe ve production-parts katmanı
 - Mimari sınırlar: `ARCHITECTURE_RULES.md`

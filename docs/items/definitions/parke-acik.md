@@ -1,13 +1,42 @@
-# parke-acik — Kanonik Item
+# parke-acik
 
-Migration öncesi tam envanter (arşiv, normatif değil): `kyrox-platform/archive/fair-stand/docs-items/current-system/parke.md`.
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md).
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
 ## Kimlik
-Fair Stand ilişkisel Item store'daki `parke-acik` kaydı. `itemKey = parke-acik`. Name `Beyaz Meşe` (mevcut select metni). Type `floor`. Lamel `140 × 16 cm` (1.40 m × 0.16 m). `defaultColor=#c9cac5` (Floorpan Classic Kristal Meşe FC086 görselinin ortalaması; `0089_parquet_reference`). `paintable=false`. Katalog/recipe/unit yok.
 
-## Render
-Ortak meşe dokusu (`public/textures/floor/oak-*`, CC0) `defaultColor` ile çarpılır; dokunun bir tekrarı 8 lamel sırasıdır ve lamel genişliği `depthCm`den gelir. Derzler dokudadır, çizgi çizilmez.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('parke-acik')`).
 
-## Kalıcılık
-Persist `stand.itemKey`. Eski `floorType` hydrate. Parke tek `parke` değeri değildir.
+| Alan | Değer |
+|---|---|
+| itemKey | `parke-acik` |
+| Ad | Beyaz Meşe |
+| Tip | `floor` |
+| Birim | `m2` |
+| Malzeme | — |
+| Katalog | görünmez |
+| Ölçü | `width_cm=140`, `depth_cm=16` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | `#c9cac5` |
+| Yüzey | — |
+
+## Bileşim / BOM
+
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
+
+## Tip davranışı
+
+`floor` tipi için ayrı sahne davranışı tanımlı değildir.
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/floorArea.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_parquet_reference_migration.py`
+- `e2e/floor-items-contract.spec.mjs`
+- `test/floorArea.test.js`
+- `test/floorItemsContract.test.js`
+- `test/projectImportValidation.test.js`
+- `test/selectionFeedback.test.js`

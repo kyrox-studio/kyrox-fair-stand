@@ -275,11 +275,10 @@ Yeni kategori gerekirse Admin Catalog CRUD ile `catalogName` / `catalogIndex` ek
 
 | Test | Ne doğrular |
 |---|---|
-| `test/catalogItemProjection.test.js` | 60/60 Item-driven thin kart (`itemKey` / `label` / `previewId`) |
-| `test/previewIdConfig.test.js` | 60/60 `previewId`; type branch yok; CSS kök sınıf regression |
+| `test/catalogItemProjection.test.js` | 133 Item, 35 görünür kart; Item-driven thin kart (`itemKey` / `label` / `previewId`) |
 | `test/catalogDomainBoundary.test.js` | Catalog/AutoDepot/ModuleContract katman sınırı; `catalogVisible=false` ≠ Item yok |
 | `test/catalogCategories.test.js` | Catalog modeli, key eşleşmesi, sıra/label/adet regression |
-| `test/itemCatalogFields.test.js` | 106/106 Item alanları, CATALOG.md tablosu, UI `listCatalogGroups` |
+| `test/itemCatalogFields.test.js` | 133 Item alanları, CATALOG.md tablosu, UI `listCatalogGroups` |
 | `test/itemSceneDimensions.test.js` | dimensions / sceneDimensions same-field fallback; catalogWidthCm yok; Recipe/Catalog dimension fallback yok |
 | `test/catalogSingleSource.test.js` | Her katalog Item tam bir grupta |
 | `test/systemModuleCatalogDoc.test.js` | `SYSTEM_MODULE_CATALOG.md` key snapshot |

@@ -1,6 +1,6 @@
 # Fair Stand — Item mimarisi refactor günlüğü
 
-Bu dosya Item mimarisine geçişin tek merkezi değişiklik kaydıdır. Audit dökümü değildir; yalnız gerçekten uygulanan adımlar ve o adımdan sonra geçerli kurallar yazılır.
+Bu dosya Item mimarisine geçişin değişiklik günlüğüdür (2026-09-16 … 2026-10-22, migration `0080`'e kadar). Audit dökümü değildir. Bugünkü şema ve `0081` sonrası migration'lar: `DATABASE.md`.
 
 - Item modeli: `docs/refactor/ITEMS.md`
 - Katalog mekanizması: `docs/refactor/CATALOG.md`

@@ -23,7 +23,7 @@
 
 - BOM’da child olması ≠ sahnede otomatik mesh. Snap için gerekirse **sanal mount hattı** yeterli; tam Lego assembly şart değil.
 - Sahneye konmak için `is_render=true` **ve** bilinen `item_type` (factory/behavior) gerekir.
-- Her behavior’ı bir anda DB’ye taşımak yoktu; **tip placement paketi** (eski `TYPE_BEHAVIORS`) 0030–0033 ile DB’de. Kalan iş: snap kalıntı / contract / preview (P2–P5).
+- Her behavior’ı bir anda DB’ye taşımak yoktu; **tip placement paketi** (eski `TYPE_BEHAVIORS`) 0030–0033 ile DB’de. Kalan iş: § Kalan.
 - Admin preview ≠ prod `scene3d` birebir kopyası olmak zorunda değil.
 - Tek kelime `top` / `side` yetmez: projetör üst rayı ile rafın ön-yüz üst dikişi **farklı kural** olmalı (`top-rail` vs `shelf-rail`).
 
@@ -66,20 +66,12 @@ Kaynak: 2026-09-23 tespit; **2026-09-24** kod gerçeğine göre yeniden hizaland
 | Item master | DB / `getItem` | Ölçü, BOM, `accepts*`, catalog, snap rule id | CRM/seed kaydı **yeter** (katalogdan `itemKey` ile) |
 | Snap motor | `itemSnap.js` + kural tabloları | Host hattı tip/kuraldan | SKU satırı **gerekmez** |
 | Genişlik→SKU (auto-wall) | `resolveAutomaticWallFlatPanelItemKey` ← Item registry | catalogVisible + isRender flat-panel, short-up hariç; width = `dimensions.widthCm`. Explicit `itemKey` map kullanmaz |
-| Module contract | `moduleContracts.js` `MODULE_CONTRACT_ASSIGNMENTS` | Governance/test allowlist. Production planner/renderer import etmez; `accepts*` ile çakışır | § C.5 erit |
-| Şerit clamp | `resolveFlatPanelStripCount` | `min(BOM qty, floor(H/pitch50))` sessiz kırpma | İstenmez; § B.7 / § A borcu |
+| Module contract | `moduleContracts.js` `MODULE_CONTRACT_ASSIGNMENTS` | Boş (`Object.freeze({})`); SKU satırı yok | Satır **gerekmez** |
+| Şerit adedi | `resolveFlatPanelStripCount` | Reçete panel qty otorite; reçetede panel yoksa `floor(H/pitch)`. Sessiz qty kırpma yok | — |
 
-### Kısmi / kalan
+### Kalan
 
-| Konu | Bugün (kod) | Kalan |
-|---|---|---|
-| Snap modeli | Tip/kural + rule id | — (placement/moveSnap/magnetic DB’de, C.3 kapandı) |
-| Raf kalıntı | `usesPanelSeamOverlaySnap` ← kural | ~~`panel-seam` literal~~ → `requires: 'shelf-rail'` |
-| Wall sanal hat | Recipe band / top-rail offset var | Yazılı host modeli + P2 tick + E2E |
-| Contract allowlist | Her katalog `itemKey` JS satırı | § C.5: DB/Item yeter; assignment erit |
-| Auto-wall width | Item registry lookup | `resolveAutomaticWallFlatPanelItemKey` (hardcoded map yok) |
-| Strip / pitch | Sabit 50 + qty clamp | Leaf ölçü + BOM otorite (§ A / B.7) |
-| Cycle | Self-parent CHECK | Admin A→B→A |
+Açık işler yalnız `kyrox-platform/projects/fair-stand/ROADMAP.md` § 3 "Item-first kalanları" satırında: wall sanal hat kapanışı + E2E, admin kompozisyon döngü kontrolü (seed'de `assert_acyclic_components` var, admin kaydında yok), rotation alanlarının tek kaynağı.
 
 ### Dünya kuralı (hâlâ geçerli)
 
@@ -89,22 +81,6 @@ Kaynak: 2026-09-23 tespit; **2026-09-24** kod gerçeğine göre yeniden hizaland
 4. **Kod yazmadan yeni SKU.** Aynı `item_type` → Item kaydı. **Yeni `item_type`:** CRM tip satırı + seed + (gerekirse) factory/renderer; JS tip davranış map’i yok.
 5. **Placement tamamı Item’da değil.** Snap dilimi taşındı; collision/magnetic vb. C.3.
 6. **Contract ≠ runtime görsel.** Görsel/catalog DB’de; `MODULE_CONTRACT_*` test/governance — ürün otoritesi değil.
-
-### Eksikler (P2 / P4)
-
-- Contract allowlist eritme (§ C.5) + sanal hat yazılı kapanış + cycle admin
-- `panel-seam` string süpürme; free leaf + wall E2E
-- Strip clamp kaldırma (B.7 / § A) — şimdi kod yok
-
-### Risk
-
-| Pri | Risk | Not |
-|---|---|---|
-| P4 | Orta | Snap dilimi var; string kalıntı + E2E |
-| P1 | Düşük | Catalog bitti; BOM soft-warning kararlı, kod yok |
-| P2 | Orta | Contract eritme + wall host yazımı / cycle |
-| P3 | Düşük | Rotate/defaultZ yakın |
-| P5 | Erteli | Doğru |
 
 **P0 zorunlu seçim:**  
 **(KİLİTLENDİ 2026-09-23, uygulandı 2026-09-23/24).** `fair_stand_item_type` + rule_type + rule; item `item_type` → tip.key FK; requires|provides rule FK; kural ↔ tip M:N; motor **rule id**. Face/edge kuralda; CRM CRUD. Tip = provides; item Provides = opsiyonel override (OR). Aile tablosu yok (`0029`). Type→kural runtime map yok.
@@ -162,17 +138,8 @@ Açık maddeler: `kyrox-platform/projects/fair-stand/ROADMAP.md` § 3.
 - [x] Kayıt: `fair_stand_item_assembly_parts` + `PUT .../assembly` + bootstrap `assembly.parts`
 - [x] Prod: assembly varsa `scene3d` parts mesh; yoksa eski gömülü/şerit
 
-Branch: `item_3d_preview`. BOM hâlâ `composition.items`; pose ayrı tabloda.
+BOM hâlâ `composition.items`; pose ayrı tabloda.
 Doküman: `docs/refactor/ITEM_3D_PREVIEW.md` (yetenekler + sınırlar + kayıt modeli).
----
-
-## Bu hafta
-
-1. ~~P0 kilidi + şema/CRM/motor dilimi~~ (yapıldı)
-2. P4 kalıntı süpürme + regresyon
-3. P2: contract § C.5 + sanal hat kapanış / cycle (sıra ürün)
-4. ~~P5 backlog’ta kalsın~~ → `item_3d_preview` branch’te uygulandı (CRM sekme + assembly API + prod mesh)
-
 ---
 
 ## Yapılmayacaklar (şimdi)

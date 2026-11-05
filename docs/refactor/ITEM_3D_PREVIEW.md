@@ -1,11 +1,9 @@
 # Item 3D Önizleme (Admin)
 
-> **Asıl plan (Cursor):** `.cursor/plans/item_3d_preview_439e7580.plan.md` — “Item 3D Preview (P5) yol haritası”.  
-> Bu dosya repo içi mirror; unutmamak için yetenek + sınır özeti.
 
 Fair Stand **admin Item düzenleme** ekranındaki canlı 3D önizleme + recipe montaj layout kaydı.
 
-Branch: `item_3d_preview` (lokal; commit/push/merge ürün kararına bağlı).  
+Kodda: `src/itemAdminPreview.js`; CRM admin Item detayında `preview3d` sekmesi (`FairStandItemsAdminPage.tsx`).  
 Roadmap dilimi: `ITEM_FIRST_ROADMAP.md` § P5.
 
 Bu dosya **ne yaptık / sistem ne yapabilir / ne yapamaz** için yaşayan not. Audit değil.

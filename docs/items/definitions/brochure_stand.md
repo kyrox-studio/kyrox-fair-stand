@@ -1,21 +1,53 @@
-# brochure_stand — Kanonik Item
+# brochure_stand
 
-Sözleşme: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md), [ITEM_CONTRACT_CHECKLIST](../contract/ITEM_CONTRACT_CHECKLIST.md). Migration: `backend/alembic/versions/0074_showcase_brochure.py`.
+> Bu belge koddan üretilir (`scripts/gen-item-definitions.py`). Ortak Item kuralları: [ITEM_CONTRACT](../contract/ITEM_CONTRACT.md). Kaynak: Fair Stand Item store (`test/fixtures/itemCatalogSeed.json`).
 
-## Kimlik, özellikler ve ölçüler
-`itemKey = brochure_stand`, ad "Broşürlük", type `brochure-stand`, birim `adet`. Tekil ticari Item. Ürün kararı (2026-10-21): taban 30 × 30 cm, yükseklik 150 cm, 5 cep, beyaz delikli metal. Katalog: Extra, önizleme "Broşürlük".
+## Kimlik
 
-## Oluşturma, state ve kalıcılık
-`src/designState.js > createBrochureStandModuleState` → `createCommercialModuleState('brochure-stand')`. Proje kaydında yeni alan yok.
+Çalışma zamanında katalog bootstrap kaydı `src/items.js` `getItem()` ile okunur (`getItem('brochure_stand')`).
 
-## Davranış
-`brochure-stand` type davranışı DB'dedir: serbest yerleşim, `collision: footprint`, 10 cm adım, mıknatıslı yapışma yok, 90° dönüş. Renk/görsel kabul etmez.
+| Alan | Değer |
+|---|---|
+| itemKey | `brochure_stand` |
+| Ad | Broşürlük |
+| Tip | `brochure-stand` |
+| Birim | `adet` |
+| Malzeme | — |
+| Katalog | görünür, Extra |
+| Ölçü | `width_cm=30`, `depth_cm=30`, `height_cm=150` |
+| Sahne ölçüsü | — |
+| Varsayılan renk | — |
+| Yüzey | — |
 
-## BOM
-`TYPE_SELF_BOM`: tek satır `brochure_stand ×1 adet`. Alt parça yok.
+## Bileşim / BOM
 
-## Renderer sınırı
-`src/scene3d.js > createBrochureStandModule` prosedüreldir: taban plakası, iki dikme, öne eğik delikli arka levha + ön dudaklı 5 cep (`BROCHURE_STAND_POCKET_COUNT = 5`). Delik deseni tek paylaşılan canvas dokusudur (`createPerforatedTexture`). Çizim BOM'un kaynağı değildir.
+Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
-## Regresyon
-`test/floorShowcaseBrochureStand.test.js`; E2E `e2e/floor-showcase-brochure-copy-rotate.spec.mjs`; migration `backend/tests/modules/fair_stand/test_showcase_brochure_migration.py`.
+## Tip davranışı
+
+`brochure-stand` tipinin davranışı (`fair_stand_item_type`; seed `backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py`, çözüm `src/moduleBehavior.js` `getModuleBehavior`):
+
+| Alan | Değer |
+|---|---|
+| placement | `free` |
+| collision | `footprint` |
+| moveSnapCm | `10` |
+| magneticSnap | `none` |
+| allowSideInsert | `True` |
+| supportsWallOverlayMount | `False` |
+| wallCapacity | `include` |
+
+## Kaynak kodda geçtiği yerler
+
+- `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
+- `src/autoFurniture.js`
+- `src/featureContracts.js`
+
+## Testler
+
+- `backend/tests/modules/fair_stand/test_showcase_brochure_migration.py`
+- `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `e2e/floor-showcase-brochure-copy-rotate.spec.mjs`
+- `test/catalogCategories.test.js`
+- `test/floorShowcaseBrochureStand.test.js`
+- `test/itemCatalogFields.test.js`
