@@ -18,7 +18,7 @@ FAZ 4 sonunda bir modül kendi başına şu sorulara cevap verebilmelidir:
 - Parametre değişirse kendi Raw BOM / module recipe çıktısı nasıl değişiyor?
 - Sahnedeki başka modüllere nereden ve nasıl bağlı?
 
-**FAZ 4'te yapılmayacaklar:** tüm sahnenin ortak parça düşümü/normalization sonucu olan Final BOM, fiyat/maliyet, fire, işçilik, Fair CRM fiyatlandırması.
+**FAZ 4'te yapılmayacaklar:** tüm sahnenin ortak parça düşümü/normalization sonucu olan Final BOM, fiyat/maliyet, fire, işçilik, fiyatlandırma.
 
 ## 3 Eylül 2026 doğrulanmış mevcut temel
 
