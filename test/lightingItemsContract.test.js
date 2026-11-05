@@ -85,7 +85,7 @@ test('illuminated-foam: canonical identity, catalog card (0084) and state', () =
   assert.equal(item.dimensions.wallGapCm, 1.5);
   assert.equal(item.unit, 'metre_kare');
   // Katalogdan konur; logo görseli panelin görsel bölümünden seçilir.
-  assert.equal(getCatalogItem('illuminated-foam').previewId, 9);
+  assert.equal(getCatalogItem('illuminated-foam').previewId, 31);
   assert.equal(item.acceptsImage, true);
 
   const state = createIlluminatedFoamModuleState('asset-1');

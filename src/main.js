@@ -3891,6 +3891,7 @@ function renderAssetLibrary() {
       button.addEventListener('click', () => {
         closeAssetContextMenu();
         setActiveAsset(asset.id, { focus: true });
+        applyAssetToSelectedFoam(asset.id);
       });
       button.addEventListener('contextmenu', (event) => {
         event.preventDefault();
@@ -4156,6 +4157,13 @@ function setIlluminatedFoamLogo(modules, assetId) {
   modules.forEach((moduleState) => scene3d.selectModuleSurface(moduleState.id));
   selectionInfo.textContent = assetId ? 'Işıklı Strafor logosu uygulandı.' : 'Işıklı Strafor logosu kaldırıldı.';
   return true;
+}
+
+// Strafor seçiliyken arşivdeki görsele tıklamak logoyu hemen uygular; panellerde Doldur/Sığdır gerekir.
+function applyAssetToSelectedFoam(assetId) {
+  const foamModules = selectedIlluminatedFoamModules(scene3d.getSelectedSurfaces());
+  if (!foamModules || foamModules.every((moduleState) => moduleState.imageAssetId === assetId)) return;
+  setIlluminatedFoamLogo(foamModules, assetId);
 }
 
 function applyActiveImageToSelection(fit = 'cover') {

@@ -44,7 +44,7 @@ Item bootstrap alanları mapper’dan: `snapRequiresRuleId` + denorm `snapRequir
 
 ### 1.2 Tablo envanteri (ürün şeması)
 
-`models.py` + Alembic head **`0090_carpet_anthracite`** (27 tablo). `0067_group_templates` organizasyon grup şablonlarını (`fair_stand_group_templates`) ekler. `0043` / `0044` kolon eklemez; cam panel SKU satırıdır. `0065_metal_separator` gizli `metal_separator` kalemini ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve maliyet bayrağını açar. Katalogda görünmez. Junction’lar ayrı tablo sayılır.
+`models.py` + Alembic head **`0091_foam_card_preview`** (27 tablo). `0067_group_templates` organizasyon grup şablonlarını (`fair_stand_group_templates`) ekler. `0043` / `0044` kolon eklemez; cam panel SKU satırıdır. `0065_metal_separator` gizli `metal_separator` kalemini ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve maliyet bayrağını açar. Katalogda görünmez. Junction’lar ayrı tablo sayılır.
 
 | Tablo | Rol |
 |---|---|
