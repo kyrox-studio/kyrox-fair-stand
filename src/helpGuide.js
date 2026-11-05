@@ -227,7 +227,7 @@ function listGuideSections() {
       <ol>
         <li>Sol menüde <strong>Modül ekle</strong> → <strong>Elektronik &amp; Aydınlatma</strong> → <strong>Işıklı Strafor / Logo</strong> kartını duvara sürükle.</li>
         <li>Bırakınca strafor seçilir ve sağda <strong>Özellikler</strong> paneli açılır.</li>
-        <li>Paneldeki görsel bölümünde SVG'yi <strong>Görsel arşivine ekle</strong> ile yükle veya arşivden seç; <strong>Doldur</strong> / <strong>Sığdır</strong> logoyu uygular, <strong>Kaldır</strong> kaldırır.</li>
+        <li>Paneldeki görsel bölümünde SVG'yi <strong>Görsel arşivine ekle</strong> ile yükle veya arşivden tıkla; logo hemen uygulanır. <strong>Kaldır</strong> logoyu kaldırır. Arşiv projeye özeldir.</li>
         <li>Ölçüyü paneldeki <strong>X · Genişlik</strong> ve <strong>Y · Yükseklik</strong> alanlarından gir; sahnede hemen değişir.</li>
       </ol>
       <ul>

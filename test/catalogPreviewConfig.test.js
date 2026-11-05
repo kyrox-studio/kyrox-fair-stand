@@ -45,6 +45,7 @@ const ROOT_CLASS_BY_PREVIEW = Object.freeze({
   9: 'module-drag-panel',
   29: 'module-drag-floor-showcase',
   30: 'module-drag-brochure-stand',
+  31: 'module-drag-foam-logo',
 });
 
 function installDocument() {
@@ -137,7 +138,7 @@ test('Catalog preview renderer yalnız catalogPreview key ile seçilir; type bra
   assert.doesNotMatch(picker, /item\.type/);
 
   const rendererKeys = listCatalogPreviewIds().sort();
-  assert.equal(rendererKeys.length, 30);
+  assert.equal(rendererKeys.length, 31);
   assert.deepEqual(rendererKeys, [...listCatalogPreviewIds()].sort());
   assert.match(CATALOG_SOURCE, /previewId,/);
   assert.match(CATALOG_SOURCE, /is catalogVisible without previewId/);
@@ -160,7 +161,7 @@ test('35 Item catalogPreview dağılımı kilitlidir', () => {
     6: 1,
     7: 2,
     8: 1,
-    9: 6,
+    9: 5,
     10: 1,
     11: 2,
     12: 1,
@@ -181,6 +182,7 @@ test('35 Item catalogPreview dağılımı kilitlidir', () => {
     28: 1,
     29: 1,
     30: 1,
+    31: 1,
   });
 });
 

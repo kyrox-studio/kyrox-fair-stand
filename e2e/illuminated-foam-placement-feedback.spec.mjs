@@ -97,6 +97,39 @@ async function findFoamScreenPoint(page) {
   };
 }
 
+test('seçili Işıklı Straforda arşivdeki SVG tıklanınca logo Doldur olmadan uygulanır', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await createStand(page, 'Ada Stand', 'E2E Foam Archive Click');
+  await page.locator('.view-cube-home').click();
+  await dropFoam(page, 0.5, 0.65);
+
+  // İkinci logo yüklenince kırmızı logo yerini mavi logoya bırakır.
+  const panel = page.locator('.selection-property-panel');
+  await panel.locator('#surface-image').setInputFiles({
+    name: 'e2e-blue.svg',
+    mimeType: 'image/svg+xml',
+    buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50"><rect width="200" height="50" fill="#1d4ed8"/></svg>', 'utf8'),
+  });
+  await expect(panel.locator('#asset-status')).toHaveText('Aktif görsel: e2e-blue.svg');
+  await expect.poll(() => findFoamScreenPoint(page), { timeout: 10000 }).toBeNull();
+
+  await panel.locator('.asset-tile[title="e2e-logo.svg"]').click();
+  await expect(panel.locator('.asset-tile.active')).toHaveAttribute('title', 'e2e-logo.svg');
+  await expect(page.locator('#selection-info')).toContainText('Işıklı Strafor logosu uygulandı');
+  await expect.poll(() => findFoamScreenPoint(page), { timeout: 10000 }).not.toBeNull();
+
+  // PNG arşivde seçilebilir ama logo olmaz; mevcut logo kalır.
+  await panel.locator('#surface-image').setInputFiles({
+    name: 'e2e-raster.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
+  });
+  await expect(page.locator('#selection-info')).toContainText('SVG görsel kullan');
+  expect(await findFoamScreenPoint(page)).not.toBeNull();
+  expect(pageErrors).toEqual([]);
+});
+
 test('Işıklı Strafor stand dışına götürülünce uyarı TV değil kendi adını gösterir', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));

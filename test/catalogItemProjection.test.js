@@ -45,7 +45,7 @@ test('listCatalogItems 35 görünür Item’ı Item kaydından üretir; hardcode
   assert.equal(projected.filter((item) => getCatalogItem(item.itemKey) == null).length, 0);
   assert.equal(getCatalogItem('panel_197'), null);
   // Işıklı Strafor katalogdan konur (0084); logo görseli panelden seçilir.
-  assert.equal(getCatalogItem('illuminated-foam')?.previewId, 9);
+  assert.equal(getCatalogItem('illuminated-foam')?.previewId, 31);
 
   assert.doesNotMatch(catalogSource, /createFlatPanelCatalogItem/);
   assert.doesNotMatch(catalogSource, /createCommercialCatalogItem/);
