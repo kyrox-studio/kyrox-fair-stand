@@ -2,11 +2,12 @@
   "schemaVersion": 2,
   "id": "md-koda-gore",
   "kind": "architecture",
-  "summary": "Canlı MD belgeleri koda göre düzeltildi: Item tanım belgeleri seed'den yeniden üretildi, docs/refactor ve kök yönetim belgelerindeki eski iddialar (katalog/davranış kaynağı DB, ITEM_CONTRACT yolu, CI sırası, moduleContracts governance, ölçüler moddan bağımsız, scene_behavior tablosu) koda hizalandı; tarihî belgelerin işaretçileri düzeltildi. Belge üreticileri seed fixture'dan okur.",
+  "summary": "Canlı MD belgeleri koda göre düzeltildi: Item tanım belgeleri seed'den yeniden üretildi, docs/refactor ve kök yönetim belgelerindeki eski iddialar (katalog/davranış kaynağı DB, ITEM_CONTRACT yolu, CI sırası, moduleContracts governance, ölçüler moddan bağımsız, scene_behavior tablosu) koda hizalandı; tarihî belgelerin işaretçileri düzeltildi. Belge üreticileri seed fixture'dan okur. K14: change gate ITEM_CONTRACT anahtarı gerçek yol docs/items/contract/ITEM_CONTRACT.md oldu. K12: FRESH_REPOSITORY_REVIEW.md ve REPOSITORY_CLEANUP_PROGRESS.md platform archive/fair-stand/ altına taşındı, onları koruyan test kaldırıldı (kullanıcı kararı).",
   "owners": [
     "scripts/gen-item-definitions.py",
     "scripts/generate-item-dimensions-matrix.py",
-    "docs/refactor/DATABASE.md"
+    "docs/refactor/DATABASE.md",
+    "src/systemChangeContract.js"
   ],
   "sourceOfTruth": [
     "test/fixtures/itemCatalogSeed.json",
@@ -36,37 +37,53 @@
   },
   "impactAnalysis": {
     "mode": "full-system",
-    "affectedFiles": [],
-    "affectedTests": [
-      "test/itemDocsRuntimeAlignment.test.js",
-      "test/developerEntrypointDocs.test.js",
-      "test/historicalDocumentationStatus.test.js",
-      "test/systemModuleCatalogDoc.test.js",
-      "test/roadmapProductionSourceOfTruth.test.js",
-      "test/catalogDomainBoundary.test.js",
-      "test/pythonPatchArchive.test.js"
+    "affectedFiles": [
+      "scripts/verify-change-contract.mjs"
     ],
-    "affectedDocs": [],
+    "affectedTests": [
+      "test/catalogDomainBoundary.test.js",
+      "test/developerEntrypointDocs.test.js",
+      "test/itemDocsRuntimeAlignment.test.js",
+      "test/pythonPatchArchive.test.js",
+      "test/roadmapProductionSourceOfTruth.test.js",
+      "test/systemChangeGate.test.js",
+      "test/systemChangeGateLocalDiff.test.js",
+      "test/systemChangeSecurityControls.test.js",
+      "test/systemModuleCatalogDoc.test.js"
+    ],
+    "affectedDocs": [
+      "SYSTEM_AUDIT_CHECKLIST.md",
+      "audit/evidence/A01_DOCS_SOURCE_OF_TRUTH.md",
+      "audit/evidence/A02_CHANGE_GATE.md",
+      "audit/evidence/A03_ARCHITECTURE.md",
+      "audit/remediation/A02_CLOSURE.md",
+      "audit/remediation/A02_F005_CLOSURE.md",
+      "audit/remediation/A02_F006_CLOSURE.md"
+    ],
     "relatedFindings": {
       "affected": [],
-      "reviewedNotAffected": []
+      "reviewedNotAffected": [
+        "F-004",
+        "F-005",
+        "F-006"
+      ]
     },
-    "notes": "Yalnız belge ve belge üretici betikler değişti; uygulama kodu, şema ve runtime davranışı değişmez."
+    "notes": "Belge, belge üretici betikler ve change gate'in governance belge yolu değişti; uygulama runtime davranışı, şema ve tarayıcı kodu değişmez."
   },
   "tests": {
     "targeted": [
       "test/itemDocsRuntimeAlignment.test.js",
       "test/developerEntrypointDocs.test.js",
-      "test/historicalDocumentationStatus.test.js",
       "test/systemModuleCatalogDoc.test.js",
-      "test/roadmapProductionSourceOfTruth.test.js"
+      "test/roadmapProductionSourceOfTruth.test.js",
+      "test/systemChangeGate.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": false,
       "targeted": [],
-      "reason": "Değişiklik yalnız Markdown belgeleri ve belge üreten Python betikleridir; tarayıcıda çalışan kod, HTML, CSS, asset veya proje verisi değişmez."
+      "reason": "Değişiklik Markdown belgeleri, belge üreten Python betikleri ve change gate'in governance belge yolu eşlemesidir (yalnız CI aracı); tarayıcıda çalışan kod, HTML, CSS, asset veya proje verisi değişmez."
     }
   },
   "risk": {

@@ -215,7 +215,7 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
 // Aynı açık değişiklik bildirimi olmadan zayıflatılamaz veya sapamaz.
 export const GOVERNANCE_DOCUMENT_REQUIRED_DOMAINS = Object.freeze({
   'AGENTS.md': frozenDomains('architecture'),
-  'ITEM_CONTRACT.md': frozenDomains('architecture'),
+  'docs/items/contract/ITEM_CONTRACT.md': frozenDomains('architecture'),
   'README.md': frozenDomains('architecture'),
   'PROJECT_RULES.md': frozenDomains('architecture'),
   'ARCHITECTURE_RULES.md': frozenDomains('architecture'),

@@ -261,15 +261,14 @@ Dağınık not / bayat sayaç karışıklığını önlemek için:
 - `ROADMAP.md` — aktif üst seviye ürün/teknik plan.
 - `ROADMAP_PHASE_4.md` — FAZ 4 ayrıntılı planı.
 - FAZ 5–6 ayrıntılı planı, gelecek ürün gereksinimleri ve render backlog'u `kyrox-platform` deposundadır: `projects/fair-stand/ROADMAP_PHASE_5_6.md`, `PRODUCT_FUTURE.md`, `RENDER_FUTURE_BACKLOG.md`.
-- Sahne editörü planı (kilit, geri al, grup, çok duvarlı grup, kurumsal şablon) de `kyrox-platform` deposundadır: `projects/fair-stand/GROUP_LOCK_ROADMAP.md`. Faz 1 (kilit) ve Faz 2 (geri al / ileri al) uygulandı.
+- Sahne editörü planı (kilit, geri al, grup, çok duvarlı grup, kurumsal şablon) de `kyrox-platform` deposundadır: `projects/fair-stand/GROUP_LOCK_ROADMAP.md`. Faz 1–5 (kilit, geri al, grup, grup döndürme, kurumsal şablon) uygulandı.
 
 ### Historical / legacy
 
 - Tarihsel kayıtlar (`MILESTONES.md`, Ağustos 2026 changelog'u, `LEGACY_TRASH.md`, BASE migration handoff) `kyrox-platform` deposunda `archive/fair-stand/` altındadır.
-- `FRESH_REPOSITORY_REVIEW.md` — explicit historical repository-review snapshot.
-- `REPOSITORY_CLEANUP_PROGRESS.md` — explicit historical cleanup-progress snapshot.
+- `FRESH_REPOSITORY_REVIEW.md` ve `REPOSITORY_CLEANUP_PROGRESS.md` (tarihî inceleme ve temizlik kayıtları) `kyrox-platform` deposunda `archive/fair-stand/` altındadır.
 
-Historical dosyalardaki “mevcut / sıradaki iş” ifadeleri current Version2 truth'u olarak kullanılmaz.
+Tarihsel dosyalardaki “mevcut / sıradaki iş” ifadeleri bugünkü durum olarak kullanılmaz.
 
 ## Geliştirme politikası
 

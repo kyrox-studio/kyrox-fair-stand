@@ -148,7 +148,7 @@ Path/domain kuralları:
 - `public/**` → `assets`,
 - `test/**`, legacy `tests/**` ve `e2e/**` → `tests`,
 - `playwright.config*` → `architecture + tests`,
-- `AGENTS.md`, `ITEM_CONTRACT.md`, `README.md`, `PROJECT_RULES.md`, `ARCHITECTURE_RULES.md`, `SYSTEM_DEVELOPMENT_CONTRACT.md`, `SYSTEM_CHANGE_GATE.md`, `SYSTEM_IMPACT_SWEEP.md`, `MODULE_BEHAVIOR_STANDARD.md`, `SYSTEM_AUDIT_CHECKLIST.md` → `architecture` (`GOVERNANCE_DOCUMENT_REQUIRED_DOMAINS`),
+- `AGENTS.md`, `docs/items/contract/ITEM_CONTRACT.md`, `README.md`, `PROJECT_RULES.md`, `ARCHITECTURE_RULES.md`, `SYSTEM_DEVELOPMENT_CONTRACT.md`, `SYSTEM_CHANGE_GATE.md`, `SYSTEM_IMPACT_SWEEP.md`, `MODULE_BEHAVIOR_STANDARD.md`, `SYSTEM_AUDIT_CHECKLIST.md` → `architecture` (`GOVERNANCE_DOCUMENT_REQUIRED_DOMAINS`),
 - `package.json`, `package-lock.json`, `scripts/**`, `.github/workflows/**`, `vite.config*` → `architecture`,
 - `index.html` → `ui`.
 
