@@ -250,7 +250,61 @@ test('box block side faces meet at every vertical corner', async ({ page }) => {
   expect(frontTopEdge.length).toBe(2);
 });
 
-test('kutu blok ölçüsü Özellikler panelinde alan olarak durur ve sahnede canlı değişir', async ({ page }) => {
+test('kutu blok yüzüne görsel verilince Görsel ölçüsü kutunun ölçüleriyle birlikte görünür', async ({ page }) => {
+  await exposeScene(page);
+  await page.goto('/');
+  const standSetup = page.locator('details.stand-setup-card');
+  await standSetup.locator('summary').click();
+  await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
+  await page.locator('#stand-size-x').fill('5');
+  await page.locator('#stand-size-y').fill('5');
+  await disableAutoFurniture(page);
+  await page.locator('#create-stage').click();
+  await page.locator('form input[name="projectName"]').fill('E2E Kutu Gorsel');
+  await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
+  await keepWallLock(page);
+  await page.locator('.view-cube-home').click();
+  await page.waitForTimeout(800);
+
+  const modulePanel = page.locator('details', { has: page.locator('.module-drag-catalog') });
+  await modulePanel.locator(':scope > summary').click();
+  const card = page.locator('.module-drag-card[data-module-key="box_block"]');
+  const group = page.locator('.module-drag-group', { has: card });
+  if (!(await group.evaluate((el) => el.open))) await group.locator(':scope > summary').click();
+  await card.scrollIntoViewIfNeeded();
+  const viewport = await page.locator('#viewport').boundingBox();
+  await card.dragTo(page.locator('#viewport'), {
+    targetPosition: { x: Math.round(viewport.width * 0.5), y: Math.round(viewport.height * 0.6) },
+  });
+  await expect(page.locator('#box-block-size-title')).toBeVisible();
+  await page.locator('input[name="opacity"]').fill('1');
+  await page.getByRole('button', { name: 'Uygula' }).click();
+  await expect(page.locator('#box-block-size-title')).toHaveCount(0);
+
+  await page.locator('body').press('t');
+  await page.waitForTimeout(400);
+  const point = await faceScreenPoint(page, 'top');
+  await page.mouse.click(point.x, point.y);
+  const panel = page.locator('.selection-property-panel');
+  const imageSize = panel.locator('.selection-property-image-size');
+  await expect(imageSize).toBeHidden();
+
+  await panel.locator('#surface-image').setInputFiles({
+    name: 'e2e-face.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
+  });
+  await expect(imageSize).toContainText('Görsel ölçüsü');
+  await expect(panel.locator('.selection-property-fields input[name="heightCm"]')).toBeVisible();
+
+  const width = imageSize.locator('input[name="widthCm"]');
+  await width.fill('40');
+  await width.press('Enter');
+  await expect(page.locator('#selection-info')).toContainText('40');
+  await expect(width).toHaveValue('40');
+});
+
+test('kutu blok ölçüsü Özellikler panelinde alan olarak durur ve sahnede canlı değişir', async ({page }) => {
   await exposeScene(page);
   await page.goto('/');
   const standSetup = page.locator('details.stand-setup-card');

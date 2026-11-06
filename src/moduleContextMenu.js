@@ -39,6 +39,8 @@ export function createModuleContextMenu({
   onAfterAction,
   // Ölçü alanları: seçime göre { key, title, fields[] } ya da null; değer değişince onDimensionInput.
   getDimensionFields,
+  // Öğenin kendi ölçüsünün yanında görsel ölçüsü: { key, title, fields[] } ya da null.
+  getImageSizeFields,
   onDimensionInput,
   // Varyant: ailesi olan öğede { title, options[], selectedItemKey, option, disabled } ya da null;
   // seçilince onVariantChange(context, itemKey, optionOn) sahnede canlı uygular.
@@ -74,6 +76,7 @@ export function createModuleContextMenu({
     <p class="selection-property-empty" hidden>Seçim yok. Sahnede bir yüzey veya öğe seçin.</p>
     <div class="selection-property-variants" hidden></div>
     <div class="selection-property-fields" hidden></div>
+    <div class="selection-property-image-size" hidden></div>
     <div class="selection-property-surface" hidden>
       <p class="selection-property-surface-note" aria-live="polite"></p>
       <div class="selection-property-surface-slot"></div>
@@ -136,11 +139,9 @@ export function createModuleContextMenu({
   const surfaceNote = panel.querySelector('.selection-property-surface-note');
   const surfaceSlot = panel.querySelector('.selection-property-surface-slot');
   const fieldsSection = panel.querySelector('.selection-property-fields');
+  const imageSizeSection = panel.querySelector('.selection-property-image-size');
   const variantSection = panel.querySelector('.selection-property-variants');
   let variantContext = null;
-  let fieldsKey = null;
-  let fieldsSpec = null;
-  let fieldsContext = null;
 
   const pickerBackdrop = document.createElement('div');
   pickerBackdrop.className = 'module-picker-backdrop';
@@ -657,17 +658,6 @@ export function createModuleContextMenu({
 
   // Ölçü alanları panelde durur, pencere açılmaz; değer değiştikçe sahne canlı güncellenir.
   // Aynı hedef yeniden çizilirken odaktaki alana dokunulmaz (yazarken imleç kaybolmaz).
-  function readDimensionValues() {
-    return Object.fromEntries([...fieldsSection.querySelectorAll('[data-field]')].map((control) => [
-      control.dataset.field,
-      control.type === 'checkbox' ? control.checked : (control.type === 'number' ? Number(control.value) : control.value),
-    ]));
-  }
-
-  function dimensionValuesValid() {
-    return [...fieldsSection.querySelectorAll('[data-field]')].every((control) => control.checkValidity());
-  }
-
   function createDimensionControl(field) {
     const label = document.createElement('label');
     label.className = field.type === 'checkbox' ? 'selection-property-field is-checkbox' : 'selection-property-field';
@@ -700,93 +690,119 @@ export function createModuleContextMenu({
     return label;
   }
 
-  function syncDimensionValues(spec, { force = false } = {}) {
-    spec.fields.forEach((field) => {
-      const control = fieldsSection.querySelector('[data-field="' + field.name + '"]');
-      if (!control) return;
-      control.disabled = Boolean(spec.disabled);
-      if (!force && control === document.activeElement) return;
-      if (control.type === 'checkbox') control.checked = Boolean(field.value);
-      else control.value = String(field.value);
+  function createDimensionSection(fieldsSection, getSpec) {
+    let fieldsKey = null;
+    let fieldsSpec = null;
+    let fieldsContext = null;
+
+    function readDimensionValues() {
+      return Object.fromEntries([...fieldsSection.querySelectorAll('[data-field]')].map((control) => [
+        control.dataset.field,
+        control.type === 'checkbox' ? control.checked : (control.type === 'number' ? Number(control.value) : control.value),
+      ]));
+    }
+
+    function dimensionValuesValid() {
+      return [...fieldsSection.querySelectorAll('[data-field]')].every((control) => control.checkValidity());
+    }
+
+    function syncDimensionValues(spec, { force = false } = {}) {
+      spec.fields.forEach((field) => {
+        const control = fieldsSection.querySelector('[data-field="' + field.name + '"]');
+        if (!control) return;
+        control.disabled = Boolean(spec.disabled);
+        if (!force && control === document.activeElement) return;
+        if (control.type === 'checkbox') control.checked = Boolean(field.value);
+        else control.value = String(field.value);
+      });
+    }
+
+    function render(context) {
+      const spec = context ? (getSpec(context) ?? null) : null;
+      fieldsContext = context;
+      if (!spec) {
+        fieldsSection.hidden = true;
+        fieldsSection.replaceChildren();
+        fieldsKey = null;
+        fieldsSpec = null;
+        return;
+      }
+      const key = [spec.key, context.moduleId, context.surfaceId ?? ''].join('|');
+      fieldsSpec = spec;
+      fieldsSection.hidden = false;
+      if (key === fieldsKey) {
+        syncDimensionValues(spec);
+        return;
+      }
+      fieldsKey = key;
+      const heading = document.createElement('p');
+      heading.className = 'selection-property-section-title';
+      heading.textContent = spec.title;
+      const grid = document.createElement('div');
+      grid.className = 'selection-property-field-grid';
+      spec.fields.forEach((field) => grid.appendChild(createDimensionControl(field)));
+      fieldsSection.replaceChildren(heading, grid);
+      if (spec.note) {
+        const note = document.createElement('p');
+        note.className = 'selection-property-field-note';
+        note.textContent = spec.note;
+        fieldsSection.appendChild(note);
+      }
+      syncDimensionValues(spec, { force: true });
+    }
+
+    let dimensionTimer = null;
+    function emitDimension(phase) {
+      if (!fieldsSpec || !fieldsContext) return;
+      clearTimeout(dimensionTimer);
+      if (phase !== 'cancel' && !dimensionValuesValid()) return;
+      onDimensionInput?.(fieldsContext, fieldsSpec.key, readDimensionValues(), phase);
+    }
+    fieldsSection.addEventListener('input', (event) => {
+      if (event.target.type === 'checkbox' || event.target.tagName === 'SELECT') return;
+      clearTimeout(dimensionTimer);
+      dimensionTimer = setTimeout(() => emitDimension('input'), 120);
     });
-  }
-
-  function renderDimensionFields(context) {
-    const spec = context ? (getDimensionFields?.(context) ?? null) : null;
-    fieldsContext = context;
-    if (!spec) {
-      fieldsSection.hidden = true;
-      fieldsSection.replaceChildren();
-      fieldsKey = null;
-      fieldsSpec = null;
-      return;
-    }
-    const key = [spec.key, context.moduleId, context.surfaceId ?? ''].join('|');
-    fieldsSpec = spec;
-    fieldsSection.hidden = false;
-    if (key === fieldsKey) {
-      syncDimensionValues(spec);
-      return;
-    }
-    fieldsKey = key;
-    const heading = document.createElement('p');
-    heading.className = 'selection-property-section-title';
-    heading.textContent = spec.title;
-    const grid = document.createElement('div');
-    grid.className = 'selection-property-field-grid';
-    spec.fields.forEach((field) => grid.appendChild(createDimensionControl(field)));
-    fieldsSection.replaceChildren(heading, grid);
-    if (spec.note) {
-      const note = document.createElement('p');
-      note.className = 'selection-property-field-note';
-      note.textContent = spec.note;
-      fieldsSection.appendChild(note);
-    }
-    syncDimensionValues(spec, { force: true });
-  }
-
-  let dimensionTimer = null;
-  function emitDimension(phase) {
-    if (!fieldsSpec || !fieldsContext) return;
-    clearTimeout(dimensionTimer);
-    if (phase !== 'cancel' && !dimensionValuesValid()) return;
-    onDimensionInput?.(fieldsContext, fieldsSpec.key, readDimensionValues(), phase);
-  }
-  fieldsSection.addEventListener('input', (event) => {
-    if (event.target.type === 'checkbox' || event.target.tagName === 'SELECT') return;
-    clearTimeout(dimensionTimer);
-    dimensionTimer = setTimeout(() => emitDimension('input'), 120);
-  });
-  // Sayı alanları bölümden çıkınca (veya Enter) tek adımda uygulanır; W → H geçişi uygulamaz.
-  // Liste ve onay kutusu seçildiği anda uygulanır.
-  let skipNextFocusOut = false;
-  fieldsSection.addEventListener('change', (event) => {
-    if (event.target.type === 'checkbox' || event.target.tagName === 'SELECT') emitDimension('change');
-  });
-  fieldsSection.addEventListener('focusout', (event) => {
-    if (event.target.type !== 'number' || fieldsSection.contains(event.relatedTarget)) return;
-    if (skipNextFocusOut) {
-      skipNextFocusOut = false;
-      return;
-    }
-    emitDimension('change');
-  });
-  fieldsSection.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
+    // Sayı alanları bölümden çıkınca (veya Enter) tek adımda uygulanır; W → H geçişi uygulamaz.
+    // Liste ve onay kutusu seçildiği anda uygulanır.
+    let skipNextFocusOut = false;
+    fieldsSection.addEventListener('change', (event) => {
+      if (event.target.type === 'checkbox' || event.target.tagName === 'SELECT') emitDimension('change');
+    });
+    fieldsSection.addEventListener('focusout', (event) => {
+      if (event.target.type !== 'number' || fieldsSection.contains(event.relatedTarget)) return;
+      if (skipNextFocusOut) {
+        skipNextFocusOut = false;
+        return;
+      }
       emitDimension('change');
-      skipNextFocusOut = true;
-      event.target.blur?.();
-    } else if (event.key === 'Escape') {
-      // Esc yazılan değeri bırakır: önizleme geri alınır, alan kayıtlı değere döner.
-      event.preventDefault();
-      event.stopPropagation();
-      emitDimension('cancel');
-      if (fieldsSpec) syncDimensionValues(fieldsSpec, { force: true });
-      skipNextFocusOut = true;
-      event.target.blur?.();
-    }
-  });
+    });
+    fieldsSection.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        emitDimension('change');
+        skipNextFocusOut = true;
+        event.target.blur?.();
+      } else if (event.key === 'Escape') {
+        // Esc yazılan değeri bırakır: önizleme geri alınır, alan kayıtlı değere döner.
+        event.preventDefault();
+        event.stopPropagation();
+        emitDimension('cancel');
+        if (fieldsSpec) syncDimensionValues(fieldsSpec, { force: true });
+        skipNextFocusOut = true;
+        event.target.blur?.();
+      }
+    });
+
+    return render;
+  }
+
+  const renderItemSizeFields = createDimensionSection(fieldsSection, (context) => getDimensionFields?.(context));
+  const renderImageSizeFields = createDimensionSection(imageSizeSection, (context) => getImageSizeFields?.(context));
+  function renderDimensionFields(context) {
+    renderItemSizeFields(context);
+    renderImageSizeFields(context);
+  }
 
   // Renk / görsel: soldaki mevcut kontroller (tek kaynak) panel açıkken buraya taşınır.
   // Yüzey seçimi yoksa veya panel kapanınca yerlerine döner.

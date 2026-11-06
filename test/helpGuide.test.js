@@ -44,7 +44,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /Çöp Kutusu/);
   assert.match(guideSource, /katalog kartı sahneye sürüklenebilir/);
   assert.match(guideSource, /Sahneyi Sıfırla/);
-  assert.match(guideSource, /Ölçü \/ opacity…/);
+  assert.match(guideSource, /Ölçü \/ opacity:/);
   assert.match(guideSource, /o yüz panellerdeki gibi mavi çerçeve ile seçilir/);
   assert.match(guideSource, /item satırındaki bayraklardan açılır/);
   assert.match(guideSource, /Lightbox aydınlatması yalnız o yüzde yanar/);
@@ -79,8 +79,8 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /Adım 10 cm’dir/);
   assert.match(guideSource, /Kutuyu zeminde sürüklemek yüksekliği bozmaz/);
   assert.match(guideSource, /Shift\+R<\/strong> kutuyu katalogdaki adımla \(varsayılan 15°\) döndürür/);
-  assert.match(guideSource, /Aynı ölçü penceresi panel, Lightbox ve Mesh için geçerlidir/);
-  assert.match(guideSource, /Panel, Lightbox ve Mesh görseli aynı pencereden ölçülür/);
+  assert.match(guideSource, /Aynı alanlar panel, Lightbox, Mesh ve kutu blok yüzü için geçerlidir/);
+  assert.match(guideSource, /Panel, Lightbox ve Mesh görseli aynı alanlardan ölçülür/);
   assert.match(guideSource, /Küpü sürüklemek kamerayı döndürür/);
   assert.match(guideSource, /L Stand Sağ’da sol-ön köşeden bakar/);
   assert.match(guideSource, /ViewCube ⌂ aynı görünüşü açar/);

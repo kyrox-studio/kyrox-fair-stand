@@ -1547,6 +1547,17 @@ function describeDimensionFields(context) {
       ],
     };
   }
+  return describeImageSizeSpec(context);
+}
+
+// Kendi ölçü alanları olan öğede (kutu blok) yüze verilen görselin ölçüsü ayrı bölümde durur.
+function describeItemImageSizeFields(context) {
+  if (context?.kind === 'floor' || context?.multiModuleIds?.length > 1) return null;
+  const moduleState = currentModules[findContextModuleIndex(context)];
+  return moduleState && SIZE_FIELD_SPECS[moduleState.type] ? describeImageSizeSpec(context) : null;
+}
+
+function describeImageSizeSpec(context) {
   if (!context.hasImage) return null;
   const area = scene3d.describeImageSizeTarget(scene3d.resolveImageBlock(context.surfaceId));
   if (!area.ok) return null;
@@ -1972,6 +1983,7 @@ const moduleContextMenu = createModuleContextMenu({
   getVariantChoices: describeVariantChoices,
   onVariantChange: changeModuleVariant,
   getDimensionFields: describeDimensionFields,
+  getImageSizeFields: describeItemImageSizeFields,
   onDimensionInput: applyDimensionInput,
   surfaceControls: surfaceEditControls
     ? {
@@ -4279,6 +4291,8 @@ imageInput.addEventListener('change', async () => {
 
     const selected = scene3d.getSelectedSurfaces();
     if (selected.length) applyActiveImageToSelection('cover');
+    // Yükleme zaman uyumsuzdur; Görsel ölçüsü alanları görsel oturunca panele gelir.
+    schedulePropertyPanelRefresh();
 
     // Otomatik kayıt kapalıyken kaydedilmez; değişiklik Kaydet'i bekler.
     if (!autosaveController.isAutoSaveOff()

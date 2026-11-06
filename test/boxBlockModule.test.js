@@ -163,3 +163,14 @@ test('box block top face image and lightbox enter the production list as width x
   assert.ok(lightboxSection, 'Lightbox Bezi bölümü');
   assert.ok(Math.abs(lightboxSection.totalAreaM2 - 0.72) < 1e-6, `toplam ${lightboxSection.totalAreaM2} m²`);
 });
+
+test('kutu blokta görsel ölçüsü öğe ölçüsünün yanında ayrı bölümde durur', () => {
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.match(main, /getImageSizeFields: describeItemImageSizeFields/);
+  const start = main.indexOf('function describeItemImageSizeFields(');
+  const helper = main.slice(start, main.indexOf('function describeImageSizeSpec(', start));
+  assert.match(helper, /SIZE_FIELD_SPECS\[moduleState\.type\] \? describeImageSizeSpec\(context\) : null/);
+
+  const panel = readFileSync(new URL('../src/moduleContextMenu.js', import.meta.url), 'utf8');
+  assert.match(panel, /createDimensionSection\(imageSizeSection, \(context\) => getImageSizeFields\?\.\(context\)\)/);
+});
