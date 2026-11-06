@@ -65,9 +65,15 @@ for (const size of SIZES) {
       expect(r.cube, 'küp görünür').toBeTruthy();
       expect(overlaps(r.toolbar, r.cube), `bant küpün altına girmez (${collapsed ? 'menü kapalı' : 'menü açık'})`).toBe(false);
       if (r.toggle) expect(overlaps(r.toolbar, r.toggle), 'bant menü düğmesine binmez').toBe(false);
-      // Küp sahnenin sağ üst köşesinde.
-      expect(r.viewport.x + r.viewport.width - (r.cube.x + r.cube.width)).toBeLessThanOrEqual(14);
-      expect(r.cube.y - r.viewport.y).toBeLessThanOrEqual(14);
+      if (size.width >= 1024) {
+        // Geniş ekranda küp sahnenin sol altında; sağdaki panel açılınca yer değiştirmez.
+        expect(r.cube.x - r.viewport.x).toBeLessThanOrEqual(14);
+        expect(r.viewport.y + r.viewport.height - (r.cube.y + r.cube.height)).toBeLessThanOrEqual(60);
+      } else {
+        // Dar ekranda küp sahnenin sağ üst köşesinde.
+        expect(r.viewport.x + r.viewport.width - (r.cube.x + r.cube.width)).toBeLessThanOrEqual(14);
+        expect(r.cube.y - r.viewport.y).toBeLessThanOrEqual(14);
+      }
       await page.screenshot({ path: test.info().outputPath(`layout-${size.width}x${size.height}-${collapsed ? 'kapali' : 'acik'}.png`) });
     }
   });

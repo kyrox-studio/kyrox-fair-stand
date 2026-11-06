@@ -12,9 +12,13 @@ export function syncStatusTone(element) {
   element.classList.add('status-' + inferStatusTone(element));
 }
 
+// Panel başlığı ve sekmeler bunları zaten söyler; panelde yalnız işlem sonucu ve uyarı kalır.
+const REDUNDANT_SELECTION_MESSAGE = /Ctrl\/Cmd \+ tık|uygulanabilir\.$|seçildi\.$/;
+
 export function syncSelectionFeedback(element, defaultHint) {
   const message = element.textContent.trim();
   element.classList.toggle('has-selection', Boolean(message) && message !== defaultHint);
+  element.classList.toggle('is-redundant', REDUNDANT_SELECTION_MESSAGE.test(message));
 }
 
 export function observeSelectionFeedback({ element, defaultHint, MutationObserverClass = MutationObserver }) {
