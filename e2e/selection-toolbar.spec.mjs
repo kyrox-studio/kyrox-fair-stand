@@ -124,11 +124,11 @@ test('selection toolbar rotates, duplicates, deletes and opens the menu', async 
   // Tek tık Özellikler panelini açar (⋯ düğmesi yok), Döndür dahil.
   await page.mouse.click(point.x, point.y);
   await expect(toolbar.getByRole('button', { name: 'Diğer işlemler' })).toHaveCount(0);
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
   await expect(menu.locator('[data-rotation-delta="45"]')).toBeVisible();
   // Kopyala özellikler kartındadır; eski yönlü çoğalt komutları yoktur.
-  await expect(menu.getByRole('menuitem', { name: 'Kopyala', exact: true })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Kopyala', exact: true })).toBeVisible();
   await expect(menu.locator('[data-module-action^="duplicate-"]')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await page.mouse.click(5, 5);
@@ -145,7 +145,7 @@ test('selection toolbar rotates, duplicates, deletes and opens the menu', async 
 test('touch long-press on a module opens the module menu', async ({ page }) => {
   await createIslandStand(page);
   const point = await dropFridge(page, 0.6, 0.8);
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await expect(menu).toBeHidden();
 
   const touch = await page.context().newCDPSession(page);
@@ -164,7 +164,7 @@ test('a short touch tap opens the property panel', async ({ page }) => {
   await createIslandStand(page);
   const point = await dropFridge(page, 0.6, 0.8);
   await page.touchscreen.tap(point.x, point.y);
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
   await expect(menu.locator('[data-rotation-delta="45"]')).toBeVisible();
 });
@@ -228,7 +228,7 @@ test('multi-select toggle on the toolbar adds tapped modules to the selection', 
 
   await page.touchscreen.tap(second.x, second.y);
   await expect(toolbar.getByRole('button', { name: /Döndür/ })).toBeHidden();
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await expect(menu).toContainText('2 öğe seçili');
   await page.keyboard.press('Escape');
 
@@ -243,7 +243,7 @@ test('module without panel surfaces shows no panel transforms', async ({ page })
   await createIslandStand(page);
   const point = await dropFridge(page, 0.6, 0.8);
   await page.mouse.click(point.x, point.y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
   // Buzdolabında panel dönüşümü yok: Cam / Metal / Lightbox / Mesh bölümü çıkmaz.
   await expect(menu.locator('.module-context-advanced')).toBeHidden();

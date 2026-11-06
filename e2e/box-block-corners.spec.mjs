@@ -1,3 +1,4 @@
+import { openPanelTab } from './helpers/surfaceControls.mjs';
 import { showSurfaceControls } from './helpers/surfaceControls.mjs';
 import { test, expect } from '@playwright/test';
 import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
@@ -45,6 +46,7 @@ async function applyLightboxToFace(page, slot, viewKey) {
   await expect.poll(() => page.evaluate((faceSlot) => window.__sceneSurfaces()
     .find((mesh) => mesh.userData.faceSlot === faceSlot)?.userData.selectionFrame?.visible === true, slot)).toBe(true);
   await page.mouse.click(point.x, point.y, { button: 'right' });
+  await openPanelTab(page, 'more');
   await page.locator('[data-module-action="toggle-fabric"]').click();
   await expect.poll(() => page.evaluate((faceSlot) => Boolean(window.__sceneSurfaces()
     .find((mesh) => mesh.userData.faceSlot === faceSlot)?.userData.surfaceState?.fabricGroupId), slot)).toBe(true);
@@ -250,7 +252,7 @@ test('box block side faces meet at every vertical corner', async ({ page }) => {
   expect(frontTopEdge.length).toBe(2);
 });
 
-test('kutu blok yüzüne görsel verilince Görsel ölçüsü kutunun ölçüleriyle birlikte görünür', async ({ page }) => {
+test('kutu blok yüzüne görsel verilince Görsel ölçüsü görsel sekmesinde, kutu ölçüleri kendi sekmesinde durur', async ({ page }) => {
   await exposeScene(page);
   await page.goto('/');
   const standSetup = page.locator('details.stand-setup-card');
@@ -295,8 +297,10 @@ test('kutu blok yüzüne görsel verilince Görsel ölçüsü kutunun ölçüler
     buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
   });
   await expect(imageSize).toContainText('Görsel ölçüsü');
+  await openPanelTab(page, 'size');
   await expect(panel.locator('.selection-property-fields input[name="heightCm"]')).toBeVisible();
 
+  await openPanelTab(page, 'look');
   const width = imageSize.locator('input[name="widthCm"]');
   await width.fill('40');
   await width.press('Enter');

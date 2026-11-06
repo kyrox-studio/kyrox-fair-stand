@@ -44,7 +44,7 @@ async function selectAll(page, count) {
 
 // Ctrl/Cmd+A sonrası Özellikler paneli açılır; ⋯ düğmesi yoktur.
 async function menu(page) {
-  const result = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const result = page.getByRole('group', { name: 'Modül işlemleri' });
   await expect(result).toBeVisible();
   return result;
 }

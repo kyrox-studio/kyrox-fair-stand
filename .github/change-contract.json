@@ -1,15 +1,17 @@
 {
   "schemaVersion": 2,
-  "id": "kutu-blok-gorsel-olcusu",
-  "kind": "bugfix",
-  "summary": "Kutu blok yüzüne verilen görselin ölçüsü Özellikler panelinde kutunun ölçülerinin yanında yeniden görünür; görsel yüklenince panel yenilenir. Kılavuz ve README sağ tık dönemi ifadelerinden koda göre düzeltildi.",
+  "id": "ozellik-paneli-sekmeler-render-isik",
+  "kind": "feature",
+  "summary": "Özellikler paneli yeniden düzenlendi: Kopyala, Sil, Kilitle, Ekle üstte; altında döndürme; altında seçilen Item'a göre adlanan sekmeler. Arşivde çift tık Doldur olarak çalışır. Banko ve baza yüzleri Çoklu panel ile tek tek seçilir, tek yüz seçimi bütün modülü çerçevelemez. Çift tıkla seçilen öğe boş alana tıklanınca çerçevesini bırakır. Render Al'da beyaz parlama azaltıldı: yalnız render'a özel spot, ortam ve projektör değerleri ile tepe spot gölgesi; editör ışığı değişmez.",
   "owners": [
     "src/moduleContextMenu.js",
-    "src/main.js"
+    "src/style.css",
+    "src/main.js",
+    "src/scene3d.js"
   ],
   "sourceOfTruth": [
     "src/moduleContextMenu.js",
-    "src/main.js"
+    "src/scene3d.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -24,7 +26,7 @@
     "assets": "affected",
     "storage": "affected",
     "importExport": "affected",
-    "performance": "not-applicable",
+    "performance": "affected",
     "accessibility": "affected",
     "architecture": "affected",
     "security": "affected",
@@ -34,6 +36,7 @@
     "mode": "full-system",
     "affectedFiles": [
       "README.md",
+      "backend/alembic/data/0002_fair_stand_catalog_dump.json",
       "backend/alembic/versions/0091_booth_types.py",
       "backend/app/integrations/kyrox_core/audit.py",
       "backend/app/integrations/kyrox_core/dev_bypass.py",
@@ -46,30 +49,65 @@
       "backend/app/modules/fair_stand/api/routes.py",
       "backend/app/modules/fair_stand/application/admin_catalog.py",
       "backend/app/modules/fair_stand/application/admin_items.py",
+      "backend/app/modules/fair_stand/application/cost_items.py",
       "backend/app/modules/fair_stand/application/get_catalog_bootstrap.py",
+      "backend/app/modules/fair_stand/application/group_templates.py",
       "backend/app/modules/fair_stand/application/item_mapper.py",
+      "backend/app/modules/fair_stand/application/projects.py",
       "backend/app/modules/fair_stand/infrastructure/booth_type_seed.py",
+      "backend/app/modules/fair_stand/infrastructure/catalog_preview_css.py",
       "backend/app/modules/fair_stand/infrastructure/catalog_repository.py",
       "backend/app/modules/fair_stand/infrastructure/models.py",
       "backend/app/modules/fair_stand/infrastructure/seed_catalog.py",
       "backend/scripts/verify_live_item_type_placement_motor.mjs",
       "backend/tests/modules/fair_stand/test_admin_items_api.py",
+      "backend/tests/modules/fair_stand/test_admin_units_api.py",
       "backend/tests/modules/fair_stand/test_booth_types.py",
+      "backend/tests/modules/fair_stand/test_core_audit.py",
+      "backend/tests/modules/fair_stand/test_cost_items_api.py",
+      "backend/tests/modules/fair_stand/test_group_templates_api.py",
       "backend/tests/modules/fair_stand/test_item_cost_enabled.py",
+      "backend/tests/modules/fair_stand/test_project_revisions.py",
+      "backend/tests/modules/fair_stand/test_projects_api.py",
       "backend/tests/modules/fair_stand/test_unit_catalog.py",
       "docs/refactor/CATALOG.md",
       "docs/refactor/DATABASE.md",
       "docs/refactor/REFACTOR.md",
+      "e2e/box-block-corners.spec.mjs",
+      "e2e/color-image-capability.spec.mjs",
+      "e2e/design-undo.spec.mjs",
+      "e2e/double-click-select.spec.mjs",
+      "e2e/duplicate-metal-separator.spec.mjs",
+      "e2e/flat-panel-back-strips.spec.mjs",
+      "e2e/floor-showcase-brochure-copy-rotate.spec.mjs",
+      "e2e/group-template.spec.mjs",
+      "e2e/grouped-image-direction.spec.mjs",
       "e2e/helpers/standSetup.mjs",
+      "e2e/helpers/surfaceControls.mjs",
+      "e2e/illuminated-foam-placement-feedback.spec.mjs",
+      "e2e/metal-separator-bom-gap.spec.mjs",
+      "e2e/module-group.spec.mjs",
+      "e2e/module-lock.spec.mjs",
       "e2e/new-project-wizard.spec.mjs",
+      "e2e/panel-sweep.spec.mjs",
+      "e2e/pinch-zoom-no-drag.spec.mjs",
       "e2e/rapid-actions-responsive.spec.mjs",
+      "e2e/scene-select-all.spec.mjs",
       "e2e/selection-property-panel.spec.mjs",
+      "e2e/selection-stale-clear.spec.mjs",
+      "e2e/selection-toolbar.spec.mjs",
+      "e2e/shelf-rows-flow.spec.mjs",
       "e2e/smoke.spec.mjs",
       "e2e/stage-result-after-restore.spec.mjs",
+      "e2e/wall-height.spec.mjs",
+      "e2e/wall-short-width.spec.mjs",
+      "e2e/wall-showcase-item-contract.spec.mjs",
       "index.html",
       "playwright.config.mjs",
       "scripts/archive/add-tv-sizes.py",
       "scripts/archive/add-video-wall-2x2.py",
+      "scripts/archive/fix-tv-screen-face.py",
+      "scripts/change-impact-analysis.mjs",
       "scripts/check-src-syntax.mjs",
       "scripts/compress-models.mjs",
       "scripts/verify-change-contract.mjs",
@@ -89,8 +127,11 @@
       "src/configuratorStyles.js",
       "src/designState.js",
       "src/floorArea.js",
+      "src/groundLayout.js",
+      "src/groupTemplatePanel.js",
       "src/groupTemplateRemote.js",
       "src/groupTemplates.js",
+      "src/helpGuide.css",
       "src/helpGuide.js",
       "src/imageOptimize.js",
       "src/itemAdminPreview.js",
@@ -124,11 +165,16 @@
       "src/projectBom.js",
       "src/projectImportValidation.js",
       "src/projectNaming.js",
+      "src/projectOpenTiming.js",
       "src/projectRemote.js",
+      "src/projectStore.js",
       "src/rectSelection.js",
       "src/relationshipBom.js",
+      "src/runtimeSettings.js",
       "src/scene3d.js",
+      "src/sceneAssetLoading.js",
       "src/selectionFeedback.js",
+      "src/selectionToolbar.js",
       "src/sidebarController.js",
       "src/stageFeedback.js",
       "src/standSetup.js",
@@ -136,11 +182,13 @@
       "src/standStandardsCopy.js",
       "src/stripOccupancy.js",
       "src/style.css",
+      "src/surfaceStateBinding.js",
       "src/systemChangeContract.js",
       "src/toastNotifications.js",
       "src/uiFeedback.js",
       "src/uprightHeight.js",
       "src/viewCube.js",
+      "src/viewKeyboardShortcuts.js",
       "src/wallLockNotice.js",
       "src/wallPanelBand.js",
       "src/wallReflow.js",
@@ -148,9 +196,13 @@
       "test/boothTypes.test.js",
       "test/mapCatalogSeed.mjs",
       "test/registerCanonicalItemCatalog.mjs",
+      "test/renderOnlyLights.test.js",
       "test/shelfLegItemContract.test.js",
       "test/wallHeightTopRail.test.js",
-      "vite.config.js"
+      "vite.config.js",
+      "backend/alembic/versions/0067_group_templates.py",
+      "src/featureContracts.js",
+      "src/itemAdminAssemblyLock.js"
     ],
     "affectedTests": [
       "backend/tests/modules/fair_stand/test_booth_types.py",
@@ -489,7 +541,26 @@
       "test/wallShortRelationshipBom.test.js",
       "test/wallShortVerticalMove.test.js",
       "test/wallShortWidth.test.js",
-      "test/wallShowcaseItemContract.test.js"
+      "test/wallShowcaseItemContract.test.js",
+      "e2e/help-guide-recent-rules.spec.mjs",
+      "e2e/helpers/catalogWidth.mjs",
+      "e2e/indoor-plant-items-contract.spec.mjs",
+      "e2e/shelf-items-contract.spec.mjs",
+      "e2e/wall-media-items-contract.spec.mjs",
+      "test/autosaveController.test.js",
+      "test/fixtures/catalogPreviewCss.mjs",
+      "test/fixtures/catalogPreviewKinds.mjs",
+      "test/itemSnapSeed.mjs",
+      "test/itemTypeBehaviorSeed.mjs",
+      "test/projectUi.test.js",
+      "test/roadmapProductionSourceOfTruth.test.js",
+      "test/viewKeyboardShortcuts.test.js",
+      "test/viewportToolbarController.test.js",
+      "e2e/selection-stale-clear.spec.mjs",
+      "e2e/editor-mode-settings.spec.mjs",
+      "e2e/helpers/catalogDrop.mjs",
+      "e2e/lighting-items-contract.spec.mjs",
+      "test/itemAdminAssemblyLock.test.js"
     ],
     "affectedDocs": [
       "ARCHITECTURE_RULES.md",
@@ -535,11 +606,38 @@
       "docs/refactor/ITEM_FIRST_ROADMAP.md",
       "docs/refactor/REFACTOR.md",
       "docs/refactor/SCENE_POSE.md",
-      "scripts/archive/README.md"
+      "scripts/archive/README.md",
+      "MODULE_BEHAVIOR_STANDARD.md",
+      "ROADMAP_PHASE_4.md",
+      "audit/evidence/A09_RENDERER_SCENE_RUNTIME.md",
+      "audit/evidence/A13_STORAGE_ASSETS_REFERENCES.md",
+      "audit/remediation/A01_F003_CLOSURE.md",
+      "audit/remediation/A13_F032_CLOSURE.md",
+      "docs/items/definitions/brochure_stand.md",
+      "docs/items/definitions/chair_eames.md",
+      "docs/items/definitions/coat_rack.md",
+      "docs/items/definitions/floor_showcase_100.md",
+      "docs/items/definitions/furniture_bar_stool_classic.md",
+      "docs/items/definitions/furniture_coffee_table_classic.md",
+      "docs/items/definitions/furniture_sofa_double_classic.md",
+      "docs/items/definitions/furniture_sofa_set_classic.md",
+      "docs/items/definitions/furniture_sofa_single_classic.md",
+      "docs/items/definitions/glass_table.md",
+      "docs/items/definitions/hali.md",
+      "docs/items/definitions/kettle.md",
+      "docs/items/definitions/led_floodlight.md",
+      "docs/items/definitions/mini_fridge_avanti.md",
+      "docs/items/definitions/parke-beton.md",
+      "docs/refactor/ITEM_3D_PREVIEW.md",
+      "docs/refactor/PENDING_ITEM_DECISIONS.md",
+      "docs/refactor/STAND_FRAME_REMOVAL.md",
+      "public/textures/floor/SOURCES.md",
+      "docs/items/definitions/box_block.md"
     ],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": [
+        "F-003",
         "F-004",
         "F-005",
         "F-006",
@@ -550,17 +648,19 @@
         "F-014",
         "F-015",
         "F-017",
+        "F-024",
         "F-025",
         "F-029",
+        "F-032",
+        "F-033",
         "F-041"
       ]
     },
-    "notes": "standType 61 dosyada yerleşim anlamıyla kaldı, adı değişmedi. Süzme yalnız yeni eklenecek Item'ı etkiler; getCatalogItem, projede duran Item'lar ve BOM süzülmez. Maksima'da katalog değişmez. assets, storage ve bom beyanı değişen ortak dosyalardan (main.js) gelen kapı zorunluluğudur; bu alanlarda davranış değişmez. affectedFiles içindeki bağımlılar değişen modülleri kullanan dosyalardır; dışa açık imzalar geriye uyumludur (listCatalogGroups parametresi opsiyonel), kendileri değişmez. Arşiv tıklaması mevcut setIlluminatedFoamLogo akışına bağlanır; state, kayıt ve render yolu değişmez. Aday bulgular FINDINGS.md tablosunda gözden geçirildi: kapalı ya da katalog kararı (F-014), bu değişiklik etkilemez."
+    "notes": "Komut kaldırılmadı, yalnız yerleri değişti. Sekme adları Item alanlarından gelir (tabLabel, panelTab, yüzey desteği). .module-context-menu kabı artık yalnız düğme gruplarıdır; renk, görsel ve ölçü alanları onun dışındadır, çünkü o kabın düğme stilleri onları bozar. Rol menu/menuitem yerine group ve düz button; tablist/tab/tabpanel eklendi. assets, storage, bom beyanı ortak dosyalardan gelen kapı zorunluluğudur; bu alanlarda davranış değişmez. Render değerleri yalnız render yolunda; editör değerleri aynı. Tepe spot gölgesi render süresini artırabilir."
   },
   "tests": {
     "targeted": [
-      "test/boxBlockModule.test.js",
-      "test/helpGuide.test.js"
+      "test/renderOnlyLights.test.js"
     ],
     "fullSuite": true,
     "build": true,
@@ -568,109 +668,115 @@
       "required": true,
       "targeted": [
         "e2e/box-block-corners.spec.mjs",
-        "e2e/selection-property-panel.spec.mjs"
+        "e2e/color-image-capability.spec.mjs",
+        "e2e/double-click-select.spec.mjs",
+        "e2e/grouped-image-direction.spec.mjs",
+        "e2e/illuminated-foam-placement-feedback.spec.mjs",
+        "e2e/panel-sweep.spec.mjs",
+        "e2e/selection-property-panel.spec.mjs",
+        "e2e/selection-stale-clear.spec.mjs"
       ],
-      "reason": "Özellikler panelinde görünen alanlar ve sahnedeki görsel ölçüsü tarayıcıda doğrulanır."
+      "reason": "Panel düzeni, Item sekmeleri, çoklu yüz seçimi, seçim temizleme ve arşivde çift tık tarayıcıda çalışır."
     }
   },
   "risk": {
-    "level": "low",
-    "notes": "Ölçü bölümü aynı davranışla iki yerde çalışır; kayıt biçimi ve BOM değişmez."
+    "level": "medium",
+    "notes": "Tek tıkla görünen komutların bir kısmı artık sekme arkasında. Render ışığı parke/koyu zemin, büyük stand ve raf altı ışıklı sahnede elle denenmedi."
   },
   "migration": {
     "required": false,
-    "notes": "Veri ve şema değişmez."
+    "notes": "Alembic migration yok; head 0092 kalır."
   },
   "rollback": "PR merge commit'ini geri al.",
   "security": {
     "controls": {
       "SEC-01": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-02": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-03": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-04": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-05": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-06": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-07": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-08": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-09": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-10": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-11": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-12": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-13": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-14": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-15": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-16": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-17": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-18": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-19": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-20": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-21": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       },
       "SEC-22": {
         "status": "na",
-        "reason": "Değişiklik Özellikler panelindeki alanların görünümü ve belgelerdir; route, kimlik doğrulama, yetki, sır, bağımlılık ve dış veri girişi değişmez."
+        "reason": "Panel düzeni ve render ışık değerleridir; route, yetki, kimlik, sır, bağımlılık, dosya yükleme ve dış servis davranışı değişmez."
       }
     }
   }

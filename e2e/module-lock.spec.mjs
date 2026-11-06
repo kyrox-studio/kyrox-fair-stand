@@ -87,7 +87,7 @@ async function drag(page, from, to) {
 async function contextAction(page, at, action) {
   const point = await viewportPoint(page, at);
   await page.mouse.click(point.x, point.y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
   const button = menu.locator(`[data-module-action="${action}"]`);
   await expect(button).toBeVisible();
@@ -135,7 +135,7 @@ test('kilitli öğe sürükleme, ok tuşu ve Delete ile oynamaz; kilit kaydedili
 
   // Menüde Sil pasif, başlıkta Kilitli yazar.
   await page.mouse.click(point.x, point.y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await expect(menu.locator('.module-context-title')).toContainText('Kilitli');
   await expect(menu.locator('[data-module-action="delete"]')).toBeDisabled();
   await expect(menu.locator('[data-module-action="toggle-lock"]')).toHaveText('Kilitli');

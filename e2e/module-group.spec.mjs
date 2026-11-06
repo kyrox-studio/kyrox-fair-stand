@@ -162,8 +162,8 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   await page.keyboard.up('Control');
   page.once('dialog', (dialog) => dialog.accept('Sağ duvar'));
   await page.mouse.click(points[second.id].x, points[second.id].y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
-  await menu.getByRole('menuitem', { name: 'Grup oluştur…' }).click();
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
+  await menu.getByRole('button', { name: 'Grup oluştur…' }).click();
   await expect(page.locator('#selection-info')).toContainText('“Sağ duvar” grubu oluşturuldu · 2 parça');
   await page.mouse.click(points[first.id].x, points[first.id].y);
   await expect.poll(async () => (await selectionFrames(page)).map(({ group, dashed, color }) => ({ group, dashed, color })))

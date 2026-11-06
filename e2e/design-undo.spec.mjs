@@ -137,7 +137,7 @@ test('taşıma, silme ve kilit Ctrl+Z ile geri alınır, Ctrl+Y ile ileri alın�
 
   // Kilitle → Ctrl+Z → kilit kalkar; Ctrl+Shift+Z → kilit geri gelir.
   await page.mouse.click(point.x, point.y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await menu.locator('[data-module-action="toggle-lock"]').click();
   const locked = await saveAndReadProject(page);
   expect(findModule(locked, fridge.id).locked).toBe(true);

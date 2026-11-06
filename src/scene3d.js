@@ -256,7 +256,7 @@ const KEY_LIGHT_OFFSET = Object.freeze({ x: 1.2, y: 12, z: 3 });
 // Gölge kamerasının stand kenarından taşma payı (çevre şeridi + uzun gölgeler).
 const KEY_LIGHT_SHADOW_MARGIN_M = 2;
 // Render Al'da standın tepesindeki sahne spotu: zemine stand merkezli ışık havuzu düşürür,
-// havuz kenarı stand köşelerinin biraz dışında yumuşakça kararır. Gölge atmaz (gölge ana ışıkta).
+// havuz kenarı stand köşelerinin biraz dışında yumuşakça kararır. Gölgeyi yalnız Render Al'da atar.
 // Sönüm (decay) fiziksel 2 değil, yumuşak tutulur: ışık havuzu stand boyunca dengeli kalır.
 const STAND_TOP_SPOT = Object.freeze({
   heightM: 8,
@@ -286,7 +286,19 @@ const PERSPECTIVE_NEAR = Object.freeze({ ratio: 0.01, minM: 0.05, maxM: 1 });
 const STAGE_HEMISPHERE = Object.freeze({ sky: 0.5, ground: 1, intensity: 1.5 });
 // Render Al'da ana ışık gölge için yanar ve bu orana kısılır; editör sahne ışığında ana ışık kapalıdır
 // (tepeden ışığı spot verir, ışık sayısı sahne ışığı kapalı editörle aynı kalır).
-const RENDER_KEY_LIGHT_DIM = 0.45;
+const RENDER_KEY_LIGHT_DIM = 0.3;
+// Render Al'da tepe ve dolgu spotları bu oranlara kısılır; editördeki Sahne Işığı bundan etkilenmez.
+// Spotlar yukarı bakan yüzeylerde toplanır: tam güçte beyaz zemin ton eğrisinin tepesine oturur.
+// Gölgesiz dolgu daha çok kısılır; ışığın çoğu gölge atan tepe ve ana ışıktan gelir, öğe ayrışır.
+const RENDER_TOP_SPOT_DIM = 0.45;
+const RENDER_FILL_SPOT_DIM = 0.1;
+// Render Al'da ortam ışığı: zemin payı düşük, dikey yüzey payı yüksek. Duvar griye dönmeden beyaz
+// kalır, zemin patlamaz. Renkler doğrusal çarpandır.
+const RENDER_STAGE_HEMISPHERE = Object.freeze({ sky: 0.26, ground: 1.74, intensity: 2.9 });
+const RENDER_TOP_SPOT_SHADOW = Object.freeze({ mapSize: 2048, bias: -0.0004 });
+// LED projektörün yalnız Render Al'da yanan spotu. Düştüğü yer zaten sahne ışığı alır; güç, beyaz yüzeyi
+// tepeye vurdurmadan projektörün ışık izini gösterecek kadar tutulur.
+const LED_FLOODLIGHT_RENDER_CD = 14;
 // Ölçü katmanı renkleri: taban alanı turuncu kesikli, kenar uzaklığı mavi.
 const MEASURE_FOOTPRINT_COLOR = 0xf97316;
 const MEASURE_DISTANCE_COLOR = 0x2563eb;
@@ -803,7 +815,10 @@ export function createStandScene(
     STAND_TOP_SPOT.penumbra,
     STAND_TOP_SPOT.decay,
   );
+  // Editörde gölge atmaz; Render Al çizerken applyStageLighting açar.
   standTopSpot.castShadow = false;
+  standTopSpot.shadow.mapSize.set(RENDER_TOP_SPOT_SHADOW.mapSize, RENDER_TOP_SPOT_SHADOW.mapSize);
+  standTopSpot.shadow.bias = RENDER_TOP_SPOT_SHADOW.bias;
   standTopSpot.layers.set(STAGE_LIGHT_LAYER);
   scene.add(standTopSpot, standTopSpot.target);
   const stageFillSpots = [0, 1, 2, 3].map(() => {
@@ -825,6 +840,8 @@ export function createStandScene(
   const editorKeyIntensity = keyLight.intensity;
   // Varsayılan açık: editör sahne ışığıyla açılır; Sahne Işığı düğmesi oturum boyunca kapatabilir.
   let stageLightPreview = true;
+  let standTopSpotIntensity = STAND_TOP_SPOT.intensityCd;
+  let stageFillSpotIntensity = STAGE_FILL_SPOT.intensityCd;
   function applyStageLighting(enabled, { forRender = false } = {}) {
     [perspectiveCamera, orthographicCamera].forEach((viewCamera) => {
       if (enabled) viewCamera.layers.enable(STAGE_LIGHT_LAYER);
@@ -834,6 +851,11 @@ export function createStandScene(
       hemisphereLight.color.setScalar(STAGE_HEMISPHERE.sky);
       hemisphereLight.groundColor.setScalar(STAGE_HEMISPHERE.ground);
       hemisphereLight.intensity = STAGE_HEMISPHERE.intensity;
+      if (forRender) {
+        hemisphereLight.color.setScalar(RENDER_STAGE_HEMISPHERE.sky);
+        hemisphereLight.groundColor.setScalar(RENDER_STAGE_HEMISPHERE.ground);
+        hemisphereLight.intensity = RENDER_STAGE_HEMISPHERE.intensity;
+      }
     } else {
       hemisphereLight.color.copy(editorHemisphere.sky);
       hemisphereLight.groundColor.copy(editorHemisphere.ground);
@@ -841,6 +863,12 @@ export function createStandScene(
     }
     keyLight.visible = !enabled || forRender;
     keyLight.intensity = editorKeyIntensity * (enabled && forRender ? RENDER_KEY_LIGHT_DIM : 1);
+    const renderStage = enabled && forRender;
+    standTopSpot.intensity = standTopSpotIntensity * (renderStage ? RENDER_TOP_SPOT_DIM : 1);
+    standTopSpot.castShadow = renderStage;
+    stageFillSpots.forEach((spot) => {
+      spot.intensity = stageFillSpotIntensity * (renderStage ? RENDER_FILL_SPOT_DIM : 1);
+    });
   }
   applyStageLighting(stageLightPreview);
 
@@ -864,19 +892,20 @@ export function createStandScene(
     // Büyük standda ışık uzaklaşır; güç uzaklığın sönüm üssüyle artırılır, beyaz her ölçüde aynı kalır.
     const halfDiagonalM = Math.hypot(widthM, depthM) / 2;
     const topReachM = Math.hypot(STAND_TOP_SPOT.heightM, halfDiagonalM / 2);
-    standTopSpot.intensity = STAND_TOP_SPOT.intensityCd
+    standTopSpotIntensity = STAND_TOP_SPOT.intensityCd
       * Math.max(1, (topReachM / Math.hypot(STAND_TOP_SPOT.heightM, 1.6)) ** STAND_TOP_SPOT.decay);
     const fillRadiusM = Math.max(Math.max(widthM, depthM) / 2 + STAGE_FILL_SPOT.radiusMarginM, STAGE_FILL_SPOT.minRadiusM);
     const fillReachM = Math.hypot(fillRadiusM, STAGE_FILL_SPOT.minHeightM);
     const fillBaseReachM = Math.hypot(STAGE_FILL_SPOT.minRadiusM, STAGE_FILL_SPOT.minHeightM);
-    const fillIntensity = STAGE_FILL_SPOT.intensityCd * (fillReachM / fillBaseReachM) ** STAGE_FILL_SPOT.decay;
+    stageFillSpotIntensity = STAGE_FILL_SPOT.intensityCd * (fillReachM / fillBaseReachM) ** STAGE_FILL_SPOT.decay;
+    standTopSpot.intensity = standTopSpotIntensity;
     [[0, fillRadiusM], [0, -fillRadiusM], [fillRadiusM, 0], [-fillRadiusM, 0]].forEach(([dx, dz], index) => {
       const spot = stageFillSpots[index];
       spot.position.set(centerX + dx, STAGE_FILL_SPOT.minHeightM, centerZ + dz);
       spot.target.position.set(centerX, 0, centerZ);
       spot.target.updateMatrixWorld();
       spot.angle = Math.min(1.48, standTopSpot.angle + STAGE_FILL_SPOT.extraAngle);
-      spot.intensity = fillIntensity;
+      spot.intensity = stageFillSpotIntensity;
     });
     keyLight.position.set(centerX + KEY_LIGHT_OFFSET.x, KEY_LIGHT_OFFSET.y, centerZ + KEY_LIGHT_OFFSET.z);
     keyLight.target.position.set(centerX, 0, centerZ);
@@ -2102,7 +2131,9 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     else {
       groupSelectionFrame.visible = false;
       const single = getSingleSelectedModuleGroup();
-      if (single) setModuleSelectionVisual(single.userData.moduleId, true, SELECTION_COLOR);
+      // Banko / baza yüzü seçiliyken yalnız yüz çerçevesi görünür; modülün tamamı seçilmiş sanılmaz.
+      const faceSelected = [...selectedSurfaces].some(isModuleFaceSurface);
+      if (single && !faceSelected) setModuleSelectionVisual(single.userData.moduleId, true, SELECTION_COLOR);
     }
   }
 
@@ -2252,12 +2283,17 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     notifySelection();
   }
 
-  function toggleCounterSurface(mesh) {
-    if (!mesh || mesh.userData?.moduleType !== 'counter') return false;
+  // Banko ve bazanın yüzleri panel gibi tek tek seçilir; aynı modülün yüzleri çoğullanır.
+  function isModuleFaceSurface(mesh) {
+    return mesh?.userData?.moduleType === 'counter' || mesh?.userData?.moduleType === 'base';
+  }
+
+  function toggleModuleFaceSurface(mesh) {
+    if (!isModuleFaceSurface(mesh)) return false;
 
     const moduleId = mesh.userData.moduleId ?? null;
     const hasForeignSelection = [...selectedSurfaces].some(
-      (surface) => surface.userData?.moduleType !== 'counter'
+      (surface) => !isModuleFaceSurface(surface)
         || surface.userData?.moduleId !== moduleId,
     );
 
@@ -6629,8 +6665,8 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     const hit = panelHit ?? hits[0];
 
     if (hit) {
-      if (rectangleSelect && hit.object.userData.moduleType === 'counter') {
-        toggleCounterSurface(hit.object);
+      if (rectangleSelect && isModuleFaceSurface(hit.object)) {
+        toggleModuleFaceSurface(hit.object);
         return;
       }
 
@@ -6677,10 +6713,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       }
     }
 
-    if (!rectangleSelect) {
-      selectedModuleId = null;
-      clearSelection();
-    }
+    if (!rectangleSelect) clearSelection();
   }
 
   function moduleIdAt(clientX, clientY) {
@@ -6736,11 +6769,12 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
   // - dokunuş: önceden seçili panel (çapa) ile dokunulan panel arası seçilir;
   // - kaydırma: parmağın konduğu panel çapa olur, parmağın altındaki panele kadar seçilir.
   // Parmak kalkınca seçim kalır ve mod kapanır; sonraki sürükleme yine taşır / kamerayı çevirir.
-  function pickPanelAt(clientX, clientY) {
+  function pickPanelAt(clientX, clientY, { faces = false } = {}) {
     setPointerFromClient(clientX, clientY);
     raycaster.setFromCamera(pointer, camera);
     return raycaster.intersectObjects(surfaceMeshes, false)
-      .find((entry) => entry.object?.userData?.selectionMode === 'panel')?.object ?? null;
+      .find((entry) => entry.object?.userData?.selectionMode === 'panel'
+        || (faces && isModuleFaceSurface(entry.object)))?.object ?? null;
   }
 
   function endMultiSelectMode() {
@@ -6755,7 +6789,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     if (multiSelectMode !== 'panel' || event.button !== 0 || !stageLayout) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    const panel = pickPanelAt(event.clientX, event.clientY);
+    const panel = pickPanelAt(event.clientX, event.clientY, { faces: true });
     if (!panel) return;
     panelSweep = { pointerId: event.pointerId, downPanel: panel, surfaceId: panel.userData.surfaceId, swept: false };
   }, { capture: true, signal });
@@ -6876,8 +6910,18 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
   hostWindow.addEventListener('pointercancel', cancelLongPress, { signal });
   hostWindow.addEventListener('pointermove', (event) => {
     if (!panelSweep || event.pointerId !== panelSweep.pointerId) return;
-    const panel = pickPanelAt(event.clientX, event.clientY);
+    const faceSweep = isModuleFaceSurface(panelSweep.downPanel);
+    const panel = pickPanelAt(event.clientX, event.clientY, { faces: faceSweep });
     if (!panel || panel.userData.surfaceId === panelSweep.surfaceId) return;
+    if (faceSweep) {
+      // Yüz taraması: parmağın geçtiği yüzler seçime eklenir, dikdörtgen kurulmaz.
+      if (panel.userData.moduleId !== panelSweep.downPanel.userData.moduleId) return;
+      if (!panelSweep.swept && !selectedSurfaces.has(panelSweep.downPanel)) toggleModuleFaceSurface(panelSweep.downPanel);
+      panelSweep.swept = true;
+      panelSweep.surfaceId = panel.userData.surfaceId;
+      if (!selectedSurfaces.has(panel)) toggleModuleFaceSurface(panel);
+      return;
+    }
     if (!panelSweep.swept) {
       panelSweep.swept = true;
       selectOnly(panelSweep.downPanel);
@@ -6887,7 +6931,9 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
   }, { signal });
   const finishPanelSweep = (event) => {
     if (!panelSweep || event.pointerId !== panelSweep.pointerId) return;
-    if (event.type === 'pointerup' && !panelSweep.swept) {
+    if (event.type === 'pointerup' && !panelSweep.swept && isModuleFaceSurface(panelSweep.downPanel)) {
+      toggleModuleFaceSurface(panelSweep.downPanel);
+    } else if (event.type === 'pointerup' && !panelSweep.swept) {
       const hasPanelAnchor = [...selectedSurfaces].some((mesh) => mesh.userData?.selectionMode === 'panel');
       if (hasPanelAnchor) selectRectangleTo(panelSweep.downPanel);
       else selectOnly(panelSweep.downPanel);
@@ -7620,7 +7666,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
           clientY: Math.round(rect.top + ((1 - selectionAnchorPoint.y) / 2) * rect.height),
           count: groups.length,
           kind: multiSelectedModuleIds.size <= 1
-            && [...selectedSurfaces].some((mesh) => mesh.userData?.selectionMode === 'panel')
+            && [...selectedSurfaces].some((mesh) => mesh.userData?.selectionMode === 'panel' || isModuleFaceSurface(mesh))
             ? 'panel'
             : 'module',
         };
@@ -9202,7 +9248,7 @@ function createLedFloodlightModule(moduleState, moduleIndex) {
   });
 
   // Panel yüzüne gerçek aydınlatma.
-  const spot = new THREE.SpotLight(0xfffbed, 44, 5.6, 0.48, 0.62, 1.35);
+  const spot = new THREE.SpotLight(0xfffbed, LED_FLOODLIGHT_RENDER_CD, 5.6, 0.48, 0.62, 1.35);
   spot.position.set(0, 0.16, 0.13);
   spot.castShadow = false;
   spot.layers.set(RENDER_ONLY_LIGHT_LAYER);

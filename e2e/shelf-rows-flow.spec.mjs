@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
+import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 // Raf kartları (Tekli / 2 / 3 sıralı) gerçek kullanıcı akışında: proje uygulamanın kendi koduyla
 // kayda yazılır ve açılır; üretim listesi, eski proje, 50'lik ve duvar dışı ret, taşımada genişlik,
@@ -306,6 +307,7 @@ test('raf altı aydınlatma açılınca üçlü rafın bütün sıralarında yan
 
   const point = await shelfBoardPoint(page, shelf.id);
   await page.mouse.click(point.x, point.y, { button: 'right' });
+  await openPanelTab(page, 'more');
   const lightButton = page.locator('[data-module-action="toggle-shelf-light"]');
   await expect(lightButton).toBeVisible();
   await lightButton.click();

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
 import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
@@ -62,10 +63,11 @@ test('one metal group with a gap on the wall is listed as separate sheets', asyn
   await page.keyboard.down('Control');
   await page.mouse.click(905, 205);
   await page.keyboard.up('Control');
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await page.mouse.click(905, 205, { button: 'right' });
   await expect(menu).toBeVisible();
-  // Panel dönüşümleri sade menüde "Gelişmiş" altında; kapalıysa aç.
+  // Panel dönüşümleri Diğer sekmesindedir.
+  await openPanelTab(page, 'more');
   await menu.locator('[data-module-action="toggle-metal-separator"]').click();
 
   await unlockModuleForFixture(page, walls[1]);

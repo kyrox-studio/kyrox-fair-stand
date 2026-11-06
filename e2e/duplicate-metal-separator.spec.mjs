@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
 import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
@@ -99,13 +100,14 @@ test('duplicating a panel with a metal separator gives the copy its own metal gr
     }, moduleState.id);
   }
 
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   const metalToggle = menu.locator('[data-module-action="toggle-metal-separator"]');
 
   // Sabit ilk kamera açısında ilk modülün en üst paneli.
   await page.mouse.click(650, 145, { button: 'right' });
   await expect(menu).toBeVisible();
-  // Panel dönüşümleri açılır sekme olmadan doğrudan listede görünür.
+  // Panel dönüşümleri Diğer sekmesindedir.
+  await openPanelTab(page, 'more');
   await expect(metalToggle).toBeVisible();
   await expect(metalToggle).toHaveText('Metal Separatöre Çevir');
   await metalToggle.click();

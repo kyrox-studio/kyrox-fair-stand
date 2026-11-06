@@ -1490,6 +1490,7 @@ const ITEM_SIZE_CHOICE_SPECS = Object.freeze({
   upright: Object.freeze({
     title: 'Dikme yüksekliği',
     list: () => listUprightHeightItems(),
+    tabLabel: 'Yükseklik',
     label: (item) => formatUprightLabel(item),
     readPreference: () => readUprightHeightPreference(),
     writePreference: (itemKey) => writeUprightHeightPreference(itemKey),
@@ -1499,6 +1500,7 @@ const ITEM_SIZE_CHOICE_SPECS = Object.freeze({
   profile: Object.freeze({
     title: 'Profil boyu',
     list: () => listProfileLengthItems(),
+    tabLabel: 'Boy',
     label: (item) => formatProfileLengthLabel(item),
     readPreference: () => readProfileLengthPreference(),
     writePreference: (itemKey) => writeProfileLengthPreference(itemKey),
@@ -1519,6 +1521,7 @@ function describeDimensionFields(context) {
     return {
       key: moduleState.type,
       title: sizeSpec.title,
+      tabLabel: 'Ölçü',
       note: sizeSpec.note,
       disabled: locked,
       fields: sizeSpec.fields.map((field) => ({
@@ -1534,6 +1537,7 @@ function describeDimensionFields(context) {
     return {
       key: moduleState.type,
       title: choiceSpec.title,
+      tabLabel: choiceSpec.tabLabel,
       disabled: locked,
       fields: [
         {
@@ -1564,6 +1568,7 @@ function describeImageSizeSpec(context) {
   return {
     key: 'image',
     title: 'Görsel ölçüsü',
+    panelTab: 'look',
     note: `Seçili alan ${formatCm(area.areaWidthCm)} × ${formatCm(area.areaHeightCm)} cm. Yazarken önizlenir; Enter uygular, Esc vazgeçer.`,
     fields: [
       { name: 'widthCm', label: 'Genişlik (cm)', min: 1, max: 5000, step: 0.1, value: formatCm(area.currentWidthCm) },
@@ -2182,6 +2187,8 @@ function buildFloorPanelContext() {
       ? {
         key: areaSelected ? 'floor-area' : 'floor',
         title: 'Zemin kaplaması',
+        panelTab: 'look',
+        panelFirst: true,
         fields: [{
           name: 'itemKey',
           type: 'select',
@@ -3893,11 +3900,12 @@ async function requestDeleteImageAsset(assetId) {
 
 function setActiveAsset(assetId, { focus = false } = {}) {
   activeAssetId = assetId;
-  renderAssetLibrary();
+  // Kutular yeniden kurulmaz: araya yeniden çizim girerse çift tık kutuya ulaşmaz.
+  if (assetLibraryElement.querySelectorAll('.asset-tile').length !== imageAssets.size) renderAssetLibrary();
+  const tiles = [...assetLibraryElement.querySelectorAll('.asset-tile')];
+  tiles.forEach((tile) => tile.classList.toggle('active', tile.dataset.assetId === assetId));
   if (focus && assetId) {
-    const activeTile = [...assetLibraryElement.querySelectorAll('.asset-tile')]
-      .find((tile) => tile.dataset.assetId === assetId);
-    activeTile?.focus({ preventScroll: true });
+    tiles.find((tile) => tile.dataset.assetId === assetId)?.focus({ preventScroll: true });
   }
   const asset = imageAssets.get(assetId);
   assetStatus.textContent = asset
@@ -3938,6 +3946,11 @@ function renderAssetLibrary() {
         closeAssetContextMenu();
         setActiveAsset(asset.id, { focus: true });
         applyAssetToSelectedFoam(asset.id);
+      });
+      // Çift tık Doldur ile aynıdır; strafor ilk tıkta logoyu almıştır.
+      button.addEventListener('dblclick', () => {
+        if (selectedIlluminatedFoamModules(scene3d.getSelectedSurfaces())) return;
+        applyActiveImageToSelection('cover');
       });
       button.addEventListener('contextmenu', (event) => {
         event.preventDefault();
@@ -4225,8 +4238,9 @@ function applyActiveImageToSelection(fit = 'cover') {
   const foamModules = selectedIlluminatedFoamModules(selected);
   if (foamModules) return setIlluminatedFoamLogo(foamModules, activeAssetId);
 
+  // Banko ve baza yüzleri ayrı cephelerdir; her cepheye ayrı tek parça görsel verilir.
   const allCounterPanels = selected.every(
-    (surface) => surface.userData.moduleType === 'counter',
+    (surface) => surface.userData.moduleType === 'counter' || surface.userData.moduleType === 'base',
   );
   if (allCounterPanels) {
     const panelsByFace = new Map();
@@ -4247,7 +4261,7 @@ function applyActiveImageToSelection(fit = 'cover') {
     }
 
     const fitLabel = fit === 'cover' ? 'Doldur' : 'Sığdır';
-    selectionInfo.textContent = `${panelsByFace.size} banko cephesinde ${appliedPanelCount} panele tek parça görsel · ${fitLabel}.`;
+    selectionInfo.textContent = `${panelsByFace.size} cephede ${appliedPanelCount} panele tek parça görsel · ${fitLabel}.`;
     return true;
   }
 

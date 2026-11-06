@@ -175,7 +175,7 @@ test('grup şablon olarak kaydedilir, yerleştirilir ve silinir', async ({ page 
   await page.keyboard.up('Control');
   page.once('dialog', (dialog) => dialog.accept('Tezgah'));
   await page.mouse.click(points[initial[1].id].x, points[initial[1].id].y, { button: 'right' });
-  await page.getByRole('menu', { name: 'Modül işlemleri' }).getByRole('menuitem', { name: 'Grup oluştur…' }).click();
+  await page.getByRole('group', { name: 'Modül işlemleri' }).getByRole('button', { name: 'Grup oluştur…' }).click();
   await expect(page.locator('#selection-info')).toContainText('“Tezgah” grubu oluşturuldu');
 
   // Gruplar kartından şablon olarak kaydet.
