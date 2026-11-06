@@ -191,7 +191,7 @@ Düz BoxGeometry küp; GLB yok. **Işıklı strafor (`illuminated-foam`)** ile k
 | Döndürme / Z | `rotation_step_deg=45`, `default_rotation_deg=0`, `default_z_cm=0` (item master; `0050_box_block_rotation_45` adımı 45 yapar) |
 | Preview | CRM **Katalog Önizlemeleri** → `Küp Blok` (canlı örn. id **57**): tek `div.module-drag-box-block` + CSS; item `preview_id` buna bağlanır. Migrasyon fallback’i “ilk preview” olabilir — prod’da CRM’de Küp Blok’a çevir |
 
-**Sahne:** Katalogdan sürükle → W/D/H + opacity dialog; sonra sağ tık “Ölçü / opacity”. Instance override proje JSON’da kalır (`modules[].widthCm/depthCm/heightCm/opacity`). Gövde renk ve saydamlığı taşır, yanmaz. `faces` ön, sağ, arka ve sol yüzeydir; görsel, Lightbox ve Mesh o yüze uygulanır. Lightbox aydınlatması yalnız o yüzde yanar. Görsel atanmış yüzde sağ tık “Görseli ölçülendir” panel, Lightbox ve Mesh için aynı pencereyi açar: başlangıç alanın kendi ölçüsü, küçük tekrar, büyük taşma. `accepts_glass` kapalıdır. Ok tuşu kutuyu zeminde ve yükseklikte yürütür: taban 0, tepe stand `heightCm` eksi kutu yüksekliği. Bayrak güncellemesi `0049_box_block_surface_flags`.
+**Sahne:** Katalogdan sürükle → W/D/H + opacity dialog; sonra Özellikler panelindeki ölçü alanları. Instance override proje JSON’da kalır (`modules[].widthCm/depthCm/heightCm/opacity`). Gövde renk ve saydamlığı taşır, yanmaz. `faces` ön, sağ, arka ve sol yüzeydir; görsel, Lightbox ve Mesh o yüze uygulanır. Lightbox aydınlatması yalnız o yüzde yanar. Görsel atanmış yüzde panelde “Görsel ölçüsü” alanları çıkar; panel, Lightbox ve Mesh için aynıdır: başlangıç alanın kendi ölçüsü, küçük tekrar, büyük taşma. `accepts_glass` kapalıdır. Ok tuşu kutuyu zeminde ve yükseklikte yürütür: taban 0, tepe stand `heightCm` eksi kutu yüksekliği. Bayrak güncellemesi `0049_box_block_surface_flags`.
 
 **Aynı tipte ek SKU:** Yalnız CRM Item + ölçüler; tip key sabit `box-block`.
 
@@ -486,7 +486,7 @@ CRM’de okunan tip etiketi (Projektör, Raf, …).
 | **Ne** | Modülün yanına başka modül eklenebilir mi |
 | **Neden** | Raf yan ekleme kapalı; duvar açık |
 | **Nasıl** | bool CRM checkbox |
-| **Sahne** | Sağ tık “yana kopyala” / katalog yan ekleme |
+| **Sahne** | Kopyala / Özellikler panelinde Ekle… |
 | **Örnek** | `shelf` false; `flat-panel` true |
 | **Kod** | `getModuleBehavior`, `allowsModuleSideInsert` |
 
@@ -1148,7 +1148,7 @@ Vitrin gövde malzemesi (`sunta`); yan/yatay panel uyumu.
 
 1. CRM’de item bayrakları DB’ye yazılır → bootstrap (`acceptsColor`, …).
 2. Modül sahneye kurulurken tıklanabilir mesh’lere `userData.accepts*` kopyalanır (`itemCapabilities.js`).
-3. Kullanıcı aracı (renk, görsel, sağ tık menüsü) **bayrak false ise o yüzeyde çalışmaz**.
+3. Kullanıcı aracı (renk, görsel, Özellikler paneli) **bayrak false ise o yüzeyde çalışmaz**.
 4. Uygulanan renk/görsel/kumaş/cam **proje** `modules[].surface` / `surfaceState` içinde saklanır; bayraklar sadece **izin kapısı**.
 
 DB CHECK: `is_render=false` iken tüm `accepts_*` false olmalı.
@@ -1197,7 +1197,7 @@ DB CHECK: `is_render=false` iken tüm `accepts_*` false olmalı.
 | **Ne** | Panel **cam moduna** geçebilir mi (şeffaf, cam malzeme) |
 | **Neden** | Duvar panelinde cam seçeneği; koltukta anlamsız |
 | **Nasıl** | Duvar flat-panel SKU true |
-| **Sahne** | Sağ tık → “Cam Panele Çevir” / “Normal Panele Çevir” (`applyGlassMode`) |
+| **Sahne** | Özellikler paneli → “Cam Panele Çevir” / “Normal Panele Çevir” (`applyGlassMode`) |
 | **Örnek** | `wall_200` true |
 | **Karıştırma** | Vitrin **cam raf** geometry ayrı; bu duvar panel camı |
 | **Kod** | `main.js` `changeContextPanelGlassMode`; `pickModuleContext` |
@@ -1209,7 +1209,7 @@ DB CHECK: `is_render=false` iken tüm `accepts_*` false olmalı.
 | **Ne** | Panel grubu **Lightbox kumaş** (tek parça ışıklı bez) olabilir mi |
 | **Neden** | Fuar ışıklı grafik duvarı |
 | **Nasıl** | Duvar panel SKU true; seçim dikdörtgen blok + aynı düzlem kuralı |
-| **Sahne** | Sağ tık → Lightbox Kumaşa Çevir; `fabricGroupId`, overlay mesh. Görsel varken sağ tık “Görseli ölçülendir” panel görseliyle aynı cm kuralını kullanır |
+| **Sahne** | Özellikler paneli → Lightbox Kumaşa Çevir; `fabricGroupId`, overlay mesh. Görsel varken panelde “Görsel ölçüsü” panel görseliyle aynı cm kuralını kullanır |
 | **Örnek** | `wall_200` true |
 | **Karıştırma** | **`accepts_mesh`** delikli branda; strafor modülü ayrı tip |
 | **Kod** | `applyFabricMode`, `setFabricLighting` |
@@ -1221,7 +1221,7 @@ DB CHECK: `is_render=false` iken tüm `accepts_*` false olmalı.
 | **Ne** | Panel grubu **Mesh (delikli) branda** olabilir mi |
 | **Neden** | Delikli baskı branda vs ışıklı lightbox |
 | **Nasıl** | Duvar panel true; lightbox ile aynı anda bir panelde tek fabric tipi |
-| **Sahne** | Sağ tık → Mesh Brandaya Çevir (`applyMeshMode`, `fabricType=mesh`). Görsel varken sağ tık “Görseli ölçülendir” panel görseliyle aynı cm kuralını kullanır |
+| **Sahne** | Özellikler paneli → Mesh Brandaya Çevir (`applyMeshMode`, `fabricType=mesh`). Görsel varken panelde “Görsel ölçüsü” panel görseliyle aynı cm kuralını kullanır |
 | **Örnek** | `wall_200` true |
 | **Karıştırma** | Mesh **aydınlatılamaz**; lightbox aydınlatılır |
 | **Kod** | `applyFabricCoverMode` |

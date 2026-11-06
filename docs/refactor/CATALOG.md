@@ -60,7 +60,7 @@ Canonical API (`getCatalogItem`, `listCatalogItems`, `listCatalogGroups`, `listC
 
 Sol paneldeki **Modül Ekle** düğmesi (`#open-module-catalog`, `index.html`) katalog girişidir. Düğmenin hemen üstüne `createModuleDragSidebar` kart ızgarasını basar.
 
-Bu yüzey “Modül Kataloğu”dur. Sağ tık **Modül Ekle** picker’ı (`renderPickerCatalog`) aynı `listCatalogGroups()` sonucunu kullanır.
+Bu yüzey “Modül Kataloğu”dur. Özellikler panelindeki **Ekle…** picker’ı (`renderPickerCatalog`) aynı `listCatalogGroups()` sonucunu kullanır.
 
 ---
 

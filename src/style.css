@@ -963,7 +963,8 @@ button.asset-tile > span {
 }
 
 /* Ölçü alanları: referanstaki gibi bölüm başlığı + etiketli alanlar; değişiklik sahnede canlı görünür. */
-.selection-property-fields {
+.selection-property-fields,
+.selection-property-image-size {
   display: grid;
   gap: 8px;
   padding: 10px 2px 0;
