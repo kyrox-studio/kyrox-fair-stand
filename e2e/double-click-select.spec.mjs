@@ -104,15 +104,15 @@ test('double click selects the whole wall module; Ctrl+click adds and removes mo
 
   // Toplu menü: grup ve kilit.
   await page.mouse.click(second.x, second.y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await expect(menu.locator('.module-context-title')).toContainText('2 öğe seçili');
-  await expect(menu.getByRole('menuitem', { name: 'Grup oluştur…' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Grup oluştur…' })).toBeVisible();
   await expect(menu.locator('.module-context-title')).toContainText('2 kilitli');
-  await expect(menu.getByRole('menuitem', { name: 'Seçilenlerin kilidini aç' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Seçilenlerin kilidini aç' })).toBeVisible();
   await expect(menu.locator('[data-module-action="delete"]')).toBeDisabled();
-  await menu.getByRole('menuitem', { name: 'Seçilenlerin kilidini aç' }).click();
+  await menu.getByRole('button', { name: 'Seçilenlerin kilidini aç' }).click();
   await page.mouse.click(second.x, second.y, { button: 'right' });
-  await expect(menu.getByRole('menuitem', { name: 'Seçilenleri kilitle' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Seçilenleri kilitle' })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

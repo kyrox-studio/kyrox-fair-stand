@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 const SVG = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50"><rect width="200" height="50" fill="#e11d48"/></svg>',
@@ -44,6 +45,7 @@ async function dropFoam(page, ratioX, ratioY) {
   // Bırakınca strafor tıklanmış gibi seçilir; logo paneldeki görsel bölümünden yüklenir (SVG).
   const panel = page.locator('.selection-property-panel');
   await expect(panel.locator('.selection-property-heading')).toHaveText('Işıklı Strafor / Logo');
+  await openPanelTab(page, 'look');
   await expect(panel.locator('#surface-image-controls')).toBeVisible();
   await panel.locator('#surface-image').setInputFiles({ name: 'e2e-logo.svg', mimeType: 'image/svg+xml', buffer: SVG });
   await expect(page.locator('#selection-info')).toContainText('Işıklı Strafor logosu uygulandı');
@@ -59,12 +61,16 @@ async function viewportPoint(page, ratioX, ratioY) {
 }
 
 // Straforun ön yüzü SVG'nin kırmızı rengindedir; ekran görüntüsünde bu piksellerin merkezini bulur.
-// Sağ üstteki view-cube'un kırmızı kenarı sayılmasın diye yatayda yalnız ilk %75 taranır.
+// Sağ üstteki view-cube'un kırmızı kenarı sayılmasın diye yatayda yalnız ilk %75 taranır;
+// paneldeki arşiv küçük resmi de strafor sayılmasın diye panel maskelenir.
 async function findFoamScreenPoint(page) {
   const viewport = page.locator('#viewport');
   const box = await viewport.boundingBox();
   expect(box).not.toBeNull();
-  const png = (await viewport.screenshot()).toString('base64');
+  const png = (await viewport.screenshot({
+    mask: [page.locator('.selection-property-panel')],
+    maskColor: '#000000',
+  })).toString('base64');
   const center = await page.evaluate(async (base64) => {
     const blob = await (await fetch(`data:image/png;base64,${base64}`)).blob();
     const bitmap = await createImageBitmap(blob);

@@ -37,7 +37,7 @@ async function wallContextMenu(page, moduleId) {
     return { x: box.left + (center.x + 1) * box.width / 2, y: box.top + (1 - center.y) * box.height / 2 };
   }, moduleId);
   await page.mouse.click(point.x, point.y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
   return menu;
 }

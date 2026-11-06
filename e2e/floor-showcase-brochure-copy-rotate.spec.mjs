@@ -1,5 +1,6 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
+import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 // Ayaklı vitrin ve broşürlük sahneye gelir, üretim listesine 1 adet yazılır; kopyalarken
 // Shift+R yalnız kopyayı döndürür, seçili kalan asıl öğe dönmez.
@@ -137,10 +138,11 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
     .filter((mesh) => ['floor-showcase', 'brochure-stand'].includes(mesh.userData.moduleType)).length)).toBe(5);
 
   // Vitrinin ön yüzü düzenlenebilir: sağ tıkta Lightbox var; uygulanınca yüz durumu kaydedilir.
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   const front = await faceScreenPoint(page, showcaseId, 'front');
   await page.mouse.click(front.x, front.y, { button: 'right' });
   await expect(menu).toBeVisible();
+  await openPanelTab(page, 'more');
   const lightbox = menu.locator('[data-module-action="toggle-fabric"]');
   await expect(lightbox).toHaveText('Lightbox Kumaşa Çevir');
   await lightbox.click();

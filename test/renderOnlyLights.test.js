@@ -70,7 +70,7 @@ test('viewport toolbar markup is identical in index.html and the CRM-embedded co
   assert.match(toolbar(FAIR_STAND_MARKUP), /id="toggle-stage-light"/);
 });
 
-test('stand-top spot drops a soft pool over the stand without casting shadows', () => {
+test('stand-top spot drops a soft pool over the stand and casts no shadow in the editor', () => {
   assert.match(scene, /const standTopSpot = new THREE\.SpotLight\(/);
   assert.match(scene, /standTopSpot\.castShadow = false;/);
   const aim = scene.slice(scene.indexOf('function aimKeyLightAtStand('), scene.indexOf('shadowCamera.updateProjectionMatrix();'));
@@ -91,6 +91,21 @@ test('Render Al turns stage lighting on while drawing and returns to the preview
   const dim = scene.match(/const RENDER_KEY_LIGHT_DIM = ([\d.]+);/);
   assert.ok(dim);
   assert.ok(Number(dim[1]) > 0 && Number(dim[1]) < 1);
+  // Spot kısma, ortam dengesi ve tepe gölgesi yalnız Render Al'da; editör tam güçte ve gölgesiz kalır.
+  const apply = scene.slice(scene.indexOf('function applyStageLighting('), scene.indexOf('function setStageLightPreview('));
+  assert.match(apply, /const renderStage = enabled && forRender;/);
+  assert.match(apply, /standTopSpot\.intensity = standTopSpotIntensity \* \(renderStage \? RENDER_TOP_SPOT_DIM : 1\);/);
+  assert.match(apply, /spot\.intensity = stageFillSpotIntensity \* \(renderStage \? RENDER_FILL_SPOT_DIM : 1\);/);
+  assert.match(apply, /standTopSpot\.castShadow = renderStage;/);
+  assert.match(apply, /if \(forRender\) \{\s+hemisphereLight\.color\.setScalar\(RENDER_STAGE_HEMISPHERE\.sky\);/);
+  for (const name of ['RENDER_TOP_SPOT_DIM', 'RENDER_FILL_SPOT_DIM']) {
+    const value = scene.match(new RegExp(`const ${name} = ([0-9.]+);`));
+    assert.ok(value);
+    assert.ok(Number(value[1]) > 0 && Number(value[1]) < 1);
+  }
+  const renderHemisphere = scene.match(/const RENDER_STAGE_HEMISPHERE = Object\.freeze\(\{ sky: ([\d.]+), ground: ([\d.]+), intensity: ([\d.]+) \}\);/);
+  assert.ok(renderHemisphere);
+  assert.ok(Number(renderHemisphere[1]) < Number(renderHemisphere[2]), 'render ortam ışığında zemin payı dikey yüzeyden düşük olmalı');
 });
 
 test('editor draws without shadows and render-only lights; Render Al turns both on and back off', () => {

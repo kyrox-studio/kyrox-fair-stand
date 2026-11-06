@@ -36,40 +36,40 @@ function videoWallCells(item) {
 }
 
 const VARIANT_FAMILIES = Object.freeze({
-  'wall-short-1': Object.freeze({ title: 'Panel genişliği' }),
-  'wall-short-2': Object.freeze({ title: 'Panel genişliği' }),
-  'wall-panel': Object.freeze({ title: 'Panel genişliği' }),
+  'wall-short-1': Object.freeze({ title: 'Panel genişliği', tabLabel: 'Genişlik' }),
+  'wall-short-2': Object.freeze({ title: 'Panel genişliği', tabLabel: 'Genişlik' }),
+  'wall-panel': Object.freeze({ title: 'Panel genişliği', tabLabel: 'Genişlik' }),
   'wall-separator': Object.freeze({
-    title: 'Separatör genişliği',
+    title: 'Separatör genişliği', tabLabel: 'Genişlik',
     option: Object.freeze({ label: 'Sarmaşıklı', variant: 'wall-separator-sarmasik' }),
   }),
-  'desk-banko': Object.freeze({ title: 'Banko ölçüsü' }),
-  'desk-banko-l': Object.freeze({ title: 'Köşe banko ölçüsü' }),
-  base: Object.freeze({ title: 'Baza ölçüsü' }),
+  'desk-banko': Object.freeze({ title: 'Banko ölçüsü', tabLabel: 'Genişlik' }),
+  'desk-banko-l': Object.freeze({ title: 'Köşe banko ölçüsü', tabLabel: 'Genişlik' }),
+  base: Object.freeze({ title: 'Baza ölçüsü', tabLabel: 'Genişlik' }),
   'wall-showcase': Object.freeze({
-    title: 'Vitrin',
+    title: 'Vitrin', tabLabel: 'Boyut',
     cardLabel: 'Vitrin',
     order: (item) => Number(item.eyeCount),
     label: (item) => `${item.eyeCount} Gözlü`,
   }),
   'shelf-row': Object.freeze({
-    title: 'Raf',
+    title: 'Raf', tabLabel: 'Boyut',
     cardLabel: 'Raf',
     order: shelfRowCount,
     label: (item) => SHELF_ROW_LABELS[shelfRowCount(item)] ?? item.name,
   }),
   tv: Object.freeze({
-    title: 'Ekran boyu',
+    title: 'Ekran boyu', tabLabel: 'Boyut',
     cardLabel: 'TV',
     label: (item) => String(item.name).replace(/^TV\s*/, ''),
   }),
   'video-wall': Object.freeze({
-    title: 'Video Wall düzeni',
+    title: 'Video Wall düzeni', tabLabel: 'Düzen',
     cardLabel: 'Video Wall',
     order: videoWallCells,
     label: (item) => `${item.videoWall.rows}×${item.videoWall.cols}`,
   }),
-  'long-planter': Object.freeze({ title: 'Saksı ölçüsü', cardLabel: 'Uzun Saksı' }),
+  'long-planter': Object.freeze({ title: 'Saksı ölçüsü', tabLabel: 'Ölçü', cardLabel: 'Uzun Saksı' }),
 });
 
 function familyOrder(family, item) {
@@ -148,6 +148,7 @@ export function describeModuleVariants(moduleState) {
   return {
     variant: resolved.variant,
     title: resolved.family.title,
+    tabLabel: resolved.family.tabLabel,
     selectedItemKey: selected?.itemKey ?? null,
     options: items.map((item) => ({ itemKey: item.itemKey, label: label(item) })),
     option: resolved.family.option

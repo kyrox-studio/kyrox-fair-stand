@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 // Düz duvara sağ tıkla arka yüze panel eklenir ve kaldırılır; üretim listesi iki yüzü sayar.
 
@@ -116,6 +117,7 @@ test('düz duvara sağ tıkla arka yüze panel eklenir, kaldırılır; üretim l
   const menuButton = page.locator('[data-module-action="toggle-back-panels"]');
   const front = await panelScreenPoint(page, wallId, 'front');
   await page.mouse.click(front.x, front.y, { button: 'right' });
+  await openPanelTab(page, 'more');
   await expect(menuButton).toHaveText('Arka yüze panel ekle');
   await menuButton.click();
   let project = await saveAndReadProject(page);

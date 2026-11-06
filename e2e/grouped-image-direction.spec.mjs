@@ -1,5 +1,6 @@
 import { showSurfaceControls } from './helpers/surfaceControls.mjs';
 import { test, expect } from '@playwright/test';
+import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 async function openSavedProject(page, id) {
   await expect(page.locator(`#project-select option[value="${id}"]`)).toHaveCount(1);
@@ -168,6 +169,7 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
     const points = await selectImagePanels(page, 'front', mode === 'single');
     if (mode === 'lightbox' || mode === 'mesh') {
       await page.mouse.click(points[0].x, points[0].y, { button: 'right' });
+      await openPanelTab(page, 'more');
       await page.locator(`[data-module-action="toggle-${mode === 'mesh' ? 'mesh' : 'fabric'}"]`).click();
     }
     await showSurfaceControls(page, 'image');
@@ -206,6 +208,7 @@ for (const mode of ['single', 'group', 'lightbox', 'mesh']) {
     await selectImagePanels(page, 'front', mode === 'single');
     await expect(dialog).toContainText('Görsel ölçüsü');
     const width = dialog.locator('input[name="widthCm"]');
+    await openPanelTab(page, 'look');
     await width.fill('150');
     await expect.poll(async () => {
       const state = await previewState(page);
@@ -288,6 +291,7 @@ for (const kind of ['panel', 'legacy', 'lightbox', 'mesh']) {
     const points = await selectImagePanels(page, 'front');
     if (kind === 'lightbox' || kind === 'mesh') {
       await page.mouse.click(points[0].x, points[0].y, { button: 'right' });
+      await openPanelTab(page, 'more');
       await page.locator(`[data-module-action="toggle-${kind === 'mesh' ? 'mesh' : 'fabric'}"]`).click();
     }
     await showSurfaceControls(page, 'image');
@@ -313,6 +317,7 @@ for (const kind of ['panel', 'legacy', 'lightbox', 'mesh']) {
     }, kind);
     const original = await groupSurfaces(page, originalIds);
     await page.mouse.click(points[0].x, points[0].y, { button: 'right' });
+    await openPanelTab(page, 'group');
     await page.locator('[data-module-action="group-duplicate"]').click();
     await expect.poll(() => page.evaluate(ids => new Set(window.__imageSurfaces()
       .filter(mesh => !ids.includes(mesh.userData.moduleId)).map(mesh => mesh.userData.moduleId)).size, originalIds)).toBe(2);
@@ -340,6 +345,7 @@ for (const kind of ['panel', 'legacy', 'lightbox', 'mesh']) {
     const dialog = page.locator('.selection-property-panel .selection-property-fields');
     await expect(dialog).toContainText('Görsel ölçüsü');
     expect(Number(await dialog.locator('input[name="widthCm"]').inputValue())).toBeLessThan(350);
+    await openPanelTab(page, 'look');
     await dialog.locator('input[name="widthCm"]').fill('120');
     await expect.poll(async () => (await groupSurfaces(page, cloneIds)).some(item => item.renderer.imageTransform?.widthCm === 120
       || item.renderer.fabricImageWidthCm === 120)).toBe(true);

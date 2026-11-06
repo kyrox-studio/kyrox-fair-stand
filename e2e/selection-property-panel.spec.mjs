@@ -1,6 +1,7 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 // Seçime göre Özellikler paneli: öğeye / yüzeye tek tık paneli açar (⋯ düğmesi yok); açık
 // panel yeni seçime göre güncellenir, boş alana tık paneli kapatır. Renk / görsel kontrolleri tek kaynaktır: panel açıkken
@@ -78,7 +79,7 @@ test('tek tık paneli açar, sağ tık aynı paneli gösterir; seçim değişinc
   const second = points.find((point) => point.moduleId === modules[1] && point.stripIndex === first.stripIndex)
     ?? points.find((point) => point.moduleId === modules[1]);
   const panel = page.getByRole('complementary', { name: 'Özellikler' });
-  const menu = panel.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = panel.getByRole('group', { name: 'Modül işlemleri' });
   const title = menu.locator('.module-context-title');
   const undo = page.locator('#design-undo');
   const undoBefore = await undo.isDisabled();
@@ -106,6 +107,7 @@ test('tek tık paneli açar, sağ tık aynı paneli gösterir; seçim değişinc
   await page.mouse.click(first.x, first.y, { button: 'right' });
   await expect(panel).toBeVisible();
   await expect(title).toContainText('Modül 1');
+  await openPanelTab(page, 'look');
   await expect(panel.locator('#apply-color')).toBeVisible();
   await expect(page.locator('#surface-controls-moved')).toBeAttached();
   await expect(panel.locator('#fit-image-cover')).toBeVisible();
@@ -211,8 +213,72 @@ test('çoklu modül seçiliyken zemine tıklamak bütün seçim çerçevelerini 
 
   // Zemin panelinde Yerleşim kartındaki kaplama listesi; seçim zemine uygulanır.
   const coverage = page.locator('.selection-property-panel .selection-property-fields select');
+  // Zeminde tek bölüm vardır; sekme çubuğu ve Ölçü başlığı çıkmaz.
+  await expect(page.locator('.selection-property-tabs')).toBeHidden();
   await expect(page.locator('.selection-property-panel .selection-property-fields')).toContainText('Zemin kaplaması');
   await expect(coverage).toHaveValue(await page.locator('#floor-type').inputValue());
   await coverage.selectOption('hali');
   await expect(page.locator('#floor-type')).toHaveValue('hali');
+});
+
+test('panel sekmeleri: işlemler üstte sabit, son sekme hatırlanır, klavye ile geçilir, yalnız sekme içi kayar', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await createBackWallStand(page);
+  const points = await panelPoints(page);
+  const modules = [...new Set(points.map((point) => point.moduleId))];
+  const first = points.find((point) => point.moduleId === modules[0]);
+  const second = points.find((point) => point.moduleId === modules[1]);
+  const panel = page.getByRole('complementary', { name: 'Özellikler' });
+  const tabs = panel.getByRole('tablist', { name: 'Özellik bölümleri' });
+  const tab = (name) => tabs.getByRole('tab', { name, exact: true });
+  const copy = panel.getByRole('button', { name: 'Kopyala', exact: true });
+
+  await page.mouse.click(first.x, first.y);
+  // Sekmeler Item'a göre adlanır; duvar panelinde genişlik, görsel ve panel türü vardır.
+  await expect(tabs.getByRole('tab')).toHaveText(['Genişlik', 'Görsel & Renk', 'Panel Türü']);
+  await expect(tab('Genişlik')).toHaveAttribute('aria-selected', 'true');
+  await expect(copy).toBeVisible();
+  // Duvar zinciri kilitli gelir: Sil gizli, kilit düğmesi görünür.
+  await expect(panel.locator('[data-module-action="toggle-lock"]')).toBeVisible();
+  // Döndürme hızlı işlemlerin altında, sekmelerin üstündedir; sekme değişince kaybolmaz.
+  const rotation = panel.locator('.selection-rotation-controls');
+  await expect(rotation).toBeVisible();
+  expect((await rotation.boundingBox()).y).toBeGreaterThan((await copy.boundingBox()).y);
+  expect((await tabs.boundingBox()).y).toBeGreaterThan((await rotation.boundingBox()).y);
+  await expect(panel.locator('#apply-color')).toBeHidden();
+
+  await tab('Görsel & Renk').click();
+  await expect(panel.locator('#apply-color')).toBeVisible();
+  await expect(rotation).toBeVisible();
+  await expect(copy).toBeVisible();
+
+  // Başka yüzey seçilince son sekme açık kalır.
+  await page.mouse.click(second.x, second.y);
+  await expect(tab('Görsel & Renk')).toHaveAttribute('aria-selected', 'true');
+  await expect(panel.locator('#apply-color')).toBeVisible();
+
+  await tab('Görsel & Renk').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(tab('Panel Türü')).toHaveAttribute('aria-selected', 'true');
+  await expect(tab('Panel Türü')).toBeFocused();
+  await expect(panel.locator('[data-module-action="toggle-glass"]')).toBeVisible();
+  await page.keyboard.press('Home');
+  await expect(tab('Genişlik')).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
+  await expect(tab('Panel Türü')).toHaveAttribute('aria-selected', 'true');
+
+  // Alçak pencerede bile hızlı işlemler yerinde kalır; yalnız sekme içeriği kayar.
+  await tab('Görsel & Renk').click();
+  await page.setViewportSize({ width: 1280, height: 600 });
+  const pane = panel.locator('#selection-pane-look');
+  const before = await copy.boundingBox();
+  const scrolled = await pane.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+    return { top: element.scrollTop, panelTop: element.closest('.selection-property-panel').scrollTop };
+  });
+  expect(scrolled.top).toBeGreaterThan(0);
+  expect(scrolled.panelTop).toBe(0);
+  expect((await copy.boundingBox()).y).toBe(before.y);
+  expect(errors).toEqual([]);
 });

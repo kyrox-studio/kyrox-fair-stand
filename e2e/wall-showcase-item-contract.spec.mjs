@@ -3,6 +3,7 @@ import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/mo
 import { dropCatalogCard } from './helpers/catalogDrop.mjs';
 import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
@@ -149,6 +150,7 @@ for (const itemKey of ['wall_showcase_100_2_350', 'wall_showcase_100_3_350']) {
     await page.mouse.click(point.x, point.y);
     const panel = page.getByRole('complementary', { name: 'Özellikler' });
     await expect(panel.locator('#selection-info')).toContainText('vitrin gövdesi · 4 sunta birlikte renklendirilir');
+    await openPanelTab(page, 'look');
     await expect(panel.locator('#color-hex')).toBeVisible();
     await expect(panel.locator('#surface-image-controls')).toBeHidden();
     // Kısa pencerede uzun açıklama ne kırpılır ne de işlem satırına biner.

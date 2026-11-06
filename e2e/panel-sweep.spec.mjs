@@ -1,6 +1,7 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
 import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 // Tablette çoklu panel: seçim çubuğunda "Çoklu panel"e basıp parmağı bir panelden diğerine
 // kaydırmak, Ctrl + tık ile aynı dikdörtgeni seçer (komşu modüller ve köşe dahil). Tek seferliktir.
@@ -138,8 +139,9 @@ test('finger sweep selects the middle two rows across three wall modules and con
   await expect(page.locator('.viewport-wrap')).not.toHaveClass(/multi-select-panel/);
 
   // Tarama bitince Özellikler paneli açılır.
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await expect(menu).toBeVisible();
+  await openPanelTab(page, 'more');
   await menu.locator('[data-module-action="toggle-fabric"]').click();
 
   // 6 panel tek Lightbox grubunda; diğer paneller dokunulmadı.

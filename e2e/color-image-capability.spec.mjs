@@ -149,3 +149,33 @@ test('katalog image-capable wall ve non-image TV kartlarını birlikte sunar', a
   }
   expect(pageErrors).toEqual([]);
 });
+
+test('arşivde tek tık görseli seçer, çift tık Doldur ile uygular', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await createStand(page, 'Sırt Duvar', 'E2E Image Double Click');
+  await openSurfacePanel(page);
+  await page.locator('#surface-image').setInputFiles({
+    name: 'e2e-fill.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  });
+  const tile = page.locator('button.asset-tile');
+  await expect(tile).toHaveCount(1);
+  await showSurfaceControls(page, 'image');
+  await page.locator('#clear-texture').click();
+  const selectionInfo = page.locator('#selection-info');
+  const clearedText = await selectionInfo.textContent();
+
+  await tile.click();
+  await expect(tile).toHaveClass(/active/);
+  await expect(selectionInfo).toHaveText(clearedText);
+
+  await tile.dblclick();
+  await expect(selectionInfo).toHaveText('Görsel seçili panele uygulandı · Doldur.');
+  await expect(tile).toHaveCount(1);
+  expect(pageErrors).toEqual([]);
+});

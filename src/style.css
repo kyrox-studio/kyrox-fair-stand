@@ -716,9 +716,128 @@ button.asset-tile > span {
   display: none;
 }
 
-/* Uzun açıklama ve işlem listesi sıkışmaz; panel kendi içinde kayar. */
+/* Üst kısım sıkışmaz; uzun içerik yalnız açık sekmede kayar. */
 .selection-property-panel > * {
   flex-shrink: 0;
+}
+
+.selection-property-panel > .selection-property-actions {
+  display: flex;
+  min-height: 0;
+  flex: 0 1 auto;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selection-property-actions[hidden] {
+  display: none;
+}
+
+.selection-property-panel .selection-quick-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.selection-property-panel .selection-quick-actions[hidden] {
+  display: none;
+}
+
+.selection-property-panel .selection-quick-actions button {
+  flex: 1 1 54px;
+  width: auto;
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 6px;
+  border: 1px solid #dbe3ed;
+  border-radius: 6px;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.selection-property-panel .selection-quick-actions button.danger {
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
+.selection-property-panel .selection-quick-actions button[data-module-action]::before {
+  content: none;
+}
+
+.selection-property-tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  border-bottom: 1px solid #e5e9ef;
+}
+
+.selection-property-tabs[hidden] {
+  display: none;
+}
+
+.selection-property-tabs button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 34px;
+  margin-bottom: -1px;
+  padding: 4px 6px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.selection-property-tabs button:hover {
+  transform: none;
+  color: #1e293b;
+}
+
+.selection-property-tabs button[aria-selected="true"] {
+  border-bottom-color: #1e3a5f;
+  color: #1e3a5f;
+}
+
+.selection-property-tabs button:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: -2px;
+}
+
+.selection-property-pane {
+  display: flex;
+  min-height: 0;
+  flex: 0 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.selection-property-pane[hidden] {
+  display: none;
+}
+
+.selection-property-pane > * {
+  flex-shrink: 0;
+}
+
+.selection-property-pane > .is-first {
+  order: -1;
+}
+
+.selection-rotation-host .selection-rotation-controls {
+  margin: 0;
+  border-block: 0;
+}
+
+/* Alçak ekranda açık sekme iyice daralmasın; bütün panel kayar. */
+@media (max-height: 520px) {
+  .selection-property-panel > .selection-property-actions { flex-shrink: 0; }
+  .selection-property-pane { overflow: visible; }
 }
 
 .selection-property-header {
@@ -847,8 +966,6 @@ button.asset-tile > span {
 .selection-property-panel .selection-rotation-buttons button:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
 .selection-property-panel .module-context-menu .selection-copy-action { min-height: 32px; border: 1px solid #dbe3ed; border-radius: 6px; background: #f8fafc; text-align: center; }
 .selection-property-panel .module-context-menu .selection-delete-action { min-height: 32px; margin-top: 0; border: 1px solid #fecaca; border-radius: 6px; background: #fff1f2; color: #9f1239; text-align: center; }
-.selection-primary-actions { display: flex; gap: 8px; }
-.selection-primary-actions > button { flex: 1; min-width: 0; }
 .selection-property-panel .module-context-menu button.is-locked:not([hidden]) {
   display: block;
   border: 1px solid #f5c876;
@@ -1080,6 +1197,8 @@ button.asset-tile > span {
 @media (pointer: coarse) {
   .selection-property-panel .selection-property-close,
   .selection-property-panel .selection-rotation-buttons button,
+  .selection-property-panel .selection-quick-actions button,
+  .selection-property-tabs button,
   .selection-property-panel .module-context-menu .selection-copy-action,
   .selection-property-panel .module-context-menu .selection-delete-action { min-height: 44px; }
 }

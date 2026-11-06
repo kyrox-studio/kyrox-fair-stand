@@ -19,6 +19,8 @@ export function resolveModuleSidePlacement(context, visualSide) {
   return visualSide === 'left' ? 'right' : 'left';
 }
 
+const PANEL_TABS = Object.freeze(['size', 'look', 'more', 'group']);
+
 export function createModuleContextMenu({
   onClearSelection,
   onDelete,
@@ -74,57 +76,68 @@ export function createModuleContextMenu({
     </div>
     <p class="selection-property-note" hidden></p>
     <p class="selection-property-empty" hidden>Seçim yok. Sahnede bir yüzey veya öğe seçin.</p>
-    <div class="selection-property-variants" hidden></div>
-    <div class="selection-property-fields" hidden></div>
-    <div class="selection-property-image-size" hidden></div>
-    <div class="selection-property-surface" hidden>
-      <p class="selection-property-surface-note" aria-live="polite"></p>
-      <div class="selection-property-surface-slot"></div>
-    </div>
   `;
   const menu = document.createElement('div');
-  menu.className = 'module-context-menu';
-  menu.setAttribute('role', 'menu');
+  menu.className = 'selection-property-actions';
+  menu.setAttribute('role', 'group');
   menu.setAttribute('aria-label', 'Modül işlemleri');
   menu.innerHTML = `
     <div class="module-context-title"></div>
     <div class="module-context-scope" hidden></div>
-    <button type="button" role="menuitem" data-module-action="group-create" hidden>Grup oluştur…</button>
-    <button type="button" role="menuitem" data-module-action="group-add" hidden>Gruba ekle</button>
-    <button type="button" role="menuitem" data-module-action="group-rename" hidden>Grubu yeniden adlandır…</button>
-    <button type="button" role="menuitem" data-module-action="group-lock" hidden>Grubu kilitle</button>
-    <button type="button" role="menuitem" data-module-action="group-duplicate" hidden>Grubu çoğalt</button>
-    <button type="button" role="menuitem" data-module-action="group-remove-member" hidden>Bu parçayı gruptan çıkar</button>
-    <button type="button" role="menuitem" data-module-action="group-dissolve" hidden>Grubu çöz</button>
-    <button type="button" role="menuitem" data-module-action="group-dissolve-selection" hidden>Seçilen grupları çöz</button>
-    <button type="button" role="menuitem" data-module-action="group-delete" class="danger" hidden>Grubu sil</button>
-    <div class="module-context-separator module-context-group-separator" hidden></div>
-    <button type="button" role="menuitem" data-module-action="toggle-lock">Kilitle</button>
-    <button type="button" role="menuitem" data-module-action="lock-selection" hidden>Seçilenleri kilitle</button>
-    <button type="button" role="menuitem" data-module-action="unlock-selection" hidden>Seçilenlerin kilidini aç</button>
-    <div class="selection-rotation-controls" role="group" aria-label="Döndür">
-      <div class="selection-rotation-heading"><span>Döndürme — <output class="selection-rotation-value" aria-label="Mevcut açı" aria-live="polite"></output></span></div>
-      <div class="selection-rotation-buttons">
-        ${[-45, -15, 15, 45].map((angle) => `<button type="button" role="menuitem" data-module-action="rotate" data-rotation-delta="${angle}" aria-label="${angle < 0 ? 'Sola' : 'Sağa'} ${Math.abs(angle)} derece döndür">${angle > 0 ? '+' : '−'}${Math.abs(angle)}°</button>`).join('')}
+    <div class="selection-quick-actions module-context-menu">
+      <button type="button" data-module-action="duplicate" class="selection-copy-action">Kopyala</button>
+      <button type="button" data-module-action="delete" class="danger selection-delete-action">Sil</button>
+      <button type="button" data-module-action="toggle-lock">Kilitle</button>
+      <button type="button" data-module-action="lock-selection" hidden>Seçilenleri kilitle</button>
+      <button type="button" data-module-action="unlock-selection" hidden>Seçilenlerin kilidini aç</button>
+      <button type="button" data-module-action="add">Ekle…</button>
+    </div>
+    <div class="module-context-menu selection-rotation-host">
+      <div class="selection-rotation-controls" role="group" aria-label="Döndür">
+        <div class="selection-rotation-heading"><span>Döndürme — <output class="selection-rotation-value" aria-label="Mevcut açı" aria-live="polite"></output></span></div>
+        <div class="selection-rotation-buttons">
+          ${[-45, -15, 15, 45].map((angle) => `<button type="button" data-module-action="rotate" data-rotation-delta="${angle}" aria-label="${angle < 0 ? 'Sola' : 'Sağa'} ${Math.abs(angle)} derece döndür">${angle > 0 ? '+' : '−'}${Math.abs(angle)}°</button>`).join('')}
+        </div>
       </div>
     </div>
-    <div class="selection-primary-actions">
-      <button type="button" role="menuitem" data-module-action="duplicate" class="selection-copy-action">Kopyala</button>
-      <button type="button" role="menuitem" data-module-action="delete" class="danger selection-delete-action">Sil</button>
+    <div class="selection-property-tabs" role="tablist" aria-label="Özellik bölümleri">
+      ${PANEL_TABS.map((key) => `<button type="button" role="tab" id="selection-tab-${key}" data-panel-tab="${key}" aria-controls="selection-pane-${key}"></button>`).join('')}
     </div>
-    <div class="module-context-separator"></div>
-    <button type="button" role="menuitem" data-module-action="toggle-shelf-light" hidden>Raf altı aydınlatmayı aç</button>
-    <button type="button" role="menuitem" data-module-action="toggle-back-panels" hidden>Arka yüze panel ekle</button>
-    <button type="button" role="menuitem" data-module-action="add">Ekle…</button>
-    <div class="module-context-advanced" hidden>
-      <button type="button" role="menuitem" data-module-action="toggle-glass" hidden>Cam Panele Çevir</button>
-      <button type="button" role="menuitem" data-module-action="toggle-metal-separator" hidden>Metal Separatöre Çevir</button>
-      <button type="button" role="menuitem" data-module-action="toggle-fabric" hidden>Lightbox Kumaşa Çevir</button>
-      <button type="button" role="menuitem" data-module-action="toggle-mesh" hidden>Mesh (Delikli) Brandaya Çevir</button>
-      <button type="button" role="menuitem" data-module-action="toggle-fabric-light" hidden>Lightbox aydınlatmayı aç</button>
+    <div class="selection-property-pane" id="selection-pane-size" role="tabpanel" aria-labelledby="selection-tab-size" data-panel-pane="size">
+      <div class="selection-property-variants" hidden></div>
+      <div class="selection-property-fields" hidden></div>
+    </div>
+    <div class="selection-property-pane" id="selection-pane-look" role="tabpanel" aria-labelledby="selection-tab-look" data-panel-pane="look">
+      <div class="selection-property-surface" hidden>
+        <p class="selection-property-surface-note" aria-live="polite"></p>
+        <div class="selection-property-surface-slot"></div>
+      </div>
+      <div class="selection-property-image-size" hidden></div>
+    </div>
+    <div class="selection-property-pane module-context-menu" id="selection-pane-more" role="tabpanel" aria-labelledby="selection-tab-more" data-panel-pane="more">
+      <button type="button" data-module-action="toggle-shelf-light" hidden>Raf altı aydınlatmayı aç</button>
+      <button type="button" data-module-action="toggle-back-panels" hidden>Arka yüze panel ekle</button>
+      <div class="module-context-advanced" hidden>
+        <button type="button" data-module-action="toggle-glass" hidden>Cam Panele Çevir</button>
+        <button type="button" data-module-action="toggle-metal-separator" hidden>Metal Separatöre Çevir</button>
+        <button type="button" data-module-action="toggle-fabric" hidden>Lightbox Kumaşa Çevir</button>
+        <button type="button" data-module-action="toggle-mesh" hidden>Mesh (Delikli) Brandaya Çevir</button>
+        <button type="button" data-module-action="toggle-fabric-light" hidden>Lightbox aydınlatmayı aç</button>
+      </div>
+    </div>
+    <div class="selection-property-pane module-context-menu" id="selection-pane-group" role="tabpanel" aria-labelledby="selection-tab-group" data-panel-pane="group">
+      <button type="button" data-module-action="group-create" hidden>Grup oluştur…</button>
+      <button type="button" data-module-action="group-add" hidden>Gruba ekle</button>
+      <button type="button" data-module-action="group-rename" hidden>Grubu yeniden adlandır…</button>
+      <button type="button" data-module-action="group-lock" hidden>Grubu kilitle</button>
+      <button type="button" data-module-action="group-duplicate" hidden>Grubu çoğalt</button>
+      <button type="button" data-module-action="group-remove-member" hidden>Bu parçayı gruptan çıkar</button>
+      <button type="button" data-module-action="group-dissolve" hidden>Grubu çöz</button>
+      <button type="button" data-module-action="group-dissolve-selection" hidden>Seçilen grupları çöz</button>
+      <button type="button" data-module-action="group-delete" class="danger" hidden>Grubu sil</button>
     </div>
   `;
-  panel.insertBefore(menu, panel.querySelector('.selection-property-surface'));
+  panel.appendChild(menu);
   (document.querySelector('.viewport-wrap') ?? document.body).appendChild(panel);
   // Panel etkileşimi sahne / kamera dinleyicilerine geçmez.
   ['pointerdown', 'wheel', 'touchstart'].forEach((type) => {
@@ -142,6 +155,7 @@ export function createModuleContextMenu({
   const imageSizeSection = panel.querySelector('.selection-property-image-size');
   const variantSection = panel.querySelector('.selection-property-variants');
   let variantContext = null;
+  let variantTabLabel = null;
 
   const pickerBackdrop = document.createElement('div');
   pickerBackdrop.className = 'module-picker-backdrop';
@@ -188,12 +202,103 @@ export function createModuleContextMenu({
   const rotationControls = menu.querySelector('.selection-rotation-controls');
   const rotationValue = menu.querySelector('.selection-rotation-value');
   const duplicateButton = menu.querySelector('[data-module-action="duplicate"]');
-  const separator = menu.querySelector('.module-context-separator:not(.module-context-group-separator)');
-  const groupSeparator = menu.querySelector('.module-context-group-separator');
   // Panel dönüşümleri (Cam, Metal Separatör, Lightbox, Mesh) ayrı bir açılır sekme olmadan
   // listede doğrudan görünür; desteklenen dönüşüm yoksa bölüm gizlenir.
   const advancedSection = menu.querySelector('.module-context-advanced');
   const advancedButtons = [...advancedSection.querySelectorAll('[data-module-action]')];
+
+  // Sekmeler seçilen Item'dan çıkar: adı Item'ın alanlarından gelir, içeriği olmayan sekme
+  // görünmez, tek sekme kalınca çubuk gizlenir. Son seçilen tür hatırlanır; yeni seçimde yoksa
+  // ilk uygun sekme açılır, tercih silinmez.
+  const quickActions = menu.querySelector('.selection-quick-actions');
+  const tabList = menu.querySelector('.selection-property-tabs');
+  const tabButtons = [...tabList.querySelectorAll('[data-panel-tab]')];
+  const tabPanes = Object.fromEntries(
+    [...menu.querySelectorAll('[data-panel-pane]')].map((pane) => [pane.dataset.panelPane, pane]),
+  );
+  let preferredTab = PANEL_TABS[0];
+  let lastTabContext = [null, null];
+  let tabLabels = {};
+
+  function isTabAvailable(key) {
+    const pane = tabPanes[key];
+    if (key === 'more' || key === 'group') {
+      return [...pane.querySelectorAll('[data-module-action]')].some((button) => !button.hidden);
+    }
+    return [...pane.children].some((child) => !child.hidden);
+  }
+
+  function describeLookLabel(context) {
+    if ((context?.moduleType ?? context?.type) === 'illuminated-foam') return 'Logo';
+    const support = context?.surfaceSummary?.support;
+    const hasColor = Boolean(support) && support.color !== 'none';
+    const hasImage = Boolean(support) && support.image !== 'none';
+    if (hasColor && hasImage) return 'Görsel & Renk';
+    if (hasColor) return 'Renk';
+    return hasImage ? 'Görsel' : 'Görünüm';
+  }
+
+  function describeMoreLabel() {
+    const panelActions = [...tabPanes.more.querySelectorAll('[data-module-action]')]
+      .filter((button) => !button.hidden && button !== shelfLightingButton);
+    return !shelfLightingButton.hidden && !panelActions.length ? 'Aydınlatma' : 'Panel Türü';
+  }
+
+  function syncTabs(context = null, sizeLabel = null) {
+    quickActions.hidden = ![...quickActions.children].some((button) => !button.hidden);
+    tabLabels = {
+      size: sizeLabel ?? 'Ölçü',
+      look: describeLookLabel(context),
+      more: describeMoreLabel(),
+      group: 'Grup',
+    };
+    const available = PANEL_TABS.filter(isTabAvailable);
+    const active = available.includes(preferredTab) ? preferredTab : (available[0] ?? null);
+    tabList.hidden = available.length < 2;
+    tabButtons.forEach((button) => {
+      const { panelTab: key } = button.dataset;
+      const selected = key === active;
+      button.textContent = tabLabels[key];
+      button.hidden = !available.includes(key);
+      button.setAttribute('aria-selected', String(selected));
+      button.tabIndex = selected ? 0 : -1;
+    });
+    Object.entries(tabPanes).forEach(([key, pane]) => { pane.hidden = key !== active; });
+    lastTabContext = [context, sizeLabel];
+  }
+
+  // Görsel ölçüsü ve zemin kaplaması ölçü sekmesine değil görünüme aittir.
+  function placeDimensionFields(spec) {
+    const target = spec?.panelTab === 'look' ? tabPanes.look : tabPanes.size;
+    if (fieldsSection.parentNode !== target) target.appendChild(fieldsSection);
+    fieldsSection.classList.toggle('is-first', spec?.panelFirst === true);
+  }
+
+  function selectTab(key, { focus = false } = {}) {
+    preferredTab = key;
+    syncTabs(...lastTabContext);
+    tabPanes[key].scrollTop = 0;
+    if (focus) tabButtons.find((button) => button.dataset.panelTab === key)?.focus();
+  }
+
+  tabList.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-panel-tab]');
+    if (button) selectTab(button.dataset.panelTab);
+  });
+  tabList.addEventListener('keydown', (event) => {
+    const visible = tabButtons.filter((button) => !button.hidden);
+    const index = visible.indexOf(event.target);
+    if (index < 0) return;
+    const next = {
+      ArrowRight: visible[(index + 1) % visible.length],
+      ArrowLeft: visible[(index - 1 + visible.length) % visible.length],
+      Home: visible[0],
+      End: visible[visible.length - 1],
+    }[event.key];
+    if (!next) return;
+    event.preventDefault();
+    selectTab(next.dataset.panelTab, { focus: true });
+  });
 
   function syncAdvancedSection() {
     advancedSection.hidden = !advancedButtons.some((button) => !button.hidden);
@@ -216,7 +321,6 @@ export function createModuleContextMenu({
       button.hidden = true;
       setDisabled(button, false);
     });
-    groupSeparator.hidden = true;
   }
 
   // Tek öğe: öğe bir gruptaysa grup komutları en üstte gösterilir.
@@ -229,7 +333,6 @@ export function createModuleContextMenu({
     groupButtons['group-lock'].textContent = locked ? 'Grubun kilidini aç' : 'Grubu kilitle';
     ['group-remove-member', 'group-dissolve', 'group-delete']
       .forEach((action) => setDisabled(groupButtons[action], locked, GROUP_LOCKED_HINT));
-    groupSeparator.hidden = false;
   }
 
   // Toplu seçim: grup kurma ve tek bir gruba ekleme.
@@ -245,7 +348,6 @@ export function createModuleContextMenu({
       groupButtons['group-add'].textContent = `Gruba ekle: ${target.name}`;
       setDisabled(groupButtons['group-add'], target.locked === true, GROUP_LOCKED_HINT);
     }
-    groupSeparator.hidden = groupButtons['group-create'].hidden && groupButtons['group-add'].hidden && groupButtons['group-dissolve-selection'].hidden;
   }
 
   // Toplu seçim menüsü: yalnız toplu kilit komutları; tek öğe komutları gizlenir.
@@ -259,7 +361,6 @@ export function createModuleContextMenu({
     [...menu.querySelectorAll('[data-module-action]')].forEach((button) => {
       button.hidden = true;
     });
-    separator.hidden = true;
     syncAdvancedSection();
     lockSelectionButton.hidden = lockedCount >= ids.length;
     unlockSelectionButton.hidden = lockedCount === 0;
@@ -449,10 +550,16 @@ export function createModuleContextMenu({
 
   // Zemin: öğe işlemi yoktur; yalnız zeminin desteklediği renk gösterilir.
   function renderFloor(context) {
+    placeDimensionFields(context.fields);
     rotationControls.hidden = true;
     activeContext = null;
     emptyHint.hidden = true;
-    menu.hidden = true;
+    menu.hidden = false;
+    menu.querySelectorAll('[data-module-action]').forEach((button) => { button.hidden = true; });
+    hideGroupButtons();
+    syncAdvancedSection();
+    title.textContent = '';
+    scopeLine.hidden = true;
     lockNote.hidden = true;
     renderVariantChoices(null);
     renderDimensionFields(context);
@@ -460,6 +567,7 @@ export function createModuleContextMenu({
     heading.textContent = context.title;
     subheading.textContent = context.subtitle ?? '';
     subheading.hidden = !context.subtitle;
+    syncTabs(context);
   }
 
   function render(context) {
@@ -480,9 +588,14 @@ export function createModuleContextMenu({
       : [];
     lockNote.textContent = reasons.join(' ');
     lockNote.hidden = !reasons.length;
+    const multi = Array.isArray(context?.multiModuleIds) && context.multiModuleIds.length > 1;
+    const fieldSpec = context && !multi ? (getDimensionFields?.(context) ?? null) : null;
+    syncTabs(context, variantTabLabel ?? fieldSpec?.tabLabel ?? null);
   }
 
   function renderContext(context) {
+    const multi = Array.isArray(context?.multiModuleIds) && context.multiModuleIds.length > 1;
+    placeDimensionFields(context && !multi ? (getDimensionFields?.(context) ?? null) : null);
     activeContext = context;
     emptyHint.hidden = Boolean(context);
     menu.hidden = !context;
@@ -517,7 +630,6 @@ export function createModuleContextMenu({
     });
     duplicateButton.hidden = false;
     setDisabled(duplicateButton, false);
-    separator.hidden = false;
     const summary = context.surfaceSummary ?? null;
     const multiSurface = (summary?.count ?? 0) > 1;
     const panelSuffix = context.supportsGlass && Number.isInteger(context.stripNumber)
@@ -594,6 +706,7 @@ export function createModuleContextMenu({
     const multi = Array.isArray(context?.multiModuleIds) && context.multiModuleIds.length > 1;
     const spec = context && !multi ? (getVariantChoices?.(context) ?? null) : null;
     variantContext = spec ? context : null;
+    variantTabLabel = spec?.tabLabel ?? null;
     variantSection.hidden = !spec;
     if (!spec) {
       variantSection.replaceChildren();
@@ -840,6 +953,8 @@ export function createModuleContextMenu({
     homeNote.hidden = false;
     surfaceSection.hidden = false;
     const { color, image } = summary.support;
+    // Rengi ve görseli olmayan öğede boş bölüm ve sekme çıkmaz.
+    surfaceSection.hidden = color === 'none' && image === 'none';
     colorSection.hidden = color === 'none';
     imageSection.hidden = image === 'none';
     setSectionDisabled(colorSection, color === 'some');

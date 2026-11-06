@@ -167,7 +167,7 @@ test('kısa panel kartı tek; genişlik panelden seçilir, seçilen genişliğin
   expect(project.modules.map((module) => [module.itemKey, module.widthCm])).toEqual([['wall_200_short_1', 200]]);
 
   // Sağ tık başlığı seçilen genişliğin adını yazar.
-  const menu = page.getByRole('menu', { name: 'Modül işlemleri' });
+  const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   const placed = await moduleScreenPoint(page, project.modules[0].id);
   await page.mouse.click(placed.x, placed.y, { button: 'right' });
   await expect(menu.locator('.module-context-title')).toContainText('Panel Tek Sıra 200');
@@ -210,7 +210,7 @@ test('boy penceresinden gelen dikmede sağ tık başlığı dikmenin kendi adın
 
   const placed = await moduleScreenPoint(page, project.modules[0].id);
   await page.mouse.click(placed.x, placed.y, { button: 'right' });
-  const title = page.getByRole('menu', { name: 'Modül işlemleri' }).locator('.module-context-title');
+  const title = page.getByRole('group', { name: 'Modül işlemleri' }).locator('.module-context-title');
   await expect(title).toContainText(String(name));
   await expect(title).not.toContainText(' · Modül');
   expect(errors).toEqual([]);

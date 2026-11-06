@@ -115,7 +115,7 @@ test('first finger grabbing an item, then a second finger: item stays, camera zo
   const [after] = await fridges(page);
   expect(after.placement).toEqual(before.placement);
   expect(await cameraDistance(page)).toBeLessThan(distanceBefore * 0.97);
-  await expect(page.getByRole('menu', { name: 'Modül işlemleri' })).toBeHidden();
+  await expect(page.getByRole('group', { name: 'Modül işlemleri' })).toBeHidden();
   expect(errors).toEqual([]);
 });
 
