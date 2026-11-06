@@ -16,6 +16,8 @@ from app.modules.fair_stand.application.catalog_item_order import (
     next_append_catalog_index,
 )
 from app.modules.fair_stand.infrastructure.models import (
+    FairStandBoothTypeModel,
+    FairStandItemBoothTypeModel,
     FairStandItemAssemblyPartModel,
     FairStandItemAssetModel,
     FairStandItemBodyPartModel,
@@ -223,6 +225,7 @@ def _integrity_error_message(exc: IntegrityError) -> str:
 
 def _item_load_options():
     return (
+        selectinload(FairStandItemModel.booth_type_links),
         selectinload(FairStandItemModel.dimensions),
         selectinload(FairStandItemModel.scene_dimensions),
         selectinload(FairStandItemModel.strip_occupancy),
@@ -365,6 +368,7 @@ def _item_admin_payload(row: FairStandItemModel) -> dict:
         "eyeCount": int(row.eye_count) if row.eye_count is not None else None,
         "defaultZCm": _num(row.default_z_cm) if row.default_z_cm is not None else 0,
         "zReference": row.z_reference or "floor",
+        "boothTypeKeys": sorted(link.booth_type_key for link in row.booth_type_links) or None,
         "verticalMove": bool(row.vertical_move),
         "snapTargetItemType": row.snap_target_item_type,
         "snapAnchor": row.snap_anchor,
@@ -719,8 +723,23 @@ class AdminItemsService:
         except CatalogItemOrderError as exc:
             raise ItemAdminError(str(exc), status_code=exc.status_code) from exc
         self._apply_satellites(row, payload, replace=True)
+        self._apply_booth_types(row, payload.get("booth_type_keys"))
         self._flush()
         return self.get_item(item_key)
+
+    def _apply_booth_types(self, row: FairStandItemModel, raw_keys: object) -> None:
+        """Boş veya null = bütün stand tiplerinde görünür."""
+        if raw_keys is not None and not isinstance(raw_keys, list):
+            raise ItemAdminError("booth_type_keys liste olmalıdır.", status_code=422)
+        keys = {str(key) for key in raw_keys or []}
+        known = set(self._session.scalars(select(FairStandBoothTypeModel.booth_type_key)).all())
+        unknown = sorted(keys - known)
+        if unknown:
+            raise ItemAdminError(f"Bilinmeyen stand tipi: {', '.join(unknown)}", status_code=422)
+        row.booth_type_links = [
+            FairStandItemBoothTypeModel(item_key=row.item_key, booth_type_key=key)
+            for key in sorted(keys)
+        ]
 
     def update_item(self, item_key: str, payload: dict) -> dict:
         row = self._get(item_key)
@@ -848,6 +867,8 @@ class AdminItemsService:
                 setattr(row, field, value)
 
         self._apply_satellites(row, payload, replace=True)
+        if "booth_type_keys" in payload:
+            self._apply_booth_types(row, payload.get("booth_type_keys"))
         row.updated_at = _now()
         self._flush()
         return self.get_item(item_key)
@@ -942,6 +963,10 @@ class AdminItemsService:
             raise ItemAdminError(str(exc), status_code=exc.status_code) from exc
 
         self._clone_satellites(source, clone)
+        clone.booth_type_links = [
+            FairStandItemBoothTypeModel(item_key=clone.item_key, booth_type_key=link.booth_type_key)
+            for link in source.booth_type_links
+        ]
         self._flush()
         return self.get_item(item_key)
 

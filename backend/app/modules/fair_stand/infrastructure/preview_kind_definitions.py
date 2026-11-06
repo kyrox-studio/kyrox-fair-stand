@@ -113,6 +113,7 @@ PREVIEW_KIND_DEFINITIONS: tuple[dict[str, object], ...] = (
     },
     {"preview_key": "floor-showcase", "display_name": "Ayaklı vitrin", "sort_index": 29, "markup": _simple("module-drag-floor-showcase")},
     {"preview_key": "brochure-stand", "display_name": "Broşürlük", "sort_index": 30, "markup": _simple("module-drag-brochure-stand")},
+    {"preview_key": "illuminated-foam", "display_name": "Işıklı Strafor", "sort_index": 31, "markup": _simple("module-drag-foam-logo")},
 )
 
 

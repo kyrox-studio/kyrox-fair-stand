@@ -55,6 +55,8 @@ def map_item(row) -> ItemAggregate:
         "catalogVisible": row.catalog_visible,
         "categoryId": int(row.category_id) if row.category_id is not None else None,
         "catalogItemIndex": row.catalog_item_index,
+        # null = bütün stand tiplerinde görünür.
+        "boothTypeKeys": sorted(link.booth_type_key for link in row.booth_type_links) or None,
     }
     if row.unit is not None:
         payload["unit"] = row.unit

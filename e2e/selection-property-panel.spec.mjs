@@ -209,7 +209,7 @@ test('çoklu modül seçiliyken zemine tıklamak bütün seçim çerçevelerini 
   await expect(page.locator('.selection-toolbar')).toBeHidden();
   await expect.poll(() => visibleSelectionFrames(page)).toEqual({ modules: 0, group: false });
 
-  // Zemin panelinde Stand Tipi'ndeki kaplama listesi; seçim zemine uygulanır.
+  // Zemin panelinde Yerleşim kartındaki kaplama listesi; seçim zemine uygulanır.
   const coverage = page.locator('.selection-property-panel .selection-property-fields select');
   await expect(page.locator('.selection-property-panel .selection-property-fields')).toContainText('Zemin kaplaması');
   await expect(coverage).toHaveValue(await page.locator('#floor-type').inputValue());

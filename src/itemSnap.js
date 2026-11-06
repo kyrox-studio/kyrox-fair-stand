@@ -121,7 +121,12 @@ export function resolveVirtualTopRailZCm(host, provider) {
   const heightShiftCm = baseItem
     ? Number(hostItem.sceneDimensions?.heightCm) - Number(baseItem.sceneDimensions?.heightCm)
     : 0;
-  const railTop = resolveItemDefaultZCm(provider) + providerHeightCm(provider) + (Number.isFinite(heightShiftCm) ? heightShiftCm : 0);
+  // wall-top parçada resolveItemDefaultZCm farkı zaten ekler; fark iki kez eklenmesin diye DB değeri okunur.
+  const providerDefaultZCm = Number(provider.defaultZCm);
+  const providerBaseZCm = provider.zReference === 'wall-top' && Number.isFinite(providerDefaultZCm)
+    ? providerDefaultZCm
+    : resolveItemDefaultZCm(provider);
+  const railTop = providerBaseZCm + providerHeightCm(provider) + (Number.isFinite(heightShiftCm) ? heightShiftCm : 0);
   if (!Number.isFinite(railTop)) return hostTop;
   const hostBottom = hostZ;
   if (railTop >= hostBottom - 0.5 && railTop <= hostTop + 0.5) return railTop;

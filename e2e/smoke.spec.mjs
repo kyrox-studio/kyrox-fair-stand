@@ -6,7 +6,7 @@ test('user can create an island stand through the real browser UI', async ({ pag
 
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: 'Maxima Konfigüratörü' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Maksima Stand Yapılandırması' })).toBeVisible();
   await expect(page.locator('#viewport-empty')).toBeVisible();
 
   const standSetup = page.locator('details.stand-setup-card');

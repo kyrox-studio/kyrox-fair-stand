@@ -112,7 +112,7 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     assert all("innerCorner" not in item.get("composition", {}) for item in body["items"])
     assert "FairStandItemModel" not in body
     assert "SQLAlchemy" not in body
-    assert len(body["previewKinds"]) == 30
+    assert len(body["previewKinds"]) == 31
     assert body["standDimensions"] == {
         "heightCm": 350.0,
         "depthCm": 10.0,

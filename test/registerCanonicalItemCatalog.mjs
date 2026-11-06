@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { initializeBoothTypes } from '../src/boothTypes.js';
 import { initializeCatalogCategories, initializeCatalogPreviews } from '../src/catalog.js';
 import { initializeItemRegistry, initializeItemTypeRegistry, initializeSnapRuleRegistry } from '../src/items.js';
 import { initializeRuntimeSettings } from '../src/runtimeSettings.js';
@@ -11,6 +12,7 @@ const snapshot = mapCatalogSeedToBootstrap(seed);
 export function loadCanonicalItemCatalog() {
   initializeStandDimensions(snapshot.standDimensions);
   initializeRuntimeSettings(snapshot.settings);
+  initializeBoothTypes(snapshot.boothTypes);
   initializeCatalogCategories(snapshot.categories);
   initializeCatalogPreviews(snapshot.previewKinds);
   initializeSnapRuleRegistry(snapshot.rules ?? []);

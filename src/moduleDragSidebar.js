@@ -70,7 +70,8 @@ export function createModuleDragSidebar({
   root.append(hint, groupsRoot);
   container.append(root);
 
-  const groupDefinitions = listCatalogGroups();
+  // Kartlar bir kez kurulur; açık stand tipine göre refreshBoothTypeFilter gizler.
+  const groupDefinitions = listCatalogGroups({ allBoothTypes: true });
 
   const groupGridByKey = new Map();
   groupDefinitions.forEach((group) => {
@@ -368,7 +369,19 @@ export function createModuleDragSidebar({
     });
   }
 
+  function refreshBoothTypeFilter() {
+    const visibleKeys = new Set(listCatalogGroups().flatMap((group) => group.keys));
+    cards.forEach((card) => {
+      card.style.display = visibleKeys.has(card.dataset.moduleKey) ? '' : 'none';
+    });
+    groupsRoot.querySelectorAll('.module-drag-group').forEach((details) => {
+      const hasCard = [...details.querySelectorAll('.module-drag-card')].some((card) => card.style.display !== 'none');
+      details.style.display = hasCard ? '' : 'none';
+    });
+  }
+
   return {
+    refreshBoothTypeFilter,
     setEnabled,
     armPlacement,
     cancelPlacement,

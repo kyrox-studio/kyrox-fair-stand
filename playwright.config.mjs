@@ -17,10 +17,10 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    // İlk kullanım ipuçları (onboardingTips) testlerde görülmüş sayılır; kendi testleri bunu temizler.
+    // İlk kullanım ipuçları görülmüş sayılır, sol menü sihirbaz arkasında açık kalır; kendi testleri bunları temizler.
     storageState: {
       cookies: [],
-      origins: [{ origin: 'http://127.0.0.1:4173', localStorage: [{ name: 'fairStandTipsSeen', value: '1' }] }],
+      origins: [{ origin: 'http://127.0.0.1:4173', localStorage: [{ name: 'fairStandTipsSeen', value: '1' }, { name: 'fairStandWizardKeepSidebar', value: '1' }] }],
     },
   },
   webServer: {

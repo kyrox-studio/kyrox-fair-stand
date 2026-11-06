@@ -17,6 +17,7 @@ from app.modules.fair_stand.application.item_mapper import (
 )
 from app.modules.fair_stand.infrastructure.models import (
     FairStandCatalogPreviewKindModel,
+    FairStandBoothTypeModel,
     FairStandCategoryModel,
     FairStandDimensionsModel,
     FairStandItemModel,
@@ -34,6 +35,7 @@ class SqlAlchemyFairStandCatalogRepository:
 
     def _item_query(self):
         return select(FairStandItemModel).options(
+            selectinload(FairStandItemModel.booth_type_links),
             selectinload(FairStandItemModel.dimensions),
             selectinload(FairStandItemModel.scene_dimensions),
             selectinload(FairStandItemModel.strip_occupancy),
@@ -54,6 +56,15 @@ class SqlAlchemyFairStandCatalogRepository:
             select(FairStandUnitModel).order_by(FairStandUnitModel.unit_key, FairStandUnitModel.id)
         ).all()
         return [(row.unit_key, row.name) for row in rows]
+
+    def list_booth_types(self) -> list[dict]:
+        rows = self._session.scalars(
+            select(FairStandBoothTypeModel).order_by(FairStandBoothTypeModel.sort_index)
+        ).all()
+        return [
+            {"key": row.booth_type_key, "name": row.name, "active": bool(row.is_active)}
+            for row in rows
+        ]
 
     def list_active_categories(self) -> list[CatalogCategory]:
         rows = self._session.scalars(

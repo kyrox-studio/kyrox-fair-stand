@@ -118,6 +118,9 @@ CATALOG_SEED = {
         {
             "sort_index": 30,
         },
+        {
+            "sort_index": 31,
+        },
     ],
     "items": [
         {
@@ -3918,7 +3921,7 @@ CATALOG_SEED = {
             "catalog_visible": True,
             "category_index": 6,
             "catalog_item_index": 4,
-            "preview_id": 9,
+            "preview_id": 31,
             "material": None,
             "default_color": None,
             "preserve_model_scale": None,

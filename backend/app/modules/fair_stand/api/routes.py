@@ -238,6 +238,7 @@ def get_catalog_bootstrap(
             }
             for category in snapshot.categories
         ],
+        "boothTypes": snapshot.booth_types,
         "items": [item.payload for item in snapshot.items],
         "previewKinds": [_preview_kind_payload(preview) for preview in snapshot.preview_kinds],
         "itemTypes": snapshot.item_types,
@@ -260,6 +261,15 @@ def get_item(
     if item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
     return item.payload
+
+
+@router.get("/admin/booth-types")
+def admin_list_booth_types(
+    auth: AuthContext = Depends(require_permission(PERMISSION_CATALOG_READ)),
+    service: AdminCatalogService = Depends(get_admin_catalog_service),
+) -> list[dict[str, Any]]:
+    _ = auth
+    return service.list_booth_types()
 
 
 @router.get("/admin/categories")

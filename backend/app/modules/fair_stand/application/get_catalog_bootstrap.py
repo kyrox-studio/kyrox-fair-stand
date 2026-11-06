@@ -23,6 +23,7 @@ from app.modules.fair_stand.infrastructure.catalog_repository import SqlAlchemyF
 class CatalogBootstrap:
     revision: str
     categories: list[CatalogCategory]
+    booth_types: list[dict]
     items: list[ItemAggregate]
     preview_kinds: list[CatalogPreview]
     item_types: list[dict]
@@ -39,6 +40,7 @@ class GetCatalogBootstrapUseCase:
 
     def execute(self) -> CatalogBootstrap:
         categories = self._repository.list_active_categories()
+        booth_types = self._repository.list_booth_types()
         items = self._repository.list_items(active_only=True)
         preview_kinds = self._repository.list_preview_payloads(active_only=False)
         item_types = [
@@ -60,6 +62,7 @@ class GetCatalogBootstrapUseCase:
             dumps(
                 {
                     "categories": [category.__dict__ for category in categories],
+                    "boothTypes": booth_types,
                     "items": [item.payload for item in items],
                     "previewKinds": [preview.__dict__ for preview in preview_kinds],
                     "itemTypes": item_types,
@@ -76,6 +79,7 @@ class GetCatalogBootstrapUseCase:
         return CatalogBootstrap(
             revision=digest,
             categories=categories,
+            booth_types=booth_types,
             items=items,
             preview_kinds=preview_kinds,
             item_types=item_types,

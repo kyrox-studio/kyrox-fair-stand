@@ -1,8 +1,20 @@
+import { DEFAULT_BOOTH_TYPE } from './boothTypes.js';
 import { getItem, listRegisteredItems, resolveItemKey } from './items.js';
 import { getCatalogFamilyCardLabel, isCatalogWidthFamilyDescriptor } from './catalogWidthFamily.js';
 
 let catalogCategories = Object.freeze([]);
 let catalogPreviews = Object.freeze([]);
+let catalogBoothType = DEFAULT_BOOTH_TYPE;
+
+export function setCatalogBoothType(boothType) {
+  catalogBoothType = boothType;
+}
+
+/** Item'ın `boothTypeKeys` değeri null ise bütün stand tiplerinde görünür. */
+export function isItemInCatalogBoothType(item) {
+  const keys = item?.boothTypeKeys;
+  return !Array.isArray(keys) || keys.length === 0 || keys.includes(catalogBoothType);
+}
 
 function toCategoryId(value) {
   const id = Number(value);
@@ -113,7 +125,7 @@ export function getCatalogItem(itemKey) {
 export function listCatalogItems() {
   return Object.freeze(
     listRegisteredItems()
-      .filter((item) => item.catalogVisible === true)
+      .filter((item) => item.catalogVisible === true && isItemInCatalogBoothType(item))
       .sort((left, right) => {
         const leftCategory = getCatalogCategory(left.categoryId);
         const rightCategory = getCatalogCategory(right.categoryId);
@@ -125,12 +137,13 @@ export function listCatalogItems() {
   );
 }
 
-export function listCatalogGroups() {
+export function listCatalogGroups({ allBoothTypes = false } = {}) {
   const categories = listCatalogCategories();
   const membersById = new Map(categories.map((category) => [category.id, []]));
 
   for (const item of listRegisteredItems()) {
     if (item.catalogVisible !== true) continue;
+    if (!allBoothTypes && !isItemInCatalogBoothType(item)) continue;
     const bucket = membersById.get(toCategoryId(item.categoryId));
     if (!bucket) {
       throw new TypeError(
