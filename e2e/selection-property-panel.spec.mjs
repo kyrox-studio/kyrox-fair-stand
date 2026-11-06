@@ -236,7 +236,7 @@ test('panel sekmeleri: işlemler üstte sabit, son sekme hatırlanır, klavye il
 
   await page.mouse.click(first.x, first.y);
   // Sekmeler Item'a göre adlanır; duvar panelinde genişlik, görsel ve panel türü vardır.
-  await expect(tabs.getByRole('tab')).toHaveText(['Genişlik', 'Görsel & Renk', 'Panel Türü']);
+  await expect(tabs.getByRole('tab')).toHaveText(['Genişlik', 'Görsel', 'Tür']);
   await expect(tab('Genişlik')).toHaveAttribute('aria-selected', 'true');
   await expect(copy).toBeVisible();
   // Duvar zinciri kilitli gelir: Sil gizli, kilit düğmesi görünür.
@@ -248,32 +248,36 @@ test('panel sekmeleri: işlemler üstte sabit, son sekme hatırlanır, klavye il
   expect((await tabs.boundingBox()).y).toBeGreaterThan((await rotation.boundingBox()).y);
   await expect(panel.locator('#apply-color')).toBeHidden();
 
-  await tab('Görsel & Renk').click();
+  await tab('Görsel').click();
   await expect(panel.locator('#apply-color')).toBeVisible();
   await expect(rotation).toBeVisible();
   await expect(copy).toBeVisible();
 
   // Başka yüzey seçilince son sekme açık kalır.
   await page.mouse.click(second.x, second.y);
-  await expect(tab('Görsel & Renk')).toHaveAttribute('aria-selected', 'true');
+  await expect(tab('Görsel')).toHaveAttribute('aria-selected', 'true');
   await expect(panel.locator('#apply-color')).toBeVisible();
 
-  await tab('Görsel & Renk').focus();
+  await tab('Görsel').focus();
   await page.keyboard.press('ArrowRight');
-  await expect(tab('Panel Türü')).toHaveAttribute('aria-selected', 'true');
-  await expect(tab('Panel Türü')).toBeFocused();
+  await expect(tab('Tür')).toHaveAttribute('aria-selected', 'true');
+  await expect(tab('Tür')).toBeFocused();
   await expect(panel.locator('[data-module-action="toggle-glass"]')).toBeVisible();
   await page.keyboard.press('Home');
   await expect(tab('Genişlik')).toBeFocused();
   await page.keyboard.press('ArrowLeft');
-  await expect(tab('Panel Türü')).toHaveAttribute('aria-selected', 'true');
+  await expect(tab('Tür')).toHaveAttribute('aria-selected', 'true');
 
   // Alçak pencerede bile hızlı işlemler yerinde kalır; yalnız sekme içeriği kayar.
-  await tab('Görsel & Renk').click();
+  await tab('Görsel').click();
   await page.setViewportSize({ width: 1280, height: 600 });
   const pane = panel.locator('#selection-pane-look');
   const before = await copy.boundingBox();
   const scrolled = await pane.evaluate((element) => {
+    // Arşiv kalabalıkmış gibi içerik uzatılır; taşma yalnız sekmede kalmalı.
+    const filler = document.createElement('div');
+    filler.style.height = '1200px';
+    element.appendChild(filler);
     element.scrollTop = element.scrollHeight;
     return { top: element.scrollTop, panelTop: element.closest('.selection-property-panel').scrollTop };
   });

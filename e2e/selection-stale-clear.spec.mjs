@@ -86,7 +86,7 @@ test('normal tıklar önceki seçimi bırakmaz: banko, başka öğe, boş alan',
   await createStand(page);
   await dropCard(page, 'desk_banko_200', 0.45, 0.8);
   await chooseCatalogWidth(page, 'desk_banko_200');
-  await dropCard(page, 'base_100', 0.78, 0.92);
+  await dropCard(page, 'base_100', 0.64, 0.92);
   await chooseCatalogWidth(page, 'base_100');
   await expect.poll(async () => (await sceneState(page)).surfaces.filter((s) => s.moduleType === 'base').length).toBeGreaterThan(0);
 

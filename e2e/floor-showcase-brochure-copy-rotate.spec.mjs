@@ -194,7 +194,8 @@ test('vitrin ve broşürlük 1 adet üretilir; kopyada Shift+R yalnız kopyayı 
   await page.mouse.move(drop.x, drop.y);
   await expect(page.locator('.scene-measure-label.is-distance')).toHaveCount(4);
   // Köşeye yaslı hayalet: yaslı iki kenara uzaklık çizilmez (hayaletin çizim payı hesaba girmez).
-  const corner = await floorScreenPoint(page, 448, 478);
+  // Sol köşe: sağ köşe açık panelin altında kalır.
+  const corner = await floorScreenPoint(page, 52, 478);
   await page.mouse.move(corner.x, corner.y);
   await expect(page.locator('.scene-measure-label.is-distance')).toHaveCount(2);
   await expect(page.locator('.scene-measure-label.is-distance')).toHaveText(['4.00 m', '4.60 m']);

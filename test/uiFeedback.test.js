@@ -56,3 +56,20 @@ test('syncSelectionFeedback only marks non-default non-empty feedback', () => {
   syncSelectionFeedback(element, hint);
   assert.equal(element.classList.values.has('has-selection'), false);
 });
+
+test('syncSelectionFeedback hides only messages the panel already shows', () => {
+  const hint = 'Bir panel seç; Ctrl/Cmd + tık ile panelleri çoklu seç.';
+  const element = createElement('Modül 1 · 200 cm · alttan 3. panel · Ctrl/Cmd + tık ile çoklu seç.');
+  syncSelectionFeedback(element, hint);
+  assert.equal(element.classList.values.has('is-redundant'), true);
+
+  element.textContent = 'Banko 200 seçildi.';
+  syncSelectionFeedback(element, hint);
+  assert.equal(element.classList.values.has('is-redundant'), true);
+
+  for (const message of ['Görsel seçili panele uygulandı · Doldur.', 'Görsel uygulamak için önce bir panel veya panel bloğu seç.', 'Modül 2 · 3 Gözlü Vitrin 100 cm · vitrin gövdesi · 4 sunta birlikte renklendirilir.']) {
+    element.textContent = message;
+    syncSelectionFeedback(element, hint);
+    assert.equal(element.classList.values.has('is-redundant'), false, message);
+  }
+});

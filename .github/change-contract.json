@@ -1,17 +1,17 @@
 {
   "schemaVersion": 2,
-  "id": "ozellik-paneli-sekmeler-render-isik",
+  "id": "ozellik-paneli-sade-kolon",
   "kind": "feature",
-  "summary": "Özellikler paneli yeniden düzenlendi: Kopyala, Sil, Kilitle, Ekle üstte; altında döndürme; altında seçilen Item'a göre adlanan sekmeler. Arşivde çift tık Doldur olarak çalışır. Banko ve baza yüzleri Çoklu panel ile tek tek seçilir, tek yüz seçimi bütün modülü çerçevelemez. Çift tıkla seçilen öğe boş alana tıklanınca çerçevesini bırakır. Render Al'da beyaz parlama azaltıldı: yalnız render'a özel spot, ortam ve projektör değerleri ile tepe spot gölgesi; editör ışığı değişmez.",
+  "summary": "Özellikler paneli sadeleşti: 1024 px ve üstünde sağda sabit tam boy kolon, altında alttan açılan panel. Görünüm küpü geniş ekranda sol altta sabit. Tekrar eden seçim açıklaması panelde gizlenir; döndürme tek satır, sekme adları kısa, Tür ve Grup komutları iki sütun düğme; düğmeler daha belirgin.",
   "owners": [
-    "src/moduleContextMenu.js",
     "src/style.css",
-    "src/main.js",
-    "src/scene3d.js"
+    "src/moduleContextMenu.js",
+    "src/selectionToolbar.js",
+    "src/uiFeedback.js"
   ],
   "sourceOfTruth": [
-    "src/moduleContextMenu.js",
-    "src/scene3d.js"
+    "src/style.css",
+    "src/moduleContextMenu.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -37,6 +37,7 @@
     "affectedFiles": [
       "README.md",
       "backend/alembic/data/0002_fair_stand_catalog_dump.json",
+      "backend/alembic/versions/0067_group_templates.py",
       "backend/alembic/versions/0091_booth_types.py",
       "backend/app/integrations/kyrox_core/audit.py",
       "backend/app/integrations/kyrox_core/dev_bypass.py",
@@ -99,6 +100,7 @@
       "e2e/shelf-rows-flow.spec.mjs",
       "e2e/smoke.spec.mjs",
       "e2e/stage-result-after-restore.spec.mjs",
+      "e2e/viewport-chrome-layout.spec.mjs",
       "e2e/wall-height.spec.mjs",
       "e2e/wall-short-width.spec.mjs",
       "e2e/wall-showcase-item-contract.spec.mjs",
@@ -126,6 +128,7 @@
       "src/configuratorMarkup.js",
       "src/configuratorStyles.js",
       "src/designState.js",
+      "src/featureContracts.js",
       "src/floorArea.js",
       "src/groundLayout.js",
       "src/groupTemplatePanel.js",
@@ -134,6 +137,7 @@
       "src/helpGuide.css",
       "src/helpGuide.js",
       "src/imageOptimize.js",
+      "src/itemAdminAssemblyLock.js",
       "src/itemAdminPreview.js",
       "src/itemAssembly.js",
       "src/itemBom.js",
@@ -198,11 +202,9 @@
       "test/registerCanonicalItemCatalog.mjs",
       "test/renderOnlyLights.test.js",
       "test/shelfLegItemContract.test.js",
+      "test/uiFeedback.test.js",
       "test/wallHeightTopRail.test.js",
-      "vite.config.js",
-      "backend/alembic/versions/0067_group_templates.py",
-      "src/featureContracts.js",
-      "src/itemAdminAssemblyLock.js"
+      "vite.config.js"
     ],
     "affectedTests": [
       "backend/tests/modules/fair_stand/test_booth_types.py",
@@ -560,7 +562,10 @@
       "e2e/editor-mode-settings.spec.mjs",
       "e2e/helpers/catalogDrop.mjs",
       "e2e/lighting-items-contract.spec.mjs",
-      "test/itemAdminAssemblyLock.test.js"
+      "test/itemAdminAssemblyLock.test.js",
+      "e2e/viewport-chrome-layout.spec.mjs",
+      "e2e/floor-items-contract.spec.mjs",
+      "e2e/live-tab-share.spec.mjs"
     ],
     "affectedDocs": [
       "ARCHITECTURE_RULES.md",
@@ -656,32 +661,32 @@
         "F-041"
       ]
     },
-    "notes": "Komut kaldırılmadı, yalnız yerleri değişti. Sekme adları Item alanlarından gelir (tabLabel, panelTab, yüzey desteği). .module-context-menu kabı artık yalnız düğme gruplarıdır; renk, görsel ve ölçü alanları onun dışındadır, çünkü o kabın düğme stilleri onları bozar. Rol menu/menuitem yerine group ve düz button; tablist/tab/tabpanel eklendi. assets, storage, bom beyanı ortak dosyalardan gelen kapı zorunluluğudur; bu alanlarda davranış değişmez. Render değerleri yalnız render yolunda; editör değerleri aynı. Tepe spot gölgesi render süresini artırabilir."
+    "notes": "Komut, kayıt ve davranış değişmez; yerleşim ve görünüm değişir. Kolon sahnenin sağ 300 px'ini örter, sahne küçülmez. assets, storage, bom, persistence ve benzeri beyanlar ortak dosyalardan gelen kapı zorunluluğudur; bu alanlarda davranış değişmez."
   },
   "tests": {
     "targeted": [
-      "test/renderOnlyLights.test.js"
+      "test/uiFeedback.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/box-block-corners.spec.mjs",
-        "e2e/color-image-capability.spec.mjs",
-        "e2e/double-click-select.spec.mjs",
-        "e2e/grouped-image-direction.spec.mjs",
-        "e2e/illuminated-foam-placement-feedback.spec.mjs",
-        "e2e/panel-sweep.spec.mjs",
+        "e2e/floor-showcase-brochure-copy-rotate.spec.mjs",
+        "e2e/rapid-actions-responsive.spec.mjs",
         "e2e/selection-property-panel.spec.mjs",
-        "e2e/selection-stale-clear.spec.mjs"
+        "e2e/selection-stale-clear.spec.mjs",
+        "e2e/selection-toolbar.spec.mjs",
+        "e2e/short-panel-context-add.spec.mjs",
+        "e2e/view-cube-home.spec.mjs",
+        "e2e/viewport-chrome-layout.spec.mjs"
       ],
-      "reason": "Panel düzeni, Item sekmeleri, çoklu yüz seçimi, seçim temizleme ve arşivde çift tık tarayıcıda çalışır."
+      "reason": "Panel yerleşimi, küp konumu ve seçim çubuğu tarayıcıda çalışır."
     }
   },
   "risk": {
-    "level": "medium",
-    "notes": "Tek tıkla görünen komutların bir kısmı artık sekme arkasında. Render ışığı parke/koyu zemin, büyük stand ve raf altı ışıklı sahnede elle denenmedi."
+    "level": "low",
+    "notes": "Görsel yerleşim. Kolonun altında kalan öğeye tıklamak için panel kapatılır veya sahne döndürülür. Gerçek tablette denenmedi."
   },
   "migration": {
     "required": false,

@@ -94,7 +94,7 @@ export function createModuleContextMenu({
     </div>
     <div class="module-context-menu selection-rotation-host">
       <div class="selection-rotation-controls" role="group" aria-label="Döndür">
-        <div class="selection-rotation-heading"><span>Döndürme — <output class="selection-rotation-value" aria-label="Mevcut açı" aria-live="polite"></output></span></div>
+        <div class="selection-rotation-heading"><span>Döndürme <output class="selection-rotation-value" aria-label="Mevcut açı" aria-live="polite"></output></span></div>
         <div class="selection-rotation-buttons">
           ${[-45, -15, 15, 45].map((angle) => `<button type="button" data-module-action="rotate" data-rotation-delta="${angle}" aria-label="${angle < 0 ? 'Sola' : 'Sağa'} ${Math.abs(angle)} derece döndür">${angle > 0 ? '+' : '−'}${Math.abs(angle)}°</button>`).join('')}
         </div>
@@ -233,7 +233,7 @@ export function createModuleContextMenu({
     const support = context?.surfaceSummary?.support;
     const hasColor = Boolean(support) && support.color !== 'none';
     const hasImage = Boolean(support) && support.image !== 'none';
-    if (hasColor && hasImage) return 'Görsel & Renk';
+    if (hasColor && hasImage) return 'Görsel';
     if (hasColor) return 'Renk';
     return hasImage ? 'Görsel' : 'Görünüm';
   }
@@ -241,7 +241,7 @@ export function createModuleContextMenu({
   function describeMoreLabel() {
     const panelActions = [...tabPanes.more.querySelectorAll('[data-module-action]')]
       .filter((button) => !button.hidden && button !== shelfLightingButton);
-    return !shelfLightingButton.hidden && !panelActions.length ? 'Aydınlatma' : 'Panel Türü';
+    return !shelfLightingButton.hidden && !panelActions.length ? 'Aydınlatma' : 'Tür';
   }
 
   function syncTabs(context = null, sizeLabel = null) {

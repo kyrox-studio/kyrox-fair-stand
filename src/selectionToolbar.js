@@ -134,8 +134,9 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMult
     const margin = 8;
     const width = bar.offsetWidth || 260;
     const height = bar.offsetHeight || 48;
-    // Açık Özellikler paneli sağ sınırdır; çubuk panelin üstüne binmez.
-    const propertyPanel = document.querySelector('.selection-property-panel:not([hidden])');
+    // Sağdaki Özellikler paneli sağ sınırdır; çubuk panelin üstüne binmez. Alttan açılan panelde sınır yoktur.
+    const openPanel = document.querySelector('.selection-property-panel:not([hidden])');
+    const propertyPanel = openPanel && openPanel.getBoundingClientRect().left > (window?.innerWidth ?? 1024) / 2 ? openPanel : null;
     const rightEdge = propertyPanel ? propertyPanel.getBoundingClientRect().left : (window?.innerWidth ?? 1024);
     const left = Math.min(Math.max(margin, anchor.clientX - width / 2), rightEdge - width - margin);
     let top = Math.max(margin, anchor.clientY - height - 14);
@@ -152,9 +153,17 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMult
     bar.style.top = `${Math.round(top)}px`;
   }
 
+  // Panel açılıp kapanınca üst çubuk satır değiştirir; çubuk eski yerinde kalıp öğenin üstüne binmesin.
+  const viewportToolbar = document.querySelector('#viewport-toolbar');
+  const toolbarObserver = viewportToolbar && typeof ResizeObserver === 'function'
+    ? new ResizeObserver(() => { if (anchor) update(anchor); })
+    : null;
+  if (toolbarObserver) toolbarObserver.observe(viewportToolbar);
+
   function destroy() {
     if (destroyed) return;
     destroyed = true;
+    toolbarObserver?.disconnect();
     bar.remove();
     if (activeToolbars.get(document) === controller) activeToolbars.delete(document);
   }
