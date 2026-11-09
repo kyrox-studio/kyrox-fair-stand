@@ -35,7 +35,8 @@ def test_unit_catalog_revision_is_single_head():
     from alembic.script import ScriptDirectory
 
     script = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert script.get_heads() == ["0092_foam_card_preview"]
+    assert script.get_heads() == ["0093_hidden_items_maxima"]
+    assert script.get_revision("0093_hidden_items_maxima").down_revision == "0092_foam_card_preview"
     assert script.get_revision("0092_foam_card_preview").down_revision == "0091_booth_types"
     assert script.get_revision("0091_booth_types").down_revision == "0090_carpet_anthracite"
     assert script.get_revision("0090_carpet_anthracite").down_revision == "0089_parquet_reference"

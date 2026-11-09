@@ -160,7 +160,7 @@ Toplam görünür Item: **35**. Kayıtlı Item: **133**.
 
 `listCatalogGroups` ve `listCatalogItems` açık stand tipinin Item'larını döner (`setCatalogBoothType`). `boothTypeKeys` null ise Item bütün tiplerde görünür; liste varsa yalnız o tiplerde. Sol menü kartları bir kez kurulur (`allBoothTypes: true`), `refreshBoothTypeFilter` tipe göre gizler. Süzme yalnız yeni ekleneni etkiler: `getCatalogItem`, projede duran Item'lar ve BOM süzülmez.
 
-İlk eşleme (`0091_booth_types`): Extra ile Elektronik & Aydınlatma null; katalogda görünen diğer Item'lar Maksima; katalogda görünmeyen Item'lar null.
+İlk eşleme (`0091_booth_types`): Extra ile Elektronik & Aydınlatma null; katalogda görünen diğer Item'lar Maksima. `0093_hidden_items_maxima` katalogda görünmeyen 86 Item'ı (kart varyantları, gövde parçaları, profil/dikme boyları, bağlantılar; liste `booth_type_seed.HIDDEN_MAXIMA_ITEM_KEYS`) Maksima yapar; zemin, TV, üretim kalemi gibi diğer gizli Item'lar null kalır. Süzme kart üzerinden çalıştığı için gizli Item'ın tipi katalogda görünen kartı değiştirmez.
 
 ## Sıralama
 

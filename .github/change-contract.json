@@ -1,17 +1,14 @@
 {
   "schemaVersion": 2,
-  "id": "ozellik-paneli-sade-kolon",
+  "id": "gizli-item-maksima",
   "kind": "feature",
-  "summary": "Özellikler paneli sadeleşti: 1024 px ve üstünde sağda sabit tam boy kolon, altında alttan açılan panel. Görünüm küpü geniş ekranda sol altta sabit. Tekrar eden seçim açıklaması panelde gizlenir; döndürme tek satır, sekme adları kısa, Tür ve Grup komutları iki sütun düğme; düğmeler daha belirgin.",
+  "summary": "Katalogda görünmeyen 86 Item (kart varyantları, gövde parçaları, profil/dikme boyları, bağlantılar) Maksima stand tipine bağlandı (0093_hidden_items_maxima). Diğer gizli Item'lar null kalır; katalog kartları değişmez.",
   "owners": [
-    "src/style.css",
-    "src/moduleContextMenu.js",
-    "src/selectionToolbar.js",
-    "src/uiFeedback.js"
+    "backend/app/modules/fair_stand/infrastructure/booth_type_seed.py",
+    "backend/alembic/versions/0093_hidden_items_maxima.py"
   ],
   "sourceOfTruth": [
-    "src/style.css",
-    "src/moduleContextMenu.js"
+    "backend/app/modules/fair_stand/infrastructure/booth_type_seed.py"
   ],
   "impact": {
     "catalog": "affected",
@@ -39,6 +36,7 @@
       "backend/alembic/data/0002_fair_stand_catalog_dump.json",
       "backend/alembic/versions/0067_group_templates.py",
       "backend/alembic/versions/0091_booth_types.py",
+      "backend/alembic/versions/0093_hidden_items_maxima.py",
       "backend/app/integrations/kyrox_core/audit.py",
       "backend/app/integrations/kyrox_core/dev_bypass.py",
       "backend/app/main.py",
@@ -73,6 +71,7 @@
       "backend/tests/modules/fair_stand/test_unit_catalog.py",
       "docs/refactor/CATALOG.md",
       "docs/refactor/DATABASE.md",
+      "docs/refactor/FAIR_STAND_DB_KULLANIM_KILAVUZU.md",
       "docs/refactor/REFACTOR.md",
       "e2e/box-block-corners.spec.mjs",
       "e2e/color-image-capability.spec.mjs",
@@ -661,38 +660,32 @@
         "F-041"
       ]
     },
-    "notes": "Komut, kayıt ve davranış değişmez; yerleşim ve görünüm değişir. Kolon sahnenin sağ 300 px'ini örter, sahne küçülmez. assets, storage, bom, persistence ve benzeri beyanlar ortak dosyalardan gelen kapı zorunluluğudur; bu alanlarda davranış değişmez."
+    "notes": "Yalnız katalog verisi değişir; kod davranışı aynı. Süzme kart üzerinden çalıştığından görünen katalog değişmez. Kapı beyanları ortak dosyalardan gelir."
   },
   "tests": {
     "targeted": [
-      "test/uiFeedback.test.js"
+      "test/shelfLegItemContract.test.js",
+      "backend/tests/modules/fair_stand/test_booth_types.py"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/floor-showcase-brochure-copy-rotate.spec.mjs",
-        "e2e/rapid-actions-responsive.spec.mjs",
-        "e2e/selection-property-panel.spec.mjs",
-        "e2e/selection-stale-clear.spec.mjs",
-        "e2e/selection-toolbar.spec.mjs",
-        "e2e/short-panel-context-add.spec.mjs",
-        "e2e/view-cube-home.spec.mjs",
-        "e2e/viewport-chrome-layout.spec.mjs"
+        "e2e/new-project-wizard.spec.mjs"
       ],
-      "reason": "Panel yerleşimi, küp konumu ve seçim çubuğu tarayıcıda çalışır."
+      "reason": "Katalog bootstrap verisi değişir; sihirbaz ve katalog süzmesi tarayıcıda doğrulanır."
     }
   },
   "risk": {
     "level": "low",
-    "notes": "Görsel yerleşim. Kolonun altında kalan öğeye tıklamak için panel kapatılır veya sahne döndürülür. Gerçek tablette denenmedi."
+    "notes": "Yalnız eksik eşleme eklenir; admin'den verilmiş tip korunur. Downgrade yalnız bu listedeki Maksima satırlarını siler."
   },
   "migration": {
-    "required": false,
-    "notes": "Alembic migration yok; head 0092 kalır."
+    "required": true,
+    "notes": "0093_hidden_items_maxima veri migration; şema değişmez. Yerel Postgres kapalıyken SQLite testleriyle doğrulandı."
   },
-  "rollback": "PR merge commit'ini geri al.",
+  "rollback": "PR merge commit'ini geri al ve alembic downgrade 0092_foam_card_preview çalıştır.",
   "security": {
     "controls": {
       "SEC-01": {
