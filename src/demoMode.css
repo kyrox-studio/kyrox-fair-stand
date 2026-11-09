@@ -13,19 +13,32 @@
   pointer-events: none;
 }
 
+/* Kyrox Studio logosu ve altında DEMO. Marka standardı: logo döndürülmez, esnetilmez, rengi değişmez. */
 .fair-stand-demo-watermark {
   position: absolute;
   inset: 0;
   z-index: 4;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 1.5vw, 20px);
   overflow: hidden;
-  color: rgba(15, 23, 42, 0.09);
-  font: 800 clamp(64px, 14vw, 200px)/1 system-ui, sans-serif;
-  letter-spacing: 0.2em;
-  transform: rotate(-24deg);
+  opacity: 0.1;
   pointer-events: none;
   user-select: none;
+}
+
+.fair-stand-demo-watermark__logo {
+  width: clamp(160px, 38vw, 560px);
+  height: auto;
+}
+
+.fair-stand-demo-watermark__label {
+  color: #0b0b0b;
+  font: 800 clamp(32px, 6vw, 96px)/1 system-ui, sans-serif;
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
 }
 
 .fair-stand-demo-expired {
@@ -78,9 +91,4 @@
   background: #fffbeb;
   color: #92400e;
   font-weight: 650;
-}
-
-/* Demo kayıt tutmaz; Geçmiş kartı görünmez. `[hidden]` genel `.collapsible-panel` display kuralıyla ezildiği için açık kural. */
-#app[data-fair-stand-demo="true"] #project-revisions {
-  display: none !important;
 }

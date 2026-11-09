@@ -118,8 +118,12 @@ test('aynı oturum Kaydet tek revizyon tutar; yeniden açılış sonraki numaray
     await route.fulfill({ status: 204, body: '' });
   });
 
-  await createIslandStand(page, 'E2ESessionRevision');
+  await page.goto('/');
   const history = page.locator('#project-revisions');
+  // Revizyon yokken kart `hidden`; `.collapsible-panel` display kuralı bunu ezmez.
+  await expect(history).toHaveAttribute('hidden', '');
+  await expect(history).toBeHidden();
+  await createIslandStand(page, 'E2ESessionRevision');
   await expect(history).not.toHaveAttribute('open');
   await expect(page.locator('#project-revision-list')).toBeHidden();
   await history.locator('summary').click();

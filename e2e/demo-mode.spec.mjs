@@ -53,7 +53,13 @@ test('demo: kilitli düğmeler oturum mesajı verir, Üretim Listesi örnek gös
   await page.goto('/e2e/demo-host.html');
 
   await expect(page.locator('#fair-stand-demo-chip')).toContainText('Demo · kalan süre 2');
-  await expect(page.locator('#fair-stand-demo-watermark')).toHaveText('DEMO');
+  const watermark = page.locator('#fair-stand-demo-watermark');
+  await expect(watermark.locator('.fair-stand-demo-watermark__label')).toHaveText('DEMO');
+  const logo = watermark.locator('img.fair-stand-demo-watermark__logo');
+  await expect(logo).toHaveAttribute('alt', 'Kyrox Studio');
+  // Logo dosyası yüklenir (kırık görsel değil) ve marka standardı gereği döndürülmez.
+  expect(await logo.evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+  expect(await watermark.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
   await expect(page.locator('#project-customer-display')).toHaveText('Demo');
   await expect(page.locator('#autosave-interval')).toBeDisabled();
   await expect(page.locator('#autosave-interval')).toHaveValue('0');

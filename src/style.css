@@ -206,6 +206,11 @@ h2 {
   gap: 9px;
 }
 
+/* `display: flex` yukarıda `[hidden]` özniteliğini ezer; gizli kart (ör. revizyonsuz Geçmiş) görünmez kalır. */
+.collapsible-panel[hidden] {
+  display: none;
+}
+
 .panel-summary {
   display: flex;
   align-items: center;
