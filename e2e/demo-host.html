@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fair Stand demo (E2E)</title>
+    <style>
+      html, body { margin: 0; height: 100%; }
+      #demo-host { position: relative; height: 100vh; }
+    </style>
+  </head>
+  <body>
+    <!-- Yalnız E2E: CRM /stand-demo sayfasının yaptığı gibi editörü demo modunda bağlar (ADR-0012). -->
+    <div id="demo-host"></div>
+    <script type="module">
+      import { mountFairStand } from '/src/mountFairStand.js';
+      mountFairStand(document.getElementById('demo-host'), { demo: true, demoLoginPath: '/login' });
+    </script>
+  </body>
+</html>

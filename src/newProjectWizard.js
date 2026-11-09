@@ -1,6 +1,7 @@
 import { metersInputToCm, formatMeters } from './standSizeInput.js';
 import { getFairStandHostDocument } from './hostDocument.js';
 import { DEFAULT_BOOTH_TYPE, getBoothTypeLabel, listBoothTypes } from './boothTypes.js';
+import { DEMO_NEW_PROJECT_HINT, isFairStandDemo } from './demoMode.js';
 
 // Yeni proje sihirbazı: boş sahnenin (#viewport-empty) ortasında 4 adım — stand tipi (boothType),
 // yerleşim (standType), ölçü, özet + Oluştur. Yeni bir kurulum yolu açmaz: seçimleri sol menüdeki mevcut alanlara yazar ve
@@ -307,7 +308,9 @@ export function createNewProjectWizard({ container, validateSetup, onCreate, onB
     summary.innerHTML = `<strong>${getBoothTypeLabel(boothType)} · ${type}</strong><br>${formatMeters(metersInputToCm(sidebar.sizeX?.value))} × ${formatMeters(metersInputToCm(sidebar.sizeY?.value))} m · duvar ${formatMeters(sidebar.wallHeight?.value)} m<br>Depo: ${depot}<br>Alınlık: ${fascia}<br>Mobilya: ${furniture}<br>Zemin: ${sidebar.floorType?.selectedOptions?.[0]?.textContent ?? '—'}`;
     const hint = document.createElement('p');
     hint.className = 'wizard-hint';
-    hint.textContent = 'Oluştur dediğinde proje adı sorulur, sahne kurulur ve proje kaydedilir.';
+    hint.textContent = isFairStandDemo()
+      ? DEMO_NEW_PROJECT_HINT
+      : 'Oluştur dediğinde proje adı sorulur, sahne kurulur ve proje kaydedilir.';
     body.replaceChildren(summary, hint);
     nextButton.disabled = false;
   }

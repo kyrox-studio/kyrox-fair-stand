@@ -35,7 +35,8 @@ test('legacy autosave globals and duplicate timer loop are absent from main.js',
 test('main.js wires the autosave interval select to browser settings', () => {
   assert.match(mainSource, /import \{ readAutosaveMinutes, writeAutosaveMinutes \} from '\.\/autosaveSettings\.js';/);
   assert.match(mainSource, /document\.querySelector\('#autosave-interval'\)/);
-  assert.match(mainSource, /applyAutosaveInterval\(readAutosaveMinutes\(\)\)/);
+  // Demo (ADR-0012) otomatik kaydı kapalı açar; oturumlu kullanımda tarayıcı ayarı okunur.
+  assert.match(mainSource, /applyAutosaveInterval\(isFairStandDemo\(\) \? 0 : readAutosaveMinutes\(\)\)/);
   assert.match(mainSource, /writeAutosaveMinutes\(autosaveIntervalSelect\.value\)/);
   assert.match(mainSource, /autosaveController\.setDelayMinutes\(minutes\)/);
 });

@@ -1,15 +1,21 @@
 import { initializeBoothTypes } from './boothTypes.js';
 import { initializeCatalogCategories, initializeCatalogPreviews } from './catalog.js';
+import { isFairStandDemo } from './demoMode.js';
 import { getFairStandHostWindow } from './hostDocument.js';
 import { initializeItemRegistry, initializeItemTypeRegistry, initializeSnapRuleRegistry } from './items.js';
 import { initializeRuntimeSettings } from './runtimeSettings.js';
 import { initializeStandDimensions } from './standDimensions.js';
 
+export const DEMO_CATALOG_BOOTSTRAP_URL = '/api/v1/fair-stand/demo/catalog/bootstrap';
+
 function catalogBootstrapUrl() {
+  // Demo, süzülmüş katalogu kendi ucundan alır; Core başlığı gönderilmez (ADR-0012).
+  if (isFairStandDemo()) return DEMO_CATALOG_BOOTSTRAP_URL;
   return import.meta.env.VITE_FAIR_STAND_CATALOG_URL || '/api/v1/fair-stand/catalog/bootstrap';
 }
 
 function catalogBootstrapHeaders() {
+  if (isFairStandDemo()) return {};
   const hostWindow = getFairStandHostWindow();
   const headers = hostWindow?.__FAIR_STAND_CATALOG_HEADERS__ || globalThis.__FAIR_STAND_CATALOG_HEADERS__;
   return headers && typeof headers === 'object' ? headers : {};
