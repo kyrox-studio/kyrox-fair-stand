@@ -7,6 +7,9 @@ export const DEMO_EXPIRED_TITLE = 'Demo süreniz doldu';
 export const DEMO_EXPIRED_MESSAGE = 'Bu tarayıcı ve bağlantı için günlük demo süresi bitti. Devam etmek için oturum açın.';
 export const DEMO_UNVERIFIED_MESSAGE = 'Demo oturumu doğrulanamadı. Sayfayı yenileyin ya da oturum açın.';
 export const DEMO_WATERMARK_TEXT = 'DEMO';
+// Logo kyrox-brand'den kopyalanır (BRAND_STANDARD); Vite bu kalıbı derlemede varlık adresine çevirir.
+export const DEMO_WATERMARK_LOGO_URL = new URL('./assets/kyrox-logo-siyah.svg', import.meta.url).href;
+export const DEMO_WATERMARK_LOGO_ALT = 'Kyrox Studio';
 const MAX_FAILED_BEATS = 3;
 
 export function formatDemoRemaining(seconds) {
@@ -47,7 +50,16 @@ export function createDemoSession({ container, fetchImpl, loginPath = '/login' }
   chip.setAttribute('aria-live', 'off');
   const watermark = ensureElement(stage, 'fair-stand-demo-watermark', 'div', 'fair-stand-demo-watermark');
   watermark.setAttribute('aria-hidden', 'true');
-  watermark.textContent = DEMO_WATERMARK_TEXT;
+  watermark.textContent = '';
+  const watermarkLogo = documentRef.createElement('img');
+  watermarkLogo.className = 'fair-stand-demo-watermark__logo';
+  watermarkLogo.src = DEMO_WATERMARK_LOGO_URL;
+  watermarkLogo.alt = DEMO_WATERMARK_LOGO_ALT;
+  watermarkLogo.setAttribute('draggable', 'false');
+  const watermarkLabel = documentRef.createElement('span');
+  watermarkLabel.className = 'fair-stand-demo-watermark__label';
+  watermarkLabel.textContent = DEMO_WATERMARK_TEXT;
+  watermark.append(watermarkLogo, watermarkLabel);
 
   function paintChip() {
     chip.textContent = `Demo · kalan süre ${formatDemoRemaining(remaining)}`;

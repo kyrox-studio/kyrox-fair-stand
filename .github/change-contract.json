@@ -1,36 +1,34 @@
 {
   "schemaVersion": 2,
-  "id": "oturumsuz-demo",
-  "kind": "feature",
-  "summary": "Oturumsuz demo (ADR-0012): mountFairStand({ demo: true }) ile editör giriş yapmadan açılır. Kayıt, dışa/içe aktarma, aç, sil, render, ekran paylaşımı, şablon kaydetme ve ad değiştirme oturum mesajı verir; otomatik kayıt kapalı; Üretim Listesi sabit örnek gösterir. Süre sunucuda sayılır (tarayıcı 25 dk/24 saat, IP 3 katı); demo kataloğu BOM/maliyet alanları çıkarılmış bootstrap'tır. Migration 0094_demo_usage.",
+  "id": "gecmis-hidden-demo-logo",
+  "kind": "bugfix",
+  "summary": "Gizli Geçmiş kartı: `.collapsible-panel { display: flex }` `[hidden]` özniteliğini eziyordu; `.collapsible-panel[hidden] { display: none }` eklendi, demoya özel kural kaldırıldı. Demo filigranı: döndürülmüş DEMO yazısı yerine kyrox-brand'den kopyalanan Kyrox Studio logosu ve altında DEMO (düz, %10 opaklık; BRAND_STANDARD logo döndürülmez).",
   "owners": [
-    "src/demoMode.js",
+    "src/style.css",
     "src/demoSession.js",
-    "src/demoProductionBom.js",
-    "backend/app/modules/fair_stand/application/demo_access.py",
-    "backend/app/modules/fair_stand/api/demo_routes.py",
-    "backend/alembic/versions/0094_demo_usage.py"
+    "src/demoMode.css",
+    "src/assets/kyrox-logo-siyah.svg"
   ],
   "sourceOfTruth": [
-    "backend/app/modules/fair_stand/application/demo_access.py",
-    "src/demoMode.js"
+    "src/style.css",
+    "src/demoSession.js"
   ],
   "impact": {
-    "catalog": "affected",
-    "behavior": "affected",
-    "state": "affected",
-    "placement": "affected",
-    "renderer": "affected",
-    "persistence": "affected",
-    "bom": "affected",
+    "catalog": "not-applicable",
+    "behavior": "not-applicable",
+    "state": "not-applicable",
+    "placement": "not-applicable",
+    "renderer": "not-applicable",
+    "persistence": "not-applicable",
+    "bom": "not-applicable",
     "ui": "affected",
-    "composition": "affected",
+    "composition": "not-applicable",
     "assets": "affected",
-    "storage": "affected",
-    "importExport": "affected",
-    "performance": "affected",
+    "storage": "not-applicable",
+    "importExport": "not-applicable",
+    "performance": "not-applicable",
     "accessibility": "affected",
-    "architecture": "affected",
+    "architecture": "not-applicable",
     "security": "affected",
     "tests": "affected"
   },
@@ -38,120 +36,30 @@
     "mode": "full-system",
     "affectedFiles": [
       "index.html",
-      "scripts/archive/add-video-wall-2x2.py",
       "scripts/verify-change-contract.mjs",
-      "src/assetStore.js",
-      "src/autoFascia.js",
-      "src/automaticWall.js",
-      "src/autosaveController.js",
-      "src/catalogBootstrap.js",
-      "src/configuratorMarkup.js",
       "src/configuratorStyles.js",
-      "src/helpGuide.js",
-      "src/imageOptimize.js",
-      "src/itemAdminPreview.js",
-      "src/liveTabShare.js",
+      "src/itemSizeDialog.js",
       "src/main.js",
-      "src/moduleContextMenu.js",
-      "src/moduleGroupPanel.js",
-      "src/moduleMove.js",
       "src/mountFairStand.js",
-      "src/productionBomPanel.css",
-      "src/projectActionSaveGuard.js",
-      "src/projectRemote.js",
-      "src/runtimeSettings.js",
+      "src/profileLength.js",
+      "src/projectNaming.js",
       "src/scene3d.js",
-      "src/style.css",
-      "src/viewCube.js",
-      "src/wallLockNotice.js",
-      "src/wallReflow.js"
+      "src/systemChangeContract.js",
+      "src/uprightHeight.js",
+      "src/wallLockNotice.js"
     ],
     "affectedTests": [
-      "backend/tests/modules/fair_stand/test_demo_access.py",
-      "backend/tests/modules/fair_stand/test_unit_catalog.py",
-      "e2e/autosave-interval.spec.mjs",
-      "e2e/base-items-contract.spec.mjs",
-      "e2e/box-block-corners.spec.mjs",
-      "e2e/box-block-face-image-restore.spec.mjs",
-      "e2e/commercial-items-contract.spec.mjs",
       "e2e/demo-host.html",
       "e2e/demo-mode.spec.mjs",
-      "e2e/design-undo.spec.mjs",
-      "e2e/desk-banko-items-contract.spec.mjs",
-      "e2e/double-click-select.spec.mjs",
-      "e2e/duplicate-metal-separator.spec.mjs",
-      "e2e/editor-mode-settings.spec.mjs",
-      "e2e/f010-module-construction.spec.mjs",
-      "e2e/f011-module-behavior.spec.mjs",
-      "e2e/f023-atomic-project-delete.spec.mjs",
-      "e2e/f027-scene-reset.spec.mjs",
-      "e2e/f028-reset-features.spec.mjs",
-      "e2e/flat-panel-back-strips.spec.mjs",
-      "e2e/floor-area.spec.mjs",
-      "e2e/floor-items-contract.spec.mjs",
-      "e2e/floor-showcase-brochure-copy-rotate.spec.mjs",
-      "e2e/free-props-collision-none.spec.mjs",
-      "e2e/furniture-items-contract.spec.mjs",
-      "e2e/glass-bar-table.spec.mjs",
-      "e2e/group-template.spec.mjs",
-      "e2e/grouped-image-direction.spec.mjs",
-      "e2e/helpers/module-lock-fixture.mjs",
-      "e2e/indoor-plant-items-contract.spec.mjs",
-      "e2e/invalid-placement-ghost.spec.mjs",
-      "e2e/lighting-items-contract.spec.mjs",
-      "e2e/live-tab-share.spec.mjs",
-      "e2e/metal-separator-bom-gap.spec.mjs",
-      "e2e/mini-fridge-dimensions.spec.mjs",
-      "e2e/missing-project-asset-open.spec.mjs",
-      "e2e/module-group.spec.mjs",
-      "e2e/module-lock.spec.mjs",
-      "e2e/module-move-snap.spec.mjs",
-      "e2e/new-project-wizard.spec.mjs",
-      "e2e/panel-sweep.spec.mjs",
-      "e2e/pinch-zoom-no-drag.spec.mjs",
-      "e2e/plastic-trash-bin-module.spec.mjs",
-      "e2e/project-import-export-roundtrip.spec.mjs",
-      "e2e/project-import-validation.spec.mjs",
-      "e2e/project-open-asset-cache.spec.mjs",
-      "e2e/project-open-timing.spec.mjs",
-      "e2e/project-open-wait-scene.spec.mjs",
       "e2e/project-revision-session.spec.mjs",
-      "e2e/rapid-actions-responsive.spec.mjs",
-      "e2e/reload-restore.spec.mjs",
-      "e2e/render-stand-top-spot.spec.mjs",
-      "e2e/scene-select-all.spec.mjs",
-      "e2e/selection-property-panel.spec.mjs",
-      "e2e/selection-stale-clear.spec.mjs",
-      "e2e/selection-toolbar.spec.mjs",
-      "e2e/shelf-items-contract.spec.mjs",
-      "e2e/shelf-rows-flow.spec.mjs",
       "e2e/shelf-width-variant.spec.mjs",
-      "e2e/short-joint-structural-upright.spec.mjs",
-      "e2e/short-panel-context-add.spec.mjs",
-      "e2e/stage-result-after-restore.spec.mjs",
-      "e2e/variant-snap-fit.spec.mjs",
-      "e2e/vertical-move-upright-height.spec.mjs",
-      "e2e/visible-ui-b.spec.mjs",
-      "e2e/wall-flat-panel-items-contract.spec.mjs",
-      "e2e/wall-height-matrix.spec.mjs",
-      "e2e/wall-height.spec.mjs",
-      "e2e/wall-media-items-contract.spec.mjs",
-      "e2e/wall-reflow-u-stand.spec.mjs",
-      "e2e/wall-separator-items-contract.spec.mjs",
-      "e2e/wall-short-width.spec.mjs",
-      "e2e/wall-showcase-item-contract.spec.mjs",
       "test/assetLibraryLayout.test.js",
-      "test/autoFascia.test.js",
-      "test/automaticWall.test.js",
-      "test/autosaveController.test.js",
       "test/autosaveMainIntegration.test.js",
       "test/baseRenderStyle.test.js",
       "test/baseWallDepthAlignment.test.js",
       "test/boxBlockModule.test.js",
       "test/bundleLoadingContract.test.js",
-      "test/catalogDomainBoundary.test.js",
       "test/catalogDragItemKeyInvariant.test.js",
-      "test/catalogPreviewConfig.test.js",
       "test/catalogSingleSource.test.js",
       "test/catalogWidthFamily.test.js",
       "test/chairEamesContract.test.js",
@@ -159,22 +67,16 @@
       "test/coatRackModule.test.js",
       "test/colorEditorControllerMainIntegration.test.js",
       "test/colorEditorMainIntegration.test.js",
-      "test/cornerPlacement.test.js",
       "test/coverModeExclusivity.test.js",
       "test/ctrlMultiSelect.test.js",
-      "test/defaultProjectBom.test.js",
       "test/demoMode.test.js",
-      "test/depotBackWallRecipe.test.js",
       "test/developerEntrypointDocs.test.js",
-      "test/doorCompositeItemContract.test.js",
       "test/doorLeafItemContract.test.js",
       "test/eamesTableChairSetContract.test.js",
       "test/editorViewSettings.test.js",
-      "test/emptyCatalogBootstrap.test.js",
       "test/f017RendererSurfacePersist.test.js",
       "test/f027SceneReset.test.js",
       "test/f028FeatureReset.test.js",
-      "test/f032ConfiguratorDb.test.js",
       "test/fabricModuleOwnership.test.js",
       "test/favicon.test.js",
       "test/floorShowcaseBrochureStand.test.js",
@@ -193,16 +95,11 @@
       "test/illuminatedFoamModule.test.js",
       "test/imageAssetDeletion.test.js",
       "test/imageAssetLiveDelete.test.js",
-      "test/imageOptimize.test.js",
       "test/indoorPlants.test.js",
-      "test/itemAdminPreview.test.js",
       "test/itemAssembly.test.js",
-      "test/itemCatalogFields.test.js",
-      "test/itemCostEnabled.test.js",
       "test/itemDefaultZCm.test.js",
       "test/itemLengthParts.test.js",
       "test/itemSurfaceCapabilitySoT.test.js",
-      "test/itemTypeBehaviorDualRead.test.js",
       "test/lCounter100Contract.test.js",
       "test/lCounter150Contract.test.js",
       "test/lCounter200Contract.test.js",
@@ -211,16 +108,10 @@
       "test/lightboxFabricAppearance.test.js",
       "test/lightboxFabricLighting.test.js",
       "test/lightboxFabricPerformance.test.js",
-      "test/liveTabShare.test.js",
       "test/materialAppearance.test.js",
-      "test/metalSeparator.test.js",
       "test/miniFridgeTopLabel.test.js",
       "test/moduleBehaviorPolicy.test.js",
-      "test/moduleContextAllowSideInsert.test.js",
-      "test/moduleContextDirection.test.js",
       "test/moduleGroupPanel.test.js",
-      "test/moduleLock.test.js",
-      "test/moduleMove.test.js",
       "test/moduleRotationSingleSourceIntegration.test.js",
       "test/moduleSelectionState.test.js",
       "test/moduleSelectionVisual.test.js",
@@ -230,27 +121,23 @@
       "test/panelMultiSelectRule.test.js",
       "test/perspectiveNear.test.js",
       "test/plasticTrashBinTopLabel.test.js",
-      "test/printAreaBom.test.js",
       "test/productionBomPanelEntry.test.js",
-      "test/productionItemType.test.js",
       "test/profileFieldPlacement.test.js",
       "test/profileLength.test.js",
-      "test/projectActionSaveGuard.test.js",
       "test/projectAtomicDeletion.test.js",
-      "test/projectBom.test.js",
       "test/projectCustomerPanel.test.js",
       "test/projectDropdownSwitchIntegration.test.js",
       "test/projectImportFlow.test.js",
+      "test/projectNaming.test.js",
+      "test/projectNamingSaveAs.test.js",
       "test/projectOpenFastPath.test.js",
       "test/projectOpenTiming.test.js",
-      "test/projectRemoteSync.test.js",
       "test/projectRevisionSession.test.js",
+      "test/projectSaveAs.test.js",
       "test/projectUiMainIntegration.test.js",
       "test/raisedPlatform.test.js",
-      "test/registerCanonicalItemCatalog.mjs",
       "test/removedIndoorPlant2.test.js",
       "test/renderOnlyLights.test.js",
-      "test/rightWallOrientation.test.js",
       "test/runtimeSettings.test.js",
       "test/scene3dPublicContract.test.js",
       "test/sceneAssetLoading.test.js",
@@ -268,13 +155,11 @@
       "test/sidebarControllerMainIntegration.test.js",
       "test/sofaClassicPiecesContract.test.js",
       "test/stageFeedbackMainIntegration.test.js",
-      "test/standDimensions.test.js",
       "test/standFloorGridKeyLight.test.js",
       "test/stripOccupancy.test.js",
       "test/systemChangeGate.test.js",
       "test/systemChangeGateLocalDiff.test.js",
       "test/systemChangeSecurityControls.test.js",
-      "test/systemDevelopmentContract.test.js",
       "test/systemImpactAnalysis.test.js",
       "test/toastNotifications.test.js",
       "test/tulleFabric.test.js",
@@ -286,216 +171,138 @@
       "test/viewportToolbarMainIntegration.test.js",
       "test/visibleUiContract.test.js",
       "test/wallDragStickiness.test.js",
-      "test/wallHeightProjectBom.test.js",
-      "test/wallHeightRecipe.test.js",
-      "test/wallHeightRelationshipBom.test.js",
       "test/wallLockNotice.test.js",
       "test/wallOverlayFeedback.test.js",
-      "test/wallReflow.test.js",
       "test/wallShortVerticalMove.test.js",
       "test/wallShortWidth.test.js",
       "test/wallShowcaseItemContract.test.js"
     ],
     "affectedDocs": [
-      "PROJECT_RULES.md",
       "README.md",
-      "SYSTEM_AUDIT_CHECKLIST.md",
-      "SYSTEM_CHANGE_GATE.md",
-      "SYSTEM_DEVELOPMENT_CONTRACT.md",
-      "audit/FINDINGS.md",
-      "audit/SISTEM_MUTABAKAT_RAPORU.md",
-      "audit/evidence/A01_DOCS_SOURCE_OF_TRUTH.md",
       "audit/evidence/A02_CHANGE_GATE.md",
-      "audit/evidence/A03_ARCHITECTURE.md",
-      "audit/evidence/A04_CATALOG_MODULE_CONTRACTS.md",
-      "audit/evidence/A05_MODULE_BEHAVIOR.md",
-      "audit/evidence/A07_STATE_MODEL_FACTORIES.md",
-      "audit/evidence/A08_PERSISTENCE_AUTOSAVE_ISOLATION.md",
-      "audit/evidence/A11_FEATURE_COMPOSITION.md",
-      "audit/evidence/A17_PERFORMANCE_BUNDLE_RENDER_LIFECYCLE.md",
-      "audit/evidence/A22_FILE_BY_FILE_SWEEP.md",
-      "audit/remediation/A02_CLOSURE.md",
-      "audit/remediation/A02_F005_CLOSURE.md",
-      "audit/remediation/A02_F006_CLOSURE.md",
-      "audit/remediation/A03_CLOSURE.md",
-      "audit/remediation/A03_F010_CLOSURE.md",
-      "audit/remediation/A03_F011_CLOSURE.md",
-      "audit/remediation/A04_F013_CLOSURE.md",
-      "audit/remediation/A11_F029_CLOSURE.md",
-      "docs/AUTOSAVE_INTEGRATION_NOTES.md",
-      "docs/items/definitions/hali.md",
-      "docs/items/definitions/illuminated-foam.md",
-      "docs/items/definitions/karolaj.md",
-      "docs/items/definitions/metal_separator.md",
-      "docs/items/definitions/plastic_trash_bin.md",
-      "docs/items/definitions/wall_door_100_350.md",
-      "docs/refactor/CATALOG.md",
-      "docs/refactor/DATABASE.md",
-      "docs/refactor/FAIR_STAND_DB_KULLANIM_KILAVUZU.md",
-      "docs/refactor/ITEMS.md",
-      "docs/refactor/PENDING_ITEM_DECISIONS.md",
-      "docs/refactor/REFACTOR.md",
-      "docs/refactor/SCENE_POSE.md"
+      "audit/evidence/A03_ARCHITECTURE.md"
     ],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": [
-        "F-004",
-        "F-005",
-        "F-006",
-        "F-010",
-        "F-011",
-        "F-012",
-        "F-013",
-        "F-014",
-        "F-015",
-        "F-017",
-        "F-020",
-        "F-029"
+        "F-005"
       ]
     },
-    "notes": "Demo bayrağı yalnız mountFairStand({ demo: true }) ile açılır; oturumlu akışta her yeni dal isFairStandDemo() false döner ve davranış aynı kalır. Kilitler document capture ile işleyicilerden önce çalışır. Sunucu sınırı ayrı router'dadır; mevcut yetki bağımlılıkları değişmez."
+    "notes": "Genel kural yalnız `hidden` özniteliği taşıyan katlanır kartları gizler; görünür kartların display değeri değişmez. Filigran pointer-events:none ve aria-hidden kalır."
   },
   "tests": {
     "targeted": [
-      "test/demoMode.test.js",
-      "test/autosaveMainIntegration.test.js",
-      "backend/tests/modules/fair_stand/test_demo_access.py",
-      "backend/tests/modules/fair_stand/test_unit_catalog.py"
+      "test/demoMode.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/demo-mode.spec.mjs"
+        "e2e/demo-mode.spec.mjs",
+        "e2e/project-revision-session.spec.mjs"
       ],
-      "reason": "Demo düğme kilitleri, sahte Üretim Listesi, süre kilidi ve demo katalog isteği tarayıcıda doğrulanır."
+      "reason": "Gizli Geçmiş kartı ve demo filigran logosu tarayıcıda doğrulanır."
     }
   },
   "risk": {
-    "level": "medium",
-    "notes": "Oturumsuz yeni uçlar. Demo kapalıyken (varsayılan) 404 döner. Birleşik Item reçetesi (composition) sahne için gerektiğinden demo yanıtında okunabilir; ADR-0012'de kabul edilen risk."
+    "level": "low",
+    "notes": "Yalnız CSS ve demo filigranı."
   },
   "migration": {
-    "required": true,
-    "notes": "0094_demo_usage yalnız yeni tablo ekler; mevcut veriye dokunmaz. Geri dönüş tabloyu siler."
+    "required": false,
+    "notes": "Yok."
   },
-  "rollback": "PR merge commit'ini geri al ve alembic downgrade 0093_hidden_items_maxima çalıştır; FAIR_STAND_DEMO_ENABLED değerini kaldır.",
+  "rollback": "PR merge commit'ini geri al.",
   "security": {
     "controls": {
       "SEC-01": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_demo_cookie_does_not_open_real_endpoints"
-        ]
+        "status": "na",
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-02": {
         "status": "na",
-        "reason": "Demo yolu organization verisine dokunmaz; yalnız global katalog okunur ve proje/şablon/maliyet uçları Core JWT ister. Organization sınırı değişmez."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-03": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_heartbeat_and_catalog_require_demo_cookie",
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_demo_cookie_does_not_open_real_endpoints"
-        ]
+        "status": "na",
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-04": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_demo_disabled_without_secret",
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_raw_ip_and_cookie_are_not_stored"
-        ]
+        "status": "na",
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-05": {
         "status": "na",
-        "reason": "Yeni tablo mevcut uygulama rolüyle yazılır; DB kullanıcıları, ağ erişimi ve yedek rolleri değişmez."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-06": {
         "status": "na",
-        "reason": "Yeni sorgular SQLAlchemy ifade API'siyle parametreli kurulur; dinamik SQL, sort/filter girdisi veya shell komutu yoktur."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-07": {
         "status": "na",
-        "reason": "Dosya yükleme veya içe aktarma yolu eklenmez; demo İçe Aktar'ı kilitler, görseller tarayıcıda kalır."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-08": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_heartbeat_and_catalog_require_demo_cookie",
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_ipv6_uses_64_prefix"
-        ]
+        "status": "na",
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-09": {
         "status": "na",
-        "reason": "Yeni paket veya sürüm değişikliği yoktur; package-lock ve requirements aynı kalır."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-10": {
         "status": "na",
-        "reason": "CI workflow, token yetkisi ve yayın akışı değişmez."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-11": {
         "status": "na",
-        "reason": "Dış servis çağrısı eklenmez; demo uçları aynı origin Nginx vekili arkasındadır, TLS ayarı değişmez."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-12": {
         "status": "na",
-        "reason": "Yedek ve geri yükleme akışı değişmez; demo sayaç tablosu geçici kullanım verisidir, 48 saatte temizlenir."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-13": {
         "status": "na",
-        "reason": "Demo kimlik/yetki olayı üretmez; Core audit akışı değişmez. Sayaç satırları ham IP/çerez tutmaz."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-14": {
-        "status": "required",
-        "tests": [
-          "test/demoMode.test.js::demo Üretim Listesi notu gösterir, boş değildir, gerçek Item kimliği taşımaz"
-        ]
+        "status": "na",
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-15": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_session_sets_httponly_cookie"
-        ]
+        "status": "na",
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-16": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_browser_expires_after_25_minutes",
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_new_cookie_same_ip_hits_ip_quota",
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_gap_between_beats_is_capped",
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_real_ip_header_only_from_trusted_proxy"
-        ]
+        "status": "na",
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-17": {
         "status": "na",
-        "reason": "Tarayıcı güvenlik başlıkları değişmez; demo yanıtları yalnız Cache-Control no-store ekler."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-18": {
         "status": "na",
-        "reason": "CORS ayarı yoktur ve eklenmez; CRM ile Stand aynı origin üzerinden çalışır."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-19": {
         "status": "na",
-        "reason": "Demo çerezi SameSite=Strict ve yalnız demo yolunda geçerlidir; durum değiştiren uçlar yalnız kendi sayacını artırır, başka kullanıcı verisi değiştirmez. Core uçları bearer token kullanır."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-20": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_demo_endpoints_404_when_disabled"
-        ]
+        "status": "na",
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-21": {
         "status": "na",
-        "reason": "Sunucu dış URL isteği yapmaz; demo yalnız yerel veritabanını okur ve yazar."
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-22": {
-        "status": "required",
-        "tests": [
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_new_cookie_same_ip_hits_ip_quota",
-          "backend/tests/modules/fair_stand/test_demo_access.py::test_window_resets_after_24_hours"
-        ]
+        "status": "na",
+        "reason": "Yalnız stil ve demo filigranı görünümü değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       }
     }
   }

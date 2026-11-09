@@ -205,7 +205,11 @@ test('süre bitmişse editör başlamaz ve kilit ekranı çıkar', async () => {
   assert.ok(overlay);
   // Kilit gövdededir; gövdedeki yüzen paneller (Üretim Listesi) üstünde kalamaz.
   assert.ok(documentRef.body.children.includes(overlay));
-  assert.equal(byId.get('fair-stand-demo-watermark').textContent, 'DEMO');
+  const [watermarkLogo, watermarkLabel] = byId.get('fair-stand-demo-watermark').children;
+  assert.equal(watermarkLogo.tag, 'img');
+  assert.match(watermarkLogo.src, /\/assets\/kyrox-logo-siyah\.svg$/);
+  assert.equal(watermarkLogo.alt, 'Kyrox Studio');
+  assert.equal(watermarkLabel.textContent, 'DEMO');
 });
 
 test('sinyal 403 dönünce editör kilitlenir; gizli sekmede sinyal gitmez', async () => {
@@ -246,7 +250,7 @@ test('demo Geçmiş kartını sahne kurulduktan sonra da gizli tutar', () => {
   assert.match(mainSource, /if \(isFairStandDemo\(\) \|\| !revisions\.length\) \{\n    projectRevisions\.open = false;\n    projectRevisions\.hidden = true;/);
 });
 
-test('demo stili Geçmiş kartını display kuralına rağmen gizler', () => {
-  assert.match(read('../src/demoMode.css'), /#app\[data-fair-stand-demo="true"\] #project-revisions \{\n  display: none !important;\n\}/);
+test('gizli Geçmiş kartı display kuralına rağmen görünmez', () => {
+  assert.match(read('../src/style.css'), /\.collapsible-panel\[hidden\] \{\r?\n  display: none;\r?\n\}/);
   assert.match(read('../src/demoMode.js'), /setAttribute\('data-fair-stand-demo', 'true'\)/);
 });
