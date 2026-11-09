@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     live_share_turn_urls: str = Field(default="", validation_alias="FAIR_STAND_LIVE_SHARE_TURN_URLS")
     live_share_turn_username: str = Field(default="", validation_alias="FAIR_STAND_LIVE_SHARE_TURN_USERNAME")
     live_share_turn_credential: str = Field(default="", validation_alias="FAIR_STAND_LIVE_SHARE_TURN_CREDENTIAL")
+    # Oturumsuz demo (ADR-0012). Gizli anahtar boşsa demo kapalıdır (fail-closed).
+    demo_enabled: bool = Field(default=False, validation_alias="FAIR_STAND_DEMO_ENABLED")
+    demo_secret: str = Field(default="", validation_alias="FAIR_STAND_DEMO_SECRET")
+    demo_minutes_per_day: int = Field(default=25, ge=1, le=1440, validation_alias="FAIR_STAND_DEMO_MINUTES")
+    demo_ip_multiplier: int = Field(default=3, ge=1, le=50, validation_alias="FAIR_STAND_DEMO_IP_MULTIPLIER")
+    demo_heartbeat_seconds: int = Field(default=30, ge=5, le=300, validation_alias="FAIR_STAND_DEMO_HEARTBEAT_SECONDS")
+    demo_trusted_proxies: str = Field(default="127.0.0.1,::1", validation_alias="FAIR_STAND_DEMO_TRUSTED_PROXIES")
 
 
 

@@ -2,6 +2,8 @@ import { groupBomLines } from './bomLineGroups.js';
 import { resolveProjectBom } from './projectBom.js';
 import { formatItemLengthParts, getItem } from './items.js';
 import { getFairStandHostDocument } from './hostDocument.js';
+import { isFairStandDemo } from './demoMode.js';
+import { buildDemoProductionBomHtml } from './demoProductionBom.js';
 
 const PANEL_ID = 'production-bom-panel';
 const POPUP_NAME = 'fair-stand-production-bom';
@@ -26,6 +28,7 @@ const POPUP_STYLE = `
   .production-bom-module--unresolved { border-color: #fca5a5; background: #fff1f2; }
   .production-bom-module__error, .production-bom-panel__empty { margin: 0; color: #64748b; }
   .production-bom-module__error { color: #b91c1c; font-size: 12px; }
+  .production-bom-panel__demo-notice { margin: 0 0 10px; padding: 8px 10px; border: 1px solid #fcd34d; border-radius: 6px; background: #fffbeb; color: #92400e; font-weight: 650; }
   .production-bom-panel__download { border: 1px solid #94a3b8; background: #fff; color: #0f172a; font: inherit; font-size: 12px; line-height: 1; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
 `;
 
@@ -399,11 +402,17 @@ export function createProductionBomPanel() {
 
   function refresh() {
     if (!body) return;
+    // Demo: gerçek liste hiç hesaplanmaz; sabit örnek gösterilir (ADR-0012).
+    if (isFairStandDemo()) {
+      paint(buildDemoProductionBomHtml());
+      return;
+    }
     captureOpenCollapseKeys();
     paint(buildProductionBomHtml(resolveProjectBom(getModules(), getStand(), getAssetNames()), openCollapseKeys));
   }
 
   function downloadProductionBomText(doc) {
+    if (isFairStandDemo()) return;
     const view = doc?.defaultView;
     if (!view?.URL?.createObjectURL || !doc.body) return;
     const blob = new view.Blob([formatProductionBomText(resolveProjectBom(getModules(), getStand(), getAssetNames()))], {

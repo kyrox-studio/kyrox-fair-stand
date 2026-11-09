@@ -130,6 +130,7 @@ import { createSidebarController } from './sidebarController.js';
 import { createViewportToolbarController } from './viewportToolbarController.js';
 import { renderStageResult as renderStageResultInto, renderWallResult } from './stageFeedback.js';
 import { reportError, showToast } from './toastNotifications.js';
+import { applyDemoControls, DEMO_CUSTOMER_LABEL, DEMO_LOGIN_REQUIRED_MESSAGE, DEMO_PROJECT_NAME, DEMO_STAGE_READY_STATUS, isFairStandDemo } from './demoMode.js';
 import {
   defaultUprightItemKeyForWallHeight,
   formatUprightLabel,
@@ -173,7 +174,9 @@ export function startFairStandConfigurator(options = {}) {
   let stopRuntime = () => {};
 
   const endCatalog = beginEditorBootStep('catalog');
-  const boot = bootstrapFairStandCatalog()
+  // Demo: süre oturumu açılmadan katalog istenmez (ADR-0012).
+  const boot = Promise.resolve(options.beforeCatalog?.())
+    .then(() => bootstrapFairStandCatalog())
     .then(() => {
       endCatalog();
       if (cancelled) return;
@@ -209,10 +212,11 @@ function startFairStandConfiguratorRuntime(options = {}) {
     canDelete: options.capabilities?.canDelete !== false,
     canExecute: options.capabilities?.canExecute !== false,
   };
-  const initialProjectId =
-    options.initialProjectId
-    || globalThis.__FAIR_STAND_INITIAL_PROJECT_ID__
-    || null;
+  const initialProjectId = isFairStandDemo()
+    ? null
+    : options.initialProjectId
+      || globalThis.__FAIR_STAND_INITIAL_PROJECT_ID__
+      || null;
   let activeCustomerId =
     options.customerId
     || globalThis.__FAIR_STAND_CUSTOMER_ID__
@@ -698,7 +702,7 @@ function renderModuleGroupPanel() {
 function renderGroupTemplatePanel() {
   if (!groupTemplatePanel) return;
   if (!isGroupTemplateRemoteEnabled()) {
-    groupTemplatePanel.showMessage(GROUP_TEMPLATES_REMOTE_REQUIRED_MESSAGE);
+    groupTemplatePanel.showMessage(isFairStandDemo() ? DEMO_LOGIN_REQUIRED_MESSAGE : GROUP_TEMPLATES_REMOTE_REQUIRED_MESSAGE);
     return;
   }
   groupTemplatePanel.render(groupTemplates, {
@@ -2024,7 +2028,7 @@ groupTemplatePanel = createGroupTemplatePanel({
 // Kurumsal şablon: grubu organizasyon kataloğuna kaydet (Item değildir; görseller saklanmaz).
 async function saveGroupAsTemplate(group) {
   if (!isGroupTemplateRemoteEnabled()) {
-    reportGroupResult(GROUP_TEMPLATES_REMOTE_REQUIRED_MESSAGE, true);
+    reportGroupResult(isFairStandDemo() ? DEMO_LOGIN_REQUIRED_MESSAGE : GROUP_TEMPLATES_REMOTE_REQUIRED_MESSAGE, true);
     return;
   }
   if (!(capabilities.canCreate || capabilities.canUpdate)) {
@@ -2908,7 +2912,10 @@ createStageButton.addEventListener('click', async () => {
   }
 
   const projectNameSuffix = buildAutomaticProjectNameSuffix(setup.standType, setup.xCm, setup.yCm);
-  const projectName = await requestProjectName({ mode: 'create', suffix: projectNameSuffix });
+  // Demo ad sormaz ve kaydetmez (ADR-0012).
+  const projectName = isFairStandDemo()
+    ? DEMO_PROJECT_NAME
+    : await requestProjectName({ mode: 'create', suffix: projectNameSuffix });
   if (!projectName) return;
 
   autosaveController.disable();
@@ -2923,18 +2930,24 @@ createStageButton.addEventListener('click', async () => {
 
   if (!rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan, furnitureConfig, furniturePlan })) return;
 
-  try {
-    await persistActiveProject({ quiet: true, reason: 'init' });
-    autosaveController.enableFromCurrentState();
-    projectStatus.textContent = 'Oluşturuldu ve kaydedildi: ' + projectName;
-    // Kart sahneyi kilitlemez; cevap beklenmeden ilk ipucu da açılır.
-    void offerWallLockRelease();
-    onboardingTips.maybeShow();
-  } catch (error) {
-    reportError('Yeni proje ilk kayıt sırasında kaydedilemedi', error);
-    autosaveController.disable();
-    projectStatus.textContent = 'Proje oluşturuldu ancak kaydedilemedi.';
+  if (isFairStandDemo()) {
+    // Demo kaydetmez (ADR-0012); koruma kartı ve ipucu yine sahne kurulunca açılır.
+    projectStatus.textContent = DEMO_STAGE_READY_STATUS;
+  } else {
+    try {
+      await persistActiveProject({ quiet: true, reason: 'init' });
+      autosaveController.enableFromCurrentState();
+      projectStatus.textContent = 'Oluşturuldu ve kaydedildi: ' + projectName;
+    } catch (error) {
+      reportError('Yeni proje ilk kayıt sırasında kaydedilemedi', error);
+      autosaveController.disable();
+      projectStatus.textContent = 'Proje oluşturuldu ancak kaydedilemedi.';
+      return;
+    }
   }
+  // Kart sahneyi kilitlemez; cevap beklenmeden ilk ipucu da açılır.
+  void offerWallLockRelease();
+  onboardingTips.maybeShow();
 });
 
 floorTypeSelect.addEventListener('change', () => {
@@ -3300,7 +3313,8 @@ function renderRevisionList() {
   const activeNumber = displayedRevisionNumber(revisionSession);
   projectRevisionList.replaceChildren();
   syncProjectNameDisplay();
-  if (!revisions.length) {
+  // Demo kayıt tutmaz; Geçmiş kartı gösterilmez (ADR-0012).
+  if (isFairStandDemo() || !revisions.length) {
     projectRevisions.open = false;
     projectRevisions.hidden = true;
     return;
@@ -3350,7 +3364,8 @@ function applyAutosaveInterval(minutes) {
   autosaveController.setDelayMinutes(minutes);
   if (autosaveIntervalSelect) autosaveIntervalSelect.value = String(minutes);
 }
-applyAutosaveInterval(readAutosaveMinutes());
+// Demo sunucuya ya da tarayıcıya proje kaydetmez: otomatik kayıt kapalı (ADR-0012).
+applyAutosaveInterval(isFairStandDemo() ? 0 : readAutosaveMinutes());
 autosaveIntervalSelect?.addEventListener('change', () => {
   applyAutosaveInterval(writeAutosaveMinutes(autosaveIntervalSelect.value));
 });
@@ -3509,6 +3524,8 @@ function syncHostProjectUrl(projectId) {
 }
 
 async function persistActiveProject({ quiet = false, reason = 'design' } = {}) {
+  // Demo hiçbir yola proje yazmaz; kilitlenmemiş bir çağrı kalsa da burada durur (ADR-0012).
+  if (isFairStandDemo()) return { enableAutosave: false, stored: null };
   const decision = resolveRevisionWrite({
     session: revisionSession,
     reason,
@@ -3535,6 +3552,10 @@ async function persistActiveProject({ quiet = false, reason = 'design' } = {}) {
 
 async function showProjectCustomerName() {
   if (!projectCustomerDisplay) return;
+  if (isFairStandDemo()) {
+    projectCustomerDisplay.textContent = DEMO_CUSTOMER_LABEL;
+    return;
+  }
   try {
     const name = await loadCustomerDisplayName(activeCustomerId);
     projectCustomerDisplay.textContent = name || TEMPORARY_CUSTOMER_LABEL;
@@ -4762,6 +4783,8 @@ clearTextureButton.addEventListener('click', () => {
 
 // Kaydedilmemiş değişiklik varken sayfa kapatılırsa tarayıcı uyarı gösterir.
 function onBeforeUnloadWarnUnsaved(event) {
+  // Demo kaydetmez; "kaydedilmemiş değişiklik" uyarısı anlamsızdır.
+  if (isFairStandDemo()) return;
   if (!autosaveController.hasUnsavedChanges()) return;
   event.preventDefault();
   event.returnValue = '';
@@ -4809,7 +4832,9 @@ applyProjectCapabilityVisibility();
 syncSaveProjectButton();
 void showProjectCustomerName();
 
-void refreshProjectList().catch((error) => reportError('Proje listesi açılamadı', error));
+// Demo bu tarayıcıda önbellekteki (oturumlu kullanıcının) projeleri listelemez.
+if (isFairStandDemo()) applyDemoControls(document);
+else void refreshProjectList().catch((error) => reportError('Proje listesi açılamadı', error));
 void refreshGroupTemplates();
 if (initialProjectId) {
   void openStoredProject(initialProjectId);

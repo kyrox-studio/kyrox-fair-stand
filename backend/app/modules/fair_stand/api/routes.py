@@ -227,7 +227,11 @@ def get_catalog_bootstrap(
     use_case: GetCatalogBootstrapUseCase = Depends(get_catalog_bootstrap_use_case),
 ) -> dict[str, Any]:
     _ = auth
-    snapshot = use_case.execute()
+    return catalog_bootstrap_payload(use_case.execute())
+
+
+def catalog_bootstrap_payload(snapshot: Any) -> dict[str, Any]:
+    """Bootstrap yanıtı; demo yolu da aynı biçimi kullanır (demo_routes)."""
     return {
         "revision": snapshot.revision,
         "categories": [

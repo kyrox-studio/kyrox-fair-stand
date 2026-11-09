@@ -4,8 +4,12 @@ import imageActionsCss from './imageActions.css?inline';
 import helpGuideCss from './helpGuide.css?inline';
 import productionBomPanelCss from './productionBomPanel.css?inline';
 import toastNotificationsCss from './toastNotifications.css?inline';
+import demoModeCss from './demoMode.css?inline';
 import { FAIR_STAND_MARKUP } from './configuratorMarkup.js';
 import { bindLiveTabShare } from './liveTabShare.js';
+import { bindDemoActionLocks } from './demoMode.js';
+import { createDemoSession } from './demoSession.js';
+import { showToast } from './toastNotifications.js';
 import { setFairStandHostDocument } from './hostDocument.js';
 import { startFairStandConfigurator } from './main.js';
 import { startEditorBootTiming } from './projectOpenTiming.js';
@@ -82,6 +86,7 @@ const MOUNT_STYLE_CSS = [
   helpGuideCss,
   productionBomPanelCss,
   toastNotificationsCss,
+  demoModeCss,
   TRASH_BIN_PREVIEW_CSS,
   HOST_CHROME_RESET_CSS,
 ].join('\n');
@@ -130,15 +135,39 @@ export function mountFairStand(container, options = {}) {
   publishHostValue(hostWindow, '__FAIR_STAND_INITIAL_PROJECT_ID__', options.initialProjectId);
   publishHostValue(hostWindow, '__FAIR_STAND_CUSTOMER_ID__', options.customerId);
 
+  // Oturumsuz demo (ADR-0012): Core başlığı, proje ve müşteri bilgisi taşınmaz.
+  const demo = options.demo === true;
+  if (demo) {
+    publishHostValue(hostWindow, '__FAIR_STAND_DEMO__', true);
+    // Önceki oturumlu kullanımdan kalan Core başlığı demoya taşınmaz (uzak proje/şablon modu kapalı).
+    delete hostWindow.__FAIR_STAND_CATALOG_HEADERS__;
+    delete globalThis.__FAIR_STAND_CATALOG_HEADERS__;
+  }
+
   let stop;
   let stopLiveShare;
+  let unbindDemoLocks;
+  let demoSession;
   try {
+    if (demo) {
+      // Kilitler editör işleyicilerinden önce kaydolur (document capture sırası).
+      unbindDemoLocks = bindDemoActionLocks(hostDocument, {
+        notify: (message) => showToast(message, { kind: 'info' }),
+      });
+      demoSession = createDemoSession({
+        container,
+        fetchImpl: hostWindow.fetch.bind(hostWindow),
+        loginPath: options.demoLoginPath || '/login',
+      });
+    }
     stop = startFairStandConfigurator({
-      initialProjectId: options.initialProjectId,
-      customerId: options.customerId,
+      initialProjectId: demo ? undefined : options.initialProjectId,
+      customerId: demo ? undefined : options.customerId,
       capabilities: options.capabilities,
+      beforeCatalog: demoSession ? () => demoSession.ready : undefined,
     });
-    stopLiveShare = bindLiveTabShare(hostDocument, {
+    // Demo canlı paylaşım açmaz; düğme kilitli mesaj verir.
+    if (!demo) stopLiveShare = bindLiveTabShare(hostDocument, {
       capabilities: options.capabilities,
       headers: () => hostWindow.__FAIR_STAND_CATALOG_HEADERS__ || options.catalogHeaders || {},
       location: hostWindow.location,
@@ -146,6 +175,8 @@ export function mountFairStand(container, options = {}) {
       WebSocket: hostWindow.WebSocket,
     });
   } catch (error) {
+    unbindDemoLocks?.();
+    demoSession?.destroy();
     style.remove();
     container.replaceChildren();
     setFairStandHostDocument(typeof document !== 'undefined' ? document : null);
@@ -156,6 +187,8 @@ export function mountFairStand(container, options = {}) {
     try {
       stopLiveShare?.();
       stop?.();
+      unbindDemoLocks?.();
+      demoSession?.destroy();
     } catch (error) {
       console.warn('Fair Stand runtime stop failed:', error);
     }
@@ -167,6 +200,8 @@ export function mountFairStand(container, options = {}) {
       delete globalThis.__FAIR_STAND_INITIAL_PROJECT_ID__;
       delete globalThis.__FAIR_STAND_CUSTOMER_ID__;
       delete globalThis.__FAIR_STAND_PROJECT_CAPABILITIES__;
+      delete hostWindow.__FAIR_STAND_DEMO__;
+      delete globalThis.__FAIR_STAND_DEMO__;
     } catch {
       /* ignore */
     }

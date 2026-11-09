@@ -996,3 +996,27 @@ class FairStandGroupTemplateModel(Base):
     created_by: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class FairStandDemoUsageModel(Base):
+    """Oturumsuz demo kullanım sayacı (ADR-0012).
+
+    Bir satır bir öznedir: tarayıcı çerezi ya da IP. Ham değer saklanmaz, yalnız HMAC
+    özeti tutulur. Pencere 24 saattir; dolunca sayaç sıfırlanır. 48 saat görülmeyen
+    satır silinir.
+    """
+
+    __tablename__ = "fair_stand_demo_usage"
+    __table_args__ = (
+        UniqueConstraint("subject_kind", "subject_hash", name="uq_fair_stand_demo_usage_subject"),
+        CheckConstraint("subject_kind IN ('ip', 'browser')", name="ck_fair_stand_demo_usage_kind"),
+        CheckConstraint("used_seconds >= 0", name="ck_fair_stand_demo_usage_used"),
+        Index("ix_fair_stand_demo_usage_last_seen_at", "last_seen_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    subject_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    subject_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    window_started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
