@@ -12,7 +12,7 @@ test('shelf_leg is canonical without invented product metadata', () => {
     catalogVisible: false,
     categoryId: null,
     catalogItemIndex: null,
-    boothTypeKeys: null,
+    boothTypeKeys: ['maxima'],
     name: 'Raf Ayağı',
     type: 'shelf-accessory',
     unit: 'adet',

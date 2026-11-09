@@ -14,12 +14,13 @@ from app.modules.fair_stand.infrastructure.models import (
     FairStandItemBoothTypeModel,
     FairStandItemModel,
 )
+from app.modules.fair_stand.infrastructure.booth_type_seed import HIDDEN_MAXIMA_ITEM_KEYS
 from app.modules.fair_stand.infrastructure.seed_catalog import seed_fair_stand_catalog
 
 
-def _migration():
-    path = Path(__file__).resolve().parents[3] / "alembic/versions/0091_booth_types.py"
-    spec = spec_from_file_location("migration_0091_booth_types", path)
+def _migration(name="0091_booth_types"):
+    path = Path(__file__).resolve().parents[3] / f"alembic/versions/{name}.py"
+    spec = spec_from_file_location(f"migration_{name}", path)
     module = module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -38,11 +39,20 @@ def _visible_by_category(session):
     return {key: name for key, name in rows}
 
 
-def test_seed_tags_visible_items_and_leaves_extra_electronics_and_hidden_null(db_session):
+def _hidden_maxima_keys(session):
+    return set(session.scalars(
+        select(FairStandItemModel.item_key).where(FairStandItemModel.item_key.in_(HIDDEN_MAXIMA_ITEM_KEYS))
+    ).all())
+
+
+def test_seed_tags_visible_and_listed_hidden_items_and_leaves_extra_electronics_null(db_session):
     seed_fair_stand_catalog(db_session)
     db_session.flush()
     visible = _visible_by_category(db_session)
+    hidden_maxima = _hidden_maxima_keys(db_session)
+    assert "wall_150_350" in hidden_maxima and "upright_297" in hidden_maxima
     expected = {key for key, name in visible.items() if name not in ("Extra", "Elektronik & Aydınlatma")}
+    expected |= hidden_maxima
     assert expected
     assert any(name == "Extra" for name in visible.values())
     assert any(name == "Elektronik & Aydınlatma" for name in visible.values())
@@ -59,6 +69,7 @@ def test_downgrade_then_upgrade_matches_seed(db_session):
         migration.downgrade()
         assert "fair_stand_item_booth_types" not in inspect(connection).get_table_names()
         migration.upgrade()
+        _migration("0093_hidden_items_maxima").upgrade()
     db_session.expire_all()
     assert _links(db_session) == seeded
 
@@ -74,7 +85,9 @@ def test_bootstrap_lists_booth_types_and_item_keys(client, db_session, auth_head
     ]
     by_key = {item["itemKey"]: item for item in payload["items"]}
     assert by_key["led_floodlight"]["boothTypeKeys"] is None
-    assert by_key["profile_190"]["boothTypeKeys"] is None
+    # Katalogda görünmeyen profil boyu 0093 ile Maksima; listede olmayan zemin null kalır.
+    assert by_key["profile_190"]["boothTypeKeys"] == ["maxima"]
+    assert by_key["hali"]["boothTypeKeys"] is None
     assert any(item["boothTypeKeys"] == ["maxima"] for item in payload["items"])
 
 
@@ -122,3 +135,32 @@ def test_admin_booth_types_requires_catalog_read(client, db_session, auth_header
         else:
             overrides[get_authorization_adapter] = previous
     assert response.status_code == 403
+
+def test_0093_adds_missing_maxima_keeps_existing_and_downgrades_only_its_rows(db_session):
+    seed_fair_stand_catalog(db_session)
+    db_session.flush()
+    connection = db_session.connection()
+    migration = _migration("0093_hidden_items_maxima")
+    with Operations.context(MigrationContext.configure(connection)):
+        migration.downgrade()
+    db_session.expire_all()
+    assert "wall_150_350" not in _links(db_session)
+    # Admin'den önce verilmiş başka tip korunur; 0093 o Item'a ikinci satır eklemez.
+    db_session.add(FairStandItemBoothTypeModel(item_key="wall_150_350", booth_type_key="package"))
+    db_session.flush()
+    with Operations.context(MigrationContext.configure(connection)):
+        migration.upgrade()
+        migration.upgrade()
+    db_session.expire_all()
+    rows = set(db_session.execute(select(FairStandItemBoothTypeModel.item_key, FairStandItemBoothTypeModel.booth_type_key)).all())
+    assert ("wall_150_350", "package") in rows
+    assert ("wall_150_350", "maxima") not in rows
+    assert ("upright_297", "maxima") in rows
+    assert ("hali", "maxima") not in rows
+    with Operations.context(MigrationContext.configure(connection)):
+        migration.downgrade()
+    db_session.expire_all()
+    rows = set(db_session.execute(select(FairStandItemBoothTypeModel.item_key, FairStandItemBoothTypeModel.booth_type_key)).all())
+    assert ("wall_150_350", "package") in rows
+    assert ("upright_297", "maxima") not in rows
+    assert ("wall_100_350", "maxima") in rows
