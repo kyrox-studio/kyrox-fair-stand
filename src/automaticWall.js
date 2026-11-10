@@ -89,13 +89,40 @@ function lampPlacementAtLocalCenter({
   };
 }
 
-/** Her kesintisiz duvar koşusunda 150 cm'lik dilimin ortasına bir lamba. Yön duvarın sahneye bakan yönüdür. */
+/**
+ * Kesintisiz duvar koşusu başına otomatik lamba sayısı (kullanıcı kararı 2026-11-10): her 150 cm
+ * için bir lamba, artan kısım yukarı yuvarlanır (400 cm → 3, 100 cm → 1).
+ */
+export function automaticWallLampCount(runLengthCm, intervalCm = AUTOMATIC_WALL_LAMP_INTERVAL_CM) {
+  const lengthCm = Number(runLengthCm);
+  const stepCm = Number(intervalCm);
+  if (!Number.isFinite(lengthCm) || lengthCm <= 0.5 || !Number.isFinite(stepCm) || stepCm <= 0) return 0;
+  return Math.ceil(lengthCm / stepCm - 1e-6);
+}
+
+/** Lamba planına giren duvar koşuları: duvar başına `uzunluk` listesi (koşu değişti mi karşılaştırması için). */
+export function automaticWallLampRunLengths(modules, standYCm) {
+  const lengths = new Map();
+  for (const run of contiguousWallRuns(modules, standYCm)) {
+    const list = lengths.get(run.wallId) ?? [];
+    list.push(Math.round(run.end - run.start));
+    lengths.set(run.wallId, list);
+  }
+  return lengths;
+}
+
+/**
+ * Her kesintisiz duvar koşusuna `automaticWallLampCount` kadar lamba; koşu eşit dilimlere bölünür ve
+ * lamba her dilimin ortasına gelir, uçta boş kısım kalmaz. Yön duvarın sahneye bakan yönüdür.
+ * `wallIds` verilirse yalnız o duvarlar planlanır.
+ */
 export function planAutomaticWallLampPlacements({
   modules,
   standXCm,
   standYCm,
   lampWidthCm = 50,
   intervalCm = AUTOMATIC_WALL_LAMP_INTERVAL_CM,
+  wallIds = null,
 } = {}) {
   const widthCm = Number(lampWidthCm);
   const stepCm = Number(intervalCm);
@@ -103,11 +130,14 @@ export function planAutomaticWallLampPlacements({
 
   const placements = [];
   for (const run of contiguousWallRuns(modules, standYCm)) {
-    const count = Math.floor((run.end - run.start) / stepCm);
+    if (wallIds && !wallIds.has(run.wallId)) continue;
+    const lengthCm = run.end - run.start;
+    const count = automaticWallLampCount(lengthCm, stepCm);
+    const sliceCm = lengthCm / count;
     for (let index = 0; index < count; index += 1) {
       placements.push(lampPlacementAtLocalCenter({
         wallId: run.wallId,
-        localCenterCm: run.start + index * stepCm + stepCm / 2,
+        localCenterCm: Math.round(run.start + index * sliceCm + sliceCm / 2),
         lampWidthCm: widthCm,
         standXCm,
         standYCm,

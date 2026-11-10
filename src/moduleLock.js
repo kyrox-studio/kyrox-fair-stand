@@ -21,6 +21,26 @@ export function getModulesLockState(modules = []) {
   return { total, locked, allLocked: total > 0 && locked === total, partiallyLocked: locked > 0 && locked < total };
 }
 
+/**
+ * Stand değişiminin (ölçü, yerleşim, depo, alınlık) yeni ürettiği parçalar kullanıcının kilit
+ * tercihini izler (kullanıcı kararı 2026-11-10): değişimden önce hiçbir öğe kilitli değilse yeni
+ * parçalar kilitsiz, hepsi kilitliyse kilitli gelir; karışıksa parçanın kendi varsayılanı kalır.
+ * Böylece "Herşeyi Kilitle" kendi kendine değişmez. `nextModules` yerinde değişir.
+ */
+export function inheritLockForNewModules(sourceModules = [], nextModules = []) {
+  const source = sourceModules.filter(Boolean);
+  if (!source.length) return nextModules;
+  const state = getModulesLockState(source);
+  if (state.partiallyLocked) return nextModules;
+  const sourceIds = new Set(source.map((moduleState) => moduleState.id));
+  for (const moduleState of nextModules) {
+    if (!moduleState || sourceIds.has(moduleState.id)) continue;
+    if (state.allLocked) moduleState.locked = true;
+    else delete moduleState.locked;
+  }
+  return nextModules;
+}
+
 /** Toplu silme atomiktir: seçimde kilit varsa hiçbir öğe silinmez. */
 export function planSelectionRemoval(modules = [], moduleIds = []) {
   const ids = new Set(moduleIds);

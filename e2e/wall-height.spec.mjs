@@ -167,7 +167,9 @@ test('250 cm stand: door and showcases from the catalog take the stand height', 
   // Vitrin tek kart (0086): 2 göz Özellikler panelinde seçilir; her öğe stand yüksekliğine çözülür.
   await dropCatalogCard(page, 'wall_door_100_350');
   await page.keyboard.press('Escape');
-  await dropCatalogCard(page, 'wall_showcase_100_3_350', { points: [[0.55, 0.85], [0.6, 0.92]] });
+  // Kapı zemine düşer; yeri duvar projektörlerinin dizimine göre değişebildiği için (300 cm'ye kadar)
+  // vitrin kapıdan uzak sol öne bırakılır.
+  await dropCatalogCard(page, 'wall_showcase_100_3_350', { points: [[0.4, 0.88], [0.35, 0.92]] });
   await chooseCatalogWidth(page, 'wall_showcase_100_2_350');
   // İkinci vitrin seçili vitrinin yanına Özellikler panelindeki Ekle… ile konur (kart 3 gözlü).
   await page.locator('.selection-property-panel [data-module-action="add"]').click();

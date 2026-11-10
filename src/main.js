@@ -7,7 +7,6 @@ import { planAutomaticDepot } from './autoDepot.js';
 import { planAutomaticFurniture } from './autoFurniture.js';
 import { requestWallLockDecision } from './wallLockNotice.js';
 import { planAutomaticFascia } from './autoFascia.js';
-import { planAutomaticWallLampPlacements } from './automaticWall.js';
 import {
   addFlatPanelBackStrips,
   createModuleStateFromCatalogKey,
@@ -82,6 +81,7 @@ import { requestStandChangeConfirmation } from './standChangeDialog.js';
 import {
   composeStandWallStates,
   createAutomaticFasciaStates,
+  createAutomaticWallLampStates,
   createDepotLampStates,
   createDepotStates,
   createFurnitureStates,
@@ -2657,8 +2657,9 @@ standTypeButtons.forEach((button) => {
   });
 });
 
-// ▲▼: ölçüyü 0,5 m (izinli adım) artırır / azaltır; kurulu standda değişim hemen uygulanır,
-// bir şey kalkacaksa önce önizleme sorar.
+// ▲▼: ölçüyü 1 m artırır / azaltır (kullanıcı kararı 2026-11-10); elle 0,5 m adımlı değer yazılabilir,
+// 9,5 m'de ▲ 10,5 m olur. Kurulu standda değişim hemen uygulanır, bir şey kalkacaksa önce önizleme sorar.
+const STAND_SIZE_ARROW_STEP_CM = 100;
 document.querySelectorAll('.stand-size-step').forEach((button) => {
   button.addEventListener('click', () => {
     const input = document.getElementById(button.dataset.sizeInput);
@@ -2669,7 +2670,7 @@ document.querySelectorAll('.stand-size-step').forEach((button) => {
       : MIN_STAND_DIMENSION_CM;
     const nextCm = Math.min(MAX_STAND_DIMENSION_CM, Math.max(
       MIN_STAND_DIMENSION_CM,
-      baseCm + Number(button.dataset.sizeStep) * STAND_DIMENSION_STEP_CM,
+      baseCm + Number(button.dataset.sizeStep) * STAND_SIZE_ARROW_STEP_CM,
     ));
     input.value = formatMeters(nextCm);
     updateStageCreateState();
@@ -2752,23 +2753,7 @@ function readSceneSetupFromControls() {
 
 
 function appendAutomaticWallLamps(standXCm, standYCm) {
-  const lampItem = getTopLightItemForType('led-floodlight');
-  if (!lampItem) return;
-  const walls = currentModules.filter(
-    (moduleState) => moduleState.type === 'flat-panel' && moduleState.placement,
-  );
-  const planned = planAutomaticWallLampPlacements({
-    modules: walls,
-    standXCm,
-    standYCm,
-    lampWidthCm: Number(lampItem.dimensions?.widthCm) || 50,
-  });
-  for (const placement of planned) {
-    const lamp = createModuleStateFromDescriptor({ type: 'led-floodlight' });
-    if (!lamp) continue;
-    lamp.placement = snapPlacementToItemAnchor(lamp, placement, currentModules) ?? { ...placement };
-    currentModules.push(lamp);
-  }
+  currentModules.push(...createAutomaticWallLampStates(currentModules, { standXCm, standYCm }));
 }
 
 function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan, furnitureConfig, furniturePlan }) {

@@ -6,6 +6,7 @@ import {
   composeAutomaticStandWall,
   getAutomaticWallCapacityCm,
   planAutomaticDepotLampPlacements,
+  automaticWallLampCount,
   planAutomaticWallLampPlacements,
 } from '../src/automaticWall.js';
 import { planAutomaticDepot } from '../src/autoDepot.js';
@@ -88,7 +89,7 @@ function wallModulesFrom(result) {
   }));
 }
 
-test('automatic lamps sit in each 150 cm bay, face the scene, and keep wall widths', () => {
+test('automatic lamps: one per 150 cm rounded up, spread evenly, face the scene, keep wall widths', () => {
   const result = composeAutomaticStandWall({
     wallWidthCm: 900,
     standType: 'l-left',
@@ -104,12 +105,15 @@ test('automatic lamps sit in each 150 cm bay, face the scene, and keep wall widt
     lampWidthCm: 50,
   });
 
+  // Sol 400 cm → 3 lamba (133 cm dilim), sırt 500 cm → 4 lamba (125 cm dilim); uçta boş kısım kalmaz.
   assert.deepEqual(lamps, [
-    { xCm: 0, yCm: 300, zCm: 0, rotationZDeg: 90, wallId: 'left' },
-    { xCm: 0, yCm: 150, zCm: 0, rotationZDeg: 90, wallId: 'left' },
-    { xCm: 50, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
-    { xCm: 200, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
-    { xCm: 350, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
+    { xCm: 0, yCm: 308, zCm: 0, rotationZDeg: 90, wallId: 'left' },
+    { xCm: 0, yCm: 175, zCm: 0, rotationZDeg: 90, wallId: 'left' },
+    { xCm: 0, yCm: 42, zCm: 0, rotationZDeg: 90, wallId: 'left' },
+    { xCm: 38, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
+    { xCm: 163, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
+    { xCm: 288, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
+    { xCm: 413, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
   ]);
 });
 
@@ -128,13 +132,15 @@ test('right wall lamps face into the stand', () => {
     lampWidthCm: 50,
   });
   assert.deepEqual(lamps, [
-    { xCm: 50, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
-    { xCm: 200, yCm: 50, zCm: 0, rotationZDeg: 270, wallId: 'right' },
-    { xCm: 200, yCm: 200, zCm: 0, rotationZDeg: 270, wallId: 'right' },
+    { xCm: 25, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
+    { xCm: 125, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
+    { xCm: 200, yCm: 42, zCm: 0, rotationZDeg: 270, wallId: 'right' },
+    { xCm: 200, yCm: 175, zCm: 0, rotationZDeg: 270, wallId: 'right' },
+    { xCm: 200, yCm: 308, zCm: 0, rotationZDeg: 270, wallId: 'right' },
   ]);
 });
 
-test('a wall shorter than 150 cm gets no automatic lamp', () => {
+test('a wall shorter than 150 cm still gets one centred lamp', () => {
   const result = composeAutomaticStandWall({
     wallWidthCm: 100,
     standType: 'back-wall',
@@ -147,7 +153,8 @@ test('a wall shorter than 150 cm gets no automatic lamp', () => {
     standXCm: 100,
     standYCm: 300,
     lampWidthCm: 50,
-  }), []);
+  }), [{ xCm: 25, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' }]);
+  assert.deepEqual([0, 100, 150, 151, 300, 350, 400].map((lengthCm) => automaticWallLampCount(lengthCm)), [0, 1, 1, 2, 2, 3, 3]);
 });
 
 test('automatic lamp snaps onto the wall top profile and keeps its scene-facing yaw', () => {
@@ -171,8 +178,8 @@ test('automatic lamp snaps onto the wall top profile and keeps its scene-facing 
   const light = createModuleStateFromCatalogKey('led_floodlight');
   const snapped = snapPlacementToItemAnchor(light, planned, hosts);
   const profile = getItem('profile_190');
-  assert.deepEqual(planned, { xCm: 50, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' });
-  assert.equal(snapped.xCm, 50);
+  assert.deepEqual(planned, { xCm: 25, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' });
+  assert.equal(snapped.xCm, 25);
   assert.equal(snapped.yCm, 0);
   assert.equal(snapped.rotationZDeg, 0);
   assert.equal(snapped.zCm, resolveVirtualTopRailZCm(hosts[0], profile));
@@ -182,7 +189,7 @@ test('automatic lamp snaps onto the wall top profile and keeps its scene-facing 
   );
 });
 
-test('depot rear wall gets no lamp and the wall beside it keeps the 150 cm cadence', () => {
+test('depot rear wall gets no lamp and each wall run beside it gets its own lamps', () => {
   const plan = planAutomaticDepot({
     standType: 'back-wall',
     standXCm: 600,
@@ -208,8 +215,10 @@ test('depot rear wall gets no lamp and the wall beside it keeps the 150 cm caden
     lampWidthCm: 50,
   });
   assert.deepEqual(lamps, [
-    { xCm: 50, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
-    { xCm: 450, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
+    { xCm: 25, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
+    { xCm: 125, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
+    { xCm: 425, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
+    { xCm: 525, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'back' },
   ]);
   assert.equal(lamps.some((lamp) => lamp.xCm >= 200 && lamp.xCm < 400), false);
 });
