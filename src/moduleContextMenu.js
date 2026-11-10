@@ -1,3 +1,4 @@
+import { installPropertyPanelPlacement } from './propertyPanelPlacement.js';
 import { getCatalogItem, getModuleCatalogLabel, listCatalogGroups } from './catalog.js';
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
 import { getModuleBehavior } from './moduleBehavior.js';
@@ -138,7 +139,9 @@ export function createModuleContextMenu({
     </div>
   `;
   panel.appendChild(menu);
-  (document.querySelector('.viewport-wrap') ?? document.body).appendChild(panel);
+  const panelHost = document.querySelector('.viewport-wrap') ?? document.body;
+  panelHost.appendChild(panel);
+  if (panelHost !== document.body) installPropertyPanelPlacement(panelHost);
   // Panel etkileşimi sahne / kamera dinleyicilerine geçmez.
   ['pointerdown', 'wheel', 'touchstart'].forEach((type) => {
     panel.addEventListener(type, (event) => event.stopPropagation(), { passive: true });

@@ -717,17 +717,18 @@ button.asset-tile > span {
   border-left: 2px solid #e5e9ef;
 }
 
-/* Seçime göre özellik paneli: sahnenin sağında, görünüm küpünün altında yüzen kart. Sahne
+/* Seçime göre özellik paneli: her ekranda üst çubuğun altında, sağda yüzen buzlu kart. Sahne
    daralmaz; üst bant ve küp yerinde kalır. */
 .selection-property-panel {
   position: absolute;
   /* Sahne ölçü etiketleri (z-index 30) panelin üstüne çıkmasın. */
   z-index: 32;
-  top: 12px;
+  /* Üst kenar üst çubuğun/küpün altına oturur (src/propertyPanelPlacement.js). */
+  top: var(--property-panel-top, 104px);
   right: 12px;
-  max-height: calc(100% - 24px);
+  max-height: calc(100% - var(--property-panel-top, 104px) - 12px);
   display: flex;
-  width: 300px;
+  width: min(300px, calc(100% - 24px));
   box-sizing: border-box;
   flex-direction: column;
   gap: 6px;
@@ -755,15 +756,8 @@ button.asset-tile > span {
   display: none;
 }
 
-/* Yatay tablet ve masaüstü: panel üst çubuğun altında, sağda yüzen yuvarlak köşeli karttır. Panel açılınca üst çubuk yerinden oynamaz,
-   görünüm küpü sahnenin sol altında durur; sahnede üst üste binen kutu olmaz. */
+/* Yatay tablet ve masaüstü: görünüm küpü sahnenin sol altında durur; panel açılınca üst çubuk yerinden oynamaz. */
 @media (min-width: 1024px) {
-  .selection-property-panel {
-    top: 104px;
-    right: 12px;
-    max-height: calc(100% - 116px);
-  }
-
 
   .selection-property-panel > .selection-property-header {
     top: -12px;
@@ -1368,17 +1362,6 @@ button.asset-tile > span {
 }
 
 /* Dikey tablet ve telefon: panel alttan açılır, sahne üstte görünür kalır. */
-@media (max-width: 1023px) {
-  .selection-property-panel {
-    top: auto;
-    right: 8px;
-    bottom: 8px;
-    left: 8px;
-    width: auto;
-    max-height: 48%;
-  }
-}
-
 @media (pointer: coarse) {
   .selection-property-panel .selection-property-close,
   .selection-property-panel .selection-rotation-buttons button,
@@ -2122,7 +2105,6 @@ button[aria-busy="true"]::after {
     top: 8px;
     padding: 6px;
     border-radius: 10px;
-    background: rgba(17, 24, 39, 0.72);
   }
 
   .live-share-popover { left: 0; right: auto; }
