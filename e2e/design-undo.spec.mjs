@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 // Faz 2 — Geri al / İleri al (kyrox-platform projects/fair-stand/GROUP_LOCK_ROADMAP.md):
 // taşıma, silme ve kilit Ctrl+Z ile geri alınır, Ctrl+Y ile ileri alınır; üst bant
@@ -16,7 +16,7 @@ async function createIslandStand(page, projectName) {
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();
   await projectNameInput.fill(projectName);
@@ -160,7 +160,7 @@ test('metin kutusundaki Ctrl+Z tasarımı geri almaz', async ({ page }) => {
   const fridge = placed.modules.find((moduleState) => moduleState.itemKey === FRIDGE.key);
 
   // Yetenek bağımsız metin alanı: buzdolabının renk alanı olmak zorunda değildir.
-  await page.locator('#rename-project').click();
+  await clickProjectAction(page, 'rename-project');
   const name = page.locator('form input[name="projectName"]');
   await expect(name).toBeVisible();
   await name.fill('Metin düzenlemesi');

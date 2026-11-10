@@ -1,6 +1,6 @@
 import { showSurfaceControls } from './helpers/surfaceControls.mjs';
 import { test, expect } from '@playwright/test';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard } from './helpers/standSetup.mjs';
 
 async function createStand(page, standName, projectName) {
   await page.goto('/');
@@ -10,7 +10,7 @@ async function createStand(page, standName, projectName) {
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();
   await projectNameInput.fill(projectName);

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard } from './helpers/standSetup.mjs';
 
 // Katalogdan bırakılan tek modül sahneye tek başına eklenir: sahnedeki diğer modüller ve
 // görselleri yeniden yaratılmaz (eskiden her bırakmada bütün sahne baştan kuruluyordu).
@@ -51,7 +51,7 @@ test('dropping a catalog module adds only that module and keeps the others untou
   await page.locator('#stand-size-x').fill('6');
   await page.locator('#stand-size-y').fill('6');
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Ekleme');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await keepWallLock(page);
@@ -90,7 +90,7 @@ test('undo and redo touch only the module that changed', async ({ page }) => {
   await page.locator('#stand-size-x').fill('6');
   await page.locator('#stand-size-y').fill('6');
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Geri Al');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await keepWallLock(page);

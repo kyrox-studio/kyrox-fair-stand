@@ -192,10 +192,14 @@ Her item kendi ölçü/BOM’unu taşır; stand tavanı yalnız **max zarf** (ö
 
 ### B.16. Açık standın duvar yüksekliğini sonradan değiştirmek
 
-- **Durum:** BACKLOG — 2026-10-19 (kullanıcı kararı: şimdi gerek yok, ileride olmalı; rakipler yapıyor).
-- **Bugün:** Duvar yüksekliği (250–500) yalnız “Sahneyi Oluştur”da seçilir, `stand.wallHeightCm` kaydedilir. Açık standda değiştirmek için mevcut duvar, kapı, vitrin ve kısa duvarların `resolveWallItemKeyForHeight` ile yeni yüksekliğe çevrilmesi ve sahnenin yeniden kurulması gerekir.
+- **Durum:** YAPILDI — 2026-11-10 (yeniden boyutlandırma motorunun ilk adımı; `src/standResize.js`, kurallar `src/standResizeRules.js`).
+- **Kullanıcı kararları (2026-11-10):** duvar üstü öğeler (TV, raf, strafor, kutu) yerinde kalır, yeni tepeyi aşan tepeye iner; panel bantları alttan korunur, eklenen bant boş gelir, alçalınca üst bantlar kalkar; duvar tepesine kadar uzanan Lightbox / Mesh yeni boya uzar; değişim önizleme + onayla tek adımda uygulanır (Geri al döner); tepeye ulaşan dikme duvar tepesine göre yerini korur (boyu fark kadar değişir), duvardan kısa dikme yerinde kalır, karşılığı olmayan boy değişmez ve uyarı gösterilmez.
+- **Kodun ek kuralı:** `z_reference = wall-top` öğeler (profil, kısa duvar / alınlık), duvar tepesindeki projektör ve tavana değen tül fark kadar iner / çıkar.
+- **Genişlik / derinlik (2026-11-10, aynı motor):** kullanıcı kararları — Sırt Duvar ve U'da sırt duvarı iki uçtan eşit uzar / kısalır, içerik ortada kalır; L'de köşe sabit, açık uç uzar / kısalır; Ada'da bütün içerik ortada kalır (tasarım bölünmez); derinlikte sırt duvarı yerinde kalır, ön kenar uzar / kısalır (rakip standı merkezde tutup sırtı geriye itiyor; bilerek farklı). Kısalan kenarda dışarıda kalan panel kalkar, yarısı kalan düz panel daraltılır; mobilya ve serbest öğeler en yakın kenara göre konumlanır; aynı gruptaki ve izi birbirine değen öğeler tek küme, bölünmez, taşarsa bütün hâlinde uygun yere taşınır; uçtan uca tül yalnız kısalır, uzamaz; alınlık yeniden kurulur ve görselleri aynı konuma taşınır. Uzayan duvara otomatik projektör eklenmez. Ölçü alanında ▲▼ 0,5 m adımla değiştirir, elle yazılan değer Enter'la uygulanır; bir şey kalkacaksa önce önizleme sorar, kalkmıyorsa doğrudan uygulanır (Geri al döner).
+- **Yerleşim (2026-11-10, aynı motor):** kullanıcı kararları — ölçü değişimindeki gibi önizleme + onay, Geri al döner. Kalan duvar görseli ve üstündeki öğelerle yerinde kalır; kalkan kenarın duvarı görselleri ve üstündekilerle gider (Ada'da bütün kenar duvarları), kalkan görsel hatırlanmaz; yeni kenara boş duvar gelir; depo ve alınlık yeni yerleşime göre kurulur; serbest öğeler yerinde, çakışan küme içeri alınır.
+- **Depo / ekipman / alınlık / stand mobilyaları (2026-11-10, aynı motor):** kurulu standda anında değişir; bir şey kalkacaksa önce önizleme sorar, kalkmıyorsa doğrudan uygulanır (yerleşim de bu kurala uyar). Depo yeni ayara göre kurulur / kalkar; yalnız ekipman değişince depo yerinde kalır. Depoyla çakışan öğe kümesiyle depodan dışarı, en yakın boş yere itilir. Mobilya işaretlenince set benzeri olsa da eklenir; kaldırılınca setteki her üründen sahnede varsa birer tane (setin yerine en yakını) kalkar.
+- **Kapsam dışı:** Paket ve Özel Tasarım kuralları.
 - **Kaynak:** `REFACTOR.md` 2026-10-19 Duvar yüksekliği kuralı.
-
 ---
 ## C. Stand zarfı ve DB (Item tablosu değil)
 

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 async function createIslandStand(page, projectName) {
   await page.goto('/');
@@ -7,7 +8,7 @@ async function createIslandStand(page, projectName) {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();
   await projectNameInput.fill(projectName);
@@ -79,7 +80,7 @@ test('Kaydet → tarayıcı yenile → Aç önceki item identity ve placement’
     select.value = id;
   }, before.id);
 
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
   await expect(page.locator('#viewport > canvas')).toHaveCount(1);

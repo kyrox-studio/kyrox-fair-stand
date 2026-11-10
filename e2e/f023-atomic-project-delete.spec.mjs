@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 async function seedProjectsAndAssets(page) {
   await page.evaluate(async () => {
@@ -105,7 +106,7 @@ test('deleting a project removes its record and assets without touching another 
   await expect(projectSelect).toHaveValue('f023-target-project');
 
   page.once('dialog', async (dialog) => dialog.accept());
-  await page.locator('#delete-project').click();
+  await clickProjectAction(page, 'delete-project');
   await expect(page.locator('#project-status')).toHaveText('Proje silindi.');
 
   const stored = await readStoredIds(page);
@@ -126,7 +127,7 @@ test('deleting the open project returns to the first-open empty scene without a 
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('F023 Open Delete');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -138,13 +139,14 @@ test('deleting the open project returns to the first-open empty scene without a 
   });
 
   page.once('dialog', async (dialog) => dialog.accept());
-  await page.locator('#delete-project').click();
+  await clickProjectAction(page, 'delete-project');
 
   await expect(page.locator('#viewport-empty')).toBeVisible();
   await expect(page.locator('#viewport-toolbar')).toBeHidden();
   await expect(page.locator('#project-name-display')).toHaveText('Adsız Proje');
   await expect(page.locator('#project-status')).toHaveText('Aktif proje henüz kaydedilmedi.');
-  await expect(page.locator('#create-stage')).toBeDisabled();
+  // Boş sahnede yeni proje sihirbazı açılır (proje yalnız sihirbazdan kurulur).
+  await expect(page.getByRole('dialog', { name: 'Yeni proje sihirbazı' })).toBeVisible();
   expect(loadCount).toBe(0);
   expect(pageErrors).toEqual([]);
 });

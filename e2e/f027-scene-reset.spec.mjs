@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 
 async function readProjects(page) {
   return page.evaluate(async () => {
@@ -29,16 +30,28 @@ test('Sahneyi Sıfırla rebuilds from the visible setup controls without creatin
   await setupCard.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
 
   const nameInput = page.locator('form input[name="projectName"]');
   await nameInput.fill('F027 Reset');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#stage-result')).toContainText('Ada Stand · 500 × 500 cm');
 
+  // Kurulu standda yerleşim ve ölçü hemen değişir, bir şey kalkacaksa önce sorar (2026-11-10); Sıfırla sonra
+  // sol menüdeki güncel seçimlerle (yerleşim, ölçü, zemin, depo) sahneyi baştan kurar.
+  // Ada → L Sol hiçbir şey kaldırmaz: pencere açılmadan uygulanır.
   await setupCard.getByRole('button', { name: 'L Stand Sol' }).click();
+  await expect(page.locator('#stage-result')).toContainText('L Stand Sol · 500 × 500 cm');
+  const sizeDialog = page.getByRole('dialog', { name: /Stand ölçüsü/ });
+  // Büyütme hiçbir şey kaldırmaz: pencere açılmadan uygulanır.
   await page.locator('#stand-size-x').fill('9');
+  await page.locator('#stand-size-x').press('Enter');
+  await expect(page.locator('#stage-result')).toContainText('L Stand Sol · 900 × 500 cm');
+  // Derinlik küçülünce sol duvardan panel kalkar: önce sorar.
   await page.locator('#stand-size-y').fill('3');
+  await page.locator('#stand-size-y').press('Enter');
+  await sizeDialog.getByRole('button', { name: 'Uygula' }).click();
+  await expect(sizeDialog).toBeHidden();
   await page.locator('#floor-type').selectOption('hali');
   await page.locator('#auto-depot-size').selectOption('200x200');
   await page.locator('#auto-depot-contents').check();

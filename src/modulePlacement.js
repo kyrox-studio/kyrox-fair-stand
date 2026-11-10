@@ -933,6 +933,22 @@ function getOrientedFootprint(module) {
   };
 }
 
+/** Modülün zemindeki izinin eksene hizalı sınırları (cm); ölçü yoksa null. */
+export function getModuleFootprintBoundsCm(module) {
+  const footprint = getOrientedFootprint(module);
+  if (!footprint) return null;
+  const [halfW, halfD] = footprint.half;
+  const [axisW, axisD] = footprint.axes;
+  const extentX = Math.abs(axisW.x) * halfW + Math.abs(axisD.x) * halfD;
+  const extentY = Math.abs(axisW.y) * halfW + Math.abs(axisD.y) * halfD;
+  return {
+    minXCm: footprint.center.xCm - extentX,
+    maxXCm: footprint.center.xCm + extentX,
+    minYCm: footprint.center.yCm - extentY,
+    maxYCm: footprint.center.yCm + extentY,
+  };
+}
+
 function orientedFootprintsOverlap(moduleA, moduleB) {
   const a = getOrientedFootprint(moduleA);
   const b = getOrientedFootprint(moduleB);

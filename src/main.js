@@ -1,20 +1,13 @@
 import { assetMatchesQuery, sortAssetsForLibrary } from './assetLibraryOrder.js';
-import { validateStandSetupMeters, formatMeters } from './standSizeInput.js';
+import { validateStandSetupMeters, formatMeters, metersInputToCm } from './standSizeInput.js';
 import { createEditorViewSettings } from './editorViewSettings.js';
 import { createStandScene, prefetchModuleModels } from './scene3d.js';
 import { initHelpGuide } from './helpGuide.js';
 import { planAutomaticDepot } from './autoDepot.js';
 import { planAutomaticFurniture } from './autoFurniture.js';
 import { requestWallLockDecision } from './wallLockNotice.js';
-import { planAutomaticFascia, resolveFasciaPanelItemKey, resolveFasciaUprightItemKey } from './autoFascia.js';
-import {
-  composeAutomaticStandWall,
-  composeAutomaticBackWallWithDepot,
-  composeAutomaticSideWallWithDepot,
-  getAutomaticWallCapacityCm,
-  planAutomaticWallLampPlacements,
-  planAutomaticDepotLampPlacements,
-} from './automaticWall.js';
+import { planAutomaticFascia } from './autoFascia.js';
+import { planAutomaticWallLampPlacements } from './automaticWall.js';
 import {
   addFlatPanelBackStrips,
   createModuleStateFromCatalogKey,
@@ -50,7 +43,13 @@ import { getBoothTypeHeading, normalizeBoothType } from './boothTypes.js';
 import { createOnboardingTips } from './onboardingTips.js';
 import { createModuleDragSidebar } from './moduleDragSidebar.js';
 import { createColorEditorController } from './colorEditorController.js';
-import { STAND_TYPE_LABELS, validateStandSetup } from './standSetup.js';
+import {
+  MAX_STAND_DIMENSION_CM,
+  MIN_STAND_DIMENSION_CM,
+  STAND_DIMENSION_STEP_CM,
+  STAND_TYPE_LABELS,
+  validateStandSetup,
+} from './standSetup.js';
 import {
   clampFloorRelativeBottomZCm,
   createModulePlacement,
@@ -79,6 +78,22 @@ import { buildSaveAsClone } from './projectSaveAs.js';
 import { createAutosaveController } from './autosaveController.js';
 import { readAutosaveMinutes, writeAutosaveMinutes } from './autosaveSettings.js';
 import { createDesignHistory } from './designHistory.js';
+import { requestStandChangeConfirmation } from './standChangeDialog.js';
+import {
+  composeStandWallStates,
+  createAutomaticFasciaStates,
+  createDepotLampStates,
+  createDepotStates,
+  createFurnitureStates,
+  describeStandLayoutChangeReport,
+  describeStandSizeChangeReport,
+  describeWallHeightChangeReport,
+  planStandStructureChange,
+  planStandSizeChange,
+  planStandWallHeightChange,
+  standSizeChangeRemovesContent,
+  standStructureChangeRemovesContent,
+} from './standResize.js';
 import { isEditableKeyboardTarget, resolveViewKeyboardShortcut } from './viewKeyboardShortcuts.js';
 import {
   MODULE_LOCKED_MESSAGE,
@@ -148,7 +163,7 @@ import {
   writeProfileLengthPreference,
 } from './profileLength.js';
 import { describeModuleVariants, resolveModuleVariantItemKey } from './catalogWidthFamily.js';
-import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveAutomaticWallFlatPanelItemKey, resolveItemDefaultZCm, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
+import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
 import {
@@ -242,13 +257,22 @@ const appElement = document.querySelector('#app');
 const sidebarToggleButton = document.querySelector('#sidebar-toggle');
 const viewport = document.querySelector('#viewport');
 const viewportEmpty = document.querySelector('#viewport-empty');
-// Yeni proje sihirbazı boş sahnede açılır, mevcut kurulum alanlarını ve Sahneyi Oluştur'u kullanır.
+// Yeni proje sihirbazı: boş sahnede ve üst banttaki Yeni ile açılır; sol menüdeki kurulum alanlarını
+// doldurur, Oluştur sahneyi kurar (kullanıcı kararı 2026-11-10: proje yalnız sihirbazdan kurulur;
+// sihirbazdaki seçimler Oluştur'a kadar açık standa dokunmaz).
 const newProjectWizard = createNewProjectWizard({
   container: viewportEmpty,
   validateSetup: () => readSceneSetupFromControls(),
-  onCreate: () => createStageButton.click(),
+  onCreate: () => createStageFromSetup(),
   onBoothTypeChange: () => syncBoothTypeHeading(),
-  onVisibilityChange: (visible) => syncSidebarForWizard(visible),
+  onVisibilityChange: (visible) => {
+    syncSidebarForWizard(visible);
+    // Açık standın üstünde açılan sihirbaz kapanınca sahne görünür, sol menü alanları açık standa döner.
+    if (!visible && currentStand) {
+      viewportEmpty.hidden = true;
+      syncOpenStandControls();
+    }
+  },
 });
 const onboardingTips = createOnboardingTips({ container: viewportEmpty?.closest('.viewport-wrap') });
 const viewportToolbar = document.querySelector('#viewport-toolbar');
@@ -264,7 +288,7 @@ const standSizeYInput = document.querySelector('#stand-size-y');
 // Yeni stand için varsayılan ölçü (m): genişlik 5, derinlik 4; kullanıcı değiştirebilir.
 const DEFAULT_STAND_WIDTH_M = '5';
 const DEFAULT_STAND_DEPTH_M = '4';
-const createStageButton = document.querySelector('#create-stage');
+const newProjectButton = document.querySelector('#new-project');
 const wallHeightSelect = document.querySelector('#wall-height');
 const floorTypeSelect = document.querySelector('#floor-type');
 const floorAreaControls = document.querySelector('#floor-area-controls');
@@ -676,10 +700,9 @@ function readStandSetup() {
 
 function updateStageCreateState() {
   const result = readStandSetup();
-  createStageButton.disabled = !result.ok;
 
   if (result.ok) {
-    if (!currentStand) renderStageResult('Stand alanı hazır. Sahneyi oluşturabilirsin.');
+    if (!currentStand) renderStageResult('Stand alanı hazır. Sihirbazda Oluştur ile kurulur.');
     return;
   }
 
@@ -688,7 +711,7 @@ function updateStageCreateState() {
   if (selectedStandType && xHasValue && yHasValue) {
     renderStageResult(result.message, true);
   } else if (!currentStand) {
-    renderStageResult('Yerleşim ile X ve Y ölçülerinin üçü de tamamlanmadan sahne oluşmaz.');
+    renderStageResult('Stand yeni proje sihirbazıyla kurulur.');
   }
 }
 
@@ -2597,8 +2620,19 @@ renderCurrentViewButton?.addEventListener('click', async () => {
   }
 });
 
+function syncStandTypeButtons(standType) {
+  standTypeButtons.forEach((candidate) => {
+    candidate.setAttribute('aria-pressed', String(candidate.dataset.standType === standType));
+  });
+}
+
 standTypeButtons.forEach((button) => {
   button.addEventListener('click', () => {
+    // Kurulu standda yerleşim değişimi motora gider; sahne baştan kurulmaz.
+    if (isEditingOpenStand()) {
+      void applyStandLayoutChange(button.dataset.standType);
+      return;
+    }
     selectedStandType = button.dataset.standType;
     standTypeButtons.forEach((candidate) => {
       candidate.setAttribute('aria-pressed', String(candidate === button));
@@ -2610,7 +2644,36 @@ standTypeButtons.forEach((button) => {
 [standSizeXInput, standSizeYInput].forEach((input) => {
   input.addEventListener('input', updateStageCreateState);
   input.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && !createStageButton.disabled) createStageButton.click();
+    if (event.key !== 'Enter') return;
+    // Kurulu standda Enter ölçü değişimini onaya götürür; sahneyi baştan kurmaz.
+    if (isEditingOpenStand()) {
+      event.preventDefault();
+      applyStandSizeFromInputs();
+      return;
+    }
+  });
+  input.addEventListener('change', () => {
+    if (isEditingOpenStand()) applyStandSizeFromInputs();
+  });
+});
+
+// ▲▼: ölçüyü 0,5 m (izinli adım) artırır / azaltır; kurulu standda değişim hemen uygulanır,
+// bir şey kalkacaksa önce önizleme sorar.
+document.querySelectorAll('.stand-size-step').forEach((button) => {
+  button.addEventListener('click', () => {
+    const input = document.getElementById(button.dataset.sizeInput);
+    if (!input) return;
+    const currentCm = metersInputToCm(input.value);
+    const baseCm = Number.isFinite(currentCm) && currentCm > 0
+      ? Math.round(currentCm / STAND_DIMENSION_STEP_CM) * STAND_DIMENSION_STEP_CM
+      : MIN_STAND_DIMENSION_CM;
+    const nextCm = Math.min(MAX_STAND_DIMENSION_CM, Math.max(
+      MIN_STAND_DIMENSION_CM,
+      baseCm + Number(button.dataset.sizeStep) * STAND_DIMENSION_STEP_CM,
+    ));
+    input.value = formatMeters(nextCm);
+    updateStageCreateState();
+    if (isEditingOpenStand()) void applyStandSizeFromInputs();
   });
 });
 autoDepotSizeSelect?.addEventListener('change', syncAutoDepotControls);
@@ -2625,34 +2688,6 @@ function syncAutoDepotControls() {
   if (autoDepotContentsHint) autoDepotContentsHint.hidden = !enabled;
 }
 
-function createAutomaticDepotStates(plan) {
-  if (!plan?.ok) return [];
-  return plan.specs.map((spec) => {
-    if (spec.kind === 'door') {
-      const state = createModuleStateFromCatalogKey(resolveWallItemKeyForHeight('wall_door_100_350', activeWallHeightCm()));
-      if (!state) return null;
-      state.placement = { ...spec.placement };
-      state.autoDepot = true;
-      return state;
-    }
-    const descriptor = {
-      ...spec,
-      type: spec.kind === 'wall' ? 'flat-panel' : spec.kind,
-    };
-    // Depo duvarı da standın yüksekliğindeki düz duvardır.
-    if (descriptor.type === 'flat-panel') {
-      descriptor.itemKey = spec.itemKey
-        ? resolveWallItemKeyForHeight(spec.itemKey, activeWallHeightCm())
-        : resolveAutomaticWallFlatPanelItemKey(spec.widthCm, activeWallHeightCm());
-    }
-    const state = createModuleStateFromDescriptor(descriptor);
-    if (!state) return null;
-    state.placement = { ...spec.placement };
-    state.autoDepot = true;
-    return state;
-  }).filter(Boolean);
-}
-
 function readWallHeightCm() {
   const value = Number(wallHeightSelect?.value);
   return WALL_LINE_HEIGHTS_CM.includes(value) ? value : CATALOG_WALL_LINE_HEIGHT_CM;
@@ -2662,17 +2697,6 @@ function readWallHeightCm() {
 function activeWallHeightCm() {
   const value = Number(currentStand?.wallHeightCm);
   return WALL_LINE_HEIGHTS_CM.includes(value) ? value : CATALOG_WALL_LINE_HEIGHT_CM;
-}
-
-/** Otomatik duvar parçası: seçilen yükseklikteki düz duvar. */
-function createAutomaticWallState(widthCm, wallHeightCm) {
-  const moduleState = createModuleStateFromDescriptor({
-    type: 'flat-panel',
-    widthCm,
-    itemKey: resolveAutomaticWallFlatPanelItemKey(widthCm, wallHeightCm),
-  });
-  moduleState.locked = true;
-  return moduleState;
 }
 
 function readSceneSetupFromControls() {
@@ -2725,46 +2749,7 @@ function readSceneSetupFromControls() {
   return { ok: true, setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan, furnitureConfig, furniturePlan };
 }
 
-/** Otomatik stand mobilyaları: katalog Item'ı olarak oluşur, kilitsizdir; kullanıcı taşıyıp silebilir. */
-function createAutomaticFurnitureStates(plan) {
-  if (!plan?.ok) return [];
-  return plan.specs.map((spec) => {
-    const state = createModuleStateFromCatalogKey(spec.itemKey);
-    if (!state) return null;
-    state.placement = { ...spec.placement };
-    return state;
-  }).filter(Boolean);
-}
 
-/** Otomatik alınlık modülleri: Z, wall-short / dikme öğesinin kendi varsayılanından gelir. */
-function createAutomaticFasciaStates(plan) {
-  if (!plan?.ok) return [];
-  const states = [];
-  for (const panel of plan.panels) {
-    const itemKey = resolveFasciaPanelItemKey(panel.widthCm, plan.rows);
-    const state = itemKey ? createModuleStateFromCatalogKey(itemKey) : null;
-    if (!state) continue;
-    state.placement = { ...panel.placement, zCm: resolveItemDefaultZCm(itemKey) };
-    state.locked = true;
-    state.autoFascia = true;
-    states.push(state);
-  }
-  const uprightKey = resolveFasciaUprightItemKey(activeWallHeightCm());
-  for (const upright of plan.uprights) {
-    const state = uprightKey ? createModuleStateFromCatalogKey(uprightKey) : null;
-    if (!state) continue;
-    // Plan noktası panel hatlarının birleşimidir; sahne yatay modülde xCm'i sol kenar sayar
-    // (gövde xCm + genişlik/2'de). Dikmenin merkezi birleşime otursun diye yarım genişlik geri alınır.
-    state.placement = {
-      ...upright.placement,
-      xCm: Number(upright.placement.xCm) - Number(state.widthCm) / 2,
-    };
-    state.locked = true;
-    state.autoFascia = true;
-    states.push(state);
-  }
-  return states;
-}
 
 function appendAutomaticWallLamps(standXCm, standYCm) {
   const lampItem = getTopLightItemForType('led-floodlight');
@@ -2776,21 +2761,6 @@ function appendAutomaticWallLamps(standXCm, standYCm) {
     modules: walls,
     standXCm,
     standYCm,
-    lampWidthCm: Number(lampItem.dimensions?.widthCm) || 50,
-  });
-  for (const placement of planned) {
-    const lamp = createModuleStateFromDescriptor({ type: 'led-floodlight' });
-    if (!lamp) continue;
-    lamp.placement = snapPlacementToItemAnchor(lamp, placement, currentModules) ?? { ...placement };
-    currentModules.push(lamp);
-  }
-}
-
-function appendAutomaticDepotLamps() {
-  const lampItem = getTopLightItemForType('led-floodlight');
-  if (!lampItem) return;
-  const planned = planAutomaticDepotLampPlacements({
-    modules: currentModules.filter((moduleState) => moduleState.depotSide || moduleState.autoDepot),
     lampWidthCm: Number(lampItem.dimensions?.widthCm) || 50,
   });
   for (const placement of planned) {
@@ -2819,7 +2789,7 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fa
     return false;
   }
 
-  // Sahneyi Oluştur o an açık olan tiple kurar; açık stand yoksa sihirbaz seçimi geçerlidir.
+  // Sihirbazın Oluştur'u ve Sahneyi Sıfırla o an açık olan tiple kurar; açık stand yoksa sihirbaz seçimi geçerlidir.
   currentStand = assignStandFloorItem({ ...setup, boothType: activeBoothType(), depot: depotConfig, fascia: fasciaConfig, furniture: furnitureConfig }, floorTypeSelect.value);
   setActiveWallLineHeightCm(activeWallHeightCm());
   syncSaveProjectButton();
@@ -2828,93 +2798,31 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fa
   syncSidebarForWizard(false);
   viewportToolbar.hidden = false;
   setStandEditingEnabled(true);
+  // Sahne kuruldu: sihirbaz kapanır (sol menü alanları artık açık standa uygulanır).
+  newProjectWizard.dismiss();
 
-  if (setup.standType === 'island') {
-    currentModules = [];
-  } else {
-    const automaticWall = composeAutomaticStandWall({
-      wallWidthCm: getAutomaticWallCapacityCm({
-        standType: setup.standType,
-        standXCm: setup.xCm,
-        standYCm: setup.yCm,
-      }),
-      standType: setup.standType,
-      standXCm: setup.xCm,
-      standYCm: setup.yCm,
-    });
-    if (!automaticWall.ok) {
-      renderStageResult(automaticWall.message, true);
-      return false;
-    }
-
-    currentModules = automaticWall.widths.map((widthCm, index) => {
-      const moduleState = createAutomaticWallState(widthCm, setup.wallHeightCm);
-      moduleState.placement = { ...automaticWall.placements[index] };
-      return moduleState;
-    });
-
-    if (depotPlan?.ok) {
-      const customBack = composeAutomaticBackWallWithDepot({
-        standXCm: setup.xCm,
-        depotOriginXCm: depotPlan.originXCm,
-        depotWidthCm: depotPlan.widthCm,
-        sizeKey: depotPlan.sizeKey,
-      });
-      if (!customBack.ok) {
-        renderStageResult(customBack.message, true);
-        return false;
-      }
-
-      currentModules = currentModules.filter(
-        (moduleState) => moduleState.placement?.wallId !== 'back',
-      );
-      const backStates = customBack.modules.map((entry) => {
-        const moduleState = createAutomaticWallState(entry.widthCm, setup.wallHeightCm);
-        moduleState.placement = { ...entry.placement };
-        if (entry.depotBack) {
-          moduleState.autoDepotBack = true;
-          moduleState.depotBack = true;
-        }
-        return moduleState;
-      });
-      currentModules.push(...backStates);
-
-      if (setup.standType === 'l-left' || setup.standType === 'l-right') {
-        const customSide = composeAutomaticSideWallWithDepot({
-          standType: setup.standType,
-          standXCm: setup.xCm,
-          standYCm: setup.yCm,
-          depotDepthCm: depotPlan.depthCm,
-        });
-        if (!customSide.ok) {
-          renderStageResult(customSide.message, true);
-          return false;
-        }
-        currentModules = currentModules.filter(
-          (moduleState) => moduleState.placement?.wallId !== customSide.wallId,
-        );
-        const sideStates = customSide.modules.map((entry) => {
-          const moduleState = createAutomaticWallState(entry.widthCm, setup.wallHeightCm);
-          moduleState.placement = { ...entry.placement };
-          if (entry.depotSide) {
-            moduleState.autoDepotBack = true;
-            moduleState.depotSide = true;
-          }
-          return moduleState;
-        });
-        currentModules.push(...sideStates);
-      }
-    }
+  // Zincir duvarlar ve depoya göre sırt / yan duvar: yerleşim değişimi de aynı dizimi kullanır.
+  const standWalls = composeStandWallStates({
+    standType: setup.standType,
+    standXCm: setup.xCm,
+    standYCm: setup.yCm,
+    wallHeightCm: setup.wallHeightCm,
+    depotPlan,
+  });
+  if (!standWalls.ok) {
+    renderStageResult(standWalls.message, true);
+    return false;
   }
+  currentModules = standWalls.modules;
 
   appendAutomaticWallLamps(setup.xCm, setup.yCm);
   if (depotPlan?.ok) {
-    currentModules.push(...createAutomaticDepotStates(depotPlan));
-    appendAutomaticDepotLamps();
+    currentModules.push(...createDepotStates(depotPlan, activeWallHeightCm()));
+    currentModules.push(...createDepotLampStates(currentModules));
   }
   // Lambalardan sonra: alınlık flat-panel'leri otomatik duvar lambası planına girmez.
-  currentModules.push(...createAutomaticFasciaStates(fasciaPlan));
-  currentModules.push(...createAutomaticFurnitureStates(furniturePlan));
+  currentModules.push(...createAutomaticFasciaStates(fasciaPlan, activeWallHeightCm()));
+  currentModules.push(...createFurnitureStates(furniturePlan));
   rebuildWall({ resetView: true });
 
   const label = STAND_TYPE_LABELS[setup.standType];
@@ -2927,7 +2835,8 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fa
   return true;
 }
 
-createStageButton.addEventListener('click', async () => {
+// Sihirbazın Oluştur adımı: sol menüdeki kurulum alanlarıyla yeni projeyi ve sahneyi kurar.
+async function createStageFromSetup() {
   const sceneSetup = readSceneSetupFromControls();
   if (!sceneSetup.ok) {
     renderStageResult(sceneSetup.message, true);
@@ -2937,14 +2846,16 @@ createStageButton.addEventListener('click', async () => {
 
   if (currentStand || currentModules.length || autosaveController.isEnabled()) {
     const currentProjectName = projectNameInput.value.trim() || 'Adsız Proje';
-    const confirmed = window.confirm(
-      'Yeni proje oluşturulacak.\n\n'
-        + (autosaveController.isEnabled()
-          ? '• Açık kayıtlı proje: "' + currentProjectName + '" korunacak.\n'
-          : '• Mevcut kaydedilmemiş sahne ve düzenlemeler temizlenecek.\n')
-        + '• Mevcut modüller, renkler ve görseller yeni projeye taşınmayacak.\n\n'
-        + 'Devam edilsin mi?',
-    );
+    // Uygulamanın kendi penceresi: tarayıcı confirm'i bazı gömülü tarayıcılarda açılmadan İptal döner.
+    const confirmed = await requestStandChangeConfirmation({
+      title: 'Yeni proje oluşturulacak',
+      lines: [
+        autosaveController.isEnabled()
+          ? `Açık kayıtlı proje "${currentProjectName}" korunacak.`
+          : 'Mevcut kaydedilmemiş sahne ve düzenlemeler temizlenecek.',
+        'Mevcut modüller, renkler ve görseller yeni projeye taşınmayacak.',
+      ],
+    });
     if (!confirmed) return;
   }
 
@@ -2985,10 +2896,10 @@ createStageButton.addEventListener('click', async () => {
   // Kart sahneyi kilitlemez; cevap beklenmeden ilk ipucu da açılır.
   void offerWallLockRelease();
   onboardingTips.maybeShow();
-});
+}
 
 floorTypeSelect.addEventListener('change', () => {
-  if (!currentStand) return;
+  if (!isEditingOpenStand()) return;
   // Zemin türü değişince eski renk taşınmaz; yeni zemin katalogdaki varsayılan renkle gelir.
   const { floorColor: _previousFloorColor, ...stand } = currentStand;
   currentStand = assignStandFloorItem(stand, floorTypeSelect.value);
@@ -2996,6 +2907,299 @@ floorTypeSelect.addEventListener('change', () => {
   const defaultColor = floorDefaultColorHex(currentStand.itemKey);
   if (getFloorItem(currentStand.itemKey)?.paintable && defaultColor) scene3d.setFloorColor(defaultColor);
   if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+});
+
+function renderCurrentStandSummaryChip() {
+  if (!currentStand) return;
+  renderStandSummaryChip(validateStandSetup({
+    standType: currentStand.standType,
+    xCm: currentStand.xCm,
+    yCm: currentStand.yCm,
+  }));
+}
+
+function syncStandSizeInputs() {
+  if (!currentStand) return;
+  standSizeXInput.value = formatMeters(currentStand.xCm);
+  standSizeYInput.value = formatMeters(currentStand.yCm);
+}
+
+/** Stand ölçüsü değişince sahne (zemin, ızgara, salon) yeni ölçüyle kurulur; kamera yerinde kalır. */
+function rebuildStageForCurrentStand() {
+  const stage = scene3d.createStage({
+    widthCm: currentStand.xCm,
+    depthCm: currentStand.yCm,
+    standType: currentStand.standType,
+    resetView: false,
+  });
+  if (!stage.ok) {
+    renderStageResult(stage.message, true);
+    return false;
+  }
+  scene3d.setFloorType(currentStand.itemKey);
+  const floorColor = currentStand.floorColor ?? floorDefaultColorHex(currentStand.itemKey);
+  if (floorColor) scene3d.setFloorColor(floorColor);
+  scene3d.setFloorArea(currentStand.floorArea ?? null);
+  syncFloorAreaControls();
+  rebuildWall({ resetView: false });
+  const setup = validateStandSetup({ standType: currentStand.standType, xCm: currentStand.xCm, yCm: currentStand.yCm });
+  if (setup.ok) {
+    renderStageResult(`${STAND_TYPE_LABELS[setup.standType]} · ${setup.xCm} × ${setup.yCm} cm aktif alan · ${setup.sceneWidthM} × ${setup.sceneDepthM} m toplam sahne`);
+  }
+  renderStandSummaryChip(setup);
+  return true;
+}
+
+// Kurulu standda genişlik / derinlik: yeniden boyutlandırma motoru planlar, önizleme onaylanınca
+// tek adımda uygulanır (Geri al ile döner).
+let standSizeChangeRunning = false;
+async function applyStandSizeFromInputs() {
+  if (!currentStand || standSizeChangeRunning) return;
+  const setup = validateStandSetupMeters({
+    standType: currentStand.standType,
+    width: standSizeXInput.value,
+    depth: standSizeYInput.value,
+  });
+  if (!setup.ok) {
+    renderStageResult(setup.message, true);
+    syncStandSizeInputs();
+    return;
+  }
+  if (setup.xCm === currentStand.xCm && setup.yCm === currentStand.yCm) return;
+  standSizeChangeRunning = true;
+  try {
+    const plan = planStandSizeChange({
+      stand: { ...currentStand, wallHeightCm: activeWallHeightCm() },
+      modules: currentModules,
+      toXCm: setup.xCm,
+      toYCm: setup.yCm,
+      boothType: activeBoothType(),
+    });
+    if (!plan.ok) {
+      renderStageResult(plan.message, true);
+      syncStandSizeInputs();
+      return;
+    }
+    const standBefore = currentStand;
+    const modulesBefore = currentModules;
+    const title = `Stand ölçüsü ${formatMeters(currentStand.xCm)} × ${formatMeters(currentStand.yCm)} m → ${formatMeters(setup.xCm)} × ${formatMeters(setup.yCm)} m`;
+    // Bir şey kalkacaksa önce önizleme sorar; kalkmıyorsa doğrudan uygulanır (Geri al döner).
+    const needsConfirmation = standSizeChangeRemovesContent(plan.report);
+    if (needsConfirmation) {
+      const confirmed = await requestStandChangeConfirmation({
+        title,
+        lines: describeStandSizeChangeReport(plan.report),
+      });
+      // Pencere açıkken stand başka bir yoldan değiştiyse plan eskidir; uygulanmaz.
+      if (!confirmed || currentStand !== standBefore || currentModules !== modulesBefore) {
+        syncStandSizeInputs();
+        return;
+      }
+    }
+    const { floorArea: _previousFloorArea, ...stand } = currentStand;
+    currentStand = {
+      ...stand,
+      ...(plan.floorArea ? { floorArea: plan.floorArea } : {}),
+      xCm: setup.xCm,
+      yCm: setup.yCm,
+      widthM: setup.widthM,
+      depthM: setup.depthM,
+      sceneWidthM: setup.sceneWidthM,
+      sceneDepthM: setup.sceneDepthM,
+    };
+    currentModules = plan.modules;
+    moduleContextMenu.close();
+    moduleContextMenu.closePicker();
+    scene3d.clearSelection();
+    rebuildStageForCurrentStand();
+    syncStandSizeInputs();
+    scheduleDesignHistoryCapture();
+    if (!needsConfirmation) showToast(`${title}. Geri almak için Ctrl+Z.`, { kind: 'info' });
+  } finally {
+    standSizeChangeRunning = false;
+  }
+}
+
+/** Depo, alınlık ve mobilya alanlarını açık standın değerlerine eşitler. */
+function syncStandStructureControls() {
+  if (!currentStand) return;
+  if (autoDepotSizeSelect) {
+    autoDepotSizeSelect.value = currentStand.depot?.enabled ? (currentStand.depot.sizeKey || '100x100') : '';
+  }
+  syncAutoDepotControls();
+  if (autoDepotContentsInput) autoDepotContentsInput.checked = Boolean(currentStand.depot?.includeContents);
+  syncAutoDepotControls();
+  if (autoFasciaRowsSelect) {
+    autoFasciaRowsSelect.value = currentStand.fascia?.enabled ? String(currentStand.fascia.rows || 1) : '';
+  }
+  // Alanı olmayan eski projelerde mobilya otomatiği çalışmamıştır.
+  if (autoFurnitureInput) autoFurnitureInput.checked = Boolean(currentStand.furniture?.enabled);
+}
+
+/** Sol menüdeki bütün kurulum alanlarını açık standın değerlerine eşitler. */
+function syncOpenStandControls() {
+  if (!currentStand) return;
+  selectedStandType = currentStand.standType;
+  syncStandTypeButtons(currentStand.standType);
+  syncStandSizeInputs();
+  if (wallHeightSelect) wallHeightSelect.value = String(activeWallHeightCm());
+  syncFloorTypeSelect(currentStand.itemKey);
+  syncStandStructureControls();
+}
+
+/** Anında değişim yalnız açık standda ve sihirbaz kapalıyken; sihirbaz seçimleri Oluştur'a kadar gerçek değildir. */
+function isEditingOpenStand() {
+  return Boolean(currentStand) && !newProjectWizard.isOpen();
+}
+
+function openNewProjectWizard() {
+  viewportEmpty.hidden = false;
+  newProjectWizard.show();
+}
+
+// Üst banttaki Yeni (açık projede) ve boş sahne kartındaki Yeni proje (sihirbaz kapatılınca) sihirbazı açar.
+newProjectButton?.addEventListener('click', openNewProjectWizard);
+document.querySelector('#empty-new-project')?.addEventListener('click', openNewProjectWizard);
+
+function readStandStructureControls() {
+  const fasciaRows = Number(autoFasciaRowsSelect?.value) || 0;
+  return {
+    depot: autoDepotSizeSelect?.value
+      ? { enabled: true, sizeKey: autoDepotSizeSelect.value, includeContents: Boolean(autoDepotContentsInput?.checked) }
+      : { enabled: false, sizeKey: null, includeContents: false },
+    fascia: fasciaRows ? { enabled: true, rows: fasciaRows } : { enabled: false, rows: null },
+    furniture: { enabled: Boolean(autoFurnitureInput?.checked) },
+  };
+}
+
+// Kurulu standda yapı değişimi (yerleşim, depo, alınlık, stand mobilyaları): motor planlar; bir şey
+// kalkacaksa önce önizleme sorar, kalkmıyorsa doğrudan uygulanır. Tek adım, Geri al döner.
+let standStructureChangeRunning = false;
+async function applyStandStructureChange(to, title) {
+  if (!currentStand || standStructureChangeRunning) return;
+  const revert = () => {
+    syncStandTypeButtons(currentStand?.standType);
+    syncStandStructureControls();
+  };
+  const toStandType = to.standType ?? currentStand.standType;
+  const setup = validateStandSetup({ standType: toStandType, xCm: currentStand.xCm, yCm: currentStand.yCm });
+  if (!setup.ok) {
+    renderStageResult(setup.message, true);
+    revert();
+    return;
+  }
+  standStructureChangeRunning = true;
+  try {
+    const plan = planStandStructureChange({
+      stand: { ...currentStand, wallHeightCm: activeWallHeightCm() },
+      modules: currentModules,
+      to,
+      boothType: activeBoothType(),
+    });
+    if (!plan.ok) {
+      renderStageResult(plan.message, true);
+      revert();
+      return;
+    }
+    if (!plan.changed) return;
+    const standBefore = currentStand;
+    const modulesBefore = currentModules;
+    const lines = describeStandLayoutChangeReport(plan.report);
+    const needsConfirmation = standStructureChangeRemovesContent(plan.report);
+    if (needsConfirmation) {
+      const confirmed = await requestStandChangeConfirmation({ title, lines });
+      // Pencere açıkken stand başka bir yoldan değiştiyse plan eskidir; uygulanmaz.
+      if (!confirmed || currentStand !== standBefore || currentModules !== modulesBefore) {
+        revert();
+        return;
+      }
+    }
+    currentStand = {
+      ...currentStand,
+      standType: setup.standType,
+      sceneWidthM: setup.sceneWidthM,
+      sceneDepthM: setup.sceneDepthM,
+      depot: plan.stand.depot,
+      fascia: plan.stand.fascia,
+      furniture: plan.stand.furniture,
+    };
+    selectedStandType = setup.standType;
+    currentModules = plan.modules;
+    moduleContextMenu.close();
+    moduleContextMenu.closePicker();
+    scene3d.clearSelection();
+    rebuildStageForCurrentStand();
+    revert();
+    scheduleDesignHistoryCapture();
+    if (!needsConfirmation) showToast(`${title}. ${lines.join(' ')} Geri almak için Ctrl+Z.`, { kind: 'info' });
+  } finally {
+    standStructureChangeRunning = false;
+  }
+}
+
+function applyStandLayoutChange(toStandType) {
+  if (!currentStand || toStandType === currentStand.standType) return;
+  return applyStandStructureChange(
+    { standType: toStandType },
+    `Yerleşim ${STAND_TYPE_LABELS[currentStand.standType]} → ${STAND_TYPE_LABELS[toStandType]}`,
+  );
+}
+
+function applyStandStructureFromControls(title) {
+  if (!isEditingOpenStand()) return;
+  return applyStandStructureChange(readStandStructureControls(), title);
+}
+
+autoDepotSizeSelect?.addEventListener('change', () => applyStandStructureFromControls('Depo'));
+autoDepotContentsInput?.addEventListener('change', () => applyStandStructureFromControls('Depo ekipmanları'));
+autoFasciaRowsSelect?.addEventListener('change', () => applyStandStructureFromControls('Üst tabela (alınlık)'));
+autoFurnitureInput?.addEventListener('change', () => applyStandStructureFromControls('Stand mobilyaları'));
+
+// Kurulu standda duvar yüksekliği: yeniden boyutlandırma motoru planlar, önizleme onaylanınca
+// tek adımda uygulanır (Geri al ile döner). Sahne kurulmadan seçim yalnız sihirbazın Oluştur adımına gider.
+let wallHeightChangeRunning = false;
+wallHeightSelect?.addEventListener('change', async () => {
+  if (!isEditingOpenStand() || wallHeightChangeRunning) return;
+  const fromHeightCm = activeWallHeightCm();
+  const toHeightCm = readWallHeightCm();
+  if (toHeightCm === fromHeightCm) return;
+  const plan = planStandWallHeightChange({
+    modules: currentModules,
+    fromHeightCm,
+    toHeightCm,
+    boothType: activeBoothType(),
+  });
+  if (!plan.ok) {
+    wallHeightSelect.value = String(fromHeightCm);
+    renderStageResult(plan.message, true);
+    return;
+  }
+  const standBefore = currentStand;
+  const modulesBefore = currentModules;
+  wallHeightChangeRunning = true;
+  let confirmed = false;
+  try {
+    confirmed = await requestStandChangeConfirmation({
+      title: `Duvar yüksekliği ${formatMeters(fromHeightCm)} m → ${formatMeters(toHeightCm)} m`,
+      lines: describeWallHeightChangeReport(plan.report),
+    });
+  } finally {
+    wallHeightChangeRunning = false;
+  }
+  // Pencere açıkken stand başka bir yoldan değiştiyse plan eskidir; uygulanmaz.
+  if (!confirmed || currentStand !== standBefore || currentModules !== modulesBefore) {
+    wallHeightSelect.value = String(activeWallHeightCm());
+    return;
+  }
+  currentStand = { ...currentStand, wallHeightCm: toHeightCm };
+  setActiveWallLineHeightCm(toHeightCm);
+  currentModules = plan.modules;
+  moduleContextMenu.close();
+  moduleContextMenu.closePicker();
+  scene3d.clearSelection();
+  rebuildWall({ resetView: false });
+  renderCurrentStandSummaryChip();
+  scheduleDesignHistoryCapture();
 });
 
 function syncFloorAreaTypeSelect(selectedKey) {
@@ -3429,9 +3633,21 @@ function reuseUnchangedModules(previousModules, nextModules) {
 function applyDesignSnapshot(snapshot) {
   const design = JSON.parse(snapshot);
   currentModules = reuseUnchangedModules(currentModules, design.modules ?? []);
+  let wallHeightChanged = false;
+  let standSizeChanged = false;
   if (currentStand && design.stand) {
+    const previousWallHeightCm = activeWallHeightCm();
+    // Yerleşim değişimi de sahneyi (koridor, salon) değiştirir: ölçü değişimi gibi baştan kurulur.
+    standSizeChanged = currentStand.xCm !== design.stand.xCm || currentStand.yCm !== design.stand.yCm
+      || currentStand.standType !== design.stand.standType;
     currentStand = design.stand;
+    selectedStandType = currentStand.standType;
+    syncStandTypeButtons(currentStand.standType);
+    syncStandStructureControls();
     setActiveWallLineHeightCm(activeWallHeightCm());
+    wallHeightChanged = previousWallHeightCm !== activeWallHeightCm();
+    if (wallHeightSelect) wallHeightSelect.value = String(activeWallHeightCm());
+    if (wallHeightChanged) renderCurrentStandSummaryChip();
     scene3d.setFloorType(currentStand.itemKey);
     const floorColor = currentStand.floorColor ?? floorDefaultColorHex(currentStand.itemKey);
     if (floorColor) scene3d.setFloorColor(floorColor);
@@ -3442,6 +3658,17 @@ function applyDesignSnapshot(snapshot) {
   moduleContextMenu.close();
   moduleContextMenu.closePicker();
   scene3d.clearSelection();
+  // Stand ölçüsü değiştiyse zemin ve salon yeni ölçüyle kurulur; yükseklik değiştiyse tavan
+  // da değişir. İki durumda da sahne baştan kurulur.
+  if (standSizeChanged) {
+    rebuildStageForCurrentStand();
+    syncStandSizeInputs();
+    return;
+  }
+  if (wallHeightChanged) {
+    rebuildWall({ resetView: false });
+    return;
+  }
   syncSceneToModules();
 }
 
@@ -3636,17 +3863,7 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     const resolvedFloor = resolveStandFloorItemKey(currentStand);
     currentStand = assignStandFloorItem({ ...currentStand, boothType: normalizeBoothType(currentStand.boothType) }, resolvedFloor);
     syncFloorTypeSelect(resolvedFloor);
-    if (autoDepotSizeSelect) {
-      autoDepotSizeSelect.value = currentStand.depot?.enabled ? (currentStand.depot.sizeKey || '100x100') : '';
-    }
-    syncAutoDepotControls();
-    if (autoDepotContentsInput) autoDepotContentsInput.checked = Boolean(currentStand.depot?.includeContents);
-    syncAutoDepotControls();
-    if (autoFasciaRowsSelect) {
-      autoFasciaRowsSelect.value = currentStand.fascia?.enabled ? String(currentStand.fascia.rows || 1) : '';
-    }
-    // Alanı olmayan eski projelerde mobilya otomatiği çalışmamıştır.
-    if (autoFurnitureInput) autoFurnitureInput.checked = Boolean(currentStand.furniture?.enabled);
+    syncStandStructureControls();
     const endSceneBuild = beginProjectOpenStep('scene-build');
     const stage = scene3d.createStage({
       widthCm: currentStand.xCm,

@@ -1,4 +1,5 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 import { test, expect } from '@playwright/test';
 
 async function exposeScene(page) {
@@ -25,7 +26,7 @@ async function createIslandStand(page) {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('6');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Grup');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();

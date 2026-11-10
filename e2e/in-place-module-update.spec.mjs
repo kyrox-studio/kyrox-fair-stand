@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { clickProjectAction, createStageFromWizard } from './helpers/standSetup.mjs';
 import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 // Ölçü ve arka yüz paneli değişimi yalnız o modülü yeniden yaratır: sahnedeki diğer modüllerin
@@ -32,7 +33,8 @@ async function openProjectWith(page, buildModules) {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('6');
   await page.locator('#stand-size-y').fill('6');
-  await page.locator('#create-stage').click();
+  // Proje yalnız sihirbazdan kurulur (Sahneyi Oluştur kaldırıldı).
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Yerinde Güncelleme');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -67,7 +69,7 @@ async function openProjectWith(page, buildModules) {
   }, buildModules.toString());
   await page.reload();
   await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, projectId);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
 }
 

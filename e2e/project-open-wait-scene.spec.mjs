@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 // Proje açılırken yükleme ekranı bütün görseller ve 3D modeller gelene kadar kalır:
 // model indirmesi bilerek geciktirilir; ekran model gelmeden kapanmamalı.
@@ -15,7 +16,7 @@ test('loading screen stays until the delayed 3D model has arrived', async ({ pag
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('6');
   await page.locator('#stand-size-y').fill('6');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Bekle');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -48,7 +49,7 @@ test('loading screen stays until the delayed 3D model has arrived', async ({ pag
 
   const overlay = page.locator('#project-loading-overlay');
   await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, projectId);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   // Sahne kuruldu (durum satırı "Açıldı"), ama model gecikmede: ekran açık ve ilerleme yazıyor.
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   expect(modelArrivedAt).toBeNull();

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 // Düz duvara sağ tıkla arka yüze panel eklenir ve kaldırılır; üretim listesi iki yüzü sayar.
@@ -75,7 +76,7 @@ test('düz duvara sağ tıkla arka yüze panel eklenir, kaldırılır; üretim l
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Arka Yüz');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -110,7 +111,7 @@ test('düz duvara sağ tıkla arka yüze panel eklenir, kaldırılır; üretim l
   });
   await page.reload();
   await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, projectId);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   const wallId = (await readLatestProject(page)).modules[0].id;
 

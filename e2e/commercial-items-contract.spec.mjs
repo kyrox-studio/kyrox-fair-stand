@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 async function createIslandStand(page, projectName, { depotContents = false } = {}) {
   await page.goto('/');
@@ -16,7 +16,7 @@ async function createIslandStand(page, projectName, { depotContents = false } = 
   }
 
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();
   await projectNameInput.fill(projectName);
@@ -84,7 +84,7 @@ test('automatic depot saves and reopens all four canonical Items', async ({ page
   await projectSelect.evaluate((select, id) => {
     select.value = id;
   }, before.id);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
   const after = await saveAndReadProject(page);

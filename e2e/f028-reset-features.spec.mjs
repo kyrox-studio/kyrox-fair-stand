@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 async function openDb(page) {
   return page.evaluate(async () => {
@@ -88,7 +89,7 @@ test('Tüm Özellikleri Kaldır deletes illuminated foam and preserves other mod
   await setupCard.getByRole('button', { name: 'L Stand Sol' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('3');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
 
   const nameInput = page.locator('form input[name="projectName"]');
   await nameInput.fill('F028 Reset');
@@ -105,7 +106,7 @@ test('Tüm Özellikleri Kaldır deletes illuminated foam and preserves other mod
   await projectSelect.evaluate((select, id) => {
     select.value = id;
   }, projectId);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
 
   // Tüm Özellikleri Kaldır sol menünün en altında, açılır kart dışında durur.

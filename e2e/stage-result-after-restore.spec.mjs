@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 import JSZip from 'jszip';
 import { PROJECT_ARCHIVE_VERSION } from '../src/projectImportValidation.js';
 
-test('Aç sonrası #stage-result create-stage stand özetini gösterir', async ({ page }) => {
+test('Aç sonrası #stage-result kurulum stand özetini gösterir', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
 
@@ -12,7 +13,7 @@ test('Aç sonrası #stage-result create-stage stand özetini gösterir', async (
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Stage Result Restore');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -27,7 +28,7 @@ test('Aç sonrası #stage-result create-stage stand özetini gösterir', async (
   await page.locator('#project-select').evaluate((select, id) => {
     select.value = id;
   }, projectId);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
   expect(pageErrors).toEqual([]);
@@ -36,7 +37,7 @@ test('Aç sonrası #stage-result create-stage stand özetini gösterir', async (
   await expect(page.locator('#stage-result')).toContainText('Ada Stand · 500 × 500 cm');
 });
 
-test('geçerli import sonrası #stage-result create-stage stand özetini gösterir', async ({ page }) => {
+test('geçerli import sonrası #stage-result kurulum stand özetini gösterir', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
@@ -69,7 +70,7 @@ test('geçersiz import #stage-result’a success yazmaz', async ({ page }) => {
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
   await expect(page.locator('#stage-result')).toContainText(
-    'Yerleşim ile X ve Y ölçülerinin üçü de tamamlanmadan sahne oluşmaz.',
+    'Stand yeni proje sihirbazıyla kurulur.',
   );
 
   const zip = new JSZip();
@@ -90,7 +91,7 @@ test('geçersiz import #stage-result’a success yazmaz', async ({ page }) => {
   await expect(page.locator('#project-status')).toContainText('Proje ZIP içe aktarılamadı');
   await expect(page.locator('#viewport-empty')).toBeVisible();
   await expect(page.locator('#stage-result')).toHaveText(
-    'Yerleşim ile X ve Y ölçülerinin üçü de tamamlanmadan sahne oluşmaz.',
+    'Stand yeni proje sihirbazıyla kurulur.',
   );
   expect(pageErrors).toEqual([]);
 });

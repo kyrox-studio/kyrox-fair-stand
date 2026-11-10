@@ -1,6 +1,6 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard } from './helpers/standSetup.mjs';
 import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 // Seçime göre Özellikler paneli: öğeye / yüzeye tek tık paneli açar (⋯ düğmesi yok); açık
@@ -37,7 +37,7 @@ async function createBackWallStand(page) {
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('4');
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Ozellik Paneli');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await keepWallLock(page);

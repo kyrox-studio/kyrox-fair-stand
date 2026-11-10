@@ -1,6 +1,7 @@
 import { SCENE_SURROUND_M } from './sceneDimensions.js';
 
-export const MIN_STAND_DIMENSION_CM = 50;
+// Kullanıcı kararı 2026-11-10: genişlik ve derinlik en az 2 m.
+export const MIN_STAND_DIMENSION_CM = 200;
 export const MAX_STAND_DIMENSION_CM = 5000;
 export const STAND_DIMENSION_STEP_CM = 50;
 

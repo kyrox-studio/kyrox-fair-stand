@@ -1,6 +1,6 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 async function createStand(page, name, { width = 500, depth = 500 } = {}) {
   await page.goto('/');
@@ -10,7 +10,7 @@ async function createStand(page, name, { width = 500, depth = 500 } = {}) {
   await page.locator('#stand-size-x').fill(String(width / 100));
   await page.locator('#stand-size-y').fill(String(depth / 100));
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill(name);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await keepWallLock(page);
@@ -71,7 +71,7 @@ test('Ctrl+A duvar ve lambaları seçer; toplu kilit ve kilit açma çalışır'
 
   // Metin alanında Ctrl+A tarayıcıya aittir; sahne seçimine çevrilmez.
   await page.locator('#viewport').click({ position: { x: 20, y: 200 } });
-  await page.locator('#rename-project').click();
+  await clickProjectAction(page, 'rename-project');
   const name = page.locator('form input[name="projectName"]');
   await expect(name).toBeVisible();
   await name.fill('Metin seçimi');
@@ -171,7 +171,7 @@ test('78 öğenin tamamı seçilir: 26 duvar, 26 lamba, 26 masa ve toplu kilit',
   }, initial.id);
   await page.reload();
   await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, initial.id);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   expect((await save(page)).modules).toHaveLength(78);
   await selectAll(page, 78);
@@ -220,7 +220,7 @@ test('Herşeyi Kilitle checkbox tüm öğeleri ve grup kilitlerini yönetir; ger
   await page.reload();
   await expect(page.locator('#project-select option[value="' + locked.id + '"]')).toHaveCount(1);
   await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, locked.id);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   await openEditorSettings(page);
   await expect(allLock).toBeChecked();

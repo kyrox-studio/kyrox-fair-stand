@@ -1,11 +1,12 @@
 import { showSurfaceControls } from './helpers/surfaceControls.mjs';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 import { test, expect } from '@playwright/test';
 import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 async function openSavedProject(page, id) {
   await expect(page.locator(`#project-select option[value="${id}"]`)).toHaveCount(1);
   await page.locator('#project-select').evaluate((select, projectId) => { select.value = projectId; }, id);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   // Durum yazısı sahne hazır olmadan gelir; ham fare tıklaması perdeyi beklemez.
   await expect(page.locator('#project-loading-overlay')).toBeHidden({ timeout: 30_000 });
@@ -28,7 +29,7 @@ async function preparePanels(page, rotation, side) {
   await setup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('9');
   await page.locator('#stand-size-y').fill('9');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('Görsel yönü');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await page.locator('#save-project').click();

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 import { DEFAULT_SELECTION_HINT } from '../src/selectionFeedback.js';
 
 test('seçim hint, standart listesi ve üretim listesi varsayılan girişte kapalı', async ({ page }) => {
@@ -25,7 +26,7 @@ test('üst banttaki Üretim Listesi butonu paneli açar', async ({ page }) => {
   await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('BOM toolbar');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -51,7 +52,7 @@ test('üretim listesi paneli gerçek girişte düz duvar reçete satırlarını 
   await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('BOM satır');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();

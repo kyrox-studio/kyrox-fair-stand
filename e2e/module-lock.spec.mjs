@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 
 // Faz 1 — Kilit (kyrox-platform projects/fair-stand/GROUP_LOCK_ROADMAP.md): kilitli öğe sürüklenmez,
 // ok tuşu ve Delete ile oynamaz, kilit projeyle kaydedilir; kilit açılınca taşınır.
@@ -16,7 +17,7 @@ async function createIslandStand(page, projectName) {
   await page.locator('#stand-size-y').fill('5');
   // Kilit akışı boş ada standda sınanır; otomatik stand mobilyaları bırakma noktalarını doldurur.
   await page.locator('#auto-furniture').uncheck();
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();
   await projectNameInput.fill(projectName);

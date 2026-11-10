@@ -10,7 +10,7 @@ test('F-027 reset uses the current stand setup controls and the same scene build
   assert.match(mainSource, /function readSceneSetupFromControls\(\)/);
   assert.match(mainSource, /function rebuildSceneFromSetup\(\{ setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan, furnitureConfig, furniturePlan \}\)/);
 
-  const createStart = mainSource.indexOf("createStageButton.addEventListener('click'");
+  const createStart = mainSource.indexOf("async function createStageFromSetup()");
   const createEnd = mainSource.indexOf("floorTypeSelect.addEventListener", createStart);
   const createHandler = mainSource.slice(createStart, createEnd);
   assert.match(createHandler, /readSceneSetupFromControls\(\)/);

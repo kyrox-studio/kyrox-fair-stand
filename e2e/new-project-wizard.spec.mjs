@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 // Yeni proje sihirbazı: boş sahnede 4 adım (stand tipi, yerleşim, ölçü, özet + Oluştur). Mevcut kurulum
 // alanlarını ve "Sahneyi Oluştur" akışını kullanır. İlk kullanım ipuçları bir kez çıkar.
@@ -107,7 +108,7 @@ test.describe('first-use tips', () => {
     await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
     await page.locator('#stand-size-x').fill('5');
     await page.locator('#stand-size-y').fill('3');
-    await page.locator('#create-stage').click();
+    await createStageFromWizard(page);
     page.once('dialog', (confirm) => confirm.accept());
     await finishNameDialog(page, 'E2E Ipucu 2');
     await expect(page.getByRole('status', { name: 'İpucu' })).toBeHidden();
@@ -356,7 +357,7 @@ test('sol menü metre ve virgüllü giriş kullanır; kayıt cm kalır ve açıl
   await page.getByLabel('Derinlik (m)', { exact: true }).fill('4,5');
   await page.locator('#wall-height').selectOption('350');
   await expect(page.locator('#wall-height option:checked')).toHaveText('3,5 m');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await finishNameDialog(page, 'Metre Girisi');
   const before = await savedProject(page);
   expect(before.stand.xCm).toBe(650);
@@ -365,7 +366,7 @@ test('sol menü metre ve virgüllü giriş kullanır; kayıt cm kalır ve açıl
   await page.reload();
   await expect(page.locator('#project-select option[value="' + before.id + '"]')).toHaveCount(1);
   await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, before.id);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   await expect(page.locator('#stand-size-x')).toHaveValue('6,5');
   await expect(page.locator('#stand-size-y')).toHaveValue('4,5');
@@ -390,7 +391,7 @@ test('sol menüden kurulan proje Maksima olur; alanı olmayan eski proje açıl�
   const open = async (id) => {
     await page.reload();
     await page.locator('#project-select').evaluate((select, value) => { select.value = value; }, id);
-    await page.locator('#open-project').click();
+    await clickProjectAction(page, 'open-project');
     await expect(page.locator('#project-status')).toContainText('Açıldı:');
   };
 
@@ -401,7 +402,7 @@ test('sol menüden kurulan proje Maksima olur; alanı olmayan eski proje açıl�
   await panel.getByRole('button', { name: 'Ada Stand', exact: true }).click();
   await page.getByLabel('Genişlik (m)', { exact: true }).fill('5');
   await page.getByLabel('Derinlik (m)', { exact: true }).fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await finishNameDialog(page, 'Eski Proje');
   const saved = await savedProject(page);
   expect(saved.stand.boothType).toBe('maxima');
@@ -420,7 +421,7 @@ test('sol menüden kurulan proje Maksima olur; alanı olmayan eski proje açıl�
   expect(await groupDisplay('Extra')).toBe('');
   if (!(await panel.evaluate((element) => element.open))) await panel.locator('summary').click();
   page.once('dialog', (confirm) => confirm.accept());
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await finishNameDialog(page, 'Eski Proje 2');
   expect((await savedProject(page)).stand.boothType).toBe('package');
   await expect(page.getByRole('heading', { name: 'Paket Stand Yapılandırması' })).toBeVisible();

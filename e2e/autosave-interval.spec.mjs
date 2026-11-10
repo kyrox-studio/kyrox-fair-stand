@@ -1,6 +1,6 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 async function createIslandProject(page, baseName) {
   const standSetup = page.locator('details.stand-setup-card');
@@ -11,7 +11,7 @@ async function createIslandProject(page, baseName) {
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const nameInput = page.locator('form input[name="projectName"]');
   await expect(nameInput).toBeVisible();
   await nameInput.fill(baseName);
@@ -145,7 +145,7 @@ test('Kapalı: image upload, hidden tab, Aç and ← Standlar never save; only K
     dialogs.push(dialog.message());
     void (acceptDialog ? dialog.accept() : dialog.dismiss());
   });
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect.poll(() => dialogs.length).toBe(1);
   expect(dialogs[0]).toContain('Kaydedilmemiş değişiklikler kaybolacak');
   expect(await readStoredFloorType(page, projectName)).toBe(initialFloor);

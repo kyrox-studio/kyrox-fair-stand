@@ -155,7 +155,7 @@ yeni DB alanı, Alembic migration veya BOM değişikliği yoktur.
 
 ### Duvar zinciri koruma uyarısı
 
-`createStageButton` ilk kayıttan (`persistActiveProject`) sonra `offerWallLockRelease()` çağırır (beklemez; ilk ipucu da açılır); sahnede kilitli öğe yoksa sormaz. `requestWallLockDecision` (`src/wallLockNotice.js`) sahneyi kilitlemeyen bir kart açar (`.viewport-wrap` sol üst, `aria-modal="false"`, `pointerdown` sahneye geçmez): **Korumayı kaldır** → `changeModuleLock(tüm öğeler, false)` iki `designHistory.capture()` arasında ve `syncAllModulesLockControl()`; **Koruma kalsın** / Escape → değişiklik yok. Kart açıkken proje değiştiyse cevap yok sayılır; `rebuildSceneFromSetup` ve `restoreProject` açık kartı kapatır (`dismissWallLockNotice`).
+`createStageFromSetup` (sihirbazın Oluştur adımı) ilk kayıttan (`persistActiveProject`) sonra `offerWallLockRelease()` çağırır (beklemez; ilk ipucu da açılır); sahnede kilitli öğe yoksa sormaz. `requestWallLockDecision` (`src/wallLockNotice.js`) sahneyi kilitlemeyen bir kart açar (`.viewport-wrap` sol üst, `aria-modal="false"`, `pointerdown` sahneye geçmez): **Korumayı kaldır** → `changeModuleLock(tüm öğeler, false)` iki `designHistory.capture()` arasında ve `syncAllModulesLockControl()`; **Koruma kalsın** / Escape → değişiklik yok. Kart açıkken proje değiştiyse cevap yok sayılır; `rebuildSceneFromSetup` ve `restoreProject` açık kartı kapatır (`dismissWallLockNotice`).
 
 ### Ölçüler moddan bağımsız
 
@@ -163,7 +163,7 @@ Eskiden ölçü görünürlüğü moda bağlıydı (Basit kapalı, Gelişmiş a�
 
 ### Yeni proje sihirbazı ve ilk ipuçları
 
-**Sihirbaz** (`src/newProjectWizard.js`): yeni projede (`initialProjectId` yok veya sahne sıfırlanınca) boş sahnenin (`#viewport-empty`) ortasında 4 adım: stand tipi (boothType), yerleşim (standType), ölçü (X, Y, duvar yüksekliği, depo), özet + Oluştur. Yeni kurulum yolu yok: seçimleri sol menüdeki alanlara yazar (`input`/`change` olaylarıyla), ölçüyü `readSceneSetupFromControls` ile doğrular, Oluştur mevcut `#create-stage`'e basar (proje adı penceresi, kayıt, revizyon aynı). ✕ ile kapanır, bugünkü boş sahne kartı görünür. Mevcut proje açılınca çıkmaz.
+**Sihirbaz** (`src/newProjectWizard.js`): yeni projede (`initialProjectId` yok veya sahne sıfırlanınca) boş sahnenin (`#viewport-empty`) ortasında 4 adım: stand tipi (boothType), yerleşim (standType), ölçü (X, Y, duvar yüksekliği, depo), özet + Oluştur. Yeni kurulum yolu yok: seçimleri sol menüdeki alanlara yazar (`input`/`change` olaylarıyla), ölçüyü `readSceneSetupFromControls` ile doğrular, Oluştur `createStageFromSetup`'ı çağırır (proje adı penceresi, kayıt, revizyon aynı). Proje yalnız sihirbazdan kurulur (2026-11-10): sol menüdeki Sahneyi Oluştur kaldırıldı, açık projedeyken üst banttaki **Yeni** sihirbazı açar; sihirbaz açıkken sol menüye yazdığı seçimler açık standa uygulanmaz, ✕ ile kapanınca alanlar açık standa döner.
 
 **İlk ipuçları** (`src/onboardingTips.js`): sahne ilk kez kurulup kaydedilince 3 ipucu (katalogdan ekleme, çift tıkla seçim, Kaydet); Tamam / Atla. `localStorage.fairStandTipsSeen = '1'` ile bu tarayıcıda bir daha çıkmaz. Playwright ayarı (`storageState`) ipuçlarını görülmüş sayar ki diğer testlerde tıklamaları örtmesin; `new-project-wizard` E2E'si bunu temizleyip ipuçlarını ayrıca doğrular.
 
@@ -193,7 +193,7 @@ Sağ tık menüsündeki **Çoğalt Sağ / Sol** kaldırıldı. Kopyalama yalnız
 
 ### Otomatik kayıt kapalıyken yalnız Kaydet
 
-Otomatik kayıt **Kapalı** iken proje yalnız **Kaydet** ile kaydedilir; revizyon da yalnız o zaman ilerler. Önceden kapalıyken de kaydeden yollar: görsel ekleme/kaldırma/kullanılan görseli silme (`persistActiveProject`), sekme gizlenince ve editörden çıkınca (`saveNowIfDirty`), Aç / Dışarı Aktar / Sahneyi Oluştur / İçe Aktar / proje seçimi öncesi (`projectActionSaveGuard`). Artık:
+Otomatik kayıt **Kapalı** iken proje yalnız **Kaydet** ile kaydedilir; revizyon da yalnız o zaman ilerler. Önceden kapalıyken de kaydeden yollar: görsel ekleme/kaldırma/kullanılan görseli silme (`persistActiveProject`), sekme gizlenince ve editörden çıkınca (`saveNowIfDirty`), Aç / Dışarı Aktar / Yeni / İçe Aktar / proje seçimi öncesi (`projectActionSaveGuard`). Artık:
 - görsel işlemleri kaydetmez (`autosaveController.isAutoSaveOff()`), `saveNowIfDirty` kapalıyken hiçbir şey yapmaz;
 - proje işlemleri kaydetmez; kaydedilmemiş değişiklik varsa onay sorar (Dışarı Aktar: son kayıt aktarılır);
 - "← Standlar" (sayfa içi geçiş; tarayıcının "Siteden çıkılsın mı?" uyarısı çıkmaz) kaydedilmemiş değişiklik varsa "Kaydetmeden çıkılsın mı?" diye sorar; fair-stand kendi tıklamayı yakalar, CRM'e dokunulmaz. Sekme kapatma / yenileme uyarısı aynen kalır. Tarayıcının geri tuşu bu onaydan geçmez.

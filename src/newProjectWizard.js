@@ -5,8 +5,9 @@ import { DEMO_NEW_PROJECT_HINT, isFairStandDemo } from './demoMode.js';
 
 // Yeni proje sihirbazı: boş sahnenin (#viewport-empty) ortasında 4 adım — stand tipi (boothType),
 // yerleşim (standType), ölçü, özet + Oluştur. Yeni bir kurulum yolu açmaz: seçimleri sol menüdeki mevcut alanlara yazar ve
-// son adımda mevcut "Sahneyi Oluştur" düğmesine basar (proje adı penceresi, doğrulama ve kayıt
-// aynı kalır). Yalnız yeni projede gösterilir; ✕ ile kapatılınca bugünkü boş sahne kartı görünür.
+// son adımda sahneyi kurdurur (`onCreate`: proje adı penceresi, doğrulama ve kayıt). Boş sahnede ve
+// üst banttaki Yeni ile açılır; proje yalnız buradan kurulur (2026-11-10). Açıkken sol menü alanlarına
+// yazdığı seçimler Oluştur'a kadar açık standa uygulanmaz.
 
 const STYLE_ID = 'new-project-wizard-styles';
 const STEP_COUNT = 4;
@@ -70,7 +71,7 @@ function setControlValue(control, value) {
 export function createNewProjectWizard({ container, validateSetup, onCreate, onBoothTypeChange, onVisibilityChange } = {}) {
   const document = getFairStandHostDocument();
   if (!container || !document?.body) {
-    return { show() {}, dismiss() {}, getBoothType: () => DEFAULT_BOOTH_TYPE, element: null };
+    return { show() {}, dismiss() {}, isOpen: () => false, getBoothType: () => DEFAULT_BOOTH_TYPE, element: null };
   }
   ensureStyles(document);
 
@@ -92,7 +93,7 @@ export function createNewProjectWizard({ container, validateSetup, onCreate, onB
   wizard.setAttribute('role', 'dialog');
   wizard.setAttribute('aria-label', 'Yeni proje sihirbazı');
   wizard.innerHTML = `
-    <button type="button" class="wizard-close" aria-label="Sihirbazı kapat" title="Sihirbazı kapat (sol menüden devam)">✕</button>
+    <button type="button" class="wizard-close" aria-label="Sihirbazı kapat" title="Sihirbazı kapat">✕</button>
     <p class="wizard-step-label"></p>
     <h2></h2>
     <div class="wizard-body"></div>
@@ -374,5 +375,6 @@ export function createNewProjectWizard({ container, validateSetup, onCreate, onB
   }
 
   dismiss();
-  return { show, dismiss, getBoothType: () => boothType, element: wizard };
+  // Açık: sihirbaz ve içinde durduğu boş sahne alanı görünür (Oluştur sonrası alan gizlenir).
+  return { show, dismiss, isOpen: () => !wizard.hidden && !container.hidden, getBoothType: () => boothType, element: wizard };
 }

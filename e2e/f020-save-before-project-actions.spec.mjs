@@ -1,6 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 
 async function createIslandProject(page, { baseName, xCm, yCm, confirmExisting = false }) {
+  // Açık proje varken önce Yeni ile sihirbaz açılır; sihirbaz açıkken sol menüye yazılanlar açık
+  // standa uygulanmaz. "Yeni proje oluşturulacak" penceresini yardımcı onaylar.
+  if (confirmExisting) {
+    await page.locator('#new-project').click();
+    await expect(page.getByRole('dialog', { name: 'Yeni proje sihirbazı' })).toBeVisible();
+  }
   const standSetup = page.locator('details.stand-setup-card');
   const isOpen = await standSetup.evaluate((element) => element.open);
   if (!isOpen) await standSetup.locator('summary').click();
@@ -9,11 +16,7 @@ async function createIslandProject(page, { baseName, xCm, yCm, confirmExisting =
   await page.locator('#stand-size-x').fill(String(xCm / 100));
   await page.locator('#stand-size-y').fill(String(yCm / 100));
 
-  if (confirmExisting) {
-    page.once('dialog', async (dialog) => dialog.accept());
-  }
-
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const nameInput = page.locator('form input[name="projectName"]');
   await expect(nameInput).toBeVisible();
   await nameInput.fill(baseName);

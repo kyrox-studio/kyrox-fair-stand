@@ -1,7 +1,7 @@
 import { showSurfaceControls } from './helpers/surfaceControls.mjs';
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 const ORG_ID = '11111111-1111-4111-8111-111111111111';
 const CUSTOMER_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -155,7 +155,7 @@ test('sunucuda dosyası olmayan görsel projeyi açmayı engellemez', async ({ p
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('EksikGorsel');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await keepWallLock(page);
@@ -185,7 +185,7 @@ test('sunucuda dosyası olmayan görsel projeyi açmayı engellemez', async ({ p
   const projectSelect = page.locator('#project-select');
   const projectId = await projectSelect.locator('option', { hasText: 'EksikGorsel' }).getAttribute('value');
   await projectSelect.evaluate((select, id) => { select.value = id; }, projectId);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
 
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   await expect(page.locator('#project-status')).toContainText('1 görsel bulunamadı');

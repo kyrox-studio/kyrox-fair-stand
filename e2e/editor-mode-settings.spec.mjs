@@ -24,7 +24,11 @@ test('Ayarlar, gruplar, şablonlar ve standartlar yalnız Gelişmiş modda gör�
   await advanced.click();
   await expect(measurements).not.toBeChecked();
   await expect(page.locator('#autosave-interval')).toHaveValue('5');
+  // Sol menü kartları kapalı gelir (2026-11-10): başlığa basınca açılır, tekrar basınca kapanır.
   const project = page.locator('details.project-card');
+  await expect(project).not.toHaveAttribute('open', '');
+  await project.locator(':scope > summary').click();
+  await expect(project).toHaveAttribute('open', '');
   await project.locator(':scope > summary').click();
   await expect(project).not.toHaveAttribute('open', '');
   await expect(settings).toHaveAttribute('open', '');

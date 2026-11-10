@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 import { openPanelTab } from './helpers/surfaceControls.mjs';
 
@@ -65,7 +66,7 @@ async function openProjectWithShelves(page, projectName, shelves) {
   await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('4');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill(projectName);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -124,7 +125,7 @@ async function openProjectWithShelves(page, projectName, shelves) {
   await page.reload();
   await expect(page.locator('#viewport-empty')).toBeVisible();
   await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, projectId);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   return readLatestProject(page);
 }

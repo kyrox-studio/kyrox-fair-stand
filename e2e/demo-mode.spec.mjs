@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, openProjectCard } from './helpers/standSetup.mjs';
 
 // Oturumsuz demo (ADR-0012). Demo uçları sunucuda; burada sunucunun cevabı taklit edilir:
 // süzülmüş katalog = E2E kataloğu (BOM alanları çıkarılmış), süre cevabı sabit.
@@ -40,7 +41,7 @@ async function buildDemoStage(page) {
   await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('4');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   // Demo ad sormaz ve kaydetmez.
   await expect(page.locator('form input[name="projectName"]')).toHaveCount(0);
   await expect(page.locator('#project-status')).toHaveText('Demo: sahne kuruldu. Demo sayfasında proje kaydedilmez.');
@@ -72,6 +73,7 @@ test('demo: kilitli düğmeler oturum mesajı verir, Üretim Listesi örnek gös
     '#delete-project', '#render-current-view', '#live-share-start', '#rename-project',
   ];
   const toast = page.locator('.toast', { hasText: LOGIN_MESSAGE });
+  await openProjectCard(page);
   for (const selector of locked) {
     if (await toast.count()) await toast.locator('.toast__close').click();
     await expect(toast).toHaveCount(0);

@@ -1,4 +1,5 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 import { dropCatalogCard } from './helpers/catalogDrop.mjs';
 import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 import { test, expect } from '@playwright/test';
@@ -83,7 +84,7 @@ test('kısa panel seçiliyken Ekle ile eklenen Panel kısa panelin üstüne binm
   const standSetup = page.locator('details.stand-setup-card');
   await standSetup.locator('summary').click();
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Kisa Panel Ekle');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();

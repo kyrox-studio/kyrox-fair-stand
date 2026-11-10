@@ -1,6 +1,6 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { test, expect } from '@playwright/test';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard } from './helpers/standSetup.mjs';
 import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 // Tablette çoklu panel: seçim çubuğunda "Çoklu panel"e basıp parmağı bir panelden diğerine
@@ -32,7 +32,7 @@ async function createStand(page, standType, x, y) {
   await page.locator('#stand-size-x').fill(String(x / 100));
   await page.locator('#stand-size-y').fill(String(y / 100));
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill(`E2E Panel Tarama ${standType}`);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await keepWallLock(page);

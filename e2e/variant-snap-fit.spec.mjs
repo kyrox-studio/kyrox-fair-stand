@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { dropCatalogCard } from './helpers/catalogDrop.mjs';
 import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard } from './helpers/standSetup.mjs';
 
 // Varyant değişimi (0086): öğe yerinden oynamaz. Zincir dışındaki (ada) öğe bitiştiği (snap) kenara
 // göre büyür; bitişik değilse ortası sabit kalır. Üretim listesi yeni varyantın Item'ından gelir.
@@ -71,7 +71,7 @@ async function createIslandStand(page, projectName) {
   await page.locator('#stand-size-x').fill('10');
   await page.locator('#stand-size-y').fill('10');
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill(projectName);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await keepWallLock(page);

@@ -1,4 +1,5 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 import { test, expect } from '@playwright/test';
 
 // Tablet kullanımı: seçim çubuğu ve ortak Özellikler paneli.
@@ -45,7 +46,7 @@ async function createIslandStand(page) {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('6');
   await page.locator('#stand-size-y').fill('6');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Araç Çubuğu');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -324,7 +325,7 @@ test('kart göreli açıları uygular, mevcut açıyı gösterir ve 15 dereceyi 
   const select = page.locator('#project-select');
   await expect(select.locator(`option[value="${projectId}"]`)).toHaveCount(1);
   await select.evaluate((el, id) => { el.value = id; }, projectId);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   const [reopened] = await fridges(page);
   expect(reopened.placement.rotationZDeg).toBe(expected);
@@ -364,7 +365,7 @@ test('kartta çakışan 45 dereceden sonraki basış 90 dereceye ilerler', async
     return { projectId: project.id, moduleId: fixture.id };
   });
   await page.locator('#project-select').evaluate((el,id) => { el.value=id; },data.projectId);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   await page.evaluate(id => window.__selectRotationModule(id), data.moduleId);
   const panel = page.locator('.selection-property-panel');
