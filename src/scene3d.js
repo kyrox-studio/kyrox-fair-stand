@@ -2636,12 +2636,18 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
   // yüklenmez); yalnız yeri değiştiyse taşınır. Listeden çıkan kaldırılır; yeni nesneyle gelen
   // veya rebuiltIds içindeki (yerinde içeriği değişmiş) modül yeniden yaratılır. Kumaş kaplaması
   // olan bir modül değiştiyse kaplamalar yeniden kurulur. Yerleşimi olmayan modül varsa false
-  // döner; çağıran tam kurulum yapar.
+  // döner; çağıran tam kurulum yapar. Yeniden yaratılan modülün görsel dokusu buildWall'daki gibi
+  // devralınır (görsel yeniden yüklenmez) ve seçili yüzeyleri yeni nesnelerde seçili kalır.
   function syncModules(modules, { rebuiltIds = null } = {}) {
     if (!Array.isArray(modules) || modules.some((moduleState) => !moduleState?.placement)) return false;
     clearPlacementDrag();
+    const selectedSurfaceIds = new Set(
+      [...selectedSurfaces].map((mesh) => mesh.userData.surfaceId).filter(Boolean),
+    );
+    const previousAnchorSurfaceId = selectionAnchorSurfaceId;
     const wanted = new Set(modules);
     const present = new Set();
+    const retainedTextures = new Map();
     let fabricTouched = false;
     [...wallRoot.children].forEach((group) => {
       const state = group.userData?.moduleState;
@@ -2655,9 +2661,11 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
         return;
       }
       if (groupHasFabric(group)) fabricTouched = true;
+      if (state && wanted.has(state)) retainGroupTextures(group, retainedTextures);
       wallRoot.remove(group);
       deferredWallDisposal.push(group);
     });
+    rebuildTextureTransfer = retainedTextures.size ? retainedTextures : null;
     const inScene = new Set();
     wallRoot.children.forEach((group) => group.traverse((object) => inScene.add(object)));
     surfaceMeshes = surfaceMeshes.filter((surface) => inScene.has(surface));
@@ -2665,14 +2673,49 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       const moduleState = modules[moduleIndex];
       if (present.has(moduleState)) continue;
       const group = addModuleGroup(moduleState, moduleIndex);
-      if (!group) return false;
+      if (!group) {
+        disposeUnusedRebuildTextures();
+        return false;
+      }
       if (groupHasFabric(group)) fabricTouched = true;
     }
+    disposeUnusedRebuildTextures();
     reindexModuleGroups(modules);
     if (fabricTouched) rebuildFabricOverlays();
+    restoreSelectionAfterSync(selectedSurfaceIds, previousAnchorSurfaceId);
     notifySelection();
     requestEditorRender();
     return true;
+  }
+
+  // Yeniden yaratılacak (sahnede kalan) modülün yüklenmiş görsel dokuları sökülür; yeni yüzeyler
+  // aynı anahtarla devralır (applyStoredImage). Yalnız görsel atanmış yüzeyin dokusu alınır:
+  // katalog malzemesi başka modüllerle paylaşılabilir, ona dokunulmaz.
+  function retainGroupTextures(group, retained) {
+    group.traverse((surface) => {
+      const texture = surface?.material?.map;
+      const key = getRebuildTextureKey(surface);
+      if (!texture || !key || texture.userData?.metalSeparator) return;
+      if (!surface.userData?.surfaceState?.imageAssetId) return;
+      retained.set(key, texture);
+      surface.material.map = null;
+    });
+  }
+
+  // Sahneden çıkan yüzeyler seçimden düşer; aynı kimlikle yeniden yaratılan yüzey seçili kalır.
+  function restoreSelectionAfterSync(selectedSurfaceIds, previousAnchorSurfaceId) {
+    const inScene = new Set(surfaceMeshes);
+    [...selectedSurfaces].forEach((surface) => {
+      if (!inScene.has(surface)) selectedSurfaces.delete(surface);
+    });
+    surfaceMeshes.forEach((surface) => {
+      if (selectedSurfaces.has(surface) || !selectedSurfaceIds.has(surface.userData.surfaceId)) return;
+      selectedSurfaces.add(surface);
+      setSelectionVisual(surface, true);
+    });
+    selectionAnchorSurfaceId = surfaceMeshes.some((surface) => surface.userData.surfaceId === previousAnchorSurfaceId)
+      ? previousAnchorSurfaceId
+      : ([...selectedSurfaces][0]?.userData.surfaceId ?? null);
   }
 
   // Tek modül silme: yalnız o modülün nesneleri kaldırılır; sonraki modüllerin sıra numarası
