@@ -1,3 +1,4 @@
+import { assetMatchesQuery, sortAssetsForLibrary } from './assetLibraryOrder.js';
 import { validateStandSetupMeters, formatMeters } from './standSizeInput.js';
 import { createEditorViewSettings } from './editorViewSettings.js';
 import { createStandScene, prefetchModuleModels } from './scene3d.js';
@@ -328,6 +329,33 @@ let propertyPanelReady = false;
 let propertyPanelRefreshQueued = false;
 const assetLibraryElement = document.querySelector('#asset-library');
 const assetStatus = document.querySelector('#asset-status');
+// Arşiv araması: kutular yeniden kurulmaz, yalnız gizlenir; setActiveAsset kutu sayısını imageAssets ile karşılaştırır.
+const assetSearchInput = document.createElement('input');
+assetSearchInput.type = 'search';
+assetSearchInput.className = 'asset-search';
+assetSearchInput.placeholder = 'Görsel ara…';
+assetSearchInput.setAttribute('aria-label', 'Görsel arşivinde ara');
+assetSearchInput.autocomplete = 'off';
+assetSearchInput.spellcheck = false;
+assetSearchInput.hidden = true;
+const assetSearchEmpty = document.createElement('p');
+assetSearchEmpty.className = 'asset-empty asset-search-empty';
+assetSearchEmpty.textContent = 'Aramaya uyan görsel yok.';
+assetSearchEmpty.hidden = true;
+assetLibraryElement.before(assetSearchInput);
+assetLibraryElement.after(assetSearchEmpty);
+assetSearchInput.addEventListener('input', applyAssetSearch);
+
+function applyAssetSearch() {
+  const query = assetSearchInput.value;
+  let visible = 0;
+  assetLibraryElement.querySelectorAll('.asset-tile').forEach((tile) => {
+    const match = assetMatchesQuery(imageAssets.get(tile.dataset.assetId), query);
+    tile.hidden = !match;
+    if (match) visible += 1;
+  });
+  assetSearchEmpty.hidden = !imageAssets.size || visible > 0;
+}
 const projectNameInput = document.querySelector('#project-name');
 const projectNameDisplay = document.querySelector('#project-name-display');
 const projectCustomerDisplay = document.querySelector('#project-customer-display');
@@ -3942,11 +3970,13 @@ function renderAssetLibrary() {
     empty.className = 'asset-empty';
     empty.textContent = 'Henüz görsel yok. Bir kez yüklediğinde burada kalır.';
     assetLibraryElement.appendChild(empty);
+    assetSearchInput.hidden = true;
+    assetSearchEmpty.hidden = true;
     return;
   }
 
-  [...imageAssets.values()]
-    .sort((a, b) => a.createdAt - b.createdAt)
+  assetSearchInput.hidden = false;
+  sortAssetsForLibrary(imageAssets.values())
     .forEach((asset) => {
       const button = document.createElement('button');
       button.type = 'button';
@@ -3981,6 +4011,7 @@ function renderAssetLibrary() {
       });
       assetLibraryElement.appendChild(button);
     });
+  applyAssetSearch();
 }
 
 function formatCm(value) {

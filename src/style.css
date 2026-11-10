@@ -400,6 +400,26 @@ h2 {
   background: #e7eaf0;
 }
 
+.asset-search {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 6px;
+}
+
+/* Aramaya uymayan kutu gizlenir; kutunun display kuralı [hidden] özniteliğini ezmesin. */
+button.asset-tile[hidden],
+.asset-search[hidden],
+.asset-search-empty[hidden] {
+  display: none;
+}
+
+/* Arama sonucu boş uyarısı göze çarpsın. */
+.asset-empty.asset-search-empty {
+  padding: 14px 12px;
+  font-size: 14px;
+  text-align: center;
+}
+
 .asset-library {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -540,12 +560,15 @@ button.asset-tile > span {
   gap: 12px;
   max-width: calc(100% - var(--view-cube-reserve) - var(--sidebar-toggle-reserve));
   padding: 9px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid #e2e8f0;
   border-radius: 18px;
-  background: rgba(17, 24, 39, 0.78);
+  /* Özellikler paneliyle aynı buzlu cam. */
+  background: transparent;
   color: #ffffff;
   font-size: 11px;
-  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
   pointer-events: none;
 }
 
@@ -698,7 +721,8 @@ button.asset-tile > span {
    daralmaz; üst bant ve küp yerinde kalır. */
 .selection-property-panel {
   position: absolute;
-  z-index: 20;
+  /* Sahne ölçü etiketleri (z-index 30) panelin üstüne çıkmasın. */
+  z-index: 32;
   top: 12px;
   right: 12px;
   max-height: calc(100% - 24px);
@@ -711,9 +735,19 @@ button.asset-tile > span {
   padding: 12px;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  background: #ffffff;
+  /* Yarı saydam cam: arkadaki sahne seçilir, yazı ve düğmeler opak kalır. */
+  background: rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
   overscroll-behavior: contain;
+}
+
+/* Şeffaf panelde düz yazılar (başlık, etiket, not) uygulamanın laciverti (--primary) olur;
+   düğme ve alanlar kendi beyaz zeminiyle kalır. Alt kurallardaki gri tonları da ezer. */
+.selection-property-panel :not(button, button *, input, select, textarea, option) {
+  color: var(--primary) !important;
+  font-weight: 600;
 }
 
 .selection-property-panel[hidden],
@@ -721,27 +755,18 @@ button.asset-tile > span {
   display: none;
 }
 
-/* Yatay tablet ve masaüstü: panel sağda sabit kolondur, içerik değişince zıplamaz. Açıkken üst çubuk tek sıra kalır,
+/* Yatay tablet ve masaüstü: panel üst çubuğun altında, sağda yüzen yuvarlak köşeli karttır. Panel açılınca üst çubuk yerinden oynamaz,
    görünüm küpü sahnenin sol altında durur; sahnede üst üste binen kutu olmaz. */
 @media (min-width: 1024px) {
   .selection-property-panel {
-    top: 0;
-    right: 0;
-    bottom: 0;
-    max-height: none;
-    border-width: 0 0 0 1px;
-    border-radius: 0;
-    box-shadow: -8px 0 24px rgba(15, 23, 42, 0.1);
+    top: 104px;
+    right: 12px;
+    max-height: calc(100% - 116px);
   }
+
 
   .selection-property-panel > .selection-property-header {
     top: -12px;
-  }
-
-  .viewport-wrap:has(> .selection-property-panel:not([hidden])) .viewport-toolbar {
-    --view-cube-reserve: 312px;
-    gap: 6px;
-    padding: 6px 8px;
   }
 
   /* Küp sabit durur: panel açılınca altına kayarsa ikinci tık küpe gider. */
@@ -759,13 +784,6 @@ button.asset-tile > span {
 
 .selection-property-panel .selection-status.is-redundant {
   display: none;
-}
-
-/* Geniş ekranda üst çubuk tek sıra; dar ekranda sol menüye taşmasın diye satır kırar. */
-@media (min-width: 1500px) {
-  .viewport-wrap:has(> .selection-property-panel:not([hidden])) .viewport-toolbar {
-    flex-wrap: nowrap;
-  }
 }
 
 .selection-property-variants button {
