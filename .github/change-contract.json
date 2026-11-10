@@ -244,6 +244,7 @@
       "test/projectRevisionSession.test.js",
       "test/projectSaveAs.test.js",
       "test/projectUiMainIntegration.test.js",
+      "test/propertyPanelPlacement.test.js",
       "test/raisedPlatform.test.js",
       "test/rawBomSelectionParser.test.js",
       "test/recipeWallPanelSlots.test.js",
