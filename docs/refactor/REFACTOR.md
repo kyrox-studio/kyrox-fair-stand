@@ -163,7 +163,7 @@ Eskiden ölçü görünürlüğü moda bağlıydı (Basit kapalı, Gelişmiş a�
 
 ### Yeni proje sihirbazı ve ilk ipuçları
 
-**Sihirbaz** (`src/newProjectWizard.js`): yeni projede (`initialProjectId` yok veya sahne sıfırlanınca) boş sahnenin (`#viewport-empty`) ortasında 3 adım: stand tipi, ölçü (X, Y, duvar yüksekliği, depo), özet + Oluştur. Yeni kurulum yolu yok: seçimleri sol menüdeki alanlara yazar (`input`/`change` olaylarıyla), ölçüyü `readSceneSetupFromControls` ile doğrular, Oluştur mevcut `#create-stage`'e basar (proje adı penceresi, kayıt, revizyon aynı). ✕ ile kapanır, bugünkü boş sahne kartı görünür. Mevcut proje açılınca çıkmaz.
+**Sihirbaz** (`src/newProjectWizard.js`): yeni projede (`initialProjectId` yok veya sahne sıfırlanınca) boş sahnenin (`#viewport-empty`) ortasında 4 adım: stand tipi (boothType), yerleşim (standType), ölçü (X, Y, duvar yüksekliği, depo), özet + Oluştur. Yeni kurulum yolu yok: seçimleri sol menüdeki alanlara yazar (`input`/`change` olaylarıyla), ölçüyü `readSceneSetupFromControls` ile doğrular, Oluştur mevcut `#create-stage`'e basar (proje adı penceresi, kayıt, revizyon aynı). ✕ ile kapanır, bugünkü boş sahne kartı görünür. Mevcut proje açılınca çıkmaz.
 
 **İlk ipuçları** (`src/onboardingTips.js`): sahne ilk kez kurulup kaydedilince 3 ipucu (katalogdan ekleme, çift tıkla seçim, Kaydet); Tamam / Atla. `localStorage.fairStandTipsSeen = '1'` ile bu tarayıcıda bir daha çıkmaz. Playwright ayarı (`storageState`) ipuçlarını görülmüş sayar ki diğer testlerde tıklamaları örtmesin; `new-project-wizard` E2E'si bunu temizleyip ipuçlarını ayrıca doğrular.
 

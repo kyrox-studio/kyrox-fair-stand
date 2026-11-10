@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "cam-panel-arsiv-arama",
   "kind": "feature",
-  "summary": "Özellikler paneli ve üst çubuk buzlu cam (şeffaf/yarı saydam zemin, 4px blur); panel masaüstünde üst çubuğun altında yüzen yuvarlak köşeli kart, panel açılınca üst çubuk yerinden oynamaz, sahne ölçü etiketleri panelin altında kalır, paneldeki düz yazılar lacivert. Görsel arşivi: SVG'ler üstte, ada göre sıralı (Türkçe, doğal sayı sırası) ve ada göre arama kutusu.",
+  "summary": "Özellikler paneli ve üst çubuk buzlu cam (şeffaf/yarı saydam zemin, 4px blur); panel masaüstünde üst çubuğun altında yüzen yuvarlak köşeli kart, panel açılınca üst çubuk yerinden oynamaz, sahne ölçü etiketleri panelin altında kalır, paneldeki düz yazılar lacivert. Görsel arşivi: SVG'ler üstte, ada göre sıralı (Türkçe, doğal sayı sırası) ve ada göre arama kutusu. Kılavuz: sihirbaz 4 adım (stand tipi, yerleşim, ölçü, özet), ölçüler varsayılan açık ve moda bağlı değil.",
   "owners": [
     "src/style.css",
     "src/main.js",
@@ -270,6 +270,7 @@
   "tests": {
     "targeted": [
       "test/assetLibraryOrder.test.js",
+      "test/helpGuide.test.js",
       "test/systemChangeGate.test.js"
     ],
     "fullSuite": true,

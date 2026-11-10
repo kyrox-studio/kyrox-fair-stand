@@ -97,7 +97,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.doesNotMatch(guideSource, /Çoğalt Sağ \/ Sol/);
   assert.match(guideSource, /Özellikler kartında mevcut açı gösterilir/);
   assert.match(guideSource, /<th>İki parmak \(tablet\)<\/th><td>Parmakları açıp kapatmak yakınlaştırır/);
-  assert.match(guideSource, /<strong>Yeni proje sihirbazı:<\/strong> Yeni projede boş sahnenin ortasında 3 adım açılır/);
+  assert.match(guideSource, /<strong>Yeni proje sihirbazı:<\/strong> Yeni projede boş sahnenin ortasında 4 adım açılır: stand tipi, yerleşim/);
   assert.match(guideSource, /<strong>Depo<\/strong> listesinde <strong>Depo yok<\/strong> yerine 1×1, 1,5×1, 2×1 veya 2×2 m depo ölçüsünü seç\./);
   assert.doesNotMatch(guideSource, /Depo eklensin/);
   assert.match(guideSource, /Mevcut proje açılınca sihirbaz çıkmaz\./);
