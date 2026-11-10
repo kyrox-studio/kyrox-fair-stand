@@ -1,19 +1,18 @@
 {
   "schemaVersion": 2,
-  "id": "cam-panel-arsiv-arama",
+  "id": "yerinde-modul-guncelleme",
   "kind": "feature",
-  "summary": "Özellikler paneli ve üst çubuk buzlu cam (şeffaf/yarı saydam zemin, 4px blur); panel masaüstünde üst çubuğun altında yüzen yuvarlak köşeli kart, panel açılınca üst çubuk yerinden oynamaz, sahne ölçü etiketleri panelin altında kalır, paneldeki düz yazılar lacivert. Görsel arşivi: SVG'ler üstte, ada göre sıralı (Türkçe, doğal sayı sırası) ve ada göre arama kutusu. Kılavuz: sihirbaz 4 adım (stand tipi, yerleşim, ölçü, özet), ölçüler varsayılan açık ve moda bağlı değil.",
+  "summary": "Ölçü alanları (kutu blok, ışıklı strafor, tül), ölçü seçimi (dikme, profil), varyant değiştirme, arka yüz paneli ekle/kaldır ve kumaş kaplamalı modül silme artık sahneyi baştan kurmaz (rebuildWall); syncModules ile yalnız o modül yeniden yaratılır. syncModules yeniden yaratılan modülün görsel dokusunu devralır ve seçimi korur. 31 modülde ölçü değişimi 1–2 ms (tam kurulum 31–42 ms).",
   "owners": [
-    "src/style.css",
     "src/main.js",
-    "src/assetLibraryOrder.js",
-    "src/helpGuide.js",
-    "README.md",
-    "src/systemChangeContract.js"
+    "src/scene3d.js",
+    "e2e/in-place-module-update.spec.mjs",
+    "docs/refactor/REFACTOR.md",
+    "test/inPlaceModuleUpdateMainIntegration.test.js"
   ],
   "sourceOfTruth": [
-    "src/style.css",
-    "src/assetLibraryOrder.js"
+    "src/main.js",
+    "src/scene3d.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -28,8 +27,8 @@
     "assets": "affected",
     "storage": "affected",
     "importExport": "affected",
-    "performance": "not-applicable",
-    "accessibility": "affected",
+    "performance": "affected",
+    "accessibility": "not-applicable",
     "architecture": "affected",
     "security": "not-applicable",
     "tests": "affected"
@@ -38,48 +37,89 @@
     "mode": "full-system",
     "affectedFiles": [
       "index.html",
+      "scripts/archive/add-tv-sizes.py",
       "scripts/archive/add-video-wall-2x2.py",
+      "scripts/archive/fix-tv-screen-face.py",
       "scripts/verify-change-contract.mjs",
+      "src/assetStore.js",
       "src/autoFascia.js",
       "src/automaticWall.js",
       "src/configuratorStyles.js",
+      "src/designState.js",
+      "src/groundLayout.js",
+      "src/groupTemplates.js",
+      "src/imageOptimize.js",
       "src/itemAdminPreview.js",
-      "src/itemSizeDialog.js",
       "src/main.js",
       "src/moduleContextMenu.js",
       "src/moduleGroupPanel.js",
+      "src/moduleGroups.js",
       "src/moduleMove.js",
       "src/mountFairStand.js",
-      "src/profileLength.js",
-      "src/projectNaming.js",
+      "src/projectImportValidation.js",
+      "src/projectRemote.js",
       "src/scene3d.js",
+      "src/selectionFeedback.js",
+      "src/selectionSurfaceSummary.js",
+      "src/style.css",
+      "src/surfaceStateBinding.js",
       "src/systemChangeContract.js",
-      "src/uprightHeight.js",
       "src/viewCube.js",
       "src/wallLockNotice.js",
       "src/wallReflow.js"
     ],
     "affectedTests": [
-      "e2e/color-image-capability.spec.mjs",
+      "e2e/box-block-corners.spec.mjs",
+      "e2e/box-block-face-image-restore.spec.mjs",
+      "e2e/camera-pointer-lifecycle.spec.mjs",
+      "e2e/catalog-drop-append.spec.mjs",
       "e2e/demo-host.html",
+      "e2e/double-click-select.spec.mjs",
       "e2e/duplicate-metal-separator.spec.mjs",
       "e2e/f010-module-construction.spec.mjs",
+      "e2e/flat-panel-back-strips.spec.mjs",
+      "e2e/floor-showcase-brochure-copy-rotate.spec.mjs",
+      "e2e/furniture-items-contract.spec.mjs",
+      "e2e/glass-bar-table.spec.mjs",
+      "e2e/group-template.spec.mjs",
+      "e2e/grouped-image-direction.spec.mjs",
       "e2e/helpers/module-lock-fixture.mjs",
+      "e2e/in-place-module-update.spec.mjs",
       "e2e/metal-separator-bom-gap.spec.mjs",
+      "e2e/missing-project-asset-open.spec.mjs",
+      "e2e/module-group.spec.mjs",
+      "e2e/panel-sweep.spec.mjs",
+      "e2e/pinch-zoom-no-drag.spec.mjs",
+      "e2e/project-import-export-roundtrip.spec.mjs",
+      "e2e/scene-select-all.spec.mjs",
       "e2e/selection-property-panel.spec.mjs",
+      "e2e/selection-stale-clear.spec.mjs",
       "e2e/selection-toolbar.spec.mjs",
+      "e2e/shelf-rows-flow.spec.mjs",
       "e2e/shelf-width-variant.spec.mjs",
+      "e2e/short-joint-structural-upright.spec.mjs",
+      "e2e/short-panel-context-add.spec.mjs",
+      "e2e/stage-result-after-restore.spec.mjs",
+      "e2e/variant-snap-fit.spec.mjs",
+      "e2e/vertical-move-upright-height.spec.mjs",
+      "e2e/visible-ui-b.spec.mjs",
       "e2e/wall-flat-panel-items-contract.spec.mjs",
+      "e2e/wall-height-matrix.spec.mjs",
       "e2e/wall-height.spec.mjs",
       "e2e/wall-separator-items-contract.spec.mjs",
+      "e2e/wall-short-width.spec.mjs",
       "e2e/wall-showcase-item-contract.spec.mjs",
       "test/assetLibraryLayout.test.js",
-      "test/assetLibraryOrder.test.js",
       "test/autoFascia.test.js",
       "test/automaticWall.test.js",
+      "test/automaticWallItemLookup.test.js",
       "test/autosaveMainIntegration.test.js",
+      "test/barStool2.test.js",
+      "test/baseItemsContract.test.js",
+      "test/baseModule.test.js",
       "test/baseRenderStyle.test.js",
       "test/baseWallDepthAlignment.test.js",
+      "test/boothTypes.test.js",
       "test/boxBlockModule.test.js",
       "test/bundleLoadingContract.test.js",
       "test/catalogDomainBoundary.test.js",
@@ -92,21 +132,31 @@
       "test/coatRackModule.test.js",
       "test/colorEditorControllerMainIntegration.test.js",
       "test/colorEditorMainIntegration.test.js",
+      "test/commercialItemsContract.test.js",
       "test/cornerPlacement.test.js",
+      "test/counterModule.test.js",
       "test/coverModeExclusivity.test.js",
       "test/ctrlMultiSelect.test.js",
       "test/demoMode.test.js",
       "test/depotBackWallRecipe.test.js",
+      "test/designState.test.js",
+      "test/deskBankoItemsContract.test.js",
       "test/developerEntrypointDocs.test.js",
+      "test/doorCompositeItemContract.test.js",
       "test/doorLeafItemContract.test.js",
+      "test/doorShelfPanelSeams.test.js",
       "test/eamesTableChairSetContract.test.js",
       "test/editorViewSettings.test.js",
       "test/f017RendererSurfacePersist.test.js",
       "test/f027SceneReset.test.js",
       "test/f028FeatureReset.test.js",
+      "test/f032ConfiguratorDb.test.js",
       "test/fabricModuleOwnership.test.js",
       "test/favicon.test.js",
+      "test/flatPanelBackStrips.test.js",
+      "test/floorArea.test.js",
       "test/floorShowcaseBrochureStand.test.js",
+      "test/furnitureItemsContract.test.js",
       "test/glassBarTable.test.js",
       "test/glassShelfItemContract.test.js",
       "test/glassTableContract.test.js",
@@ -114,6 +164,7 @@
       "test/globalSilhouetteGhost.test.js",
       "test/gltfLoadCache.test.js",
       "test/groundLayout.test.js",
+      "test/groupTemplates.test.js",
       "test/helpGuide.test.js",
       "test/homeViewDirection.test.js",
       "test/horizontalPanelRails.test.js",
@@ -122,67 +173,92 @@
       "test/illuminatedFoamModule.test.js",
       "test/imageAssetDeletion.test.js",
       "test/imageAssetLiveDelete.test.js",
+      "test/imageOptimize.test.js",
+      "test/inPlaceModuleUpdateMainIntegration.test.js",
+      "test/indoorPlantItemsContract.test.js",
       "test/indoorPlants.test.js",
       "test/itemAdminPreview.test.js",
       "test/itemAssembly.test.js",
       "test/itemCatalogFields.test.js",
       "test/itemDefaultZCm.test.js",
-      "test/itemLengthParts.test.js",
+      "test/itemIsRenderFactory.test.js",
+      "test/itemRotation.test.js",
+      "test/itemSceneDimensions.test.js",
+      "test/itemScenePose.test.js",
+      "test/itemSnapAnchor.test.js",
       "test/itemSurfaceCapabilitySoT.test.js",
+      "test/kettle.test.js",
       "test/lCounter100Contract.test.js",
       "test/lCounter150Contract.test.js",
       "test/lCounter200Contract.test.js",
       "test/lCounterSideGeometry.test.js",
+      "test/ledFloodlightModule.test.js",
       "test/lightboxFabric.test.js",
       "test/lightboxFabricAppearance.test.js",
       "test/lightboxFabricLighting.test.js",
       "test/lightboxFabricPerformance.test.js",
+      "test/lightingItemsContract.test.js",
       "test/materialAppearance.test.js",
       "test/metalSeparator.test.js",
+      "test/miniFridge.test.js",
       "test/miniFridgeTopLabel.test.js",
       "test/moduleBehaviorPolicy.test.js",
       "test/moduleContextAllowSideInsert.test.js",
       "test/moduleContextDirection.test.js",
       "test/moduleGroupPanel.test.js",
+      "test/moduleGroups.test.js",
       "test/moduleLock.test.js",
       "test/moduleMove.test.js",
+      "test/modulePersistenceRoundTrip.test.js",
       "test/moduleRotationSingleSourceIntegration.test.js",
       "test/moduleSelectionState.test.js",
       "test/moduleSelectionVisual.test.js",
       "test/moduleStateConstructionRegistry.test.js",
       "test/mountFairStandBoundary.test.js",
+      "test/panelGlassBom.test.js",
       "test/panelGlassRestore.test.js",
       "test/panelMultiSelectRule.test.js",
       "test/perspectiveNear.test.js",
+      "test/plasticTrashBinModule.test.js",
       "test/plasticTrashBinTopLabel.test.js",
+      "test/printAreaBom.test.js",
       "test/productionBomPanelEntry.test.js",
+      "test/productionItemType.test.js",
       "test/profileFieldPlacement.test.js",
       "test/profileLength.test.js",
       "test/projectAtomicDeletion.test.js",
       "test/projectCustomerPanel.test.js",
       "test/projectDropdownSwitchIntegration.test.js",
       "test/projectImportFlow.test.js",
-      "test/projectNaming.test.js",
-      "test/projectNamingSaveAs.test.js",
+      "test/projectImportValidation.test.js",
       "test/projectOpenFastPath.test.js",
       "test/projectOpenTiming.test.js",
+      "test/projectRemoteSync.test.js",
       "test/projectRevisionSession.test.js",
-      "test/projectSaveAs.test.js",
       "test/projectUiMainIntegration.test.js",
       "test/raisedPlatform.test.js",
+      "test/rawBomSelectionParser.test.js",
+      "test/recipeWallPanelSlots.test.js",
+      "test/relationshipBomJoints.test.js",
       "test/removedIndoorPlant2.test.js",
       "test/renderOnlyLights.test.js",
       "test/rightWallOrientation.test.js",
       "test/runtimeSettings.test.js",
       "test/scene3dPublicContract.test.js",
       "test/sceneAssetLoading.test.js",
+      "test/sceneBomAcceptance.test.js",
       "test/sceneSurroundSingleSource.test.js",
       "test/selectedModuleRotationCursor.test.js",
+      "test/selectionFeedback.test.js",
       "test/selectionFeedbackMainIntegration.test.js",
+      "test/selectionSurfaceSummary.test.js",
       "test/shelfCatalogPanelSeam.test.js",
       "test/shelfItemsItemContract.test.js",
       "test/shelfLighting.test.js",
+      "test/shelfModule.test.js",
       "test/shelfRowsRender.test.js",
+      "test/shelfWidthVariantPlacement.test.js",
+      "test/shortJointStructuralUpright.test.js",
       "test/showcaseAppearance.test.js",
       "test/showcaseBodyColorRegression.test.js",
       "test/showcaseDepthDirection.test.js",
@@ -192,6 +268,7 @@
       "test/stageFeedbackMainIntegration.test.js",
       "test/standFloorGridKeyLight.test.js",
       "test/stripOccupancy.test.js",
+      "test/surfaceStateBinding.test.js",
       "test/systemChangeGate.test.js",
       "test/systemChangeGateLocalDiff.test.js",
       "test/systemChangeSecurityControls.test.js",
@@ -206,55 +283,82 @@
       "test/viewKeyboardMainIntegration.test.js",
       "test/viewportToolbarMainIntegration.test.js",
       "test/visibleUiContract.test.js",
+      "test/wallBaseItemsContract.test.js",
       "test/wallDragStickiness.test.js",
+      "test/wallFlatPanelItemsContract.test.js",
+      "test/wallHeightProjectBom.test.js",
+      "test/wallHeightProjects.mjs",
+      "test/wallHeightRecipe.test.js",
+      "test/wallHeightTopRail.test.js",
       "test/wallLockNotice.test.js",
+      "test/wallMediaItemsContract.test.js",
       "test/wallOverlayFeedback.test.js",
       "test/wallReflow.test.js",
+      "test/wallSeparatorItemsContract.test.js",
+      "test/wallShelfItemsContract.test.js",
+      "test/wallShortCanonicalRename.test.js",
+      "test/wallShortProfileSnapCollision.test.js",
+      "test/wallShortRelationshipBom.test.js",
       "test/wallShortVerticalMove.test.js",
       "test/wallShortWidth.test.js",
       "test/wallShowcaseItemContract.test.js"
     ],
     "affectedDocs": [
-      "PROJECT_RULES.md",
+      "MODULE_BEHAVIOR_STANDARD.md",
+      "README.md",
       "SYSTEM_AUDIT_CHECKLIST.md",
-      "SYSTEM_CHANGE_GATE.md",
-      "SYSTEM_DEVELOPMENT_CONTRACT.md",
       "audit/FINDINGS.md",
       "audit/SISTEM_MUTABAKAT_RAPORU.md",
-      "audit/evidence/A01_DOCS_SOURCE_OF_TRUTH.md",
       "audit/evidence/A02_CHANGE_GATE.md",
       "audit/evidence/A03_ARCHITECTURE.md",
       "audit/evidence/A04_CATALOG_MODULE_CONTRACTS.md",
       "audit/evidence/A05_MODULE_BEHAVIOR.md",
       "audit/evidence/A07_STATE_MODEL_FACTORIES.md",
       "audit/evidence/A08_PERSISTENCE_AUTOSAVE_ISOLATION.md",
+      "audit/evidence/A09_RENDERER_SCENE_RUNTIME.md",
       "audit/evidence/A11_FEATURE_COMPOSITION.md",
+      "audit/evidence/A13_STORAGE_ASSETS_REFERENCES.md",
       "audit/evidence/A17_PERFORMANCE_BUNDLE_RENDER_LIFECYCLE.md",
       "audit/evidence/A22_FILE_BY_FILE_SWEEP.md",
-      "audit/remediation/A02_CLOSURE.md",
       "audit/remediation/A02_F005_CLOSURE.md",
-      "audit/remediation/A02_F006_CLOSURE.md",
       "audit/remediation/A03_CLOSURE.md",
       "audit/remediation/A03_F010_CLOSURE.md",
       "audit/remediation/A03_F011_CLOSURE.md",
+      "audit/remediation/A03_F012_CLOSURE.md",
       "audit/remediation/A04_F013_CLOSURE.md",
+      "audit/remediation/A07_F017_CLOSURE.md",
       "audit/remediation/A11_F029_CLOSURE.md",
       "docs/AUTOSAVE_INTEGRATION_NOTES.md",
+      "docs/items/contract/ITEM_CONTRACT_CHECKLIST.md",
+      "docs/items/definitions/chair_eames.md",
+      "docs/items/definitions/coat_rack.md",
+      "docs/items/definitions/furniture_bar_stool_classic.md",
+      "docs/items/definitions/furniture_coffee_table_classic.md",
+      "docs/items/definitions/furniture_sofa_double_classic.md",
+      "docs/items/definitions/furniture_sofa_set_classic.md",
+      "docs/items/definitions/furniture_sofa_single_classic.md",
+      "docs/items/definitions/glass_table.md",
       "docs/items/definitions/illuminated-foam.md",
       "docs/items/definitions/karolaj.md",
+      "docs/items/definitions/kettle.md",
+      "docs/items/definitions/led_floodlight.md",
+      "docs/items/definitions/mini_fridge_avanti.md",
+      "docs/items/definitions/parke-beton.md",
       "docs/items/definitions/wall_door_100_350.md",
       "docs/refactor/CATALOG.md",
       "docs/refactor/DATABASE.md",
       "docs/refactor/FAIR_STAND_DB_KULLANIM_KILAVUZU.md",
+      "docs/refactor/ITEM_3D_PREVIEW.md",
+      "docs/refactor/PENDING_ITEM_DECISIONS.md",
       "docs/refactor/REFACTOR.md",
-      "docs/refactor/SCENE_POSE.md"
+      "docs/refactor/SCENE_POSE.md",
+      "docs/refactor/STAND_FRAME_REMOVAL.md",
+      "public/textures/floor/SOURCES.md"
     ],
     "relatedFindings": {
       "affected": [],
       "reviewedNotAffected": [
-        "F-004",
         "F-005",
-        "F-006",
         "F-010",
         "F-011",
         "F-012",
@@ -262,31 +366,29 @@
         "F-014",
         "F-015",
         "F-017",
-        "F-029"
+        "F-029",
+        "F-033"
       ]
     },
-    "notes": "Arama kutuları yeniden kurmaz, yalnız [hidden] ile gizler; setActiveAsset kutu sayısı karşılaştırması bozulmaz. Arşiv sırası yalnız görünümü etkiler, kayıt biçimi değişmez."
+    "notes": "Kayıt biçimi değişmez; yalnız sahnenin nasıl güncellendiği değişir. syncModules başarısız olursa eski tam kurulum yedek yol olarak kalır. Kumaşlı modül silinince tek parça kaplama tam kurulumdaki kuralla çözülür (normalizeFabricOwnership)."
   },
   "tests": {
     "targeted": [
-      "test/assetLibraryOrder.test.js",
-      "test/helpGuide.test.js",
-      "test/systemChangeGate.test.js"
+      "test/inPlaceModuleUpdateMainIntegration.test.js"
     ],
     "fullSuite": true,
     "build": true,
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/selection-property-panel.spec.mjs",
-        "e2e/color-image-capability.spec.mjs"
+        "e2e/in-place-module-update.spec.mjs"
       ],
-      "reason": "Panel düzeni ve arşiv tarayıcıda doğrulanır."
+      "reason": "Sahne nesnelerinin korunduğu ve buildWall çağrılmadığı tarayıcıda doğrulanır."
     }
   },
   "risk": {
-    "level": "low",
-    "notes": "Stil ve arşiv görünümü; veri ve kayıt değişmez."
+    "level": "medium",
+    "notes": "Sahne güncelleme yolu değişir; yedek tam kurulum korunur."
   },
   "migration": {
     "required": false,
@@ -297,91 +399,91 @@
     "controls": {
       "SEC-01": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-02": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-03": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-04": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-05": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-06": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-07": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-08": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-09": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-10": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-11": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-12": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-13": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-14": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-15": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-16": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-17": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-18": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-19": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-20": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-21": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       },
       "SEC-22": {
         "status": "na",
-        "reason": "Yalnız panel/üst çubuk stili ve görsel arşivinin sırası/araması değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
+        "reason": "Yalnız editör sahnesinin güncellenme yolu değişir; yetki, veri, ağ, depolama, oturum ve sunucu davranışı değişmez."
       }
     }
   }

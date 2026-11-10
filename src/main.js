@@ -1045,7 +1045,8 @@ function commitModuleAddition(mutate) {
 }
 
 // Silme: grup temizliği kalan modüllerden birini değiştirirse tam kurulum; değiştirmezse yalnız
-// o modül sahneden kaldırılır.
+// o modül sahneden kaldırılır. Kumaş kaplamalı modül (kaplama birden fazla modüle yayılabilir)
+// tek başına kaldırılamaz: sahne eşitlenir, yalnız kumaş katmanı yeniden kurulur.
 function commitModuleRemoval(index) {
   const removed = currentModules[index];
   currentModules.splice(index, 1);
@@ -1054,7 +1055,7 @@ function commitModuleRemoval(index) {
   const buildStartedAt = performance.now();
   if (moduleLayoutSignature(currentModules) !== beforeSignature
     || !currentStand
-    || !scene3d.removeModule(removed?.id, currentModules)) {
+    || (!scene3d.removeModule(removed?.id, currentModules) && !scene3d.syncModules(currentModules))) {
     rebuildWall({ resetView: false });
     return;
   }
@@ -1389,6 +1390,8 @@ function changeContextBackPanels(context, enabled) {
   const index = findContextModuleIndex(context);
   const moduleState = index >= 0 ? currentModules[index] : null;
   if (!supportsFlatPanelBackStrips(moduleState)) return;
+  // Yalnız bu modül yeniden yaratılır; sahnenin geri kalanı yerinde kalır.
+  const capturedContent = captureModuleContent();
   if (enabled) {
     if (!addFlatPanelBackStrips(moduleState)) return;
     selectionInfo.textContent = 'Arka yüze panel eklendi.';
@@ -1400,7 +1403,7 @@ function changeContextBackPanels(context, enabled) {
     if (!removeFlatPanelBackStrips(moduleState)) return;
     selectionInfo.textContent = 'Arka yüz panelleri kaldırıldı.';
   }
-  rebuildWall({ resetView: false });
+  syncSceneAfterModuleChange(capturedContent);
 }
 
 function changeContextFabricMode(context, enabled) {
@@ -1676,17 +1679,20 @@ function applyDimensionInput(context, key, values, phase) {
     // Çentik kalkarsa sonraki öğede yine sorulur.
     choiceSpec.writePreference(values.remember ? values.itemKey : null);
     if (values.itemKey === moduleState.itemKey) return;
+    const capturedContent = captureModuleContent();
     if (!choiceSpec.apply(moduleState, values.itemKey)) return;
     selectionInfo.textContent = choiceSpec.message(getItem(values.itemKey));
-    rebuildWall({ resetView: false });
+    syncSceneAfterModuleChange(capturedContent);
     return;
   }
   const sizeSpec = SIZE_FIELD_SPECS[key];
   if (!sizeSpec) return;
   const changed = sizeSpec.fields.some((field) => Number(moduleState[field.name] ?? (field.name === 'opacity' ? 1 : 0)) !== Number(values[field.name]));
   if (!changed) return;
+  // Ölçü canlı değişir: yalnız bu modül yeniden yaratılır, sahnenin geri kalanı yerinde kalır.
+  const capturedContent = captureModuleContent();
   sizeSpec.fields.forEach((field) => { moduleState[field.name] = Number(values[field.name]); });
-  rebuildWall({ resetView: false });
+  syncSceneAfterModuleChange(capturedContent);
   selectionInfo.textContent = key === 'box-block'
     ? `Modül ${index + 1} · Kutu blok · ${moduleState.widthCm} × ${moduleState.depthCm} × ${moduleState.heightCm} cm · opacity ${moduleState.opacity}`
     : `Modül ${index + 1} · ${key === 'tulle-fabric' ? 'Tül' : 'Işıklı Strafor'} · ${moduleState.widthCm} × ${moduleState.heightCm} cm.`;
@@ -1966,6 +1972,9 @@ function changeModuleVariant(context, itemKey, optionOn) {
     return;
   }
   designHistory.capture();
+  // Varyant yeni nesneyle gelir ve yeniden yaratılır; itilen komşular yalnız taşınır, içeriği
+  // değişen (taşınan duvar üstü öğe vb.) modül yeniden yaratılır.
+  const capturedContent = captureModuleContent();
   // Kaymadan önceki yerler: duvar kimliği stand kenarına göre okunur (serbest bırakılmış duvar öğesi dahil).
   const edgeWallIds = new Map(withStandEdgeWallIds(currentModules, currentStand.standType, currentStand.xCm)
     .map((moduleState) => [moduleState.id, moduleState.placement?.wallId ?? null]));
@@ -1980,7 +1989,7 @@ function changeModuleVariant(context, itemKey, optionOn) {
     if (moduleState) moduleState.placement = { ...placement };
   });
   carryMountedOverlays(before, next.id);
-  rebuildWall({ resetView: false });
+  syncSceneAfterModuleChange(capturedContent);
   // Seçim aynı öğede kalır; panel yeni varyantla açık durur.
   scene3d.selectModuleSurface(next.id);
   designHistory.capture();
