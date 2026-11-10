@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 
 // Üst bant, görünüm küpü ve menü aç/kapa düğmesi hiçbir ekran boyutunda üst üste binmez;
 // küp sağ üst köşededir, bantta ipucu yazısı yoktur.
@@ -19,7 +20,7 @@ async function createIslandStand(page) {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('6');
   await page.locator('#stand-size-y').fill('6');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Bant Kup');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();

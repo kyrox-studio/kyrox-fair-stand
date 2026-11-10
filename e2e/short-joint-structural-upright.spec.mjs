@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 
 // Kaydedilmiş sahne fixture'ı gerçek Item state factory'siyle üretilir; BOM ve
@@ -14,7 +15,7 @@ for (const { level, corner } of [{ level: 1, corner: false }, { level: 2, corner
     await setup.getByRole('button', { name: 'Ada Stand', exact: true }).click();
     await page.locator('#stand-size-x').fill('6');
     await page.locator('#stand-size-y').fill('4');
-    await page.locator('#create-stage').click();
+    await createStageFromWizard(page);
     await page.locator('form input[name="projectName"]').fill(`Ortak kısa dikme ${level}`);
     await page.getByRole('button', { name: 'Projeyi Oluştur', exact: true }).click();
     await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -56,7 +57,7 @@ for (const { level, corner } of [{ level: 1, corner: false }, { level: 2, corner
       await page.reload();
       await expect(page.locator('#project-select').locator(`option[value="${projectId}"]`)).toHaveCount(1);
       await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, projectId);
-      await page.locator('#open-project').click();
+      await clickProjectAction(page, 'open-project');
       await expect(page.locator('#project-status')).toContainText('Açıldı:');
       await expect(page.locator('#project-loading-overlay')).toBeHidden({ timeout: 30_000 });
       await page.locator('#toggle-production-bom').click();

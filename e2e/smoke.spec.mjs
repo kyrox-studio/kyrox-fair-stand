@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 
 test('user can create an island stand through the real browser UI', async ({ page }) => {
   const pageErrors = [];
@@ -18,9 +19,7 @@ test('user can create an island stand through the real browser UI', async ({ pag
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
 
-  const createStage = page.locator('#create-stage');
-  await expect(createStage).toBeEnabled();
-  await createStage.click();
+  await createStageFromWizard(page);
 
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();

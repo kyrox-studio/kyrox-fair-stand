@@ -1,4 +1,5 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 import { test, expect } from '@playwright/test';
 
 // Proje görselleri: ilk açılışta en fazla 6'şar iner ve yükleme ekranı ilerleme yazar;
@@ -91,7 +92,7 @@ test('project images download six at a time once, then come from the browser cop
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('OnbellekGorsel');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -108,7 +109,7 @@ test('project images download six at a time once, then come from the browser cop
     const projectSelect = page.locator('#project-select');
     const projectId = await projectSelect.locator('option', { hasText: 'OnbellekGorsel' }).getAttribute('value');
     await projectSelect.evaluate((select, id) => { select.value = id; }, projectId);
-    await page.locator('#open-project').click();
+    await clickProjectAction(page, 'open-project');
   };
 
   // 1. açılış: hepsi iner, en fazla 6 aynı anda; ekran ilerleme yazar.

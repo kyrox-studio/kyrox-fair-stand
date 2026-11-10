@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction, openProjectCard } from './helpers/standSetup.mjs';
 
 const ORG_ID = '11111111-1111-4111-8111-111111111111';
 const CUSTOMER_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -10,7 +11,7 @@ async function createIslandStand(page, projectName) {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();
   await projectNameInput.fill(projectName);
@@ -126,6 +127,7 @@ test('aynı oturum Kaydet tek revizyon tutar; yeniden açılış sonraki numaray
   await createIslandStand(page, 'E2ESessionRevision');
   await expect(history).not.toHaveAttribute('open');
   await expect(page.locator('#project-revision-list')).toBeHidden();
+  await openProjectCard(page);
   await history.locator('summary').click();
   await expect(page.locator('#project-revision-list')).toBeVisible();
   await expect(page.locator('#project-revision-list')).toContainText('R1');
@@ -152,7 +154,7 @@ test('aynı oturum Kaydet tek revizyon tutar; yeniden açılış sonraki numaray
   await projectSelect.evaluate((select, id) => {
     select.value = id;
   }, projectId);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   await expect(history).not.toHaveAttribute('open');
   await history.locator('summary').click();

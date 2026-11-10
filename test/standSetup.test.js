@@ -24,7 +24,7 @@ test('supports left and right L stands as separate stand types', () => {
 });
 
 test('accepts stand dimensions only in 50 cm increments', () => {
-  assert.equal(MIN_STAND_DIMENSION_CM, 50);
+  assert.equal(MIN_STAND_DIMENSION_CM, 200);
   assert.equal(STAND_DIMENSION_STEP_CM, 50);
 
   assert.equal(validateStandSetup({ standType: 'back-wall', xCm: 800, yCm: 450 }).ok, true);

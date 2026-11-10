@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 // Duvar ailesinin her ürünü × her duvar yüksekliği: proje kaydına uygulamanın kendi koduyla
 // yazılır, proje açılır; kod (_H), panel sayısı ve sahnedeki tepe yüksekliği ölçülür.
@@ -69,7 +70,7 @@ for (const wallHeight of HEIGHTS) {
     await page.locator('#stand-size-x').fill('30');
     await page.locator('#stand-size-y').fill('10');
     await page.locator('#wall-height').selectOption(String(wallHeight));
-    await page.locator('#create-stage').click();
+    await createStageFromWizard(page);
     await page.locator('form input[name="projectName"]').fill(`E2E Matris ${wallHeight}`);
     await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
     await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -117,7 +118,7 @@ for (const wallHeight of HEIGHTS) {
     await page.reload();
     await expect(page.locator('#viewport-empty')).toBeVisible();
     await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, projectId);
-    await page.locator('#open-project').click();
+    await clickProjectAction(page, 'open-project');
     await expect(page.locator('#project-status')).toContainText('Açıldı:');
     await expect(page.locator('#wall-height')).toHaveValue(String(wallHeight));
 

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { catalogCardKeyFor, chooseCatalogWidth } from './helpers/catalogWidth.mjs';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard } from './helpers/standSetup.mjs';
 
 // Normal tık önceki seçimin bütün izlerini kaldırır: yüzey çerçevesi, parlama, modül çerçevesi.
 test.use({ viewport: { width: 1280, height: 860 } });
@@ -28,7 +28,7 @@ async function createStand(page) {
   await page.locator('#stand-size-x').fill('6');
   await page.locator('#stand-size-y').fill('6');
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('E2E Secim Temizleme');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await keepWallLock(page);

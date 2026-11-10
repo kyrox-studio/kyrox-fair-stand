@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 
 test('canlı paylaşım kontrolü sahne açılınca toolbar içinde durur', async ({ page }) => {
   await page.goto('/');
@@ -10,7 +11,7 @@ test('canlı paylaşım kontrolü sahne açılınca toolbar içinde durur', asyn
   await standSetup.getByRole('button', { name: 'Sırt Duvar' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('Canlı paylaşım');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
 

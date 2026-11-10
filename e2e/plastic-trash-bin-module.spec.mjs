@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 
 const TRASH_KEY = 'plastic_trash_bin';
 
@@ -16,7 +17,7 @@ async function createIslandStand(page, projectName, { depotContents = false } = 
     await page.locator('#auto-depot-contents').check();
   }
 
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();
   await projectNameInput.fill(projectName);

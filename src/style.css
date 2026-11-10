@@ -2344,3 +2344,54 @@ button[aria-busy="true"]::after {
   width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 10px;
   padding: 10px 12px; color: var(--text); background: var(--surface);
 }
+
+/* Stand ölçüsü: ▲▼ ile 0,5 m adım (kurulu standda değişim hemen uygulanır). */
+.stand-size-stepper {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+.stand-size-grid .stand-size-stepper input[type="text"] {
+  padding-right: 34px;
+}
+.stand-size-steps {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stand-size-step {
+  flex: 1 1 0;
+  width: 24px;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: var(--surface-sunken);
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1;
+}
+.stand-size-step:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+/* Görsel ölçüsü Görsel sekmesinin en üstündedir (kullanıcı kararı 2026-11-10): üst çizgi yok,
+   altındaki renk / görsel bölümü kendi çizgisiyle ayrılır. */
+#selection-pane-look > .selection-property-image-size {
+  padding-top: 2px;
+  padding-bottom: 10px;
+  border-top: 0;
+}
+
+/* Boş sahne: sihirbaz kapatılınca yeniden açan düğme. */
+.viewport-empty-card button {
+  align-self: center;
+  margin-top: 4px;
+}

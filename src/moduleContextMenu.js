@@ -109,11 +109,11 @@ export function createModuleContextMenu({
       <div class="selection-property-fields" hidden></div>
     </div>
     <div class="selection-property-pane" id="selection-pane-look" role="tabpanel" aria-labelledby="selection-tab-look" data-panel-pane="look">
+      <div class="selection-property-image-size" hidden></div>
       <div class="selection-property-surface" hidden>
         <p class="selection-property-surface-note" aria-live="polite"></p>
         <div class="selection-property-surface-slot"></div>
       </div>
-      <div class="selection-property-image-size" hidden></div>
     </div>
     <div class="selection-property-pane module-context-menu" id="selection-pane-more" role="tabpanel" aria-labelledby="selection-tab-more" data-panel-pane="more">
       <button type="button" data-module-action="toggle-shelf-light" hidden>Raf altı aydınlatmayı aç</button>

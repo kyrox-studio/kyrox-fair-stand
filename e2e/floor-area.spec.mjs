@@ -1,4 +1,5 @@
 import { inflateSync } from 'node:zlib';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 import { expect, test } from '@playwright/test';
 
 function paeth(left, up, upLeft) {
@@ -86,7 +87,7 @@ async function createIslandStand(page, projectName) {
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
   await page.locator('#floor-type').selectOption('hali');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();
   await projectNameInput.fill(projectName);
@@ -191,7 +192,7 @@ test('baz halıya tek dikdörtgen karolaj eklenir, sahnede görünür ve kayıtt
   await projectSelect.evaluate((select, id) => {
     select.value = id;
   }, saved.id);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   await expect(page.locator('#floor-area-controls')).toBeHidden();
   const restored = await saveAndReadProject(page);

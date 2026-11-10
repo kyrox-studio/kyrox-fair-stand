@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 
 // 500 cm duvarın reçetesindeki upright_495 Üretim Listesi'nde tek satır kalır, adın yanında
 // parça bölünüşü yazar; standart boylarda bölünüş yazılmaz.
@@ -13,7 +14,7 @@ test('Üretim Listesi uzun dikmeyi parça bölünüşüyle tek satırda gösteri
   await page.locator('#stand-size-x').fill('3');
   await page.locator('#stand-size-y').fill('2');
   await page.locator('#wall-height').selectOption('500');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('Uzun Parca Bolunus');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-empty')).toBeHidden();

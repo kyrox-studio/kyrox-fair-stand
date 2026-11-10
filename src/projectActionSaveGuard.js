@@ -4,13 +4,13 @@ import { reportError } from './toastNotifications.js';
 const GUARDED_BUTTON_IDS = new Set([
   'open-project',
   'export-project',
-  'create-stage',
+  'new-project',
 ]);
 
 const ACTION_FAILURE_MESSAGES = Object.freeze({
   'open-project': 'Mevcut proje kaydedilemedi. Proje açma iptal edildi.',
   'export-project': 'Mevcut proje kaydedilemedi. Dışarı aktarma iptal edildi.',
-  'create-stage': 'Mevcut proje kaydedilemedi. Yeni sahne oluşturma iptal edildi.',
+  'new-project': 'Mevcut proje kaydedilemedi. Yeni proje iptal edildi.',
   'import-project': 'Mevcut proje kaydedilemedi. İçe aktarma iptal edildi.',
   'project-select': 'Mevcut proje kaydedilemedi. Proje değişikliği iptal edildi.',
 });

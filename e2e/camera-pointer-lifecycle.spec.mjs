@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard } from './helpers/standSetup.mjs';
 
 async function openScene(page, { frameIntervalMs = 0 } = {}) {
   // Observe the real controls without adding a production debug API.
@@ -31,7 +31,7 @@ async function openScene(page, { frameIntervalMs = 0 } = {}) {
   await page.locator('#stand-size-x').fill('4');
   await page.locator('#stand-size-y').fill('4');
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('Camera lifecycle');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await keepWallLock(page);

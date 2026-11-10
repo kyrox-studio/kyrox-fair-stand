@@ -238,7 +238,7 @@ test('sinyal 403 dönünce editör kilitlenir; gizli sekmede sinyal gitmez', asy
 
 test('demo sahne kurarken ad sormaz, projeyi kaydetmez ve otomatik kaydı açmaz', () => {
   assert.match(mainSource, /const projectName = isFairStandDemo\(\)\n    \? DEMO_PROJECT_NAME\n    : await requestProjectName/);
-  const createStage = mainSource.slice(mainSource.indexOf("createStageButton.addEventListener('click'"));
+  const createStage = mainSource.slice(mainSource.indexOf("async function createStageFromSetup()"));
   const demoBranch = createStage.indexOf('if (isFairStandDemo()) {\n    // Demo kaydetmez (ADR-0012); koruma kartı ve ipucu yine sahne kurulunca açılır.\n    projectStatus.textContent = DEMO_STAGE_READY_STATUS;\n  } else {');
   const persist = createStage.indexOf("await persistActiveProject({ quiet: true, reason: 'init' })");
   assert.ok(demoBranch > 0 && demoBranch < persist);

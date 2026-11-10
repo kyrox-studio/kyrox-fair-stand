@@ -68,7 +68,7 @@ function createGuardEvent(target) {
 }
 
 test('open/export/create actions flush the active project before resuming the requested click', async () => {
-  for (const buttonId of ['open-project', 'export-project', 'create-stage']) {
+  for (const buttonId of ['open-project', 'export-project', 'new-project']) {
     const order = [];
     const harness = createHarness({
       flush: async () => { order.push('save'); },
@@ -167,7 +167,7 @@ test('import keeps the native picker click synchronous but blocks archive proces
 
 // Otomatik kayıt kapalıyken yalnız Kaydet kaydeder: proje işlemi kaydetmez, kaydedilmemiş değişiklik varsa sorar.
 test('with autosave off, guarded actions never save and ask before dropping unsaved changes', async () => {
-  for (const buttonId of ['open-project', 'export-project', 'create-stage']) {
+  for (const buttonId of ['open-project', 'export-project', 'new-project']) {
     const order = [];
     const messages = [];
     let answer = false;

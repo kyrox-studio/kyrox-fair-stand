@@ -77,7 +77,7 @@ test('Escape korumayı bırakır', async () => {
 });
 
 test('yeni sahne kaydından sonra sorulur; kaldır denirse tüm öğelerin kilidi açılır', () => {
-  const createStart = mainSource.indexOf("createStageButton.addEventListener('click'");
+  const createStart = mainSource.indexOf("async function createStageFromSetup()");
   const createHandler = mainSource.slice(createStart, mainSource.indexOf('floorTypeSelect.addEventListener', createStart));
   assert.ok(createHandler.indexOf('void offerWallLockRelease()') > createHandler.indexOf('persistActiveProject'));
   const helper = mainSource.slice(mainSource.indexOf('async function offerWallLockRelease'));

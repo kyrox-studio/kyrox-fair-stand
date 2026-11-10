@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
 import { dropCatalogCard } from './helpers/catalogDrop.mjs';
 import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 import { openPanelTab } from './helpers/surfaceControls.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
@@ -15,7 +15,7 @@ async function createStand(page) {
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const input = page.locator('form input[name="projectName"]');
   await expect(input).toBeVisible();
   await input.fill('Wall Showcase Contract');
@@ -129,7 +129,7 @@ for (const itemKey of ['wall_showcase_100_2_350', 'wall_showcase_100_3_350']) {
       await page.reload();
       await expect(page.locator(`#project-select option[value="${initial.id}"]`)).toHaveCount(1);
       await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, initial.id);
-      await page.locator('#open-project').click();
+      await clickProjectAction(page, 'open-project');
       await expect(page.locator('#project-status')).toContainText('Açıldı:');
       await expect(page.locator('#project-loading-overlay')).toBeHidden({ timeout: 30_000 });
     };

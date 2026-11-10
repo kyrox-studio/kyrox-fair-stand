@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
 // Kısa panel katalogda Tek Sıra / Çift Sıra için birer kartla gelir (migration 0079); kart 100 cm
@@ -47,7 +48,7 @@ async function createIslandProject(page, name, modules) {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill(name);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#viewport-toolbar')).toBeVisible();
@@ -84,7 +85,7 @@ async function createIslandProject(page, name, modules) {
   }, modules);
   await page.reload();
   await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, projectId);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
 }
 

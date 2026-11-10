@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
 
 async function createBackWallStand(page, projectName, widthCm = 500) {
@@ -8,7 +9,7 @@ async function createBackWallStand(page, projectName, widthCm = 500) {
   await setup.getByRole('button', { name: 'Sırt Duvar' }).click();
   await page.locator('#stand-size-x').fill(String(widthCm / 100));
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const input = page.locator('form input[name="projectName"]');
   await expect(input).toBeVisible();
   await input.fill(projectName);

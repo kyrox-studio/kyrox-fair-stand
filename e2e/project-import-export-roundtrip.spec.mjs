@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 import JSZip from 'jszip';
 import { PROJECT_ARCHIVE_VERSION } from '../src/projectImportValidation.js';
 
@@ -9,7 +10,7 @@ async function createIslandStand(page, projectName) {
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('5');
   await page.locator('#stand-size-y').fill('5');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   const projectNameInput = page.locator('form input[name="projectName"]');
   await expect(projectNameInput).toBeVisible();
   await projectNameInput.fill(projectName);
@@ -148,7 +149,7 @@ test('Kaydet → Dışarı Aktar → İçe Aktar proje kimliğini ve stand state
   expect(before.stand.standType).toBe('island');
 
   const downloadPromise = page.waitForEvent('download');
-  await page.locator('#export-project').click();
+  await clickProjectAction(page, 'export-project');
   const download = await downloadPromise;
   await expect(page.locator('#project-status')).toContainText('Dışarı aktarıldı');
 

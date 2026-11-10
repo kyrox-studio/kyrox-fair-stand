@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createStageFromWizard } from './helpers/standSetup.mjs';
 
 test('view cube home and face controls stay usable after a stage is created', async ({ page }) => {
   const pageErrors = [];
@@ -11,7 +12,7 @@ test('view cube home and face controls stay usable after a stage is created', as
   await standSetup.getByRole('button', { name: 'Ada Stand' }).click();
   await page.locator('#stand-size-x').fill('4');
   await page.locator('#stand-size-y').fill('4');
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill('View Cube Home');
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
 

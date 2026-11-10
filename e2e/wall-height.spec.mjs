@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { installModuleUnlockFixture, unlockModuleForFixture } from './helpers/module-lock-fixture.mjs';
 import { dropCatalogCard } from './helpers/catalogDrop.mjs';
 import { chooseCatalogWidth } from './helpers/catalogWidth.mjs';
-import { disableAutoFurniture, keepWallLock } from './helpers/standSetup.mjs';
+import { disableAutoFurniture, keepWallLock, createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
 test.beforeEach(async ({ page }) => installModuleUnlockFixture(page));
 
@@ -51,7 +51,7 @@ async function createBackWallStand(page, { wallHeight, projectName }) {
   await page.locator('#stand-size-y').fill('5');
   if (wallHeight) await page.locator('#wall-height').selectOption(String(wallHeight));
   await disableAutoFurniture(page);
-  await page.locator('#create-stage').click();
+  await createStageFromWizard(page);
   await page.locator('form input[name="projectName"]').fill(projectName);
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await keepWallLock(page);
@@ -143,7 +143,7 @@ test('otomatik duvar kilidi silmeyi engeller; kullanıcı kilidi açınca kayıt
   expect(unlocked.modules.filter((module) => module.type === 'flat-panel' && module.id !== wall.id).every((module) => module.locked === true)).toBe(true);
   await page.reload();
   await page.locator('#project-select').evaluate((select, id) => { select.value = id; }, initial.id);
-  await page.locator('#open-project').click();
+  await clickProjectAction(page, 'open-project');
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
   const reopened = await wallContextMenu(page, wall.id);
   await expect(reopened.locator('[data-module-action="toggle-lock"]')).toHaveText('Kilitle');
@@ -198,7 +198,7 @@ for (const wallHeight of [250, 300, 350, 400, 450, 500]) {
     await page.locator('#stand-size-y').fill('6');
     await page.locator('#wall-height').selectOption(String(wallHeight));
     await disableAutoFurniture(page);
-    await page.locator('#create-stage').click();
+    await createStageFromWizard(page);
     await page.locator('form input[name="projectName"]').fill(`E2E Sürükle ${wallHeight}`);
     await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
     await keepWallLock(page);
@@ -249,3 +249,58 @@ for (const wallHeight of [250, 300, 350, 400, 450, 500]) {
     expect(upperPanels).toBe(wallHeight / 50 - 4);
   });
 }
+
+// Kurulu standda duvar yüksekliği (yeniden boyutlandırma motoru): önizleme onaylanınca duvarlar
+// yeni yüksekliğe çevrilir, alt bant görseli/rengi kalır, Geri al eski yüksekliğe döndürür;
+// vazgeçilirse hiçbir şey değişmez.
+test('open stand: wall height change previews, applies, saves and undoes', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await exposeScene(page);
+  await createBackWallStand(page, { projectName: 'E2E Yükseklik Değişimi' });
+  const initial = await savedProject(page);
+  const wallIds = initial.modules.filter((module) => module.type === 'flat-panel').map((module) => module.id);
+
+  // Önizleme uygulamanın kendi penceresidir (tarayıcı confirm'i değil).
+  const dialog = page.getByRole('dialog', { name: /Duvar yüksekliği/ });
+
+  // Vazgeç: seçim eski değere döner, sahne değişmez.
+  await page.locator('#wall-height').selectOption('250');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'İptal' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#wall-height')).toHaveValue('350');
+  expect(await wallTopMeters(page)).toBeCloseTo(3.5, 1);
+
+  // Esc de vazgeçer.
+  await page.locator('#wall-height').selectOption('250');
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#wall-height')).toHaveValue('350');
+
+  // Uygula: önizleme değişiklikleri sayar.
+  await page.locator('#wall-height').selectOption('250');
+  await expect(dialog).toContainText('3,5 m → 2,5 m');
+  await expect(dialog).toContainText('duvar parçası yeni yüksekliğe çevrilecek');
+  await dialog.getByRole('button', { name: 'Uygula' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#stand-summary-chip')).toContainText('duvar 2,5 m');
+  expect(await wallTopMeters(page)).toBeCloseTo(2.5, 1);
+
+  const lowered = await savedProject(page);
+  expect(lowered.stand.wallHeightCm).toBe(250);
+  const loweredWalls = lowered.modules.filter((module) => module.type === 'flat-panel');
+  expect(loweredWalls.map((module) => module.id)).toEqual(wallIds);
+  for (const wall of loweredWalls) {
+    expect(wall.itemKey).toMatch(/^wall_(50|100|150|200)_250$/);
+    expect(wall.strips).toHaveLength(5);
+    expect(wall.locked).toBe(true);
+  }
+
+  await page.locator('#design-undo').click();
+  await expect(page.locator('#wall-height')).toHaveValue('350');
+  await expect(page.locator('#stand-summary-chip')).toContainText('duvar 3,5 m');
+  expect(await wallTopMeters(page)).toBeCloseTo(3.5, 1);
+  expect(errors).toEqual([]);
+});
