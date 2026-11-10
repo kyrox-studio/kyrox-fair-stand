@@ -66,8 +66,20 @@ test('görsel arşive yüklenir; görselsiz seçili panelde Kaldır mesaj verir'
   });
   const tiles = page.locator('button.asset-tile');
   await expect(tiles).toHaveCount(2);
-  await expect(tiles.nth(0).locator('span')).toHaveText('e2e-swatch.png');
-  await expect(tiles.nth(1).locator('span')).toHaveText('e2e-poster.png');
+  // Arşiv yükleme sırasına değil ada göre dizilir.
+  await expect(tiles.nth(0).locator('span')).toHaveText('e2e-poster.png');
+  await expect(tiles.nth(1).locator('span')).toHaveText('e2e-swatch.png');
+  // Arama ada göre süzer; kutular yeniden kurulmaz, yalnız gizlenir.
+  const search = page.locator('.asset-search');
+  await search.fill('SWATCH');
+  await expect(tiles.filter({ visible: true })).toHaveCount(1);
+  await expect(tiles.filter({ visible: true }).locator('span')).toHaveText('e2e-swatch.png');
+  await search.fill('yok-boyle-gorsel');
+  await expect(tiles.filter({ visible: true })).toHaveCount(0);
+  await expect(page.locator('.asset-search-empty')).toBeVisible();
+  await search.fill('');
+  await expect(tiles.filter({ visible: true })).toHaveCount(2);
+  await expect(page.locator('.asset-search-empty')).toBeHidden();
   const tileBoxes = [];
   for (let index = 0; index < 2; index += 1) {
     const tile = tiles.nth(index);

@@ -206,7 +206,7 @@ function listGuideSections() {
     title: 'Görsel Kütüphanesi ve Görsel Uygulama',
     html: `
       <ul>
-        <li><strong>Dosya Seç:</strong> Görseli aktif projenin görsel arşivine ekler. En fazla ${getMaxImageUploadMb()} MB; aşıldığında sağ altta bildirim gösterilir. Büyük görseller sahne için küçültülür; şeffaf arka plan korunur. SVG olduğu gibi kalır.</li>
+        <li><strong>Dosya Seç:</strong> Görseli aktif projenin görsel arşivine ekler. En fazla ${getMaxImageUploadMb()} MB; aşıldığında sağ altta bildirim gösterilir. Büyük görseller sahne için küçültülür; şeffaf arka plan korunur. SVG olduğu gibi kalır. Arşivde SVG dosyaları üstte, sonra diğerleri ada göre sıralanır; <strong>Görsel ara…</strong> kutusu ada göre süzer.</li>
         <li><strong>Doldur:</strong> Görselin en-boy oranını koruyarak alanı tamamen kaplar; taşan kısmı ortadan kırpar. Arşivdeki görsele çift tıklamak da aynısını yapar.</li>
         <li><strong>Sığdır:</strong> Görselin tamamını en-boy oranını koruyarak seçili alana sığdırır; gerekirse boşluk bırakır.</li>
         <li><strong>Ölçü:</strong> Panelde <strong>Görsel ölçüsü</strong> alanları. Panel, Lightbox ve Mesh görseli aynı alanlardan ölçülür. Önizleme otomatik kayda veya geri alma geçmişine girmez; Enter veya alandan çıkış tek geri alma adımıdır. Esc değişikliği iptal eder. Ölçü vermek görseli bu genişlik ve yüksekliğe oturtur; Doldur ve Sığdır ise en-boy oranını korur. Seçili alanın kendi ölçüsü başlangıçtır; 400×200 alandaki görsel önce 400×200 oturur. 300×150 yazınca daralır ve boşluk tekrarlanır, 500×300 yazınca alanın dışına taşar. Tek panelde de aynıdır.</li>

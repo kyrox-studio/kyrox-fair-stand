@@ -82,6 +82,7 @@ function frozenDomains(...domains) {
 // Mevcut her kaynak dosya için sahiplikten türetilmiş açık harita. Yeni bir src dosyasının
 // kasıtlı yedek yolu yoktur: regresyon paketi CI geçmeden önce onu sınıflandırmalıdır.
 export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
+  'src/assetLibraryOrder.js': frozenDomains('ui', 'assets'),
   'src/assetStore.js': frozenDomains('persistence', 'storage'),
   'src/autoDepot.js': frozenDomains('composition', 'placement'),
   'src/autoFascia.js': frozenDomains('composition', 'placement'),
