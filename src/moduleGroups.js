@@ -345,15 +345,89 @@ export function getGroupBounds(members = []) {
   return { minX, minY, maxX, maxY, widthCm: maxX - minX, depthCm: maxY - minY };
 }
 
-const ROTATION_ROUND_CM = 100; // 0,01 cm hassasiyet
+// Dik açıda (0/90/180/270) 0,01 cm; ara açıda (45°) 1e-6 cm. Ara açıdaki ince değer, ikinci
+// 45° ile dik açıya dönünce birikmiş yuvarlama bırakmaz (iki 45° sonrası 649,99 değil 650).
+const ROTATION_ROUND_CARDINAL = 100;
+const ROTATION_ROUND_INTERMEDIATE = 1e6;
+// Dik açıda grup bu ızgaraya oturtulur (en çok yarım adım ortak kaydırma).
+export const GROUP_ROTATE_GRID_CM = 5;
+const GRID_MATCH_TOLERANCE_CM = 0.05;
+const ROTATION_SUBSTEP_DEG = 45;
 
-function roundCm(value) {
-  return Math.round(value * ROTATION_ROUND_CM) / ROTATION_ROUND_CM;
+function roundCmTo(value, scale) {
+  return Math.round(value * scale) / scale;
+}
+
+function snapGridCm(value) {
+  return Math.round(value / GROUP_ROTATE_GRID_CM) * GROUP_ROTATE_GRID_CM;
+}
+
+function isCardinalRotation(rotationZDeg) {
+  return rotationZDeg % 90 === 0;
+}
+
+// Ortalama etrafında tam hassasiyetle bir adım döndürür (yuvarlama yok).
+function rotateStateAroundMean(state, deltaDeg) {
+  const meanX = state.reduce((sum, entry) => sum + entry.xCm, 0) / state.length;
+  const meanY = state.reduce((sum, entry) => sum + entry.yCm, 0) / state.length;
+  const radians = deltaDeg * Math.PI / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const next = state.map((entry) => {
+    const dx = entry.xCm - meanX;
+    const dy = entry.yCm - meanY;
+    return {
+      xCm: meanX + dx * cos + dy * sin,
+      yCm: meanY - dx * sin + dy * cos,
+      rotationZDeg: normalizeRotation(entry.rotationZDeg + deltaDeg),
+    };
+  });
+  return { next, pivot: { xCm: meanX, yCm: meanY } };
+}
+
+// Bütün üyeler dik açıdaysa ve aynı ortak kaydırmayla ızgaraya oturuyorsa, o kaydırmanın
+// adayları (önce en küçük). Grup kendi içinde ızgaraya uymuyorsa aday yok: grup olduğu gibi kalır.
+function gridShiftCandidates(state) {
+  if (!state.every((entry) => isCardinalRotation(entry.rotationZDeg))) return [];
+  const [first] = state;
+  const baseX = snapGridCm(first.xCm) - first.xCm;
+  const baseY = snapGridCm(first.yCm) - first.yCm;
+  const fits = state.every((entry) => (
+    Math.abs(snapGridCm(entry.xCm + baseX) - (entry.xCm + baseX)) < GRID_MATCH_TOLERANCE_CM
+    && Math.abs(snapGridCm(entry.yCm + baseY) - (entry.yCm + baseY)) < GRID_MATCH_TOLERANCE_CM
+  ));
+  if (!fits) return [];
+  const step = GROUP_ROTATE_GRID_CM;
+  const xs = [baseX, baseX > 0 ? baseX - step : baseX + step];
+  const ys = [baseY, baseY > 0 ? baseY - step : baseY + step];
+  return xs.flatMap((dx) => ys.map((dy) => ({ dx, dy })))
+    .sort((a, b) => Math.hypot(a.dx, a.dy) - Math.hypot(b.dx, b.dy));
+}
+
+function placementsFromState(placed, state, shift, stand) {
+  const placements = new Map();
+  for (let index = 0; index < placed.length; index += 1) {
+    const moduleState = placed[index];
+    const entry = state[index];
+    const centerX = shift
+      ? snapGridCm(entry.xCm + shift.dx)
+      : roundCmTo(entry.xCm, isCardinalRotation(entry.rotationZDeg) ? ROTATION_ROUND_CARDINAL : ROTATION_ROUND_INTERMEDIATE);
+    const centerY = shift
+      ? snapGridCm(entry.yCm + shift.dy)
+      : roundCmTo(entry.yCm, isCardinalRotation(entry.rotationZDeg) ? ROTATION_ROUND_CARDINAL : ROTATION_ROUND_INTERMEDIATE);
+    const next = placementFromMemberCenter(moduleState, moduleState.placement, centerX, centerY, entry.rotationZDeg);
+    if (!memberInsideStand(moduleState, next, stand)) return null;
+    placements.set(moduleState.id, next);
+  }
+  return placements;
 }
 
 /**
- * Grubu döndürme planı. Merkez, üye merkezlerinin ortalamasıdır; bu nokta dönüşte
- * sabit kaldığı için art arda döndürmede grup kaymaz (8 × 45° başa döner).
+ * Grubu döndürme planı (kullanıcı kararı 2026-11-11). Grup üye merkezlerinin ortalaması
+ * etrafında, 45° katı açılar 45°'lik ara adımlarla döner. Bütün üyeler dik açıya (0/90/180/270)
+ * gelince grup en küçük ortak kaydırmayla (her eksende en çok 2,5 cm) 5 cm ızgaraya oturur:
+ * ham ortalama çoğu zaman ızgara dışıdır ve grubu 632,85 gibi konumlara düşürüyordu.
+ * Bedeli: art arda tam tur döndürmede grup nadiren birkaç cm kayabilir.
  * Her üyenin konumu merkez etrafında çevrilir ve açısına aynı derece eklenir
  * (sahne: rotationZDeg Three.js world-Y yaw; x' = x cos + y sin, y' = -x sin + y cos).
  * Tek kısıt: döndürülmüş her üye aktif stand alanında kalmalı; tür kuralları aranmaz.
@@ -361,27 +435,30 @@ function roundCm(value) {
 export function planPlacementsRotate(members = [], deltaDeg, stand) {
   const placed = members.filter((moduleState) => moduleState?.placement);
   if (!placed.length) return { ok: false, message: 'Grup bulunamadı.', placements: new Map() };
-  const centers = placed.map((moduleState) => memberCenterCm(moduleState));
-  const pivotX = centers.reduce((sum, center) => sum + center.xCm, 0) / centers.length;
-  const pivotY = centers.reduce((sum, center) => sum + center.yCm, 0) / centers.length;
-  const radians = (Number(deltaDeg) || 0) * Math.PI / 180;
-  const cos = Math.cos(radians);
-  const sin = Math.sin(radians);
-  const placements = new Map();
-  for (let index = 0; index < placed.length; index += 1) {
-    const moduleState = placed[index];
-    const dx = centers[index].xCm - pivotX;
-    const dy = centers[index].yCm - pivotY;
-    const centerX = roundCm(pivotX + dx * cos + dy * sin);
-    const centerY = roundCm(pivotY - dx * sin + dy * cos);
-    const rotationZDeg = normalizeRotation(Number(moduleState.placement.rotationZDeg) + (Number(deltaDeg) || 0));
-    const next = placementFromMemberCenter(moduleState, moduleState.placement, centerX, centerY, rotationZDeg);
-    if (!memberInsideStand(moduleState, next, stand)) {
-      return { ok: false, message: GROUP_ROTATE_OUTSIDE_STAND_MESSAGE, placements: new Map() };
-    }
-    placements.set(moduleState.id, next);
+  const delta = Number(deltaDeg) || 0;
+  const substeps = delta !== 0 && delta % ROTATION_SUBSTEP_DEG === 0
+    ? Array(Math.abs(delta) / ROTATION_SUBSTEP_DEG).fill(Math.sign(delta) * ROTATION_SUBSTEP_DEG)
+    : [delta];
+  let state = placed.map((moduleState) => ({
+    ...memberCenterCm(moduleState),
+    rotationZDeg: normalizeRotation(moduleState.placement.rotationZDeg),
+  }));
+  let pivot = null;
+  for (const stepDeg of substeps) {
+    const rotated = rotateStateAroundMean(state, stepDeg);
+    pivot ??= rotated.pivot;
+    state = rotated.next;
+    // Ara adımda dik açıya gelindiyse ızgaraya oturt; sonraki adım ızgaradan başlar.
+    const [shift] = gridShiftCandidates(state);
+    if (shift) state = state.map((entry) => ({ ...entry, xCm: snapGridCm(entry.xCm + shift.dx), yCm: snapGridCm(entry.yCm + shift.dy) }));
   }
-  return { ok: true, placements, pivot: { xCm: pivotX, yCm: pivotY } };
+  // Son durum: önce ızgaraya oturmuş hali (state zaten oturtulmuşsa kaydırma 0); sığmazsa komşu
+  // ızgara kaydırmaları, en son kaydırmasız.
+  for (const shift of [...gridShiftCandidates(state), null]) {
+    const placements = placementsFromState(placed, state, shift, stand);
+    if (placements) return { ok: true, placements, pivot };
+  }
+  return { ok: false, message: GROUP_ROTATE_OUTSIDE_STAND_MESSAGE, placements: new Map() };
 }
 
 export function planGroupRotate(modules = [], groupId, deltaDeg, stand) {

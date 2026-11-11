@@ -1,4 +1,5 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
+import { answerTextDialog } from './helpers/inAppDialog.mjs';
 import { test, expect } from '@playwright/test';
 import { disableAutoFurniture, keepWallLock, createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
@@ -89,8 +90,9 @@ test('Ctrl+A ile grup kurulur; grubun tamamının kilidi açılır ve topluca ç
   await unlockAll(page, count);
   await selectAll(page, count);
   let context = await menu(page);
-  page.once('dialog', (dialog) => dialog.accept('Bütün stand'));
+  // Grup adı uygulamanın kendi penceresinde sorulur (src/inAppDialogs.js), tarayıcı prompt'u değil.
   await context.locator('[data-module-action="group-create"]').click();
+  await answerTextDialog(page, 'Grup oluştur', 'Bütün stand');
   const grouped = await save(page);
   expect(grouped.modules.every((module) => module.group?.name === 'Bütün stand')).toBe(true);
   await page.locator('#editor-mode-advanced').click();
@@ -204,8 +206,8 @@ test('Herşeyi Kilitle checkbox tüm öğeleri ve grup kilitlerini yönetir; ger
   expect((await save(page)).modules.every(module => module.locked !== true)).toBe(true);
   await selectAll(page, initial.modules.length);
   const context = await menu(page);
-  page.once('dialog', dialog => dialog.accept('Toplu Kilit Grubu'));
   await context.locator('[data-module-action="group-create"]').click();
+  await answerTextDialog(page, 'Grup oluştur', 'Toplu Kilit Grubu');
   const card = page.locator('#module-groups-card');
   if (!(await card.evaluate(element => element.open))) await card.locator(':scope > summary').click();
   await card.locator('.module-group-row details > summary').click();

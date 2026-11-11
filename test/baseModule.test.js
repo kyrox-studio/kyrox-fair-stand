@@ -132,3 +132,47 @@ test('baza physical depth still rejects real body overlap', () => {
   });
   assert.equal(overlap.ok, false);
 });
+
+test('baza tepedeki profile mıknatıslanmaz; iki yanda da stand kenarına sıfır oturur', () => {
+  const profile = (id, xCm) => ({
+    id,
+    type: 'profile',
+    itemKey: 'profile_388',
+    widthCm: 400,
+    depthCm: 10,
+    heightCm: 10,
+    placement: { xCm, yCm: 0, zCm: 340, rotationZDeg: 90, wallId: 'free' },
+  });
+  const stand = { standType: 'back-wall', standXCm: 700, standYCm: 800 };
+  [
+    { pointerXCm: 5, rotationZDeg: 270, modules: [profile('outer-left', 0), profile('inner-left', 50)], expectedXCm: 25 },
+    { pointerXCm: 695, rotationZDeg: 90, modules: [profile('outer-right', 700), profile('inner-right', 650)], expectedXCm: 675 },
+  ].forEach(({ pointerXCm, rotationZDeg, modules, expectedXCm }) => {
+    const magnetic = snapPlacementToModules({
+      ...stand,
+      moduleId: 'base',
+      moduleType: 'base',
+      itemKey: 'base_200',
+      widthCm: 200,
+      depthCm: 50,
+      heightCm: 50,
+      pointerXCm,
+      pointerYCm: 300,
+      rotationZDeg,
+      modules,
+    });
+    assert.equal(magnetic, null, `profil yüzüne yapışmamalı (${pointerXCm})`);
+    const free = snapPlacementToStand({
+      ...stand,
+      moduleType: 'base',
+      widthCm: 200,
+      depthCm: 50,
+      forceFree: true,
+      pointerXCm,
+      pointerYCm: 300,
+      preferredRotationZDeg: rotationZDeg,
+      rotationLocked: true,
+    });
+    assert.equal(free.placement.xCm, expectedXCm);
+  });
+});

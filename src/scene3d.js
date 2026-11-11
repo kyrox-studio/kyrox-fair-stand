@@ -114,8 +114,14 @@ import {
 import { getModuleBehavior, getModuleDefaultRotationDeg, getModuleGhostBehavior, isFreePlacementModule, isTopPlacementModule, isWallOverlayModule, resolveModuleRotationDeltaDeg, supportsWallOverlayMount, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
 import { noteSceneRender, trackSceneModel, trackSceneTextureLoader } from './sceneAssetLoading.js';
+import { normalizeProfileFinish, profileFinishColorCss } from './profileFinish.js';
+
+// Proje profil rengi (stand.profileFinish). Varsayılanda null: çerçeve katalog rengini kullanır.
+let activeProfileFinish = normalizeProfileFinish(null);
 
 function frameColorForModule(moduleState) {
+  const finishColor = profileFinishColorCss(activeProfileFinish);
+  if (finishColor) return finishColor;
   const item = getItem(moduleState?.itemKey);
   if ((item?.type === 'profile' || item?.type === 'upright') && Number.isInteger(item.defaultColor)) {
     return itemDefaultColorCss(item);
@@ -1454,6 +1460,18 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     return resolved;
   }
 
+  /**
+   * Proje profil rengini ayarlar; değiştiyse true. Çerçeveler modül kurulurken boyandığı için
+   * çağıran, değişimden sonra modülleri yeniden kurar.
+   */
+  function setProfileFinish(finish) {
+    const next = normalizeProfileFinish(finish);
+    if (next === activeProfileFinish) return false;
+    activeProfileFinish = next;
+    requestEditorRender();
+    return true;
+  }
+
   // Doku yüklenince ortalama renk değişir; açık zeminler yeni çarpanla yeniden kurulur.
   function refreshTexturedFloors() {
     requestEditorRender();
@@ -2531,26 +2549,30 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       .map((surface) => ({ surface, meta: getSurfaceSelectionPlaneMeta(surface) }))
       .filter((entry) => entry.meta?.planeKey === anchorMeta.planeKey);
 
-    const orderedModules = [...new Map(
-      planePanels
-        .filter((entry) => entry.meta.moduleId)
-        .map((entry) => [entry.meta.moduleId, entry.meta]),
-    ).values()].sort((a, b) => (a.pathCm - b.pathCm));
-    const columnByModuleId = new Map(
-      orderedModules.map((entry, index) => [entry.moduleId, index]),
-    );
-    const anchorColumn = columnByModuleId.get(anchorMeta.moduleId);
-    const targetColumn = columnByModuleId.get(targetMeta.moduleId);
-    if (!Number.isInteger(anchorColumn) || !Number.isInteger(targetColumn)) return;
+    // Sütun duvar üzerindeki konum, satır panelin gerçek yüksekliğidir: üst üste duran modüller
+    // (ör. iki short) aynı sütundur ve aradaki panel atlanmaz. Modül içi panel sırası her modülde
+    // 0'dan başladığı için üstteki short'un paneli alttakinin 0. paneliyle aynı satır sayılıyordu.
+    const columnKey = (meta) => Math.round(Number(meta.pathCm) * 2);
+    const rowKey = (surface) => {
+      surface.updateWorldMatrix(true, false);
+      return Math.round(surface.getWorldPosition(new THREE.Vector3()).y * 200);
+    };
+    const columnKeys = [...new Set(planePanels.map(({ meta }) => columnKey(meta)))].sort((a, b) => a - b);
+    const rowKeys = [...new Set(planePanels.map(({ surface }) => rowKey(surface)))].sort((a, b) => a - b);
+    const columnOf = (meta) => columnKeys.indexOf(columnKey(meta));
+    const rowOf = (surface) => rowKeys.indexOf(rowKey(surface));
+    const anchorColumn = columnOf(anchorMeta);
+    const targetColumn = columnOf(targetMeta);
+    if (anchorColumn < 0 || targetColumn < 0) return;
 
     const result = createPanelRangeSelection(
       planePanels.map(({ surface, meta }) => ({
         mesh: surface,
-        moduleIndex: columnByModuleId.get(meta.moduleId),
-        stripIndex: surface.userData.stripIndex,
+        moduleIndex: columnOf(meta),
+        stripIndex: rowOf(surface),
       })),
-      { moduleIndex: anchorColumn, stripIndex: anchorMesh.userData.stripIndex },
-      { moduleIndex: targetColumn, stripIndex: mesh.userData.stripIndex },
+      { moduleIndex: anchorColumn, stripIndex: rowOf(anchorMesh) },
+      { moduleIndex: targetColumn, stripIndex: rowOf(mesh) },
     );
 
     if (!result.ok) return;
@@ -7879,6 +7901,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     getCameraMode: () => cameraMode,
     createStage,
     setFloorType,
+    setProfileFinish,
     setFloorColor,
     setFloorArea,
     setFloorAreaColor,

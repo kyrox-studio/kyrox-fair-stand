@@ -112,7 +112,10 @@ test('context menu offers group commands and forwards them to main', () => {
 });
 
 test('main wires group actions, deletes without confirm and confirms moving between groups', () => {
-  assert.match(mainSource, /onGroupAction: \(action, context\) => handleGroupAction\(action, \{/);
+  assert.match(mainSource, /onGroupAction: \(action, context\) => void handleGroupAction\(action, \{/);
+  // Ad ve onay uygulamanın kendi penceresinden sorulur; tarayıcı prompt / confirm'i gömülü tarayıcıda engellenir.
+  assert.doesNotMatch(mainSource, /window\.prompt\(/);
+  assert.match(mainSource, /await requestTextInput\(\{ title: 'Grup oluştur', label: 'Grup adı'/);
   // Grubu sil onay sormaz; yanlış silme Geri al ile döner.
   assert.doesNotMatch(mainSource, /grubunun tamamı silinecek/);
   assert.match(mainSource, /grubuna eklensin mi\?/);

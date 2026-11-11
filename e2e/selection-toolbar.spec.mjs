@@ -307,6 +307,8 @@ test('tablet: Kopyala then taps place copies; the toolbar button ends copying', 
 
 
 test('kart göreli açıları uygular, mevcut açıyı gösterir ve 15 dereceyi yeniden açınca korur', async ({ page }, testInfo) => {
+  // Beş açı adımında beş kayıt, yeniden yükleme ve açma: tek başına ~25 sn, 30 sn sınırına dayanıyordu.
+  test.setTimeout(60_000);
   await createIslandStand(page);
   const point = await dropFridge(page, 0.6, 0.8);
   await page.touchscreen.tap(point.x, point.y);

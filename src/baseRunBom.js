@@ -4,6 +4,8 @@
  * 2n+2 uprights and 2n+2 short profiles, and two outer 48.5 cheeks.
  * A same-width wall, separator, or showcase on a baza's back drops that baza's
  * long profile from 4 to 2 and one long panel. Shared back uprights drop once.
+ * A standalone upright (346,5 …) standing on a baza corner replaces that corner's
+ * 49,5 upright (user decision 2026-11-11).
  * Short-up is not a host.
  */
 
@@ -111,22 +113,62 @@ function hostFrame(module) {
   };
 }
 
+// Tek başına duran dikmenin plan merkezi (dik açıda). Gövdesi köşe noktasının üstündeyse (merkez
+// köşeye yarım kesitten yakın) o köşenin 49,5 dikmesinin yerini alır. Bazanın yanına sıfır yaslanmış
+// dikme (merkez tam yarım kesit uzakta) köşeyi kaplamaz; baza kendi dikmesini korur.
+function uprightFrame(module) {
+  const item = getItem(module?.itemKey);
+  const placement = module?.placement;
+  if ((item?.type ?? module?.type) !== 'upright' || !placement) return null;
+  const x = Number(placement.xCm);
+  const y = Number(placement.yCm);
+  const width = Number(module.widthCm) || Number(item?.dimensions?.widthCm) || 0;
+  if (!Number.isFinite(x) || !Number.isFinite(y) || width <= 0) return null;
+  if (!nearlyEqual(normalizeRotationZDeg(placement.rotationZDeg) % 90, 0)) return null;
+  const vertical = isVerticalRotation(placement.rotationZDeg);
+  return {
+    xCm: vertical ? x : x + width / 2,
+    yCm: vertical ? y + width / 2 : y,
+    halfCm: width / 2,
+  };
+}
+
+// Dikme köşeyi kaplar: gövdesi köşe noktasının üstündedir ya da köşenin içinde, bazanın iki dış
+// yüzüyle hizalı durur (kullanıcı kararı 2026-11-11: dikme bazanın köşe dikmesinin yerinde durur).
+// `inwardAlong` / `inwardAcross` köşeden bazanın içine doğru işarettir. Dışarıdan yaslı dikme kaplamaz.
+function uprightOnPoint(upright, axis, alongCm, acrossCm, inwardAlong = 0, inwardAcross = 0) {
+  const along = axis === 'x' ? upright.xCm : upright.yCm;
+  const across = axis === 'x' ? upright.yCm : upright.xCm;
+  const half = upright.halfCm;
+  if (Math.abs(along - alongCm) < half - EPSILON_CM && Math.abs(across - acrossCm) < half - EPSILON_CM) return true;
+  if (!inwardAlong || !inwardAcross) return false;
+  const insideAlong = (along - alongCm) * inwardAlong;
+  const insideAcross = (across - acrossCm) * inwardAcross;
+  return insideAlong > -EPSILON_CM && insideAlong < half + EPSILON_CM
+    && insideAcross > -EPSILON_CM && insideAcross < half + EPSILON_CM;
+}
+
 function framesTouch(a, b) {
   if (a.axis !== b.axis || !nearlyEqual(a.centerFixed, b.centerFixed)) return false;
   return nearlyEqual(a.end, b.start) || nearlyEqual(b.end, a.start);
 }
 
 /**
- * The long face sits flush on the host. Snap uses the same gap:
- * centers are (baza depth + wall thickness) / 2 apart.
+ * The host wall sits inside the baza back strip (back faces flush; centers (depth - wall) / 2
+ * apart, user decision 2026-11-11) or, in older projects, flush behind the baza
+ * ((depth + wall) / 2 apart).
  * The span must match; a 200 baza does not sit on a 100 host.
  */
 function hostCovers(base, host) {
   if (!host || base.axis !== host.axis) return false;
   if (base.spec.width !== host.width) return false;
   if (!nearlyEqual(base.start, host.start) || !nearlyEqual(base.end, host.end)) return false;
-  const gapCm = (base.depth + STAND_DIMENSIONS.depthCm) / 2;
-  return nearlyEqual(Math.abs(base.centerFixed - host.fixedCm), gapCm);
+  // Duvar bazanın arka kenarının içinde, arka yüzler hizalı (kullanıcı kararı 2026-11-11; yaslanma
+  // kuralı `modulePlacement.js` isWallInBaseBack) ya da eski düzende bazanın arkasında, yüze sıfır.
+  const insideGapCm = (base.depth - STAND_DIMENSIONS.depthCm) / 2;
+  const outsideGapCm = (base.depth + STAND_DIMENSIONS.depthCm) / 2;
+  const gapCm = Math.abs(base.centerFixed - host.fixedCm);
+  return nearlyEqual(gapCm, insideGapCm) || nearlyEqual(gapCm, outsideGapCm);
 }
 
 function chainRuns(frames) {
@@ -163,15 +205,25 @@ function addQuantity(totals, itemKey, quantity) {
   totals.set(itemKey, (totals.get(itemKey) ?? 0) + quantity);
 }
 
-function runTotals(run, hosts) {
+function runTotals(run, hosts, uprights = []) {
   const totals = new Map();
   const hosted = run.map((frame) => hosts.some((host) => hostCovers(frame, host)));
   const hostedCount = hosted.filter(Boolean).length;
+  // Köşe anahtarı: arka (b) / ön (f) hat ve sınır sırası (0..n).
   const cleared = new Set();
   hosted.forEach((isHosted, index) => {
     if (!isHosted) return;
-    cleared.add(index);
-    cleared.add(index + 1);
+    cleared.add(`b:${index}`);
+    cleared.add(`b:${index + 1}`);
+  });
+  run.forEach((frame, index) => {
+    const frontFixed = 2 * frame.centerFixed - frame.backFixed;
+    const backInward = Math.sign(frame.centerFixed - frame.backFixed);
+    const frontInward = Math.sign(frame.centerFixed - frontFixed);
+    [[frame.start, index, 1], [frame.end, index + 1, -1]].forEach(([alongCm, boundary, alongInward]) => {
+      if (uprights.some((upright) => uprightOnPoint(upright, frame.axis, alongCm, frame.backFixed, alongInward, backInward))) cleared.add(`b:${boundary}`);
+      if (uprights.some((upright) => uprightOnPoint(upright, frame.axis, alongCm, frontFixed, alongInward, frontInward))) cleared.add(`f:${boundary}`);
+    });
   });
 
   let longPanels = 0;
@@ -215,6 +267,7 @@ export function applyBaseRunBom(modules = []) {
   const list = Array.isArray(modules) ? modules : [];
   const bases = [];
   const hosts = [];
+  const uprights = [];
   const unplaced = [];
 
   list.forEach((module) => {
@@ -226,12 +279,14 @@ export function applyBaseRunBom(modules = []) {
     if (baseSpec(module?.itemKey)) unplaced.push(module);
     const host = hostFrame(module);
     if (host) hosts.push(host);
+    const upright = uprightFrame(module);
+    if (upright) uprights.push(upright);
   });
 
   const notes = [];
   const totals = new Map();
   for (const run of chainRuns(bases)) {
-    const result = runTotals(run, hosts);
+    const result = runTotals(run, hosts, uprights);
     if (result.joints > 0 || result.hostedCount > 0) {
       notes.push(
         `Baza dizisi: ${run.length} baza, ${result.joints} yan yana uç, ${result.hostedCount} host sırtı.`,

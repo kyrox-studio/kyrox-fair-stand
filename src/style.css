@@ -728,7 +728,9 @@ button.asset-tile > span {
   right: 12px;
   max-height: calc(100% - var(--property-panel-top, 104px) - 12px);
   display: flex;
-  width: min(300px, calc(100% - 24px));
+  /* Kompakt panel (kullanıcı kararı 2026-11-11): 300 px'ten %20 dar; yazı ve düğme ölçüleri dosya
+     sonundaki "Özellikler paneli — kompakt" bloğunda. */
+  width: min(240px, calc(100% - 24px));
   box-sizing: border-box;
   flex-direction: column;
   gap: 6px;
@@ -2337,6 +2339,7 @@ button[aria-busy="true"]::after {
 #app[data-editor-mode="simple"] #module-templates-card,
 #app[data-editor-mode="simple"] #stand-standards-card,
 #app[data-editor-mode="simple"] #floor-area-controls,
+#app[data-editor-mode="simple"] #profile-finish-field,
 #app[data-editor-mode="simple"] .editor-settings-card {
   display: none;
 }
@@ -2394,4 +2397,77 @@ button[aria-busy="true"]::after {
 .viewport-empty-card button {
   align-self: center;
   margin-top: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+   Özellikler paneli — kompakt (kullanıcı kararı 2026-11-11: rakiplerdeki gibi küçük ve sade).
+   Panel 240 px; yazı 11–13 px, düğmeler 26 px. `#app` öneki yukarıdaki panel kurallarını
+   tek yerden ezer; bu blok silinince eski ölçüler döner.
+   --------------------------------------------------------------------------- */
+#app .selection-property-panel {
+  gap: 4px;
+  padding: 8px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+#app .selection-property-panel .selection-property-header {
+  /* Panelin 8 px iç boşluğuna göre (eski kural 12 px'e göreydi; başlık 4 px taşıyordu). */
+  top: -8px;
+  margin: -8px -8px 0;
+  padding: 6px 4px 6px 8px;
+  font-size: 13px;
+}
+#app .selection-property-panel .selection-quick-actions {
+  flex-wrap: nowrap;
+}
+#app .selection-property-panel .selection-quick-actions button {
+  flex: 1 1 0;
+}
+#app .selection-property-panel .selection-property-heading,
+#app .selection-property-panel .module-context-title {
+  font-size: 13px;
+  line-height: 1.25;
+}
+#app .selection-property-panel .selection-property-subheading,
+#app .selection-property-panel .selection-property-note,
+#app .selection-property-panel .selection-property-empty,
+#app .selection-property-panel .selection-property-surface-note,
+#app .selection-property-panel .selection-rotation-heading,
+#app .selection-property-panel .module-context-scope,
+#app .selection-property-panel label {
+  font-size: 11px;
+}
+#app .selection-property-panel .selection-property-variant-current {
+  font-size: 12px;
+}
+#app .selection-property-panel button {
+  min-height: 26px;
+  padding: 3px 4px;
+  border-radius: 5px;
+  font-size: 11px;
+  line-height: 1.15;
+}
+#app .selection-property-panel .selection-property-header .selection-property-close {
+  min-width: 0;
+  min-height: 22px;
+  padding: 0 6px;
+  font-size: 11px;
+}
+#app .selection-property-panel .selection-property-tabs button {
+  min-height: 26px;
+  font-size: 11px;
+}
+#app .selection-property-panel .selection-rotation-controls {
+  padding: 5px 0;
+  margin: 2px 0;
+}
+#app .selection-property-panel .selection-rotation-buttons,
+#app .selection-property-panel .selection-quick-actions {
+  gap: 3px;
+}
+#app .selection-property-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+#app .selection-property-panel select {
+  min-height: 26px;
+  padding: 2px 6px;
+  font-size: 12px;
 }

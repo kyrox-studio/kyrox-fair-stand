@@ -99,6 +99,34 @@ yeni DB alanı, Alembic migration veya BOM değişikliği yoktur.
 
 Ürün kararı: 2026-10-21 kuralı duvarlar için geçerli kalır; profil ise başka bir profilin her noktasına dik bağlanır (iki profilin arasına, ortasına) ve uç uca eklenir. Çakışma (`collisionSegmentsOverlap`): iki profil dik kesişince birinin ucu birleşimdeyse izin, birbirinin ortasından geçerse (X) çakışma; `isMidWallTeeContact` profil çiftinde dikme mesajını vermez (`isProfilePair`). Yapışma (`getSegmentSnapCoordinates`): profil hedef profile yaklaşınca uçlara ek olarak `PROFILE_TEE_SNAP_STEP_CM` (10 cm) adımla ara noktalar `tee` adayıdır. Profil T bağlantısı için BOM'a ayrı aparat eklenmez.
 
+## 2026-11-11 — Art arda iki tuş işlemi ayrı geri alma adımıdır
+
+**Hata:** Geri alma adımı tuş bırakılınca `setTimeout(0)` ile yakalanıyordu; tarayıcı girdiyi zamanlayıcıdan önce işleyebildiği için hızlı iki Shift+R tek adıma karışıyor, ikinci Ctrl+Z bir önceki taşımayı da geri alıyordu. Düzeltme (`src/main.js`): metin alanı dışındaki her `keydown`, sahne işlemeden önce (capture) bekleyen değişikliği ayrı adım olarak kaydeder. Test: `e2e/module-group.spec.mjs` (iki Shift+R sonrası iki Ctrl+Z başa döner).
+
+## 2026-11-11 — Baza köşesindeki dikme 49,5 dikmenin yerini alır
+
+**Hata:** Bazanın arka köşelerine 346,5 dikme konunca üretim listesi bazanın 4 × 49,5 dikmesini aynen yazıyordu; doğrusu 2. Düzeltme (`baseRunBom.js`): tek başına duran dikme gövdesiyle baza köşesinin üstündeyse (arka ya da ön hat, merkez köşeye yarım kesitten yakın) o köşe `cleared` sayılır; host sırtı kuralıyla aynı küme (köşe bir kez düşer). Yan yüze sıfır yaslı dikme düşürmez. Testler: `test/baseRunBom.test.js`, `e2e/base-corner-upright-bom.spec.mjs`.
+
+## 2026-11-11 — Grup ve şablon adı uygulama penceresinden sorulur
+
+**Hata:** Grup oluşturma, grup / şablon adlandırma, şablon olarak kaydetme `window.prompt`; başka gruptaki öğeyi taşıma ve şablon silme onayı `window.confirm` kullanıyordu. Uygulama içi / gömülü tarayıcı bu pencereleri açmadan iptal döndürdüğü için grup kurulamıyordu. Düzeltme: `src/inAppDialogs.js` (`requestTextInput`, `requestConfirmation`; Esc / dış tık iptal, boş ad kabul edilmez). Diğer `window.confirm` kullanımları (arka yüz paneli, Sahneyi Sıfırla, proje silme vb.) bu işte değişmedi. Testler: `test/moduleGroupPanel.test.js`, `e2e/module-group.spec.mjs`, `e2e/group-template.spec.mjs`.
+
+## 2026-11-11 — Dikme baza / banko köşesine yaslanır
+
+**Hata:** Dikme (`short-up-joint`) yalnız kısa panel, profil ve banko uç noktalarına yapışıyordu; baza / banko köşesine (bacağına) yapışmıyordu. Serbest taşımada merkez 10 cm ızgarada kaldığından (ör. 60) bazanın yan yüzüne (50) sıfır oturamıyor, arada boşluk kalıyordu. Düzeltme (`snapUprightToShortUpJoints`): derin fixture (baza, düz banko; dik açıda) hedefin dört köşesinde iki aday üretir: yan yüze ya da uç yüze sıfır yaslı, kenarı köşeyle hizalı (`snapKind: 'fixture-corner'`). Testler: `test/uprightFieldPlacement.test.js`, `e2e/upright-base-corner.spec.mjs`.
+
+## 2026-11-11 — Proje profil rengi (Gelişmiş mod)
+
+Ürün kararı: profil rengi proje genelidir; Gelişmiş modda Yerleşim kartında **Profil rengi** seçicisi (`#profile-finish`, Basit modda gizli): **Varsayılan (alüminyum)** = katalog `defaultColor`, **Siyah**. Değer stand kaydında `profileFinish` (`default` | `black`, `src/profileFinish.js`); alan yoksa (eski proje) varsayılan. Kayıt, revizyon, dışa / içe aktarım standı olduğu gibi taşır; içe aktarımda bilinmeyen değer reddedilir (`validateImportedStandState`). Sahne: `frameColorForModule` seçili rengi bütün profil, dikme ve modül çerçevelerine verir; değişince modüller yeniden kurulur (`scene3d.setProfileFinish`). Geri al rengi geri getirir; Sahneyi Sıfırla korur, yeni proje varsayılanla açılır. Yalnız görünüm: BOM ve Item değişmez. Testler: `test/profileFinish.test.js`, `e2e/profile-finish.spec.mjs`.
+
+## 2026-11-11 — Grup dik açıda 5 cm ızgaraya oturur
+
+**Hata:** Grup döndürme üye merkezlerinin ham ortalaması etrafında dönüyordu; ortalama çoğu zaman ızgara dışı olduğundan 90° / 180° sonrası üyeler 632,85 gibi konumlara düşüyor, 10 cm grup adımıyla da kenara oturamıyordu. Ayrıca her 45° adım 0,01 cm'ye yuvarlandığı için iki 45° sonrası 649,99 kalabiliyordu. Kullanıcı kararı (seçenek 1, merkezde dönsün): `planPlacementsRotate` ortalama etrafında 45°'lik ara adımlarla döner, ara açıda 1e-6 cm hassasiyet tutar; bütün üyeler dik açıya gelince grup en küçük ortak kaydırmayla (`gridShiftCandidates`, eksen başına ≤ 2,5 cm) 5 cm ızgaraya oturur. Sığmazsa komşu ızgara kaydırması, en son kaydırmasız hâl denenir. Grup kendi içinde ızgaraya uymuyorsa dokunulmaz. Bedel: art arda tam turda grup nadiren birkaç cm kayabilir (platform `GROUP_LOCK_ROADMAP.md` güncellendi). Testler: `test/moduleGroups.test.js`, `e2e/module-group.spec.mjs` (iki Shift+R sonrası merkezler 5'in katı, iki Ctrl+Z başa döner).
+
+## 2026-11-11 — Baza / banko tepedeki öğeye mıknatıslanmaz
+
+**Hata:** Açık kenarın tepesinde alınlık paneli ya da profil varken kenara sürüklenen baza / banko, o parçanın yüzüne yapışıyordu (`snapPlacementToModules`, derin modül `face` adayı). Bu yüzden stand kenarına sıfır oturamıyor, 4–5 cm boşluk kalıyordu. Düzeltme: derin modül yalnız yükseklik aralığı kendisiyle kesişen hedefe yapışır (`collisionHeightsOverlap`). Yerdeki dikme gibi gerçekten değen parçalara yapışma sürer. Testler: `test/baseModule.test.js`, `e2e/base-edge-under-fascia.spec.mjs`.
+
 ## 2026-11-11 — Profil duvar rayına dik bağlanır
 
 Ürün kararı: T bağlantıyı yalnız profil yapar; profile, dikmeye ya da duvarın üst / alt rayına (o da profildir). Yerleşim (`collisionSegmentsOverlap` → `profileOnWallRail`): profilin yüksekliği ince duvarın üst ya da alt bağlantı çizgisine değiyorsa (`profileTouchesWallRailLine`, kısa duvar ray kontrolüyle aynı) profilin ucu duvarın her noktasına gelebilir; rayı kesen profil (X) çakışır. Ray hizasında olmayan profil `PROFILE_WALL_RAIL_MESSAGE` ile reddedilir. Duvar ile duvar ve profilin ortasına gelen duvar 2026-10-21 kuralına bağlı kalır. Magnetic snap profil için duvar rayının ara noktalarını da 10 cm adımla aday üretir (`profileTeeInteriorStepCm`). BOM'a T aparatı eklenmez (profil-profil kararıyla aynı). Test: `test/profileWallRailTee.test.js`.

@@ -1,5 +1,6 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { createStageFromWizard } from './helpers/standSetup.mjs';
+import { acceptConfirmDialog, answerTextDialog } from './helpers/inAppDialog.mjs';
 import { test, expect } from '@playwright/test';
 
 const ORG_ID = '11111111-1111-4111-8111-111111111111';
@@ -174,9 +175,9 @@ test('grup şablon olarak kaydedilir, yerleştirilir ve silinir', async ({ page 
   await page.keyboard.down('Control');
   await page.mouse.click(points[initial[1].id].x, points[initial[1].id].y);
   await page.keyboard.up('Control');
-  page.once('dialog', (dialog) => dialog.accept('Tezgah'));
   await page.mouse.click(points[initial[1].id].x, points[initial[1].id].y, { button: 'right' });
   await page.getByRole('group', { name: 'Modül işlemleri' }).getByRole('button', { name: 'Grup oluştur…' }).click();
+  await answerTextDialog(page, 'Grup oluştur', 'Tezgah');
   await expect(page.locator('#selection-info')).toContainText('“Tezgah” grubu oluşturuldu');
 
   // Gruplar kartından şablon olarak kaydet.
@@ -185,8 +186,8 @@ test('grup şablon olarak kaydedilir, yerleştirilir ve silinir', async ({ page 
   if (!(await groupsCard.evaluate((el) => el.open))) await groupsCard.locator(':scope > summary').click();
   const row = groupsCard.locator('.module-group-row', { hasText: 'Tezgah' });
   await row.locator('summary').click();
-  page.once('dialog', (dialog) => dialog.accept('Tezgah şablonu'));
   await row.locator('[data-group-action="group-save-template"]').click();
+  await answerTextDialog(page, 'Şablon olarak kaydet', 'Tezgah şablonu');
   await expect(page.locator('#selection-info')).toContainText('“Tezgah şablonu” şablonu kaydedildi · 2 parça');
 
   // Sunucuya giden şablon: kimlik, grup ve görsel yok.
@@ -223,8 +224,8 @@ test('grup şablon olarak kaydedilir, yerleştirilir ve silinir', async ({ page 
   expect(Math.abs(gap(placed) - gap(initial))).toBeLessThan(0.5);
 
   // Sil: onaylı; sahnedeki gruplar etkilenmez.
-  page.once('dialog', (dialog) => dialog.accept());
   await templateRow.locator('[data-template-action="template-delete"]').click();
+  await acceptConfirmDialog(page, 'Şablonu sil');
   await expect(templatesCard.locator('.module-template-row')).toHaveCount(0);
   await expect(groupsCard.locator('.module-group-row')).toHaveCount(2);
   expect(pageErrors).toEqual([]);

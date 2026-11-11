@@ -111,6 +111,7 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/helpGuide.js': frozenDomains('ui', 'accessibility'),
   'src/horizontalImageLayout.js': frozenDomains('renderer', 'state'),
   'src/hostDocument.js': frozenDomains('architecture', 'ui'),
+  'src/inAppDialogs.js': frozenDomains('ui'),
   'src/imageActions.css': frozenDomains('ui'),
   'src/imageAssetReferences.js': frozenDomains('persistence', 'storage'),
   'src/imageFit.js': frozenDomains('renderer'),
@@ -218,6 +219,7 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/wall.js': frozenDomains('composition', 'placement'),
   'src/wallLockNotice.js': frozenDomains('ui', 'accessibility', 'state'),
   'src/wallPanelBand.js': frozenDomains('architecture', 'placement', 'renderer', 'behavior'),
+  'src/profileFinish.js': frozenDomains('state', 'renderer', 'importExport'),
   'src/profileGeometry.js': frozenDomains('renderer', 'performance'),
   'src/wallReflow.js': frozenDomains('behavior', 'placement'),
 });

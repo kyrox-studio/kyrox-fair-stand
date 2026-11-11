@@ -1,5 +1,6 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
 import { createStageFromWizard } from './helpers/standSetup.mjs';
+import { answerTextDialog } from './helpers/inAppDialog.mjs';
 import { test, expect } from '@playwright/test';
 
 async function exposeScene(page) {
@@ -161,10 +162,10 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   await page.keyboard.down('Control');
   await page.mouse.click(points[second.id].x, points[second.id].y);
   await page.keyboard.up('Control');
-  page.once('dialog', (dialog) => dialog.accept('Sağ duvar'));
   await page.mouse.click(points[second.id].x, points[second.id].y, { button: 'right' });
   const menu = page.getByRole('group', { name: 'Modül işlemleri' });
   await menu.getByRole('button', { name: 'Grup oluştur…' }).click();
+  await answerTextDialog(page, 'Grup oluştur', 'Sağ duvar');
   await expect(page.locator('#selection-info')).toContainText('“Sağ duvar” grubu oluşturuldu · 2 parça');
   await page.mouse.click(points[first.id].x, points[first.id].y);
   await expect.poll(async () => (await selectionFrames(page)).map(({ group, dashed, color }) => ({ group, dashed, color })))
@@ -256,6 +257,26 @@ test('öğeden bağımsız grup: oluştur, birlikte taşı, kilitle, çoğalt, s
   await page.keyboard.press('Control+z');
   const undone = boxes(await storedModules(page));
   expect(undone.map((m) => m.placement.rotationZDeg)).toEqual(beforeRotate.map((m) => m.placement.rotationZDeg));
+
+  // İki kez 45° (dik açı): merkez ortalamaya en yakın üye olduğundan üyeler 5 cm ızgarada kalır
+  // (ortalama merkez 632,85 gibi küsurat üretiyordu). İki Ctrl+Z başa döndürür.
+  const rightAnglePoints = await boxScreenPoints(page);
+  await page.mouse.click(rightAnglePoints[first.id].x, rightAnglePoints[first.id].y);
+  await page.keyboard.press('Shift+R');
+  await page.keyboard.press('Shift+R');
+  const rightAngle = boxes(await storedModules(page));
+  for (const module of rightAngle) {
+    const turn = (((Number(module.placement.rotationZDeg) - Number(beforeRotate.find((m) => m.id === module.id).placement.rotationZDeg)) % 360) + 360) % 360;
+    expect([90, 270]).toContain(turn);
+    const center = centerOf(module);
+    expect(center.x % 5).toBe(0);
+    expect(center.y % 5).toBe(0);
+  }
+  expect(Math.abs(gap(rightAngle) - gap(beforeRotate))).toBeLessThan(0.01);
+  await page.keyboard.press('Control+z');
+  await page.keyboard.press('Control+z');
+  const rightAngleUndone = boxes(await storedModules(page));
+  expect(rightAngleUndone.map((m) => m.placement)).toEqual(beforeRotate.map((m) => m.placement));
 
   // Kilitli grup taşınmaz.
   await row.locator('summary').click();
