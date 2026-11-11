@@ -7,9 +7,11 @@ import { planAutomaticDepot } from '../src/autoDepot.js';
 import { planAutomaticFascia } from '../src/autoFascia.js';
 import { createModulePlacement, placementsOverlap, validateModulePlacement } from '../src/modulePlacement.js';
 import { resolveProjectBom } from '../src/projectBom.js';
+import { getModulesLockState } from '../src/moduleLock.js';
 import {
   composeStandWallStates,
   createAutomaticFasciaStates,
+  createAutomaticWallLampStates,
   createDepotLampStates,
   createDepotStates,
   describeStandLayoutChangeReport,
@@ -29,6 +31,8 @@ function buildStand(standType, { depot = null, xCm = X, yCm = Y } = {}) {
   const walls = composeStandWallStates({ standType, standXCm: xCm, standYCm: yCm, wallHeightCm: 350, depotPlan });
   assert.equal(walls.ok, true, walls.message);
   const modules = [...walls.modules];
+  // Kurulum sırası: duvarlar, duvar projektörleri, depo, depo projektörleri.
+  modules.push(...createAutomaticWallLampStates(modules, { standXCm: xCm, standYCm: yCm }));
   if (depotPlan?.ok) {
     modules.push(...createDepotStates(depotPlan, 350));
     modules.push(...createDepotLampStates(modules));
@@ -43,6 +47,10 @@ function plan(fromType, toType, modules, extra = {}) {
     toStandType: toType,
     boothType: 'maxima',
   });
+}
+
+function unresolvedKeys(bom) {
+  return bom.unresolved.map((entry) => entry.itemKey).sort();
 }
 
 function wallCoverage(modules, wallId) {
@@ -69,9 +77,13 @@ for (const fromType of STAND_TYPES) {
         });
         assert.equal(check.ok, true, `${module.itemKey}: ${check.message}`);
       }
+      // Projektörler dahil BOM sıfırdan kurulan standla birebir aynı (test kataloğunda projektörün birimi
+      // yok; çözülemeyen satırlar da aynı olmalı, yani projektör sayısı da tutar).
       const bom = resolveProjectBom(result.modules);
-      assert.equal(bom.unresolved.length, 0);
-      assert.equal(bom.appliedCornerCount, resolveProjectBom(fresh).appliedCornerCount);
+      const freshBom = resolveProjectBom(fresh);
+      assert.deepEqual(unresolvedKeys(bom), unresolvedKeys(freshBom));
+      assert.ok(unresolvedKeys(bom).every((key) => key === 'led_floodlight'));
+      assert.equal(bom.appliedCornerCount, freshBom.appliedCornerCount);
     });
   }
 }
@@ -89,9 +101,12 @@ test('same layout: nothing changes', () => {
 
 test('U → L left: kept walls keep their images and overlays; the right wall goes with its items', () => {
   const modules = buildStand('u-stand');
-  const back = modules.find((module) => module.placement.wallId === 'back');
-  const left = modules.find((module) => module.placement.wallId === 'left');
-  const right = modules.find((module) => module.placement.wallId === 'right');
+  const panelOn = (wallId) => modules.find((module) => module.type === 'flat-panel' && module.placement.wallId === wallId);
+  const back = panelOn('back');
+  const left = panelOn('left');
+  const right = panelOn('right');
+  const rightLamps = modules.filter((module) => module.type === 'led-floodlight' && module.placement.wallId === 'right');
+  assert.ok(rightLamps.length > 0);
   back.strips[0].imageAssetId = 'asset-back';
   left.strips[0].imageAssetId = 'asset-left';
   right.strips[0].imageAssetId = 'asset-right';
@@ -107,7 +122,9 @@ test('U → L left: kept walls keep their images and overlays; the right wall go
   assert.ok(!ids.has(right.id) && !ids.has(tvRight.id));
   assert.deepEqual(result.report.removedWalls, ['right']);
   assert.equal(result.report.removedImages, 1);
-  assert.equal(result.report.removedItems, 1);
+  // Sağ duvardaki TV ve duvarın projektörleri duvarla birlikte kalkar.
+  assert.equal(result.report.removedItems, 1 + rightLamps.length);
+  assert.ok(!rightLamps.some((lamp) => ids.has(lamp.id)));
   const lines = describeStandLayoutChangeReport(result.report);
   assert.ok(lines.some((line) => line.includes('Sağ duvar kalkacak')));
 });
@@ -115,10 +132,25 @@ test('U → L left: kept walls keep their images and overlays; the right wall go
 test('back wall → U: empty locked walls are added on both sides', () => {
   const result = plan('back-wall', 'u-stand', buildStand('back-wall'));
   assert.deepEqual(result.report.addedWalls.sort(), ['left', 'right']);
-  const added = result.modules.filter((module) => ['left', 'right'].includes(module.placement.wallId));
+  const added = result.modules.filter((module) => module.type === 'flat-panel'
+    && ['left', 'right'].includes(module.placement.wallId));
   assert.ok(added.length > 0);
   assert.equal(result.report.addedPanels, added.length);
   assert.ok(added.every((module) => module.locked === true && module.strips.every((strip) => !strip.imageAssetId)));
+});
+
+test('kept wall with manually deleted panels is refilled on a layout change', () => {
+  // Kullanıcı kararı 2026-11-10: U'da sırt panelleri elle silinip yerleşim değişince sırt duvar dolar.
+  const modules = buildStand('u-stand').filter((module) => module.type !== 'flat-panel'
+    || module.placement.wallId !== 'back' || module.placement.xCm >= 300);
+  const result = plan('u-stand', 'l-left', modules);
+  assert.equal(result.ok, true, result.message);
+  assert.deepEqual(wallCoverage(result.modules, 'back'), wallCoverage(buildStand('l-left'), 'back'));
+  assert.ok(result.report.filledPanels > 0);
+  const lampXs = (list) => list.filter((module) => module.type === 'led-floodlight' && module.placement.wallId === 'back')
+    .map((module) => module.placement.xCm).sort((a, b) => a - b);
+  assert.deepEqual(lampXs(result.modules), lampXs(buildStand('l-left')));
+  assert.ok(describeStandLayoutChangeReport(result.report).some((line) => line.includes('boşluklar')));
 });
 
 test('island: every edge wall goes; free content stays', () => {
@@ -270,4 +302,16 @@ test('furniture: adding always adds the set; removing takes one of each, the one
   }
   const none = change({ standType: 'u-stand', furniture: { enabled: true } }, walls, { furniture: { enabled: false } });
   assert.equal(none.report.furnitureRemoved, 0);
+});
+
+test('layout change keeps the user lock choice for new walls, fascia and lamps', () => {
+  const unlocked = buildStand('back-wall').map((module) => {
+    const next = structuredClone(module);
+    delete next.locked;
+    return next;
+  });
+  const result = change({ standType: 'back-wall' }, unlocked, { standType: 'u-stand', fascia: { enabled: true, rows: 1 } });
+  assert.equal(result.ok, true, result.message);
+  assert.ok(result.report.addedWalls.length > 0);
+  assert.equal(getModulesLockState(result.modules).locked, 0);
 });

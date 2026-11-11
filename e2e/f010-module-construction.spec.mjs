@@ -74,7 +74,8 @@ test('F-010 automatic wall construction reaches persisted runtime state through 
   expect(walls.every((moduleState) => moduleState.itemKey === wallFlatPanelItemKey(moduleState.widthCm))).toBe(true);
   expect(walls.every((moduleState) => moduleState.placement?.wallId === 'back')).toBe(true);
   expect(walls.every((moduleState) => moduleState.locked === true)).toBe(true);
-  expect(lamps).toHaveLength(3);
+  // 500 cm sırt duvarı: 150 cm'de bir projektör, yukarı yuvarlanır (kullanıcı kararı 2026-11-10).
+  expect(lamps).toHaveLength(4);
   expect(lamps.every((moduleState) => moduleState.itemKey === 'led_floodlight')).toBe(true);
   expect(lamps.every((moduleState) => moduleState.placement?.wallId === 'back')).toBe(true);
   expect(lamps.every((moduleState) => moduleState.locked !== true)).toBe(true);

@@ -7,8 +7,10 @@ import { composeAutomaticStandWall, getAutomaticWallCapacityCm } from '../src/au
 import { planAutomaticFascia } from '../src/autoFascia.js';
 import { createModulePlacement, validateModulePlacement } from '../src/modulePlacement.js';
 import { resolveProjectBom } from '../src/projectBom.js';
+import { getModulesLockState } from '../src/moduleLock.js';
 import {
   createAutomaticFasciaStates,
+  createAutomaticWallLampStates,
   describeStandSizeChangeReport,
   planStandSizeChange,
   standSizeChangeRemovesContent,
@@ -25,12 +27,25 @@ function buildStand(standType, xCm, yCm) {
     standYCm: yCm,
   });
   assert.equal(wall.ok, true, wall.message);
-  return wall.widths.map((widthCm, index) => {
+  const modules = wall.widths.map((widthCm, index) => {
     const moduleState = createModuleStateFromCatalogKey(`wall_${widthCm}_350`);
     moduleState.placement = { ...wall.placements[index] };
     moduleState.locked = true;
     return moduleState;
   });
+  // Kurulumdaki gibi duvar projektörleri de olur.
+  modules.push(...createAutomaticWallLampStates(modules, { standXCm: xCm, standYCm: yCm }));
+  return modules;
+}
+
+function unresolvedKeys(bom) {
+  return bom.unresolved.map((entry) => entry.itemKey).sort();
+}
+
+function lampsOn(modules, wallId) {
+  return modules.filter((module) => module.type === 'led-floodlight' && module.placement?.wallId === wallId)
+    .map((module) => Number(module.placement[wallId === 'back' ? 'xCm' : 'yCm']))
+    .sort((a, b) => a - b);
 }
 
 function plan(standType, modules, from, to, extra = {}) {
@@ -86,7 +101,13 @@ for (const standType of STAND_TYPES) {
       }
       const bom = resolveProjectBom(result.modules);
       const freshBom = resolveProjectBom(fresh);
-      assert.equal(bom.unresolved.length, 0);
+      // Projektörler dahil BOM sıfırdan kurulan standla birebir aynı (test kataloğunda projektörün birimi
+      // yok; çözülemeyen satırlar da aynı olmalı, yani projektör sayısı da tutar).
+      assert.deepEqual(unresolvedKeys(bom), unresolvedKeys(freshBom));
+      assert.ok(unresolvedKeys(bom).every((key) => key === 'led_floodlight'));
+      for (const wallId of ['back', 'left', 'right']) {
+        assert.deepEqual(lampsOn(result.modules, wallId), lampsOn(fresh, wallId), `${standType} ${wallId} lamps`);
+      }
       assert.equal(bom.appliedCornerCount, freshBom.appliedCornerCount);
     });
   }
@@ -110,8 +131,9 @@ test('planning does not mutate input; same size and unknown booth type', () => {
 
 test('panel images stay on surviving panels; removed panel images are counted', () => {
   const modules = buildStand('back-wall', 500, 400);
-  const first = modules.find((module) => module.placement.xCm === 0);
-  const last = modules.reduce((a, b) => (a.placement.xCm > b.placement.xCm ? a : b));
+  const panels = modules.filter((module) => module.type === 'flat-panel');
+  const first = panels.find((module) => module.placement.xCm === 0);
+  const last = panels.reduce((a, b) => (a.placement.xCm > b.placement.xCm ? a : b));
   first.strips[0].imageAssetId = 'asset-first';
   last.strips[0].imageAssetId = 'asset-last';
   const result = plan('back-wall', modules, [500, 400], [200, 400]);
@@ -121,18 +143,36 @@ test('panel images stay on surviving panels; removed panel images are counted', 
   assert.equal(result.report.removedImages, 1);
 });
 
-test('a wall that does not reach the open end is not extended', () => {
-  const modules = buildStand('l-left', 500, 400).filter((module) => module.placement.wallId !== 'back' || module.placement.xCm < 300);
+test('manually deleted panels are refilled: every wall runs end to end, kept panels stay', () => {
+  // Kullanıcı kararı 2026-11-10: elle silinen paneller ve uçtaki açıklık ölçü değişiminde dolar.
+  const lLeft = buildStand('l-left', 500, 400);
+  const keptBack = lLeft.filter((module) => module.type === 'flat-panel'
+    && module.placement.wallId === 'back' && module.placement.xCm < 300);
+  const modules = lLeft.filter((module) => module.type !== 'flat-panel'
+    || module.placement.wallId !== 'back' || module.placement.xCm < 300);
   const result = plan('l-left', modules, [500, 400], [700, 400]);
-  assert.equal(result.report.addedPanels, 0);
+  assert.equal(result.ok, true, result.message);
+  assertContinuous(wallCoverage(result.modules, 'back'), 700, 'l-left back');
+  assert.ok(result.report.addedPanels > 0);
+  for (const panel of keptBack) {
+    assert.deepEqual(result.modules.find((module) => module.id === panel.id).placement, panel.placement);
+  }
+  assert.deepEqual(lampsOn(result.modules, 'back'), lampsOn(buildStand('l-left', 700, 400), 'back'));
 
-  // Sırt duvar iki uçtan uzar: yalnız duvarın ulaştığı (sol) uca panel girer, kısa bırakılan sağ uç uzamaz.
-  const back = buildStand('back-wall', 500, 400).filter((module) => module.placement.xCm < 300);
-  const symmetric = plan('back-wall', back, [500, 400], [700, 400]);
-  assert.equal(symmetric.report.addedPanels, 1);
-  assert.deepEqual(wallCoverage(symmetric.modules, 'back')[0], [0, 100]);
-  // Eski duvar 0–400 idi, 100 sağa kayar ve 500'de biter; sağ uçtaki 500–700 boş kalır.
-  assert.equal(Math.max(...wallCoverage(symmetric.modules, 'back').map(([, end]) => end)), 500);
+  // Sırt duvar ortadan silinmiş: aynı ölçüde değişmez ama ölçü değişince ortadaki boşluk da dolar.
+  const back = buildStand('back-wall', 500, 400);
+  const middle = back.find((module) => module.type === 'flat-panel' && module.placement.xCm === 200);
+  assert.ok(middle);
+  const holed = back.filter((module) => module !== middle);
+  const grown = plan('back-wall', holed, [500, 400], [700, 400]);
+  assert.equal(grown.ok, true, grown.message);
+  assertContinuous(wallCoverage(grown.modules, 'back'), 700, 'back-wall back');
+  assert.deepEqual(lampsOn(grown.modules, 'back'), lampsOn(buildStand('back-wall', 700, 400), 'back'));
+
+  // Tamamen silinmiş sırt duvar da baştan kurulur.
+  const empty = buildStand('back-wall', 500, 400).filter((module) => module.placement.wallId !== 'back');
+  const rebuilt = plan('back-wall', empty, [500, 400], [600, 400]);
+  assertContinuous(wallCoverage(rebuilt.modules, 'back'), 600, 'empty back');
 });
 
 test('back wall and U: width grows and shrinks equally on both ends; content stays centred', () => {
@@ -373,4 +413,28 @@ test('growing asks nothing; shrinking that removes something asks first', () => 
   assert.equal(standSizeChangeRemovesContent(moveOnly.report), false);
   assert.equal(standSizeChangeRemovesContent({ floorArea: 'removed' }), true);
   assert.equal(standSizeChangeRemovesContent({ outsideItems: 1 }), true);
+});
+
+test('new pieces follow the user lock choice: all unlocked stays unlocked, all locked stays locked', () => {
+  // Kullanıcı kararı 2026-11-10: "Herşeyi Kilitle" stand değişiminde kendi kendine değişmez.
+  const unlocked = buildStand('l-left', 500, 400).map((module) => {
+    const next = structuredClone(module);
+    delete next.locked;
+    return next;
+  });
+  const grown = plan('l-left', unlocked, [500, 400], [700, 600]);
+  assert.equal(grown.ok, true, grown.message);
+  assert.ok(grown.report.addedPanels > 0);
+  assert.equal(getModulesLockState(grown.modules).locked, 0);
+
+  const locked = buildStand('l-left', 500, 400).map((module) => ({ ...structuredClone(module), locked: true }));
+  const grownLocked = plan('l-left', locked, [500, 400], [700, 600]);
+  assert.equal(getModulesLockState(grownLocked.modules).allLocked, true);
+
+  // Karışık durumda yeni duvar paneli varsayılan olarak kilitli gelir.
+  const mixed = buildStand('l-left', 500, 400);
+  const grownMixed = plan('l-left', mixed, [500, 400], [700, 600]);
+  const before = new Set(mixed.map((module) => module.id));
+  const added = grownMixed.modules.filter((module) => module.type === 'flat-panel' && !before.has(module.id));
+  assert.ok(added.length > 0 && added.every((module) => module.locked === true));
 });

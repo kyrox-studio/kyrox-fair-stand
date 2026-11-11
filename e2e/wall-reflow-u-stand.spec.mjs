@@ -54,10 +54,11 @@ test('U Stand otomatik duvar reflow sağ duvarda 270 derece orientation üretir'
   const lamps = project.modules.filter((moduleState) => moduleState.type === 'led-floodlight');
   expect(walls.map((moduleState) => moduleState.widthCm)).toEqual([200, 200, 200, 200, 100, 200, 200]);
   expect(wallIds({ modules: walls }).sort()).toEqual(['back', 'left', 'right']);
-  expect(lamps).toHaveLength(7);
+  // Duvar koşusu başına 150 cm'de bir projektör, yukarı yuvarlanır (kullanıcı kararı 2026-11-10): 400 cm → 3, 500 cm → 4.
+  expect(lamps).toHaveLength(10);
   expect(lamps.every((moduleState) => moduleState.itemKey === 'led_floodlight')).toBe(true);
   expect(lamps.map((moduleState) => moduleState.placement?.wallId)).toEqual([
-    'left', 'left', 'back', 'back', 'back', 'right', 'right',
+    'left', 'left', 'left', 'back', 'back', 'back', 'back', 'right', 'right', 'right',
   ]);
   expect(project.modules).toHaveLength(walls.length + lamps.length);
 
@@ -65,7 +66,7 @@ test('U Stand otomatik duvar reflow sağ duvarda 270 derece orientation üretir'
   const rightLamps = lamps.filter((moduleState) => moduleState.placement?.wallId === 'right');
   expect(rightWall.map((moduleState) => moduleState.widthCm)).toEqual([200, 200]);
   expect(rightWall.every((moduleState) => moduleState.placement.rotationZDeg === 270)).toBe(true);
-  expect(rightLamps).toHaveLength(2);
+  expect(rightLamps).toHaveLength(3);
   expect(rightLamps.every((moduleState) => moduleState.placement.rotationZDeg === 270)).toBe(true);
   expect(pageErrors).toEqual([]);
 });
@@ -80,9 +81,10 @@ test('L Stand Sağ otomatik inşa sağ duvar orientation’ını 270 tutar', asy
   const walls = project.modules.filter((moduleState) => moduleState.type === 'flat-panel');
   const lamps = project.modules.filter((moduleState) => moduleState.type === 'led-floodlight');
   expect(wallIds({ modules: walls }).sort()).toEqual(['back', 'right']);
-  expect(lamps).toHaveLength(5);
+  // Duvar koşusu başına 150 cm'de bir projektör, yukarı yuvarlanır (kullanıcı kararı 2026-11-10): 400 cm → 3, 500 cm → 4.
+  expect(lamps).toHaveLength(7);
   expect(lamps.map((moduleState) => moduleState.placement?.wallId)).toEqual([
-    'back', 'back', 'back', 'right', 'right',
+    'back', 'back', 'back', 'back', 'right', 'right', 'right',
   ]);
   const rightWall = walls.filter((moduleState) => moduleState.placement?.wallId === 'right');
   const rightLamps = lamps.filter((moduleState) => moduleState.placement?.wallId === 'right');
@@ -103,9 +105,10 @@ test('L Stand Sol otomatik inşa sol ve sırt duvar üretir', async ({ page }) =
   const walls = project.modules.filter((moduleState) => moduleState.type === 'flat-panel');
   const lamps = project.modules.filter((moduleState) => moduleState.type === 'led-floodlight');
   expect(wallIds({ modules: walls }).sort()).toEqual(['back', 'left']);
-  expect(lamps).toHaveLength(5);
+  // Duvar koşusu başına 150 cm'de bir projektör, yukarı yuvarlanır (kullanıcı kararı 2026-11-10): 400 cm → 3, 500 cm → 4.
+  expect(lamps).toHaveLength(7);
   expect(lamps.map((moduleState) => moduleState.placement?.wallId)).toEqual([
-    'left', 'left', 'back', 'back', 'back',
+    'left', 'left', 'left', 'back', 'back', 'back', 'back',
   ]);
   expect(project.modules).toHaveLength(walls.length + lamps.length);
   expect(page.locator('#viewport > canvas')).toHaveCount(1);
