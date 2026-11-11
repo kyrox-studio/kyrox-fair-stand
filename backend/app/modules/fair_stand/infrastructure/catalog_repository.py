@@ -26,6 +26,7 @@ from app.modules.fair_stand.infrastructure.models import (
     FairStandRuleTypeModel,
     FairStandSettingsModel,
     FairStandUnitModel,
+    FairStandVariantFamilyModel,
 )
 
 
@@ -65,6 +66,15 @@ class SqlAlchemyFairStandCatalogRepository:
             {"key": row.booth_type_key, "name": row.name, "active": bool(row.is_active)}
             for row in rows
         ]
+
+    def list_active_variant_families(self) -> list[FairStandVariantFamilyModel]:
+        return list(
+            self._session.scalars(
+                select(FairStandVariantFamilyModel)
+                .where(FairStandVariantFamilyModel.is_active.is_(True))
+                .order_by(FairStandVariantFamilyModel.sort_index, FairStandVariantFamilyModel.family_key)
+            ).all()
+        )
 
     def list_active_categories(self) -> list[CatalogCategory]:
         rows = self._session.scalars(

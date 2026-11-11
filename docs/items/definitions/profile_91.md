@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | alüminyum |
 | Katalog | görünmez |
+| Varyant ailesi | `profile` |
 | Ölçü | `width_cm=91`, `depth_cm=8`, `height_cm=8` |
 | Sahne ölçüsü | `width_cm=100`, `depth_cm=8`, `height_cm=350` |
 | Varsayılan renk | `#d0d3d4` |
@@ -42,6 +43,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `desk_banko_100`, `desk_
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/baseRunBom.js`
 
@@ -60,6 +62,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `desk_banko_100`, `desk_
 - `test/itemAssembly.test.js`
 - `test/itemSceneDimensions.test.js`
 - `test/lCounter150Contract.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/modulePlacement.test.js`
 - `test/moduleRecipes.test.js`
 - `test/profile190ItemContract.test.js`

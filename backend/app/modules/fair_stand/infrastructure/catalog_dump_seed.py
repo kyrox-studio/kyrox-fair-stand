@@ -63,6 +63,15 @@ def _canonical_dump_unit(value: object) -> object:
     return value
 
 
+# 0047 short-up → wall-short adı. Yalnız varyant aile tablosu (0095) olan şemada uygulanır; 0002 göçü
+# sırasında tablo yoktur, dökümün eski değeri kalır ve 0047 onu kendisi çevirir.
+_DUMP_VARIANT_RENAMES = {"short-up-1": "wall-short-1", "short-up-2": "wall-short-2"}
+
+
+def _has_variant_families(bind) -> bool:
+    return sa.inspect(bind).has_table("fair_stand_variant_families")
+
+
 def _ensure_dump_units(session, item_rows: list) -> None:
     from datetime import UTC, datetime
 
@@ -102,6 +111,7 @@ def seed_catalog_if_empty(bind) -> None:
     payload = load_catalog_dump()
     tables = payload["tables"]
 
+    variant_families = _has_variant_families(bind)
     # item_type FK is RESTRICT: catalog rows must exist before fair_stand_items.
     item_rows = tables.get("fair_stand_items") or []
     if item_rows:
@@ -122,6 +132,11 @@ def seed_catalog_if_empty(bind) -> None:
             session.flush()
             _ensure_dump_units(session, item_rows)
             session.flush()
+            if variant_families:
+                from app.modules.fair_stand.infrastructure.variant_family_seed import ensure_variant_families
+
+                ensure_variant_families(session)
+                session.flush()
         finally:
             session.close()
 
@@ -137,6 +152,8 @@ def seed_catalog_if_empty(bind) -> None:
         if name == "fair_stand_items":
             for item in coerced:
                 item["unit"] = _canonical_dump_unit(item.get("unit"))
+                if variant_families:
+                    item["variant"] = _DUMP_VARIANT_RENAMES.get(item.get("variant"), item.get("variant"))
                 for flag in (
                     "is_render",
                     "accepts_color",

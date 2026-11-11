@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünür, Banko & Baza |
+| Varyant ailesi | `base` |
 | Ölçü | `width_cm=100`, `depth_cm=50`, `height_cm=50` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |
@@ -60,6 +61,7 @@
 - `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
 - `e2e/base-items-contract.spec.mjs`
 - `e2e/helpers/catalogWidth.mjs`
+- `e2e/selection-stale-clear.spec.mjs`
 - `test/baseItemsContract.test.js`
 - `test/baseModule.test.js`
 - `test/baseRunBom.test.js`

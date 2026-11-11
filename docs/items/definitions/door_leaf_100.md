@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | ahşap |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=100`, `depth_cm=8`, `height_cm=200` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#ffffff` |

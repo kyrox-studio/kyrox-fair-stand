@@ -14,6 +14,7 @@
 | Birim | `m2` |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | — |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#383e42` |
@@ -34,6 +35,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 ## Testler
 
+- `backend/tests/modules/fair_stand/test_booth_types.py`
 - `backend/tests/modules/fair_stand/test_carpet_anthracite_migration.py`
 - `backend/tests/modules/fair_stand/test_item_unit_fk_migration.py`
 - `e2e/autosave-interval.spec.mjs`

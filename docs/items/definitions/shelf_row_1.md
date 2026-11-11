@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | sunta |
 | Katalog | görünür, Raf & Vitrin |
+| Varyant ailesi | `shelf-row` |
 | Ölçü | `width_cm=100`, `depth_cm=38`, `height_cm=1.8` |
 | Sahne ölçüsü | `width_cm=100`, `height_cm=1.8` |
 | Varsayılan renk | `#ffffff` |
@@ -58,3 +59,4 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/itemCatalogFields.test.js`
 - `test/shelfCatalogPanelSeam.test.js`
 - `test/shelfWidthVariantPlacement.test.js`
+- `test/standResizeWallHeight.test.js`

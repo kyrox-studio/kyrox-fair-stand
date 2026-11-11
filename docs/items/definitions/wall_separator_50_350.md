@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | `wall-separator` |
 | Ölçü | `width_cm=50` |
 | Sahne ölçüsü | `depth_cm=10`, `height_cm=350` |
 | Varsayılan renk | — |
@@ -47,6 +48,7 @@
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/designState.js`
 
@@ -55,6 +57,7 @@
 - `backend/tests/modules/fair_stand/test_panel_separator_cards_migration.py`
 - `e2e/wall-height-matrix.spec.mjs`
 - `test/catalogWidthFamily.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/relationshipBomJoints.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/wallHeightProjects.mjs`

@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünür, Elektronik & Aydınlatma |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=50`, `depth_cm=20`, `height_cm=35`, `mount_height_cm=350` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#17191c` |
@@ -46,12 +47,14 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 ## Testler
 
+- `backend/tests/modules/fair_stand/test_booth_types.py`
 - `backend/tests/modules/fair_stand/test_illuminated_foam_card_migration.py`
 - `backend/tests/modules/fair_stand/test_item_default_z.py`
 - `backend/tests/modules/fair_stand/test_item_snap.py`
 - `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
 - `e2e/f010-module-construction.spec.mjs`
 - `e2e/lighting-items-contract.spec.mjs`
+- `e2e/new-project-wizard.spec.mjs`
 - `e2e/scene-select-all.spec.mjs`
 - `e2e/wall-reflow-u-stand.spec.mjs`
 - `test/automaticWall.test.js`
@@ -63,4 +66,6 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/ledFloodlightModule.test.js`
 - `test/lightingItemsContract.test.js`
 - `test/moduleRotationPolicy.test.js`
+- `test/standResizeWallHeight.test.js`
 - `test/verticalMoveUprightHeight.test.js`
+- `test/wallHeightTopRail.test.js`

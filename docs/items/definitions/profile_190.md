@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | alüminyum |
 | Katalog | görünmez |
+| Varyant ailesi | `profile` |
 | Ölçü | `width_cm=190`, `depth_cm=8`, `height_cm=8` |
 | Sahne ölçüsü | `width_cm=200`, `depth_cm=8`, `height_cm=350` |
 | Varsayılan renk | `#d0d3d4` |
@@ -42,17 +43,20 @@ Alt kalem olarak kullanıldığı Item'lar: `base_200`, `desk_banko_200`, `desk_
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/baseRunBom.js`
 
 ## Testler
 
+- `backend/tests/modules/fair_stand/test_booth_types.py`
 - `backend/tests/modules/fair_stand/test_item_default_z.py`
 - `backend/tests/modules/fair_stand/test_item_scene_pose.py`
 - `backend/tests/modules/fair_stand/test_item_snap.py`
 - `backend/tests/modules/fair_stand/test_item_surface_flags.py`
 - `backend/tests/modules/fair_stand/test_profile_346_5_migration.py`
 - `backend/tests/modules/fair_stand/test_profile_lengths_migration.py`
+- `backend/tests/modules/fair_stand/test_variant_families.py`
 - `backend/tests/modules/fair_stand/test_vertical_move_migration.py`
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
 - `e2e/long-part-split-label.spec.mjs`
@@ -69,6 +73,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_200`, `desk_banko_200`, `desk_
 - `test/itemScenePose.test.js`
 - `test/itemSnapAnchor.test.js`
 - `test/lCounter200Contract.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/moduleBehaviorPolicy.test.js`
 - `test/modulePlacement.test.js`
 - `test/moduleRecipes.test.js`

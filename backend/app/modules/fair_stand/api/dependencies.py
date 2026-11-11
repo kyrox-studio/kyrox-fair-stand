@@ -27,6 +27,7 @@ from app.modules.fair_stand.application.admin_items import AdminItemsService
 from app.modules.fair_stand.application.admin_settings import AdminSettingsService
 from app.modules.fair_stand.application.admin_snap_catalog import AdminSnapCatalogService
 from app.modules.fair_stand.application.admin_units import AdminUnitsService
+from app.modules.fair_stand.application.admin_variant_families import AdminVariantFamiliesService
 from app.modules.fair_stand.application.get_catalog_bootstrap import GetCatalogBootstrapUseCase
 from app.modules.fair_stand.application.get_item import GetItemUseCase
 from app.modules.fair_stand.application.cost_items import CostItemService
@@ -94,6 +95,10 @@ def get_admin_snap_catalog_service(db: Session = Depends(get_db)) -> AdminSnapCa
 
 def get_admin_units_service(db: Session = Depends(get_db)) -> AdminUnitsService:
     return AdminUnitsService(db)
+
+
+def get_admin_variant_families_service(db: Session = Depends(get_db)) -> AdminVariantFamiliesService:
+    return AdminVariantFamiliesService(db)
 
 
 def get_cost_item_service(db: Session = Depends(get_db)) -> CostItemService:

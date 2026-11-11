@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünür, Banko & Baza |
+| Varyant ailesi | `desk-banko-l` |
 | Ölçü | `width_cm=100`, `depth_cm=100`, `height_cm=100` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |

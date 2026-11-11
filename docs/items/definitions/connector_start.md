@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | — |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |
@@ -31,6 +32,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/baseRunBom.js`
 - `src/relationshipBom.js`
@@ -46,6 +48,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 - `test/itemSurfaceCapabilitySoT.test.js`
 - `test/lCounter150Contract.test.js`
 - `test/lCounter200Contract.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/moduleRecipes.test.js`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/relationshipBomEndToEnd.test.js`

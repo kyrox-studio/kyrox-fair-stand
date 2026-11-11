@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünür, Elektronik & Aydınlatma |
+| Varyant ailesi | `video-wall` |
 | Ölçü | `depth_cm=5` |
 | Sahne ölçüsü | `width_cm=217`, `height_cm=122` |
 | Varsayılan renk | — |

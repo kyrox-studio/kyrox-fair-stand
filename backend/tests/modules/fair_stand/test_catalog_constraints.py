@@ -18,11 +18,13 @@ from app.modules.fair_stand.infrastructure.seed_catalog import seed_fair_stand_c
 # Documented ondelete exceptions (live Postgres SoT; not blanket CASCADE):
 # - fair_stand_items.item_type → fair_stand_item_type.key: RESTRICT
 # - fair_stand_items.unit → fair_stand_units.unit_key: RESTRICT, ON UPDATE CASCADE
+# - fair_stand_items.variant → fair_stand_variant_families.family_key: RESTRICT, ON UPDATE CASCADE (0095)
 # - fair_stand_items.snap_*_rule_id → fair_stand_rule: SET NULL (onupdate NO ACTION)
 # - fair_stand_item_assembly_parts.child_item_key → items: RESTRICT (0038)
 _ITEMS_ONDELETE_EXCEPTIONS: dict[tuple[str, frozenset[str]], str] = {
     ("fair_stand_item_type", frozenset({"item_type"})): "RESTRICT",
     ("fair_stand_units", frozenset({"unit"})): "RESTRICT",
+    ("fair_stand_variant_families", frozenset({"variant"})): "RESTRICT",
     ("fair_stand_rule", frozenset({"snap_requires_rule_id"})): "SET NULL",
     ("fair_stand_rule", frozenset({"snap_provides_rule_id"})): "SET NULL",
 }

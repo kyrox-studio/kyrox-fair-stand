@@ -5,6 +5,7 @@ import { getFairStandHostWindow } from './hostDocument.js';
 import { initializeItemRegistry, initializeItemTypeRegistry, initializeSnapRuleRegistry } from './items.js';
 import { initializeRuntimeSettings } from './runtimeSettings.js';
 import { initializeStandDimensions } from './standDimensions.js';
+import { initializeVariantFamilyRegistry } from './variantFamilies.js';
 
 export const DEMO_CATALOG_BOOTSTRAP_URL = '/api/v1/fair-stand/demo/catalog/bootstrap';
 
@@ -48,6 +49,7 @@ export async function bootstrapFairStandCatalog() {
   initializeCatalogPreviews(payload.previewKinds);
   initializeSnapRuleRegistry(Array.isArray(payload.rules) ? payload.rules : []);
   initializeItemTypeRegistry(Array.isArray(payload.itemTypes) ? payload.itemTypes : []);
+  initializeVariantFamilyRegistry(Array.isArray(payload.variantFamilies) ? payload.variantFamilies : []);
   initializeItemRegistry(payload.items);
   return payload.revision ?? null;
 }

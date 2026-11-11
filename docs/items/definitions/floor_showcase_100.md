@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | — |
 | Katalog | görünür, Banko & Baza |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=100`, `depth_cm=40`, `height_cm=100` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |

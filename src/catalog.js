@@ -110,8 +110,7 @@ function projectCatalogItem(item) {
 function catalogCardLabel(item) {
   const familyLabel = getCatalogFamilyCardLabel(item);
   if (familyLabel) return familyLabel;
-  const asksSize = item.type === 'profile' || item.type === 'upright' || isCatalogWidthFamilyDescriptor(item);
-  if (!asksSize) return item.name;
+  if (!isCatalogWidthFamilyDescriptor(item)) return item.name;
   // "Köşe Banko 200×200" gibi iki ölçülü ad da ölçüsüz başlığa iner ("Köşe Banko").
   return String(item.name).replace(/\s+\d+(?:[.,]\d+)?(?:\s*[×x]\s*\d+(?:[.,]\d+)?)?$/, '') || item.name;
 }

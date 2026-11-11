@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünür, Banko & Baza |
+| Varyant ailesi | `desk-banko` |
 | Ölçü | `width_cm=100`, `depth_cm=50`, `height_cm=100` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |
@@ -73,4 +74,6 @@
 - `test/modulePlacement.test.js`
 - `test/moduleRotationPolicy.test.js`
 - `test/sceneBomAcceptance.test.js`
+- `test/standResizeLayout.test.js`
+- `test/standResizeSize.test.js`
 - `test/verticalMoveUprightHeight.test.js`

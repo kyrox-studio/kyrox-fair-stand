@@ -129,6 +129,19 @@ export function mapCatalogSeedToBootstrap(seed) {
       catalogIndex: category.catalog_index,
     })),
     previewKinds: CATALOG_PREVIEW_KIND_FIXTURE,
+    // 0095: backend variant_family_seed.VARIANT_FAMILY_ROWS ile aynı (test_variant_families eşler).
+    variantFamilies: (seed.variant_families ?? [])
+      .filter((row) => row.is_active)
+      .map((row) => ({
+        key: row.family_key,
+        title: row.title,
+        tabLabel: row.tab_label,
+        cardLabel: row.card_label,
+        labelRule: row.label_rule,
+        optionFamilyKey: row.option_family_key,
+        optionLabel: row.option_label,
+        sortIndex: row.sort_index,
+      })),
     items,
     itemTypes: buildItemTypeBootstrapRows([
       ...items.map((item) => item.type),

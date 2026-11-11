@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | — |
 | Katalog | görünür, Panel Ek Modül |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=100`, `depth_cm=50`, `height_cm=50` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#e8e8d5` |
@@ -52,6 +53,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `e2e/box-block-face-image-restore.spec.mjs`
 - `e2e/catalog-drop-append.spec.mjs`
 - `e2e/group-template.spec.mjs`
+- `e2e/in-place-module-update.spec.mjs`
 - `e2e/missing-project-asset-open.spec.mjs`
 - `e2e/module-group.spec.mjs`
 - `e2e/project-open-timing.spec.mjs`
@@ -59,6 +61,9 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/catalogCategories.test.js`
 - `test/groupTemplates.test.js`
 - `test/itemCatalogFields.test.js`
+- `test/standResizeLayout.test.js`
+- `test/standResizeSize.test.js`
+- `test/standResizeWallHeight.test.js`
 - `test/tulleFabric.test.js`
 - `test/uprightFieldPlacement.test.js`
 - `test/verticalMoveUprightHeight.test.js`

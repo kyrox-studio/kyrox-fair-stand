@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünür, Extra |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=46`, `depth_cm=58`, `height_cm=82` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#ffffff` |

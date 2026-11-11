@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | sunta |
 | Katalog | görünmez |
+| Varyant ailesi | `shelf-row` |
 | Ölçü | `width_cm=100`, `depth_cm=38`, `height_cm=51.8` |
 | Sahne ölçüsü | `width_cm=100`, `height_cm=51.8` |
 | Varsayılan renk | `#ffffff` |
@@ -39,6 +40,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 
 ## Testler
@@ -52,5 +54,6 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/catalogDragItemKeyInvariant.test.js`
 - `test/catalogWidthFamily.test.js`
 - `test/doorShelfPanelSeams.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/shelfCatalogPanelSeam.test.js`
 - `test/shelfWidthVariantPlacement.test.js`

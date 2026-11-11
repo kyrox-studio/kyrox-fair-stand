@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | alüminyum |
 | Katalog | görünmez |
+| Varyant ailesi | `upright` |
 | Ölçü | `width_cm=8`, `depth_cm=8`, `height_cm=396` |
 | Sahne ölçüsü | `width_cm=8`, `depth_cm=8`, `height_cm=400` |
 | Varsayılan renk | `#d0d3d4` |
@@ -40,6 +41,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/relationshipBom.js`
 
@@ -47,6 +49,8 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 - `backend/tests/modules/fair_stand/test_item_length_parts_migration.py`
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
+- `test/mapCatalogSeed.mjs`
+- `test/standResizeWallHeight.test.js`
 - `test/wallHeightProjectBom.test.js`
 - `test/wallHeightRecipe.test.js`
 - `test/wallShortRelationshipBom.test.js`

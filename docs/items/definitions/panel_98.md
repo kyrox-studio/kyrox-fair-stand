@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | sunta |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=98`, `depth_cm=0.8`, `height_cm=47` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#ffffff` |
@@ -31,6 +32,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `desk_banko_100`, `desk_
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/baseRunBom.js`
 
@@ -50,6 +52,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `desk_banko_100`, `desk_
 - `test/flatPanelBackStrips.test.js`
 - `test/itemAssembly.test.js`
 - `test/itemIsRenderFactory.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/moduleRecipes.test.js`
 - `test/panelCamFamily.test.js`
 - `test/printAreaBom.test.js`

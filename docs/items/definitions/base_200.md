@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | `base` |
 | Ölçü | `width_cm=200`, `depth_cm=50`, `height_cm=50` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |
@@ -51,6 +52,7 @@
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/designState.js`
 
@@ -61,6 +63,7 @@
 - `test/baseItemsContract.test.js`
 - `test/baseModule.test.js`
 - `test/baseRunBom.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/modulePlacement.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/wallShortRelationshipBom.test.js`

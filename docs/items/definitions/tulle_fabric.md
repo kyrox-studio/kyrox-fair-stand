@@ -14,6 +14,7 @@
 | Birim | `metre_kare` |
 | Malzeme | — |
 | Katalog | görünür, Extra |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=200`, `depth_cm=0.4`, `height_cm=100` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#ffffff` |
@@ -53,5 +54,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/bomLineGroups.test.js`
 - `test/catalogCategories.test.js`
 - `test/itemCatalogFields.test.js`
+- `test/standResizeSize.test.js`
+- `test/standResizeWallHeight.test.js`
 - `test/tulleFabric.test.js`
 - `test/verticalMoveUprightHeight.test.js`

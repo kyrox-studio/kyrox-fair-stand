@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünür, Panel Ek Modül |
+| Varyant ailesi | `wall-short-2` |
 | Ölçü | `width_cm=100` |
 | Sahne ölçüsü | `depth_cm=10` |
 | Varsayılan renk | — |

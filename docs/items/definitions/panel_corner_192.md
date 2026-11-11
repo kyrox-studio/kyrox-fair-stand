@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | sunta |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=192`, `depth_cm=0.8`, `height_cm=47` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#ffffff` |
@@ -29,6 +30,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/relationshipBom.js`
 
@@ -39,6 +41,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/boardMaterialItemContract.test.js`
 - `test/counterModule.test.js`
 - `test/flatPanelBackStrips.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/panel197ItemContract.test.js`
 - `test/panelCamFamily.test.js`
 - `test/panelCorner192ItemContract.test.js`
