@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | alüminyum |
 | Katalog | görünmez |
+| Varyant ailesi | `profile` |
 | Ölçü | `width_cm=8`, `depth_cm=8`, `height_cm=8` |
 | Sahne ölçüsü | `width_cm=8`, `depth_cm=8`, `height_cm=350` |
 | Varsayılan renk | `#d0d3d4` |
@@ -40,6 +41,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 
 ## Testler
@@ -48,3 +50,4 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `e2e/long-part-split-label.spec.mjs`
 - `test/itemLengthParts.test.js`
 - `test/itemSurfaceFlagAudit.test.js`
+- `test/mapCatalogSeed.mjs`

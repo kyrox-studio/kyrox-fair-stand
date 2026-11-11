@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | — |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |
@@ -29,12 +30,14 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/relationshipBom.js`
 
 ## Testler
 
 - `test/itemSceneDimensions.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/moduleRecipes.test.js`
 - `test/productionBomPanelEntry.test.js`
 - `test/relationshipBomEndToEnd.test.js`

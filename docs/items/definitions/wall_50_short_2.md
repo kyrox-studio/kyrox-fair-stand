@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | `wall-short-2` |
 | Ölçü | `width_cm=50` |
 | Sahne ölçüsü | `depth_cm=10` |
 | Varsayılan renk | — |
@@ -47,6 +48,7 @@
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/designState.js`
 
@@ -55,6 +57,7 @@
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
 - `e2e/wall-height-matrix.spec.mjs`
 - `e2e/wall-short-width.spec.mjs`
+- `test/mapCatalogSeed.mjs`
 - `test/sceneBomAcceptance.test.js`
 - `test/uprightFieldPlacement.test.js`
 - `test/wallShortCanonicalRename.test.js`

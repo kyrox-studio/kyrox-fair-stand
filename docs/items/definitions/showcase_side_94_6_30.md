@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | sunta |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=94.6`, `depth_cm=30`, `height_cm=1.8` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#ffffff` |
@@ -31,12 +32,14 @@ Alt kalem olarak kullanıldığı Item'lar: `wall_showcase_100_2_350`.
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 
 ## Testler
 
 - `backend/tests/modules/fair_stand/test_showcase_body_color_migration.py`
 - `test/boardMaterialItemContract.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/showcaseBodyBoardsItemContract.test.js`
 - `test/showcaseRecipes.test.js`

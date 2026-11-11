@@ -1,18 +1,33 @@
-// Dikme boyu seçimi: katalogdaki tek dikme kartı bırakılırken boy sorulur. Varsayılan seçili
-// duvar yüksekliğinin dikmesidir (gerçek boy = duvar × 0,99). "Bir daha sorma" işaretlenirse
-// seçilen boy bu tarayıcıda hatırlanır ve sonraki dikmeler sormadan o boyda gelir; Özellikler
-// panelindeki dikme boyu alanı boyu değiştirir, çentik oradan kaldırılınca yeniden sorulur.
-import { listRegisteredItems } from './items.js';
+// Dikme boyu seçimi: katalogdaki tek dikme kartı bırakılırken boy sorulur. Seçenekler `upright`
+// varyant ailesinin (DB 0095, CRM admin "Varyant aileleri") sahnede çizilebilen üyeleridir; pencere
+// başlığı ailenin başlığıdır. Varsayılan seçili duvar yüksekliğinin dikmesidir (gerçek boy = duvar
+// × 0,99). "Bir daha sorma" işaretlenirse seçilen boy bu tarayıcıda hatırlanır ve sonraki dikmeler
+// sormadan o boyda gelir; Özellikler panelindeki dikme boyu alanı boyu değiştirir, çentik oradan
+// kaldırılınca yeniden sorulur.
+import {
+  formatUprightLabel,
+  listCatalogWidthFamilyItems,
+  UPRIGHT_REAL_HEIGHT_RATIO,
+} from './catalogWidthFamily.js';
 import { readItemSizePreference, requestItemSizeChoice, writeItemSizePreference } from './itemSizeDialog.js';
+import { getVariantFamily } from './variantFamilies.js';
+
+export { formatUprightLabel };
 
 export const UPRIGHT_HEIGHT_PREFERENCE_KEY = 'fairStand.uprightHeightItemKey';
-const UPRIGHT_REAL_HEIGHT_RATIO = 0.99;
+export const UPRIGHT_FAMILY_KEY = 'upright';
 
 export function listUprightHeightItems() {
-  return listRegisteredItems()
-    // Yalnız sahnede çizilebilen dikmeler (is_render); çizilemeyen boy seçilirse bırakma reddedilirdi.
-    .filter((item) => item.type === 'upright' && item.isRender !== false && Number(item.dimensions?.heightCm) > 0)
-    .sort((a, b) => Number(a.dimensions.heightCm) - Number(b.dimensions.heightCm));
+  // Yalnız sahnede çizilebilen üyeler (is_render); çizilemeyen boy seçilirse bırakma reddedilirdi.
+  return listCatalogWidthFamilyItems(UPRIGHT_FAMILY_KEY);
+}
+
+export function getUprightHeightTitle() {
+  return getVariantFamily(UPRIGHT_FAMILY_KEY)?.title ?? '';
+}
+
+export function getUprightHeightTabLabel() {
+  return getVariantFamily(UPRIGHT_FAMILY_KEY)?.tabLabel ?? '';
 }
 
 export function defaultUprightItemKeyForWallHeight(wallLineHeightCm) {
@@ -31,19 +46,13 @@ export function writeUprightHeightPreference(itemKey, storage) {
   writeItemSizePreference(UPRIGHT_HEIGHT_PREFERENCE_KEY, itemKey, storage);
 }
 
-export function formatUprightLabel(item) {
-  const heightCm = Number(item.dimensions.heightCm);
-  const wallCm = Math.round(heightCm / UPRIGHT_REAL_HEIGHT_RATIO);
-  return `${String(heightCm).replace('.', ',')} cm (${wallCm} cm duvar)`;
-}
-
 /**
  * Dikme boyu penceresi. Sonuç: { itemKey, remember } ya da iptalde null.
  * remember true: tercih yazılır; false: tercih silinir (yeniden sorulur).
  */
 export function requestUprightHeight({ selectedItemKey, remember = false } = {}) {
   return requestItemSizeChoice({
-    title: 'Dikme yüksekliği',
+    title: getUprightHeightTitle(),
     itemType: 'upright',
     items: listUprightHeightItems(),
     formatLabel: formatUprightLabel,

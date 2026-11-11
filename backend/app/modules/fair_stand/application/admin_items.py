@@ -32,6 +32,11 @@ from app.modules.fair_stand.infrastructure.models import (
     FairStandItemWidthVariantModel,
     FairStandRuleModel,
     FairStandUnitModel,
+    FairStandVariantFamilyModel,
+)
+from app.modules.fair_stand.application.admin_variant_families import (
+    VariantFamilyAdminError,
+    require_known_variant,
 )
 
 _ITEM_LIST_SORT_FIELDS: dict[str, object] = {
@@ -127,6 +132,13 @@ def _require_known_unit(session: Session, unit: str | None) -> str | None:
     return unit
 
 
+def _require_variant(session: Session, variant: str | None, *, current: str | None = None) -> str | None:
+    try:
+        return require_known_variant(session, variant, current=current)
+    except VariantFamilyAdminError as exc:
+        raise ItemAdminError(str(exc), status_code=exc.status_code) from exc
+
+
 def _require_item_type(session: Session, item_type: str) -> str:
     key = str(item_type or "").strip()
     if not key:
@@ -212,6 +224,8 @@ def _integrity_error_message(exc: IntegrityError) -> str:
         "body_role" in orig and ("already exists" in orig or "duplicate" in orig)
     ):
         return "Aynı body role bir item altında birden fazla kullanılamaz."
+    if "fk_fair_stand_items_variant" in orig:
+        return "Varyant ailesi bulunamadı."
     if "fk_fair_stand_items_unit_key" in orig:
         return "Ölçü birimi katalogda yok."
     if "foreign key" in orig or "fk_" in orig:
@@ -581,7 +595,14 @@ class AdminItemsService:
             ],
             "materials": distinct_values(FairStandItemModel.material),
             "shapes": distinct_values(FairStandItemModel.shape),
-            "variants": distinct_values(FairStandItemModel.variant),
+            "variants": [
+                row.family_key
+                for row in self._session.scalars(
+                    select(FairStandVariantFamilyModel)
+                    .where(FairStandVariantFamilyModel.is_active.is_(True))
+                    .order_by(FairStandVariantFamilyModel.sort_index, FairStandVariantFamilyModel.family_key)
+                ).all()
+            ],
             "compositionModes": distinct_values(FairStandItemModel.composition_mode),
             "sideInsertRotations": distinct_values(FairStandItemModel.side_insert_rotation),
             "itemTypes": [
@@ -688,7 +709,7 @@ class AdminItemsService:
             composition_mode=_optional_str(payload.get("composition_mode")),
             paintable=_optional_bool(payload.get("paintable")),
             shape=_optional_str(payload.get("shape")),
-            variant=_optional_str(payload.get("variant")),
+            variant=_require_variant(self._session, _optional_str(payload.get("variant"))),
             eye_count=payload.get("eye_count"),
             default_z_cm=_optional_decimal(payload.get("default_z_cm")) or Decimal("0"),
             z_reference=_z_reference(payload.get("z_reference")),
@@ -759,11 +780,12 @@ class AdminItemsService:
             "side_insert_rotation": _optional_str,
             "composition_mode": _optional_str,
             "shape": _optional_str,
-            "variant": _optional_str,
         }
         for field, converter in scalar_map.items():
             if field in payload:
                 setattr(row, field, converter(payload.get(field)))
+        if "variant" in payload:
+            row.variant = _require_variant(self._session, _optional_str(payload.get("variant")), current=row.variant)
 
         if any(
             key in payload

@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | mdf |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=48.5`, `depth_cm=0.8`, `height_cm=47` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#c79b63` |
@@ -31,11 +32,13 @@ Alt kalem olarak kullanıldığı Item'lar: `wall_separator_50_350`, `wall_separ
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/designState.js`
 
 ## Testler
 
+- `test/mapCatalogSeed.mjs`
 - `test/panelGlassBom.test.js`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/relationshipBomJoints.test.js`

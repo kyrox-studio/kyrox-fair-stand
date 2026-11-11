@@ -10,6 +10,10 @@ from app.modules.fair_stand.application.admin_items import AdminItemsService, It
 from app.modules.fair_stand.application.admin_settings import AdminSettingsService, SettingsAdminError
 from app.modules.fair_stand.application.admin_snap_catalog import AdminSnapCatalogService, SnapCatalogAdminError
 from app.modules.fair_stand.application.admin_units import AdminUnitsService, UnitAdminError
+from app.modules.fair_stand.application.admin_variant_families import (
+    AdminVariantFamiliesService,
+    VariantFamilyAdminError,
+)
 from app.modules.fair_stand.application.get_catalog_bootstrap import GetCatalogBootstrapUseCase
 from app.modules.fair_stand.application.item_mapper import runtime_settings_payload, stand_dimensions_payload
 from app.modules.fair_stand.application.get_item import GetItemUseCase
@@ -29,6 +33,7 @@ from app.modules.fair_stand.api.dependencies import (
     get_admin_settings_service,
     get_admin_snap_catalog_service,
     get_admin_units_service,
+    get_admin_variant_families_service,
     get_catalog_bootstrap_use_case,
     get_item_use_case,
     get_stand_audit,
@@ -66,6 +71,34 @@ class UnitUpdateBody(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=128)
     symbol: str | None = Field(default=None, min_length=1, max_length=32)
     is_active: bool | None = None
+
+
+class VariantFamilyCreateBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    family_key: str = Field(min_length=1, max_length=64)
+    title: str = Field(min_length=1, max_length=128)
+    tab_label: str = Field(min_length=1, max_length=32)
+    card_label: str | None = Field(default=None, max_length=64)
+    label_rule: str = Field(min_length=1, max_length=32)
+    option_family_key: str | None = Field(default=None, max_length=64)
+    option_label: str | None = Field(default=None, max_length=64)
+    sort_index: int = 0
+
+
+class VariantFamilyMembersBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    item_keys: list[str] = Field(default_factory=list, max_length=500)
+
+
+class VariantFamilyUpdateBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str | None = Field(default=None, min_length=1, max_length=128)
+    tab_label: str | None = Field(default=None, min_length=1, max_length=32)
+    card_label: str | None = Field(default=None, max_length=64)
+    label_rule: str | None = Field(default=None, min_length=1, max_length=32)
+    option_family_key: str | None = Field(default=None, max_length=64)
+    option_label: str | None = Field(default=None, max_length=64)
+    sort_index: int | None = None
 
 
 class ItemCatalogUpdateBody(BaseModel):
@@ -216,7 +249,12 @@ def _result_key(result: Any, *keys: str) -> Any:
 
 
 def _raise_admin(
-    exc: CatalogAdminError | SettingsAdminError | ItemAdminError | SnapCatalogAdminError | UnitAdminError,
+    exc: CatalogAdminError
+    | SettingsAdminError
+    | ItemAdminError
+    | SnapCatalogAdminError
+    | UnitAdminError
+    | VariantFamilyAdminError,
 ) -> None:
     raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
@@ -243,6 +281,7 @@ def catalog_bootstrap_payload(snapshot: Any) -> dict[str, Any]:
             for category in snapshot.categories
         ],
         "boothTypes": snapshot.booth_types,
+        "variantFamilies": snapshot.variant_families,
         "items": [item.payload for item in snapshot.items],
         "previewKinds": [_preview_kind_payload(preview) for preview in snapshot.preview_kinds],
         "itemTypes": snapshot.item_types,
@@ -491,6 +530,130 @@ def admin_restore_unit(
         unit_id,
         scope=SCOPE_SYSTEM_CATALOG,
     )
+    return result
+
+
+# Varyant aileleri (0095). Yetki Item admin izinleridir (kullanıcı kararı 2026-10-25).
+@router.get("/admin/variant-families")
+def admin_list_variant_families(
+    auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_READ)),
+    service: AdminVariantFamiliesService = Depends(get_admin_variant_families_service),
+) -> list[dict[str, Any]]:
+    _ = auth
+    return service.list_families()
+
+
+@router.get("/admin/variant-families/member-candidates")
+def admin_list_variant_family_member_candidates(
+    auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_READ)),
+    service: AdminVariantFamiliesService = Depends(get_admin_variant_families_service),
+) -> list[dict[str, Any]]:
+    _ = auth
+    return service.list_member_candidates()
+
+
+@router.put("/admin/variant-families/{family_key}/members")
+def admin_set_variant_family_members(
+    family_key: str,
+    body: VariantFamilyMembersBody,
+    auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_UPDATE)),
+    service: AdminVariantFamiliesService = Depends(get_admin_variant_families_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
+) -> dict[str, Any]:
+    _ = auth
+    try:
+        result = service.set_members(family_key, body.item_keys)
+    except VariantFamilyAdminError as exc:
+        _raise_admin(exc)
+        raise
+    audit.record(
+        "fair_stand.variant_family.members_updated",
+        "variant_family",
+        family_key,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(),
+    )
+    return result
+
+
+@router.post("/admin/variant-families", status_code=status.HTTP_201_CREATED)
+def admin_create_variant_family(
+    body: VariantFamilyCreateBody,
+    auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_CREATE)),
+    service: AdminVariantFamiliesService = Depends(get_admin_variant_families_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
+) -> dict[str, Any]:
+    _ = auth
+    try:
+        result = service.create_family(body.model_dump())
+    except VariantFamilyAdminError as exc:
+        _raise_admin(exc)
+        raise
+    audit.record(
+        "fair_stand.variant_family.created",
+        "variant_family",
+        _result_key(result, "key"),
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(),
+    )
+    return result
+
+
+@router.patch("/admin/variant-families/{family_key}")
+def admin_update_variant_family(
+    family_key: str,
+    body: VariantFamilyUpdateBody,
+    auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_UPDATE)),
+    service: AdminVariantFamiliesService = Depends(get_admin_variant_families_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
+) -> dict[str, Any]:
+    _ = auth
+    try:
+        result = service.update_family(family_key, body.model_dump(exclude_unset=True))
+    except VariantFamilyAdminError as exc:
+        _raise_admin(exc)
+        raise
+    audit.record(
+        "fair_stand.variant_family.updated",
+        "variant_family",
+        family_key,
+        scope=SCOPE_SYSTEM_CATALOG,
+        new_values=body.model_dump(exclude_unset=True),
+    )
+    return result
+
+
+@router.post("/admin/variant-families/{family_key}/archive")
+def admin_archive_variant_family(
+    family_key: str,
+    auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_ARCHIVE)),
+    service: AdminVariantFamiliesService = Depends(get_admin_variant_families_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
+) -> dict[str, Any]:
+    _ = auth
+    try:
+        result = service.archive_family(family_key)
+    except VariantFamilyAdminError as exc:
+        _raise_admin(exc)
+        raise
+    audit.record("fair_stand.variant_family.archived", "variant_family", family_key, scope=SCOPE_SYSTEM_CATALOG)
+    return result
+
+
+@router.post("/admin/variant-families/{family_key}/restore")
+def admin_restore_variant_family(
+    family_key: str,
+    auth: AuthContext = Depends(require_permission(PERMISSION_ITEMS_ARCHIVE)),
+    service: AdminVariantFamiliesService = Depends(get_admin_variant_families_service),
+    audit: StandAuditRecorder = Depends(get_stand_audit),
+) -> dict[str, Any]:
+    _ = auth
+    try:
+        result = service.restore_family(family_key)
+    except VariantFamilyAdminError as exc:
+        _raise_admin(exc)
+        raise
+    audit.record("fair_stand.variant_family.restored", "variant_family", family_key, scope=SCOPE_SYSTEM_CATALOG)
     return result
 
 

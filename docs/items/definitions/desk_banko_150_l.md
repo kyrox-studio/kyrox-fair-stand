@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | `desk-banko-l` |
 | Ölçü | `width_cm=150`, `depth_cm=150`, `height_cm=100` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |
@@ -53,6 +54,7 @@
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `backend/app/modules/fair_stand/infrastructure/item_rotation_seed.py`
 - `src/designState.js`
@@ -63,6 +65,7 @@
 - `e2e/desk-banko-items-contract.spec.mjs`
 - `test/deskBankoItemsContract.test.js`
 - `test/lCounter150Contract.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/moduleBehavior.test.js`
 - `test/rawBomSelectionParser.test.js`
 - `test/sceneBomAcceptance.test.js`

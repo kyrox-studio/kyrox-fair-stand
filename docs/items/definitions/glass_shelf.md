@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | cam |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=87.3`, `depth_cm=28.5`, `height_cm=0.6` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |

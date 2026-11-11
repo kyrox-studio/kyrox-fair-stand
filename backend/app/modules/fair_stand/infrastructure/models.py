@@ -118,6 +118,53 @@ class FairStandUnitModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class FairStandVariantFamilyModel(Base):
+    """Varyant ailesi (0095): katalogda tek kart, üyeler Özellikler panelinde ya da bırakma penceresinde seçilir.
+
+    Item.variant bu tablonun family_key değerine gider. Etiket ve sıra `label_rule` ile hazır kurallardan
+    seçilir; eş aile (option) aynı genişlikteki karşılığı çentikle seçtirir (Separatör → Sarmaşıklı).
+    `is_system` aileler koda bağlıdır (kısa panel, profil, dikme): arşivlenemez, kural/eş aile değişmez.
+    """
+
+    __tablename__ = "fair_stand_variant_families"
+    __table_args__ = (
+        CheckConstraint(
+            "label_rule IN ('width_cm', 'eye_count', 'shelf_rows', 'video_wall_grid', 'name_suffix', "
+            "'profile_length', 'upright_height')",
+            name="ck_fair_stand_variant_families_label_rule",
+        ),
+        CheckConstraint(
+            "option_family_key IS NULL OR option_family_key <> family_key",
+            name="ck_fair_stand_variant_families_option_self",
+        ),
+        CheckConstraint(
+            "(option_family_key IS NULL) = (option_label IS NULL)",
+            name="ck_fair_stand_variant_families_option_pair",
+        ),
+    )
+
+    family_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str] = mapped_column(String(128), nullable=False)
+    tab_label: Mapped[str] = mapped_column(String(32), nullable=False)
+    card_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    label_rule: Mapped[str] = mapped_column(String(32), nullable=False)
+    option_family_key: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey(
+            "fair_stand_variant_families.family_key",
+            name="fk_fair_stand_variant_families_option",
+            ondelete="RESTRICT",
+        ),
+        nullable=True,
+    )
+    option_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    sort_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    is_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=sa_true())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class FairStandBoothTypeModel(Base):
     """Stand tipi (Maksima / Özel Tasarım / Paket). Yerleşim olan `standType` ile karıştırılmaz."""
 
@@ -423,7 +470,16 @@ class FairStandItemModel(Base):
     composition_mode: Mapped[str | None] = mapped_column(String(16), nullable=True)
     paintable: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     shape: Mapped[str | None] = mapped_column(String(16), nullable=True)
-    variant: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    variant: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey(
+            "fair_stand_variant_families.family_key",
+            name="fk_fair_stand_items_variant",
+            ondelete="RESTRICT",
+            onupdate="CASCADE",
+        ),
+        nullable=True,
+    )
     eye_count: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     default_z_cm: Mapped[Decimal] = mapped_column(Numeric(8, 2), nullable=False, default=Decimal("0"), server_default="0")
     # default_z_cm neye göre: zemin ya da katalog duvar tepesi (350); wall-top seçili duvar yüksekliği farkı kadar kayar.

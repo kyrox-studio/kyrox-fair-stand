@@ -69,7 +69,7 @@ def _bearer(headers: dict[str, str]) -> str:
 
 def test_every_admin_mutation_route_records_core_audit():
     admin_mutations = _mutation_routes("/fair-stand/admin")
-    assert len(admin_mutations) == 33
+    assert len(admin_mutations) == 38  # 0095: variant-families ekle/düzenle/arşivle/geri al/üyeler
     for method, route in admin_mutations:
         assert get_stand_audit in _dependency_calls(route.dependant), (method, route.path)
 
@@ -84,7 +84,7 @@ def test_every_admin_mutation_route_records_core_audit():
 def test_audit_actions_use_fair_stand_prefix_and_core_naming():
     source = "\n".join(path.read_text(encoding="utf-8") for path in API_DIR.glob("*.py"))
     actions = set(re.findall(r'"(fair_stand\.[a-z0-9_.]+)"', source))
-    assert len(actions) == 34
+    assert len(actions) == 39
     for action in actions:
         assert CORE_ACTION_PATTERN.match(action), action
         assert len(action.split(".")) == 3, action

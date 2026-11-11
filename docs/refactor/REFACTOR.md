@@ -99,6 +99,10 @@ yeni DB alanı, Alembic migration veya BOM değişikliği yoktur.
 
 Ürün kararı: 2026-10-21 kuralı duvarlar için geçerli kalır; profil ise başka bir profilin her noktasına dik bağlanır (iki profilin arasına, ortasına) ve uç uca eklenir. Çakışma (`collisionSegmentsOverlap`): iki profil dik kesişince birinin ucu birleşimdeyse izin, birbirinin ortasından geçerse (X) çakışma; `isMidWallTeeContact` profil çiftinde dikme mesajını vermez (`isProfilePair`). Yapışma (`getSegmentSnapCoordinates`): profil hedef profile yaklaşınca uçlara ek olarak `PROFILE_TEE_SNAP_STEP_CM` (10 cm) adımla ara noktalar `tee` adayıdır. Profil T bağlantısı için BOM'a ayrı aparat eklenmez.
 
+## 2026-11-11 — Profil duvar rayına dik bağlanır
+
+Ürün kararı: T bağlantıyı yalnız profil yapar; profile, dikmeye ya da duvarın üst / alt rayına (o da profildir). Yerleşim (`collisionSegmentsOverlap` → `profileOnWallRail`): profilin yüksekliği ince duvarın üst ya da alt bağlantı çizgisine değiyorsa (`profileTouchesWallRailLine`, kısa duvar ray kontrolüyle aynı) profilin ucu duvarın her noktasına gelebilir; rayı kesen profil (X) çakışır. Ray hizasında olmayan profil `PROFILE_WALL_RAIL_MESSAGE` ile reddedilir. Duvar ile duvar ve profilin ortasına gelen duvar 2026-10-21 kuralına bağlı kalır. Magnetic snap profil için duvar rayının ara noktalarını da 10 cm adımla aday üretir (`profileTeeInteriorStepCm`). BOM'a T aparatı eklenmez (profil-profil kararıyla aynı). Test: `test/profileWallRailTee.test.js`.
+
 ## 2026-10-21 — Dik bağlantı yalnız dikme olan noktaya
 
 Ürün kararı: tek duvarın ortasında dikme yoktur; dik duvar (kısa ya da tam boy) oraya bağlanamaz. Yerleşim (`collisionSegmentsOverlap`): iki ince duvar dik kesiştiğinde ikisinin de ucu birleşimdeyse (L ya da iki duvarın birleşim ucunda T) izin; yalnız birinin ucu diğerinin ortasındaysa çakışma, mesaj `MID_WALL_TEE_MESSAGE` "Dik bağlantı yalnız dikme olan noktaya yapılır.". Magnetic snap (`getSegmentSnapCoordinates`) yalnız hedefin uçlarını aday üretir; 50 cm'lik ara noktalar kalktı. Kayıtlı eski yerleşimler yerinde kalır; taşınınca yeni kurala uyar. Testler `test/modulePlacement.test.js` ürün kararına göre güncellendi.

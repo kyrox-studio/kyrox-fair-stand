@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=108.5`, `height_cm=61` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |

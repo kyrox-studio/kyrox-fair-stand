@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | — |
 | Katalog | görünür, Panel & Duvar |
+| Varyant ailesi | `wall-showcase` |
 | Ölçü | `width_cm=100` |
 | Sahne ölçüsü | `depth_cm=10`, `height_cm=350` |
 | Varsayılan renk | — |

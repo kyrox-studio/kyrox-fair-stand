@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | `video-wall` |
 | Ölçü | `depth_cm=5` |
 | Sahne ölçüsü | `width_cm=325.5`, `height_cm=183` |
 | Varsayılan renk | — |

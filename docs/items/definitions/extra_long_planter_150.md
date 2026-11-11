@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | `long-planter` |
 | Ölçü | `width_cm=150`, `depth_cm=30`, `height_cm=30` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#ffffff` |

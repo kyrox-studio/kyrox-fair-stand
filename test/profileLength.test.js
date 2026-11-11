@@ -9,6 +9,8 @@ import { getItem } from '../src/items.js';
 import {
   PROFILE_LENGTH_PREFERENCE_KEY,
   formatProfileLengthLabel,
+  getProfileLengthTabLabel,
+  getProfileLengthTitle,
   listProfileLengthItems,
   readProfileLengthPreference,
   writeProfileLengthPreference,
@@ -94,7 +96,10 @@ test('profil bırakılırken boy sorulur; Özellikler panelinde profil boyu alan
   assert.match(main, /if \(moduleState\?\.type === 'profile'\) \{[\s\S]*readProfileLengthPreference\(\)[\s\S]*requestProfileLength\(\{ selectedItemKey: moduleState\.itemKey \}\)[\s\S]*if \(choice\.remember\) writeProfileLengthPreference\(itemKey\);/);
   assert.match(main, /const commitKey = moduleState\?\.type === 'upright' \|\| moduleState\?\.type === 'profile'\s+\? moduleState\.itemKey : catalogKey;/);
   // Panel alanı: boy listesi + "Bir daha sorma"; çentik kalkınca tercih silinir.
-  assert.match(main, /profile: Object\.freeze\(\{\r?\n {4}title: 'Profil boyu',\r?\n {4}list: \(\) => listProfileLengthItems\(\),/);
+  // Başlık ve sekme `profile` varyant ailesinden (0095, CRM admin).
+  assert.match(main, /profile: Object\.freeze\(\{\r?\n {4}get title\(\) \{ return getProfileLengthTitle\(\); \},\r?\n {4}list: \(\) => listProfileLengthItems\(\),/);
+  assert.equal(getProfileLengthTitle(), 'Profil boyu');
+  assert.equal(getProfileLengthTabLabel(), 'Boy');
   assert.match(main, /choiceSpec\.writePreference\(values\.remember \? values\.itemKey : null\);/);
   assert.doesNotMatch(menu, /data-module-action="profile-length"/);
 });

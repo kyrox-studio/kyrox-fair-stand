@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | alüminyum |
 | Katalog | görünmez |
+| Varyant ailesi | `upright` |
 | Ölçü | `width_cm=8`, `depth_cm=8`, `height_cm=99` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#d0d3d4` |
@@ -42,6 +43,7 @@ Alt kalem olarak kullanıldığı Item'lar: `desk_banko_100`, `desk_banko_100_l`
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/relationshipBom.js`
 
@@ -49,6 +51,7 @@ Alt kalem olarak kullanıldığı Item'lar: `desk_banko_100`, `desk_banko_100_l`
 
 - `backend/tests/modules/fair_stand/test_item_length_parts_migration.py`
 - `backend/tests/modules/fair_stand/test_item_scene_pose.py`
+- `backend/tests/modules/fair_stand/test_variant_families.py`
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
 - `e2e/short-joint-structural-upright.spec.mjs`
 - `test/catalogDomainBoundary.test.js`
@@ -60,9 +63,11 @@ Alt kalem olarak kullanıldığı Item'lar: `desk_banko_100`, `desk_banko_100_l`
 - `test/itemScenePose.test.js`
 - `test/lCounter150Contract.test.js`
 - `test/lCounter200Contract.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/shortJointStructuralUpright.test.js`
+- `test/standResizeWallHeight.test.js`
 - `test/upright3465ItemContract.test.js`
 - `test/upright99And495ItemContract.test.js`
 - `test/uprightIntrinsicProperties.test.js`

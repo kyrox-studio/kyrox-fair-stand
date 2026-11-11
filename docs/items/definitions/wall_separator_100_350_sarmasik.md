@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | `wall-separator-sarmasik` |
 | Ölçü | `width_cm=100` |
 | Sahne ölçüsü | `depth_cm=10`, `height_cm=350` |
 | Varsayılan renk | — |
@@ -47,6 +48,7 @@
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 
 ## Testler
@@ -55,6 +57,7 @@
 - `e2e/wall-height-matrix.spec.mjs`
 - `test/catalogSingleSource.test.js`
 - `test/catalogWidthFamily.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/moduleStateConstructionRegistry.test.js`
 - `test/relationshipBomJoints.test.js`
 - `test/sceneBomAcceptance.test.js`

@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | sunta |
 | Katalog | görünmez, Raf & Vitrin |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=100`, `depth_cm=38`, `height_cm=1.8` |
 | Sahne ölçüsü | `width_cm=100`, `height_cm=1.8` |
 | Varsayılan renk | `#ffffff` |
@@ -46,6 +47,7 @@ Alt kalem olarak kullanıldığı Item'lar: `shelf_row_2_100`, `shelf_row_3_100`
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 
 ## Testler
@@ -61,6 +63,7 @@ Alt kalem olarak kullanıldığı Item'lar: `shelf_row_2_100`, `shelf_row_3_100`
 - `test/catalogWidthFamily.test.js`
 - `test/itemBoxDimensions.test.js`
 - `test/itemSnapAnchor.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/moduleRecipes.test.js`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/sceneBomAcceptance.test.js`

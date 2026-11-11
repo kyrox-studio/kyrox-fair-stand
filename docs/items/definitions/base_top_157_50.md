@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | sunta |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=157`, `depth_cm=50`, `height_cm=1.8` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#ffffff` |
@@ -31,6 +32,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_150`.
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/baseRunBom.js`
 
@@ -40,4 +42,5 @@ Alt kalem olarak kullanıldığı Item'lar: `base_150`.
 - `test/baseRecipes.test.js`
 - `test/baseRunBom.test.js`
 - `test/boardMaterialItemContract.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/recipeCompositionItemsContract.test.js`

@@ -9,6 +9,7 @@ from app.modules.fair_stand.application.admin_snap_catalog import (
     _rule_payload,
     _rule_type_payload,
 )
+from app.modules.fair_stand.application.admin_variant_families import family_payload
 from app.modules.fair_stand.application.item_mapper import (
     CatalogCategory,
     CatalogPreview,
@@ -24,6 +25,7 @@ class CatalogBootstrap:
     revision: str
     categories: list[CatalogCategory]
     booth_types: list[dict]
+    variant_families: list[dict]
     items: list[ItemAggregate]
     preview_kinds: list[CatalogPreview]
     item_types: list[dict]
@@ -41,6 +43,8 @@ class GetCatalogBootstrapUseCase:
     def execute(self) -> CatalogBootstrap:
         categories = self._repository.list_active_categories()
         booth_types = self._repository.list_booth_types()
+        # Arşivdeki aile gönderilmez: üyeleri sahnede ailesiz (tek başına) davranır.
+        variant_families = [family_payload(row) for row in self._repository.list_active_variant_families()]
         items = self._repository.list_items(active_only=True)
         preview_kinds = self._repository.list_preview_payloads(active_only=False)
         item_types = [
@@ -63,6 +67,7 @@ class GetCatalogBootstrapUseCase:
                 {
                     "categories": [category.__dict__ for category in categories],
                     "boothTypes": booth_types,
+                    "variantFamilies": variant_families,
                     "items": [item.payload for item in items],
                     "previewKinds": [preview.__dict__ for preview in preview_kinds],
                     "itemTypes": item_types,
@@ -80,6 +85,7 @@ class GetCatalogBootstrapUseCase:
             revision=digest,
             categories=categories,
             booth_types=booth_types,
+            variant_families=variant_families,
             items=items,
             preview_kinds=preview_kinds,
             item_types=item_types,

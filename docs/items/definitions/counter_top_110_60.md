@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | sunta |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=110`, `depth_cm=60`, `height_cm=1.8` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#f8fafc` |
@@ -31,6 +32,7 @@ Alt kalem olarak kullanıldığı Item'lar: `desk_banko_100`, `desk_banko_100_l`
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 
 ## Testler
@@ -39,4 +41,5 @@ Alt kalem olarak kullanıldığı Item'lar: `desk_banko_100`, `desk_banko_100_l`
 - `test/counterRecipes.test.js`
 - `test/counterTopDefaultColor.test.js`
 - `test/itemIsRenderFactory.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/recipeCompositionItemsContract.test.js`

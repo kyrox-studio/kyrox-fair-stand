@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | cam |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=147.5`, `depth_cm=0.8`, `height_cm=47` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |
@@ -29,9 +30,11 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 
 ## Testler
 
 - `backend/tests/modules/fair_stand/test_item_surface_flags.py`
+- `test/mapCatalogSeed.mjs`
 - `test/panelCamFamily.test.js`

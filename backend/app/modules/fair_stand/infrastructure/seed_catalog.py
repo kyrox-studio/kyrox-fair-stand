@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.modules.fair_stand.application.cycle_validation import assert_acyclic_components
 from app.modules.fair_stand.infrastructure.booth_type_seed import ensure_booth_types
+from app.modules.fair_stand.infrastructure.variant_family_seed import ensure_variant_families
 from app.modules.fair_stand.infrastructure.catalog_seed_data import CATALOG_SEED
 from app.modules.fair_stand.infrastructure.item_snap_seed import ensure_item_types, ensure_snap_catalog
 from app.modules.fair_stand.infrastructure.item_type_behavior_seed import ensure_type_behavior_slices
@@ -130,6 +131,7 @@ def seed_fair_stand_catalog(session: Session) -> None:
     ensure_item_types(session, [row["item_type"] for row in CATALOG_SEED["items"]])
     ensure_type_behavior_slices(session)
     _ensure_seed_units(session, now)
+    ensure_variant_families(session)
     rule_ids = snap_ids["rules"]
 
     for row in CATALOG_SEED["items"]:

@@ -150,6 +150,8 @@ import { applyDemoControls, DEMO_CUSTOMER_LABEL, DEMO_LOGIN_REQUIRED_MESSAGE, DE
 import {
   defaultUprightItemKeyForWallHeight,
   formatUprightLabel,
+  getUprightHeightTabLabel,
+  getUprightHeightTitle,
   listUprightHeightItems,
   readUprightHeightPreference,
   requestUprightHeight,
@@ -157,6 +159,8 @@ import {
 } from './uprightHeight.js';
 import {
   formatProfileLengthLabel,
+  getProfileLengthTabLabel,
+  getProfileLengthTitle,
   listProfileLengthItems,
   readProfileLengthPreference,
   requestProfileLength,
@@ -1546,9 +1550,10 @@ const SIZE_FIELD_SPECS = Object.freeze({
 
 const ITEM_SIZE_CHOICE_SPECS = Object.freeze({
   upright: Object.freeze({
-    title: 'Dikme yüksekliği',
+    // Başlık ve sekme `upright` varyant ailesinden (CRM admin).
+    get title() { return getUprightHeightTitle(); },
     list: () => listUprightHeightItems(),
-    tabLabel: 'Yükseklik',
+    get tabLabel() { return getUprightHeightTabLabel(); },
     label: (item) => formatUprightLabel(item),
     readPreference: () => readUprightHeightPreference(),
     writePreference: (itemKey) => writeUprightHeightPreference(itemKey),
@@ -1556,9 +1561,9 @@ const ITEM_SIZE_CHOICE_SPECS = Object.freeze({
     message: (item) => `Dikme yüksekliği: ${item?.name ?? ''}.`,
   }),
   profile: Object.freeze({
-    title: 'Profil boyu',
+    get title() { return getProfileLengthTitle(); },
     list: () => listProfileLengthItems(),
-    tabLabel: 'Boy',
+    get tabLabel() { return getProfileLengthTabLabel(); },
     label: (item) => formatProfileLengthLabel(item),
     readPreference: () => readProfileLengthPreference(),
     writePreference: (itemKey) => writeProfileLengthPreference(itemKey),

@@ -14,6 +14,7 @@
 | Birim | `metre_kare` |
 | Malzeme | metal |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=98`, `depth_cm=0.8`, `height_cm=47` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |

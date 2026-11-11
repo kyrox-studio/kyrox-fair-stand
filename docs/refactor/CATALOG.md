@@ -162,6 +162,10 @@ Toplam görünür Item: **35**. Kayıtlı Item: **133**.
 
 İlk eşleme (`0091_booth_types`): Extra ile Elektronik & Aydınlatma null; katalogda görünen diğer Item'lar Maksima. `0093_hidden_items_maxima` katalogda görünmeyen 86 Item'ı (kart varyantları, gövde parçaları, profil/dikme boyları, bağlantılar; liste `booth_type_seed.HIDDEN_MAXIMA_ITEM_KEYS`) Maksima yapar; zemin, TV, üretim kalemi gibi diğer gizli Item'lar null kalır. Süzme kart üzerinden çalıştığı için gizli Item'ın tipi katalogda görünen kartı değiştirmez.
 
+## Varyant ailesi (tek kart)
+
+Aynı ailedeki Item'lar (Item `variant`) katalogda tek kartla gelir; kart ailenin katalogda görünen üyesidir. Kart başlığı ailenin `cardLabel` değeridir, boşsa Item adı ölçüsüz yazılır (`catalogCardLabel`). Aile tanımı DB `fair_stand_variant_families` (0095); kolonlar ve kurallar `DATABASE.md`. Yönetim CRM `Varyant Aileleri`; üye eklemek Item formunda Varyant alanından aileyi seçmektir. Raf genişliği ayrı mekanizmadır (`fair_stand_item_width_variants`).
+
 ## Sıralama
 
 1. **Kategori sırası** = `Catalog.catalogIndex`

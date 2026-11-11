@@ -14,6 +14,7 @@
 | Birim | `m2` |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=140`, `depth_cm=16` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#ad8e76` |

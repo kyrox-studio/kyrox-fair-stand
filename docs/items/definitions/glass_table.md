@@ -14,6 +14,7 @@
 | Birim | — |
 | Malzeme | — |
 | Katalog | görünür, Extra |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=75`, `depth_cm=75`, `height_cm=74` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |
@@ -48,6 +49,7 @@ Alt kalem olarak kullanıldığı Item'lar: `furniture_table_chair_set_eames`.
 ## Testler
 
 - `backend/tests/modules/fair_stand/test_glass_bar_table_migration.py`
+- `backend/tests/modules/fair_stand/test_variant_families.py`
 - `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
 - `e2e/glass-bar-table.spec.mjs`
 - `e2e/scene-select-all.spec.mjs`

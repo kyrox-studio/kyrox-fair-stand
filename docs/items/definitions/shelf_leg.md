@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | — |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |
@@ -31,6 +32,7 @@ Alt kalem olarak kullanıldığı Item'lar: `shelf_100`, `shelf_100_self`, `shel
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 
 ## Testler
@@ -41,6 +43,7 @@ Alt kalem olarak kullanıldığı Item'lar: `shelf_100`, `shelf_100_self`, `shel
 - `test/bomLineGroups.test.js`
 - `test/itemSceneDimensions.test.js`
 - `test/itemSurfaceFlagAudit.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/moduleRecipes.test.js`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/sceneBomAcceptance.test.js`

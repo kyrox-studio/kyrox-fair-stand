@@ -146,7 +146,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "upright",
             "eye_count": None,
             
             "dimensions": {
@@ -192,7 +192,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "upright",
             "eye_count": None,
             
             "dimensions": {
@@ -234,7 +234,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "upright",
             "eye_count": None,
             
             "dimensions": {
@@ -280,7 +280,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "upright",
             "eye_count": None,
             
             "dimensions": {
@@ -326,7 +326,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "upright",
             "eye_count": None,
             
             "dimensions": {
@@ -373,7 +373,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "upright",
             "eye_count": None,
             
             "dimensions": {
@@ -420,7 +420,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "upright",
             "eye_count": None,
             
             "dimensions": {
@@ -467,7 +467,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "upright",
             "eye_count": None,
             
             "dimensions": {
@@ -509,7 +509,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "profile",
             "eye_count": None,
             
             "dimensions": {
@@ -555,7 +555,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "profile",
             "eye_count": None,
             
             "dimensions": {
@@ -601,7 +601,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "profile",
             "eye_count": None,
             
             "dimensions": {
@@ -647,7 +647,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "profile",
             "eye_count": None,
             
             "dimensions": {
@@ -693,7 +693,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "profile",
             "eye_count": None,
             
             "dimensions": {
@@ -739,7 +739,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "profile",
             "eye_count": None,
             
             "dimensions": {
@@ -785,7 +785,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "profile",
             "eye_count": None,
             
             "dimensions": {
@@ -831,7 +831,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "profile",
             "eye_count": None,
             
             "dimensions": {
@@ -878,7 +878,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "profile",
             "eye_count": None,
             
             "dimensions": {
@@ -925,7 +925,7 @@ CATALOG_SEED = {
             "composition_mode": None,
             "paintable": None,
             "shape": None,
-            "variant": None,
+            "variant": "profile",
             "eye_count": None,
             
             "dimensions": {

@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | alüminyum |
 | Katalog | görünür, Panel Ek Modül |
+| Varyant ailesi | `upright` |
 | Ölçü | `width_cm=8`, `depth_cm=8`, `height_cm=346.5` |
 | Sahne ölçüsü | `width_cm=8`, `depth_cm=8`, `height_cm=346.5` |
 | Varsayılan renk | `#d0d3d4` |
@@ -79,9 +80,11 @@ Alt kalem olarak kullanıldığı Item'lar: `wall_100_350`, `wall_150_350`, `wal
 - `test/separatorRecipes.test.js`
 - `test/shortJointStructuralUpright.test.js`
 - `test/showcaseRecipes.test.js`
+- `test/standResizeWallHeight.test.js`
 - `test/upright3465ItemContract.test.js`
 - `test/uprightFieldPlacement.test.js`
 - `test/uprightIntrinsicProperties.test.js`
+- `test/variantFamilies.test.js`
 - `test/verticalMoveUprightHeight.test.js`
 - `test/wallHeightProjectBom.test.js`
 - `test/wallHeightRecipe.test.js`

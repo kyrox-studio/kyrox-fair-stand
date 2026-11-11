@@ -102,6 +102,8 @@ def render(key):
              f"| Birim | {('`' + it['unit'] + '`') if it.get('unit') else '—'} |",
              f"| Malzeme | {it.get('material') or '—'} |",
              f"| Katalog | {'görünür' if it.get('catalog_visible') else 'görünmez'}" + (f", {cats.get(it.get('category_index'), it.get('category_index'))}" if it.get('category_index') is not None else "") + " |",
+             # 0095: varyant ailesi (DB fair_stand_variant_families; CRM admin "Varyant Aileleri").
+             f"| Varyant ailesi | {('`' + it['variant'] + '`') if it.get('variant') else '—'} |",
              f"| Ölçü | {dims(it.get('dimensions'))} |",
              f"| Sahne ölçüsü | {dims(it.get('scene_dimensions'))} |",
              f"| Varsayılan renk | {color(it.get('default_color'))} |",

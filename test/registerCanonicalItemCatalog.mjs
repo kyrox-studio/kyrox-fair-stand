@@ -4,6 +4,7 @@ import { initializeCatalogCategories, initializeCatalogPreviews } from '../src/c
 import { initializeItemRegistry, initializeItemTypeRegistry, initializeSnapRuleRegistry } from '../src/items.js';
 import { initializeRuntimeSettings } from '../src/runtimeSettings.js';
 import { initializeStandDimensions } from '../src/standDimensions.js';
+import { initializeVariantFamilyRegistry } from '../src/variantFamilies.js';
 import { mapCatalogSeedToBootstrap } from './mapCatalogSeed.mjs';
 
 const seed = JSON.parse(readFileSync(new URL('./fixtures/itemCatalogSeed.json', import.meta.url), 'utf8'));
@@ -17,6 +18,7 @@ export function loadCanonicalItemCatalog() {
   initializeCatalogPreviews(snapshot.previewKinds);
   initializeSnapRuleRegistry(snapshot.rules ?? []);
   initializeItemTypeRegistry(snapshot.itemTypes ?? []);
+  initializeVariantFamilyRegistry(snapshot.variantFamilies);
   initializeItemRegistry(snapshot.items);
 }
 

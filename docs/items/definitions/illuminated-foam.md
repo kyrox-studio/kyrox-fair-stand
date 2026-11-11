@@ -14,6 +14,7 @@
 | Birim | `metre_kare` |
 | Malzeme | — |
 | Katalog | görünür, Elektronik & Aydınlatma |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=200`, `depth_cm=3.5`, `height_cm=50`, `wall_gap_cm=1.5` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | — |
@@ -42,10 +43,12 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `backend/app/modules/fair_stand/infrastructure/item_rotation_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/item_vertical_seed.py`
+- `backend/app/modules/fair_stand/infrastructure/preview_kind_definitions.py`
 - `src/bomLineGroups.js`
 - `src/designState.js`
 - `src/main.js`
 - `src/moduleBehavior.js`
+- `src/moduleContextMenu.js`
 - `src/moduleContracts.js`
 - `src/printAreaBom.js`
 - `src/projectBom.js`
@@ -55,6 +58,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 ## Testler
 
 - `backend/tests/modules/fair_stand/test_drop_foam_logo_item_migration.py`
+- `backend/tests/modules/fair_stand/test_foam_card_preview_migration.py`
 - `backend/tests/modules/fair_stand/test_illuminated_foam_card_migration.py`
 - `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
 - `e2e/f028-reset-features.spec.mjs`

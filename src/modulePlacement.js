@@ -899,6 +899,10 @@ function collisionSegmentsOverlap(a, moduleA, b, moduleB) {
     // Profil profile her noktada dik bağlanır (iki profilin arasına, ortasına): birinin ucu yeter;
     // birbirinin ortasından geçen iki profil (X) çakışır.
     if (isProfilePair(horizontalModule, verticalModule)) return !(horizontalEndpoint || verticalEndpoint);
+    // Profil duvarın üst / alt rayına (duvarın kendi profili) dik bağlanır: profilin ucu rayın her
+    // noktasına gelebilir; rayı kesen profil (X) çakışır. Duvarın ucu profilin ortasına gelemez.
+    if (profileOnWallRail(horizontalModule, verticalModule)) return !horizontalEndpoint;
+    if (profileOnWallRail(verticalModule, horizontalModule)) return !verticalEndpoint;
     // Duvarda dik bağlantı yalnız dikme olan noktada: ikisinin de ucu birleşimdeyse L ya da T (komşu
     // duvarla ortak dikme). Yalnız birinin ucu diğerinin ortasındaysa orada dikme yoktur; çakışma sayılır.
     return !(horizontalEndpoint && verticalEndpoint);
@@ -1014,7 +1018,7 @@ function segmentsShareCollidingBody(moduleA, moduleB) {
   return centerLineGapCm < requiredGapCm - EPSILON_CM;
 }
 
-function profileTouchesWallShortConnectionLine(wall, profile) {
+function profileTouchesWallRailLine(wall, profile) {
   const wallRange = getModuleCollisionHeightRangeCm(wall);
   const profileRange = getModuleCollisionHeightRangeCm(profile);
   const touchesBottom = profileRange.minCm <= wallRange.minCm + EPSILON_CM
@@ -1027,7 +1031,7 @@ function profileTouchesWallShortConnectionLine(wall, profile) {
 function isWallShortProfileRailJoint(wall, profile) {
   if (!isWallShortFamilyDescriptor(wall) || !isProfileModule(profile)) return false;
   if (!segmentsShareCollidingBody(wall, profile)) return false;
-  return profileTouchesWallShortConnectionLine(wall, profile);
+  return profileTouchesWallRailLine(wall, profile);
 }
 
 function wallShortProfileRailPlacement({
@@ -1088,6 +1092,23 @@ export const MID_WALL_TEE_MESSAGE = 'Dik bağlantı yalnız dikme olan noktaya y
 /** Profil ile profil: dik bağlantı (T) hedefin her noktasına yapılabilir. */
 function isProfilePair(moduleA, moduleB) {
   return isProfileModule(moduleA) && isProfileModule(moduleB);
+}
+
+export const PROFILE_WALL_RAIL_MESSAGE = 'Profil duvara yalnız üst ya da alt ray hizasında dik bağlanır.';
+
+// Ürün kararı (2026-11-11): T bağlantıyı yalnız profil yapar; profile, dikmeye ya da duvarın üst / alt
+// rayına (o da profildir). Profilin yüksekliği duvarın üst ya da alt bağlantı çizgisine değmelidir.
+function profileOnWallRail(profile, wall) {
+  if (!isProfileModule(profile) || isProfileModule(wall)) return false;
+  if (getModuleCollisionDepthCm(wall) > standWallDepthCm() + EPSILON_CM) return false;
+  return profileTouchesWallRailLine(wall, profile);
+}
+
+/** Bırakılan profil hedefin ara noktalarına da (10 cm adım) yapışır: hedef profil ya da ince duvar (ray). */
+function profileTeeInteriorStepCm(moduleType, target) {
+  if (moduleType !== 'profile' || !target) return null;
+  if (isProfileModule(target)) return PROFILE_TEE_SNAP_STEP_CM;
+  return getModuleCollisionDepthCm(target) <= standWallDepthCm() + EPSILON_CM ? PROFILE_TEE_SNAP_STEP_CM : null;
 }
 
 // İki ince duvar dik kesişir ve yalnız birinin ucu diğerinin ortasına (dikmesiz yere) gelir.
@@ -1186,7 +1207,9 @@ export function validatePlacementAgainstModules({
   if (collision) {
     return {
       ok: false,
-      message: isMidWallTeeContact(candidate, collision) ? MID_WALL_TEE_MESSAGE : 'Başka bir modülle çakışıyor.',
+      message: isMidWallTeeContact(candidate, collision)
+        ? (isProfileModule(candidate) && !isProfileModule(collision) ? PROFILE_WALL_RAIL_MESSAGE : MID_WALL_TEE_MESSAGE)
+        : 'Başka bir modülle çakışıyor.',
       collisionModuleId: collision.id,
     };
   }
@@ -1563,7 +1586,7 @@ export function snapPlacementToModules({
     }
 
     getSegmentSnapCoordinates(target, {
-      interiorStepCm: moduleType === 'profile' && isProfileModule(targetModuleForDepth) ? PROFILE_TEE_SNAP_STEP_CM : null,
+      interiorStepCm: profileTeeInteriorStepCm(moduleType, targetModuleForDepth),
     }).forEach((coordinateCm) => {
       const pointXCm = target.axis === 'x' ? coordinateCm : target.fixedCm;
       const pointYCm = target.axis === 'y' ? coordinateCm : target.fixedCm;
@@ -1774,9 +1797,9 @@ export function snapPlacementToModules({
     }
 
     // Dik modül: hedefin uçları aday (dikme olan nokta). Uçta komşu duvar varsa bağlantı T olur.
-    // Profil profile bağlanırken hedef profilin ara noktaları da adaydır.
+    // Profil profile ya da duvar rayına bağlanırken hedefin ara noktaları da adaydır.
     getSegmentSnapCoordinates(target, {
-      interiorStepCm: moduleType === 'profile' && isProfileModule(targetModule) ? PROFILE_TEE_SNAP_STEP_CM : null,
+      interiorStepCm: profileTeeInteriorStepCm(moduleType, targetModule),
     }).forEach((coordinateCm) => {
       const pointXCm = target.axis === 'x' ? coordinateCm : target.fixedCm;
       const pointYCm = target.axis === 'y' ? coordinateCm : target.fixedCm;

@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | `wall-showcase` |
 | Ölçü | `width_cm=100` |
 | Sahne ölçüsü | `depth_cm=10`, `height_cm=350` |
 | Varsayılan renk | — |
@@ -50,6 +51,7 @@
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/relationshipBom.js`
 
@@ -64,6 +66,7 @@
 - `test/catalogPreviewConfig.test.js`
 - `test/catalogWidthFamily.test.js`
 - `test/flatPanelBackStrips.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/relationshipBomJoints.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/shelfCatalogPanelSeam.test.js`

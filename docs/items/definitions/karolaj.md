@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | — |
 | Katalog | görünmez |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=100`, `depth_cm=100` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#e9edf1` |
@@ -42,6 +43,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `e2e/floor-items-contract.spec.mjs`
 - `e2e/project-import-export-roundtrip.spec.mjs`
 - `e2e/stage-result-after-restore.spec.mjs`
+- `test/boothTypes.test.js`
 - `test/floorArea.test.js`
 - `test/floorItemsContract.test.js`
 - `test/projectBom.test.js`

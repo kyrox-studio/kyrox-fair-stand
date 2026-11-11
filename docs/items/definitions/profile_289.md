@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | alüminyum |
 | Katalog | görünür, Panel Ek Modül |
+| Varyant ailesi | `profile` |
 | Ölçü | `width_cm=289`, `depth_cm=8`, `height_cm=8` |
 | Sahne ölçüsü | `width_cm=300`, `depth_cm=8`, `height_cm=350` |
 | Varsayılan renk | `#d0d3d4` |
@@ -46,7 +47,9 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 ## Testler
 
 - `backend/tests/modules/fair_stand/test_profile_lengths_migration.py`
+- `backend/tests/modules/fair_stand/test_variant_families.py`
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
+- `e2e/variant-families-admin.spec.mjs`
 - `e2e/vertical-move-upright-height.spec.mjs`
 - `test/catalogCategories.test.js`
 - `test/catalogItemProjection.test.js`
@@ -57,4 +60,5 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/profileFieldPlacement.test.js`
 - `test/profileLength.test.js`
 - `test/uprightFieldPlacement.test.js`
+- `test/variantFamilies.test.js`
 - `test/wallShortRelationshipBom.test.js`

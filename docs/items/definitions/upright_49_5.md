@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | alüminyum |
 | Katalog | görünmez |
+| Varyant ailesi | `upright` |
 | Ölçü | `width_cm=8`, `depth_cm=8`, `height_cm=49.5` |
 | Sahne ölçüsü | — |
 | Varsayılan renk | `#d0d3d4` |
@@ -42,6 +43,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 
 ## Kaynak kodda geçtiği yerler
 
+- `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/baseRunBom.js`
 - `src/relationshipBom.js`
@@ -53,6 +55,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 - `e2e/short-joint-structural-upright.spec.mjs`
 - `test/baseRecipes.test.js`
 - `test/baseRunBom.test.js`
+- `test/mapCatalogSeed.mjs`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/shortJointStructuralUpright.test.js`

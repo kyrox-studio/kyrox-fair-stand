@@ -10,6 +10,8 @@ import {
 import {
   UPRIGHT_HEIGHT_PREFERENCE_KEY,
   defaultUprightItemKeyForWallHeight,
+  getUprightHeightTabLabel,
+  getUprightHeightTitle,
   listUprightHeightItems,
   readUprightHeightPreference,
   writeUprightHeightPreference,
@@ -83,7 +85,10 @@ test('"Bir daha sorma" tercihi: yazılır, okunur, kaldırılınca yine sorulur;
 
 test('dikme bırakılırken boy sorulur; Özellikler panelinde dikme yüksekliği alanı boyu ve tercihi değiştirir', () => {
   assert.match(main, /if \(moduleState\?\.type === 'upright'\) \{[\s\S]*readUprightHeightPreference\(\)[\s\S]*defaultUprightItemKeyForWallHeight\(getActiveWallLineHeightCm\(\)\)[\s\S]*if \(choice\.remember\) writeUprightHeightPreference\(itemKey\);/);
-  assert.match(main, /upright: Object\.freeze\(\{\r?\n {4}title: 'Dikme yüksekliği',\r?\n {4}list: \(\) => listUprightHeightItems\(\),/);
+  // Panel alanının başlığı ve sekmesi `upright` varyant ailesinden (0095, CRM admin).
+  assert.match(main, /upright: Object\.freeze\(\{[\s\S]*?get title\(\) \{ return getUprightHeightTitle\(\); \},\r?\n {4}list: \(\) => listUprightHeightItems\(\),/);
+  assert.equal(getUprightHeightTitle(), 'Dikme yüksekliği');
+  assert.equal(getUprightHeightTabLabel(), 'Yükseklik');
   assert.match(main, /choiceSpec\.writePreference\(values\.remember \? values\.itemKey : null\);/);
   assert.doesNotMatch(menu, /data-module-action="upright-height"/);
 });

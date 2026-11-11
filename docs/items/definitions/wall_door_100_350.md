@@ -14,6 +14,7 @@
 | Birim | `adet` |
 | Malzeme | — |
 | Katalog | görünür, Panel & Duvar |
+| Varyant ailesi | — |
 | Ölçü | `width_cm=100` |
 | Sahne ölçüsü | `depth_cm=10`, `height_cm=350` |
 | Varsayılan renk | — |
@@ -51,8 +52,8 @@
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/autoDepot.js`
 - `src/designState.js`
-- `src/main.js`
 - `src/relationshipBom.js`
+- `src/standResize.js`
 
 ## Testler
 
