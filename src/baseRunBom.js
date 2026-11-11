@@ -3,7 +3,7 @@
  * A free row of n bazas keeps 2n+2 panels, 2 starts per panel, 2n+6 singles,
  * 2n+2 uprights and 2n+2 short profiles, and two outer 48.5 cheeks.
  * A same-width wall, separator, or showcase on a baza's back drops that baza's
- * long profile from 4 to 2 and one long panel. Shared back uprights drop once.
+ * long profile from 4 to 2 and one long panel. Uprights on the host face drop; a shared one on the same face line drops once.
  * A standalone upright (346,5 …) standing on a baza corner replaces that corner's
  * 49,5 upright (user decision 2026-11-11).
  * Short-up is not a host.
@@ -207,14 +207,22 @@ function addQuantity(totals, itemKey, quantity) {
 
 function runTotals(run, hosts, uprights = []) {
   const totals = new Map();
-  const hosted = run.map((frame) => hosts.some((host) => hostCovers(frame, host)));
+  // Host'un bazanın hangi uzun yüzünde olduğu (-1 / +1): köşe dikmesi o yüzün hattındadır.
+  const hostSides = run.map((frame) => {
+    const host = hosts.find((entry) => hostCovers(frame, entry));
+    return host ? Math.sign(host.fixedCm - frame.centerFixed) : 0;
+  });
+  const hosted = hostSides.map(Boolean);
   const hostedCount = hosted.filter(Boolean).length;
-  // Köşe anahtarı: arka (b) / ön (f) hat ve sınır sırası (0..n).
+  // Köşe anahtarı: arka (b) / ön (f) hat ve sınır sırası (0..n). Host'un yaslandığı yüzün
+  // dikmeleri düşer; aynı hattaki ortak dikme bir kez düşer, karşı yüzlerdeki iki dikme ayrı parçadır.
   const cleared = new Set();
-  hosted.forEach((isHosted, index) => {
-    if (!isHosted) return;
-    cleared.add(`b:${index}`);
-    cleared.add(`b:${index + 1}`);
+  hostSides.forEach((side, index) => {
+    if (!side) return;
+    const frame = run[index];
+    const line = side === Math.sign(frame.backFixed - frame.centerFixed) ? 'b' : 'f';
+    cleared.add(`${line}:${index}`);
+    cleared.add(`${line}:${index + 1}`);
   });
   run.forEach((frame, index) => {
     const frontFixed = 2 * frame.centerFixed - frame.backFixed;
