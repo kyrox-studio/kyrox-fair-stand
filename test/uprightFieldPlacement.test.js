@@ -10,7 +10,7 @@ import { resolveItemBom } from '../src/itemBom.js';
 import { isWallShortFamilyDescriptor, getItem, resolveSceneDimensions } from '../src/items.js';
 import { getModuleMagneticSnapStrategy, requiresShortUpJointSnap } from '../src/moduleBehavior.js';
 import { resolveModuleContract } from '../src/moduleContracts.js';
-import { snapPlacementToModules } from '../src/modulePlacement.js';
+import { snapPlacementToModules, validatePlacementAgainstModules } from '../src/modulePlacement.js';
 import {
   getExpandedStraightWallRecipe,
 } from './recipeParentItemKey.js';
@@ -228,4 +228,57 @@ test('catalog preview for upright is a solid post, not a 7-strip panel', async (
   assert.match(fixture, /id: 27/);
   assert.match(fixture, /module-drag-upright/);
   assert.match(fixture, /markup: '<div class="module-drag-upright"><\/div>'/);
+});
+
+test('dikme baza köşesinin üstüne oturur: köşenin içinde, iki dış yüzüyle hizalı', () => {
+  // Kullanıcı kararı 2026-11-11: dikme ile baza birleştiği yerde dikme durur (bazanın 49,5 köşe
+  // dikmesinin yerini alır), profil ve paneller ona bağlanır. Eskiden dikme bazanın yanına yaslanıyordu.
+  const upright = createModuleStateFromDescriptor({ itemKey: 'upright_346_5', type: 'upright' });
+  upright.id = 'upright-1';
+  const base = createModuleStateFromDescriptor({ itemKey: 'base_200', type: 'base' });
+  base.id = 'base-1';
+  // Dikey baza: x 0..50, y 260..460 (stand kenarına sıfır).
+  base.placement = { xCm: 25, yCm: 260, zCm: 0, rotationZDeg: 270, wallId: 'free' };
+  const snapAt = (pointerXCm, pointerYCm) => snapPlacementToModules({
+    moduleId: upright.id,
+    moduleType: upright.type,
+    itemKey: upright.itemKey,
+    heightCm: upright.heightCm,
+    widthCm: upright.widthCm,
+    depthCm: upright.depthCm,
+    pointerXCm,
+    pointerYCm,
+    rotationZDeg: 0,
+    modules: [base],
+    standType: 'back-wall',
+    standXCm: 700,
+    standYCm: 800,
+  });
+  const half = upright.widthCm / 2;
+  const center = (hit) => ({ x: hit.placement.xCm + half, y: hit.placement.yCm });
+
+  // Köşenin yanına ya da önüne bırakılsa da dikme köşenin içine oturur.
+  for (const [pointerXCm, pointerYCm] of [[60, 450], [45, 470], [48, 455]]) {
+    const hit = snapAt(pointerXCm, pointerYCm);
+    assert.equal(hit?.snapKind, 'fixture-corner', `imleç ${pointerXCm},${pointerYCm}`);
+    assert.equal(hit.targetModuleId, 'base-1');
+    assert.deepEqual(center(hit), { x: 50 - half, y: 460 - half });
+  }
+
+  // Bazanın ortası çakışmadır; istisna yalnız köşedir.
+  const middle = { ...upright, placement: { xCm: 20, yCm: 360, zCm: 0, rotationZDeg: 0, wallId: 'free' } };
+  const middleCheck = validatePlacementAgainstModules({
+    placement: middle.placement,
+    widthCm: upright.widthCm,
+    depthCm: upright.depthCm,
+    moduleId: upright.id,
+    moduleType: 'upright',
+    itemKey: upright.itemKey,
+    heightCm: upright.heightCm,
+    modules: [base],
+    standType: 'back-wall',
+    standXCm: 700,
+    standYCm: 800,
+  });
+  assert.equal(middleCheck.ok, false);
 });

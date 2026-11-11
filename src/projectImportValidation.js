@@ -3,6 +3,7 @@ import { MODULE_STATE_TYPES } from './designState.js';
 import { validateFloorArea } from './floorArea.js';
 import { getFloorItem, resolveStandFloorItemKey } from './items.js';
 import { validateModuleGroups } from './moduleGroups.js';
+import { isKnownProfileFinish } from './profileFinish.js';
 import { validateStandSetup } from './standSetup.js';
 
 export const PROJECT_ARCHIVE_VERSION = 1;
@@ -55,6 +56,10 @@ export function validateImportedStandState(stand) {
   if (!setup.ok) return setup;
   if (stand.boothType != null && !isKnownBoothType(stand.boothType)) {
     return { ok: false, message: 'Proje stand tipi geçersiz.' };
+  }
+  // Alan yoksa (eski proje) varsayılan profil rengi kullanılır.
+  if (stand.profileFinish != null && !isKnownProfileFinish(stand.profileFinish)) {
+    return { ok: false, message: 'Proje profil rengi geçersiz.' };
   }
   const floorKey = resolveStandFloorItemKey(stand);
   if (!getFloorItem(floorKey)) {

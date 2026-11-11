@@ -3,6 +3,7 @@ import { getItem, getWidthVariantFamily, resolveWidthVariantItemKey, resolveShel
 import {
   allowsThinWallEndpointContact,
   canModulesOverlapByBehavior,
+  getModuleBehavior,
   countsTowardWallCapacity,
   getModuleCollisionHeightRangeCm,
   getModuleCollisionStrategy,
@@ -1152,6 +1153,67 @@ export function placementsOverlap(moduleA, moduleB) {
   )));
 }
 
+/**
+ * Dikme baza köşesinin üstünde (kullanıcı kararı 2026-11-11): gerçekte dikme ile baza birleştiği yerde
+ * dikme durur, bazanın köşe dikmesinin (49,5) yerini alır, profil ve paneller ona bağlanır. Dikme
+ * bazanın içinde, iki dış yüzüyle hizalı köşede duruyorsa bazayla çakışma sayılmaz; bazanın ortası
+ * ya da yarım taşan dikme çakışmadır.
+ */
+function isUprightOnBaseCorner(upright, base) {
+  if (upright?.type !== 'upright' || base?.type !== 'base') return false;
+  if (!upright.placement || !base.placement) return false;
+  if (!isCardinalModuleRotation(normalizeModuleRotationZDeg(upright.placement.rotationZDeg))) return false;
+  if (!isCardinalModuleRotation(normalizeModuleRotationZDeg(base.placement.rotationZDeg))) return false;
+  const center = getPlacementCenterCm(upright.placement, upright.widthCm);
+  const bounds = getModuleFootprintBoundsCm(base);
+  if (!center || !bounds) return false;
+  const half = Number(upright.widthCm) / 2;
+  const minX = center.xCm - half;
+  const maxX = center.xCm + half;
+  const minY = center.yCm - half;
+  const maxY = center.yCm + half;
+  const inside = minX >= bounds.minXCm - EPSILON_CM && maxX <= bounds.maxXCm + EPSILON_CM
+    && minY >= bounds.minYCm - EPSILON_CM && maxY <= bounds.maxYCm + EPSILON_CM;
+  if (!inside) return false;
+  const onX = nearlyEqual(minX, bounds.minXCm) || nearlyEqual(maxX, bounds.maxXCm);
+  const onY = nearlyEqual(minY, bounds.minYCm) || nearlyEqual(maxY, bounds.maxYCm);
+  return onX && onY;
+}
+
+/**
+ * Duvar (wall ailesi) bazanın arka kenarının içinde (kullanıcı kararı 2026-11-11, dikmeyle aynı kural):
+ * duvar bazanın arka yüzüyle hizalı, bazanın arka şeridinde durur; baza o tarafta duvarın iskeletine
+ * bağlanır. Bu durum çakışma sayılmaz; bazanın ön tarafındaki ya da ortasındaki duvar çakışmadır.
+ * Bazanın ön yönü `baseRunBom.js` frontNormal ile aynıdır (0° → +y).
+ */
+// Wall ailesi: duvara yerleşen ince parça (düz duvar, kapı, vitrin, separatör; davranış `placement: wall`).
+function isWallFamilyModule(module) {
+  if (!module?.type || module.type === 'base') return false;
+  if (getModuleBehavior(module).placement !== 'wall') return false;
+  return getModuleCollisionDepthCm(module) <= standWallDepthCm() + EPSILON_CM;
+}
+
+function isWallInBaseBack(wall, base) {
+  if (base?.type !== 'base' || !isWallFamilyModule(wall)) return false;
+  if (!wall.placement || !base.placement) return false;
+  if (!isCardinalModuleRotation(normalizeModuleRotationZDeg(base.placement.rotationZDeg))) return false;
+  if (!isCardinalModuleRotation(normalizeModuleRotationZDeg(wall.placement.rotationZDeg))) return false;
+  const baseSegment = getGroundSegment(base);
+  const wallSegment = getGroundSegment(wall);
+  if (!baseSegment || !wallSegment || baseSegment.axis !== wallSegment.axis) return false;
+  const overlapsAlong = baseSegment.startCm < wallSegment.endCm - EPSILON_CM
+    && wallSegment.startCm < baseSegment.endCm - EPSILON_CM;
+  if (!overlapsAlong) return false;
+  const theta = normalizeModuleRotationZDeg(base.placement.rotationZDeg) * Math.PI / 180;
+  const frontAcross = baseSegment.axis === 'x' ? Math.cos(theta) : Math.sin(theta);
+  if (Math.abs(frontAcross) < 0.5) return false;
+  const front = Math.sign(frontAcross);
+  const baseDepthCm = getModuleCollisionDepthCm(base);
+  const wallDepthCm = getModuleCollisionDepthCm(wall);
+  const backFaceCm = baseSegment.fixedCm - front * (baseDepthCm / 2);
+  return nearlyEqual(wallSegment.fixedCm, backFaceCm + front * (wallDepthCm / 2));
+}
+
 export function validatePlacementAgainstModules({
   placement,
   widthCm,
@@ -1201,6 +1263,8 @@ export function validatePlacementAgainstModules({
   const collision = modules.find((module) => {
     if (!module || module.id === moduleId) return false;
     if (exemptIds.has(module.id)) return false;
+    if (isUprightOnBaseCorner(candidate, module) || isUprightOnBaseCorner(module, candidate)) return false;
+    if (isWallInBaseBack(candidate, module) || isWallInBaseBack(module, candidate)) return false;
     return placementsOverlap(candidate, module);
   });
 
@@ -1339,8 +1403,65 @@ function snapUprightToShortUpJoints({
   ) return null;
 
   const candidates = [];
+  const uprightHeightCm = Number(getItem('upright_346_5').dimensions.heightCm);
+  const halfUprightCm = width / 2;
   modules.forEach((targetModule) => {
     if (!targetModule?.placement || targetModule.id === moduleId) return;
+    // Baza / banko köşesi (bacak): bazada dikme köşenin üstünde, bankoda yan yüze ya da uç yüze
+    // sıfır yaslı; kenarı köşeyle hizalı. 10 cm serbest ızgara dikme merkezini 55 gibi noktalara getiremiyordu.
+    if (usesLogicalFixtureEndpoint(targetModule) && !isLCounterModule(targetModule)
+      && hasStrictDepthBounds(getModuleCollisionDepthCm(targetModule))
+      && isCardinalModuleRotation(normalizeModuleRotationZDeg(targetModule.placement.rotationZDeg))) {
+      const bounds = getModuleFootprintBoundsCm(targetModule);
+      if (bounds) {
+        [[bounds.minXCm, -1], [bounds.maxXCm, 1]].forEach(([cornerXCm, sx]) => {
+          [[bounds.minYCm, -1], [bounds.maxYCm, 1]].forEach(([cornerYCm, sy]) => {
+            // Sınırlar dönüş trigonometrisinden gelir (ör. 55,000000000000014): 0,01 cm'ye yuvarlanır.
+            const round = (value) => Math.round(value * 100) / 100;
+            // Baza: dikme köşenin içinde, iki dış yüzüyle hizalı durur (kullanıcı kararı 2026-11-11;
+            // bazanın köşe dikmesinin yerini alır). Banko: yan yüze ya da uç yüze sıfır yaslanır.
+            const centers = targetModule.type === 'base'
+              ? [{ xCm: round(cornerXCm - sx * halfUprightCm), yCm: round(cornerYCm - sy * halfUprightCm) }]
+              : [
+                { xCm: round(cornerXCm + sx * halfUprightCm), yCm: round(cornerYCm - sy * halfUprightCm) },
+                { xCm: round(cornerXCm - sx * halfUprightCm), yCm: round(cornerYCm + sy * halfUprightCm) },
+              ];
+            centers.forEach((center) => {
+              const distanceCm = Math.hypot(center.xCm - pointerX, center.yCm - pointerY);
+              if (distanceCm > threshold + EPSILON_CM) return;
+              const placement = placementFromCenterCm({
+                centerXCm: center.xCm,
+                centerYCm: center.yCm,
+                widthCm: width,
+                rotationZDeg: 0,
+                template: { zCm: 0, wallId: 'free' },
+              });
+              const validation = validatePlacementAgainstModules({
+                placement,
+                widthCm: width,
+                depthCm,
+                moduleId,
+                moduleType: 'upright',
+                itemKey: 'upright_346_5',
+                heightCm: uprightHeightCm,
+                modules,
+                standType,
+                standXCm,
+                standYCm,
+              });
+              if (!validation.ok) return;
+              candidates.push({
+                placement,
+                targetModuleId: targetModule.id,
+                snapKind: 'fixture-corner',
+                priority: 0,
+                distanceCm,
+              });
+            });
+          });
+        });
+      }
+    }
     if (!isUprightJointSnapTarget(targetModule)) return;
     const targetSegments = isLCounterModule(targetModule)
       ? getLCounterCollisionSegments(targetModule).map((entry) => entry.segment)
@@ -1632,6 +1753,9 @@ export function snapPlacementToModules({
 
     if (strictMovingDepth) {
       if (!freePlacement) return;
+      // Baza / banko yalnız dokunabileceği yükseklikteki öğeye yaslanır; tepedeki profil ya da
+      // yukarıdaki kısa panel yüzüne mıknatıslanırsa stand kenarına sıfır oturamaz.
+      if (!collisionHeightsOverlap(movingDescriptor, targetModule)) return;
 
       const targetDepthCm = getModuleCollisionDepthCm(targetModule);
 
@@ -1695,7 +1819,13 @@ export function snapPlacementToModules({
         }
       }
 
-      const faceGapCm = (movingDepthCm + targetDepthCm) / 2;
+      // Baza duvara (wall ailesi) yaslanınca duvar bazanın arka kenarının içine girer, arka yüzler
+      // hizalı (kullanıcı kararı 2026-11-11); çakışma istisnası `isWallInBaseBack` yalnız arka tarafı
+      // geçirir. Diğer derin modüller yüzün önüne yaslanır.
+      const baseIntoWall = moduleType === 'base' && isWallFamilyModule(targetModule);
+      const faceGapCm = baseIntoWall
+        ? (movingDepthCm - targetDepthCm) / 2
+        : (movingDepthCm + targetDepthCm) / 2;
 
       [-1, 1].forEach((direction) => {
         const placement = createModulePlacement({
@@ -1831,6 +1961,64 @@ export function snapPlacementToModules({
       }), targetModule.id, snapKind, priority);
     });
   });
+
+  // Short dikme ailesine kendiliğinden yaslanır (kullanıcı kararı 2026-11-11): short'un ucu dikmenin
+  // dış yüzüyle hizalanır, dikme short'un içinde kalır. Baza köşesine yaslanan dikmeler bazanın içinde
+  // durduğundan short bazayla birebir hizalanır (eskiden short 10 cm ızgarada 5 cm taşıyordu). İki
+  // dikmenin dış yüzleri arası short boyundaysa iki ucu birden oturan yer önceliklidir.
+  if (isWallShortFamilyDescriptor(movingDescriptor)) {
+    const round = (value) => Math.round(value * 100) / 100;
+    const uprights = modules
+      .filter((module) => module?.placement && module.id !== moduleId && module.type === 'upright'
+        && isCardinalModuleRotation(normalizeModuleRotationZDeg(module.placement.rotationZDeg)))
+      .map((module) => {
+        // Dikmenin kendi eklem kuralı (`snapUprightToShortUpJoints`) gibi merkez yerleşimden ve
+        // dikme genişliğinden kurulur (zemin izi değil).
+        const center = getPlacementCenter(module.placement, module.widthCm);
+        if (!center) return null;
+        const half = Number(module.widthCm) / 2;
+        const along = movingAxis === 'x' ? center.xCm : center.yCm;
+        return {
+          id: module.id,
+          fixedCm: round(movingAxis === 'x' ? center.yCm : center.xCm),
+          minCm: round(along - half),
+          maxCm: round(along + half),
+        };
+      })
+      .filter(Boolean);
+    uprights.forEach((upright) => {
+      // start: short dikmenin dış (min) yüzünden başlar ve onu örter; end: dış (max) yüzünde biter.
+      [['start', upright.minCm], ['end', upright.maxCm]].forEach(([movingEndpoint, faceCm]) => {
+        const placement = createEndpointConnectionPlacement({
+          axis: movingAxis,
+          pointXCm: movingAxis === 'x' ? faceCm : upright.fixedCm,
+          pointYCm: movingAxis === 'y' ? faceCm : upright.fixedCm,
+          widthCm: width,
+          rotationZDeg: resolvedRotation,
+          movingEndpoint,
+          standType,
+          standXCm,
+        });
+        const center = getPlacementCenter(placement, width);
+        if (!center) return;
+        const pointerDistanceCm = Math.hypot(center.xCm - pointerX, center.yCm - pointerY);
+        if (pointerDistanceCm > threshold + EPSILON_CM) return;
+        const startCm = movingEndpoint === 'start' ? faceCm : faceCm - width;
+        const bothEnds = uprights.some((other) => other.id !== upright.id
+          && nearlyEqual(other.fixedCm, upright.fixedCm)
+          && (movingEndpoint === 'start'
+            ? nearlyEqual(other.maxCm, startCm + width)
+            : nearlyEqual(other.minCm, startCm)));
+        addCandidate(
+          placement,
+          upright.id,
+          'short-up-joint',
+          bothEnds ? -3 : -1,
+          bothEnds ? 0 : pointerDistanceCm,
+        );
+      });
+    });
+  }
 
   if (isCounter && counterCornerFaces.length > 1) {
     const touchesTargetFace = (placement, targetModule) => {

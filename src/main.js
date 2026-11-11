@@ -186,6 +186,8 @@ import { bootstrapFairStandCatalog } from './catalogBootstrap.js';
 import { bindProjectActionSaveGuard } from './projectActionSaveGuard.js';
 import { createProductionBomPanel } from './productionBomPanel.js';
 import { waitForNextRender, waitForSceneAssets } from './sceneAssetLoading.js';
+import { PROFILE_FINISH_DEFAULT, normalizeProfileFinish } from './profileFinish.js';
+import { requestConfirmation, requestTextInput } from './inAppDialogs.js';
 import { beginEditorBootStep, beginProjectOpenStep, discardEditorBootTiming, timeSceneRefresh, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
 
 
@@ -295,6 +297,7 @@ const DEFAULT_STAND_DEPTH_M = '4';
 const newProjectButton = document.querySelector('#new-project');
 const wallHeightSelect = document.querySelector('#wall-height');
 const floorTypeSelect = document.querySelector('#floor-type');
+const profileFinishSelect = document.querySelector('#profile-finish');
 const floorAreaControls = document.querySelector('#floor-area-controls');
 const floorAreaAddButton = document.querySelector('#floor-area-add');
 const floorAreaDrawButton = document.querySelector('#floor-area-draw');
@@ -2047,7 +2050,7 @@ const moduleContextMenu = createModuleContextMenu({
   onBackPanelChange: changeContextBackPanels,
   onLockChange: changeModuleLock,
   onRotate: (context, deltaDeg) => scene3d.rotateModuleById(context.moduleId, deltaDeg),
-  onGroupAction: (action, context) => handleGroupAction(action, {
+  onGroupAction: (action, context) => void handleGroupAction(action, {
     groupId: context?.group?.id ?? null,
     moduleId: context?.moduleId ?? null,
     moduleIds: context?.multiModuleIds ?? null,
@@ -2080,7 +2083,7 @@ moduleGroupPanel = createModuleGroupPanel({
   empty: document.querySelector('#module-groups-empty'),
   document,
   describeModule: (moduleState) => (moduleState ? getModuleCatalogLabel(moduleState) : '—'),
-  onAction: (action, { groupId, moduleId }) => handleGroupAction(action, { groupId, moduleId }),
+  onAction: (action, { groupId, moduleId }) => void handleGroupAction(action, { groupId, moduleId }),
 });
 
 groupTemplatePanel = createGroupTemplatePanel({
@@ -2105,7 +2108,7 @@ async function saveGroupAsTemplate(group) {
     reportGroupResult(built.message, true);
     return;
   }
-  const name = window.prompt('Şablon adı', group.name);
+  const name = await requestTextInput({ title: 'Şablon olarak kaydet', label: 'Şablon adı', defaultValue: group.name });
   if (name === null) return;
   try {
     const saved = await createGroupTemplate(name, built.payload);
@@ -2143,7 +2146,7 @@ async function handleGroupTemplateAction(action, templateId) {
       return;
     }
     if (action === 'template-rename') {
-      const name = window.prompt('Şablonun yeni adı', template.name);
+      const name = await requestTextInput({ title: 'Şablonu yeniden adlandır', label: 'Şablonun yeni adı', defaultValue: template.name });
       if (name === null) return;
       const renamed = await renameGroupTemplate(template.id, name);
       await refreshGroupTemplates();
@@ -2151,7 +2154,12 @@ async function handleGroupTemplateAction(action, templateId) {
       return;
     }
     if (action === 'template-delete') {
-      if (!window.confirm(`“${template.name}” şablonu silinecek. Sahnedeki gruplar etkilenmez. Devam edilsin mi?`)) return;
+      const confirmed = await requestConfirmation({
+        title: 'Şablonu sil',
+        message: `“${template.name}” şablonu silinecek. Sahnedeki gruplar etkilenmez. Devam edilsin mi?`,
+        confirmLabel: 'Sil',
+      });
+      if (!confirmed) return;
       await deleteGroupTemplate(template.id);
       await refreshGroupTemplates();
       reportGroupResult(`“${template.name}” şablonu silindi.`);
@@ -2347,10 +2355,16 @@ function reportGroupResult(message, isError = false) {
 function confirmGroupMove(conflicts, targetName) {
   const names = [...new Set(conflicts.map((conflict) => `“${conflict.groupName}”`))].join(', ');
   const subject = conflicts.length > 1 ? `${conflicts.length} öğe` : 'Bu öğe';
-  return window.confirm(`${subject} şu an ${names} grubunda. Bu gruptan çıkarılıp “${targetName}” grubuna eklensin mi?`);
+  return requestConfirmation({
+    title: 'Başka gruptaki öğe',
+    message: `${subject} şu an ${names} grubunda. Bu gruptan çıkarılıp “${targetName}” grubuna eklensin mi?`,
+    confirmLabel: 'Gruba ekle',
+  });
 }
 
-function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds = null, addTarget = null } = {}) {
+// Ad ve onay uygulamanın kendi penceresinden sorulur (await); pencere açıkken sahne değişmiş
+// olabileceği için grup durumu cevaptan sonra okunur.
+async function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds = null, addTarget = null } = {}) {
   if (!currentStand) return;
   const stand = getGroupStand();
   const group = groupId ? listGroups(currentModules).find((candidate) => candidate.id === groupId) : null;
@@ -2370,12 +2384,12 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
       reportGroupResult('Grup için Shift+tık ile en az 2 öğe seçin.', true);
       return;
     }
-    const name = window.prompt('Grup adı', nextGroupName(currentModules));
+    const name = await requestTextInput({ title: 'Grup oluştur', label: 'Grup adı', defaultValue: nextGroupName(currentModules), submitLabel: 'Oluştur' });
     if (name === null) return;
     const capturedContent = captureModuleContent();
     let result = createGroup(currentModules, ids, { name, stand });
     if (!result.ok && result.reason === 'conflict') {
-      if (!confirmGroupMove(result.conflicts, name.trim() || nextGroupName(currentModules))) return;
+      if (!(await confirmGroupMove(result.conflicts, name.trim() || nextGroupName(currentModules)))) return;
       result = createGroup(currentModules, ids, { name, stand, moveFromOtherGroups: true });
     }
     if (!result.ok) {
@@ -2395,7 +2409,7 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
     const capturedContent = captureModuleContent();
     let result = addToGroup(currentModules, addTarget.id, ids, { stand });
     if (!result.ok && result.reason === 'conflict') {
-      if (!confirmGroupMove(result.conflicts, addTarget.name)) return;
+      if (!(await confirmGroupMove(result.conflicts, addTarget.name))) return;
       result = addToGroup(currentModules, addTarget.id, ids, { stand, moveFromOtherGroups: true });
     }
     if (!result.ok) {
@@ -2422,7 +2436,7 @@ function handleGroupAction(action, { groupId = null, moduleId = null, moduleIds 
     return;
   }
   if (action === 'group-rename') {
-    const name = window.prompt('Grubun yeni adı', group.name);
+    const name = await requestTextInput({ title: 'Grubu yeniden adlandır', label: 'Grubun yeni adı', defaultValue: group.name });
     if (name === null) return;
     const result = renameGroup(currentModules, group.id, name);
     renderModuleGroupPanel();
@@ -2708,7 +2722,8 @@ function activeWallHeightCm() {
 function readSceneSetupFromControls() {
   const standSetup = readStandSetup();
   if (!standSetup.ok) return { ok: false, message: standSetup.message };
-  const setup = { ...standSetup, wallHeightCm: readWallHeightCm() };
+  // Profil rengi de kurulum seçimidir: Sahneyi Sıfırla açık standın rengini korur.
+  const setup = { ...standSetup, wallHeightCm: readWallHeightCm(), profileFinish: normalizeProfileFinish(profileFinishSelect?.value) };
 
   const depotConfig = autoDepotSizeSelect?.value ? {
     enabled: true,
@@ -2784,6 +2799,10 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fa
   setActiveWallLineHeightCm(activeWallHeightCm());
   syncSaveProjectButton();
   scene3d.setFloorType(floorTypeSelect.value);
+  // Yeni proje varsayılan profil rengiyle, Sahneyi Sıfırla seçili renkle kurulur (setup.profileFinish);
+  // modüller aşağıda bu renkle çizilir.
+  scene3d.setProfileFinish(currentStand.profileFinish);
+  syncProfileFinishSelect();
   viewportEmpty.hidden = true;
   syncSidebarForWizard(false);
   viewportToolbar.hidden = false;
@@ -2833,6 +2852,8 @@ async function createStageFromSetup() {
     return;
   }
   const { setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan, furnitureConfig, furniturePlan } = sceneSetup;
+  // Yeni proje varsayılan profil rengiyle açılır (önceki projenin rengi taşınmaz).
+  setup.profileFinish = PROFILE_FINISH_DEFAULT;
 
   if (currentStand || currentModules.length || autosaveController.isEnabled()) {
     const currentProjectName = projectNameInput.value.trim() || 'Adsız Proje';
@@ -2887,6 +2908,23 @@ async function createStageFromSetup() {
   void offerWallLockRelease();
   onboardingTips.maybeShow();
 }
+
+/** Gelişmiş moddaki profil rengi seçicisini açık standın değerine eşitler. */
+function syncProfileFinishSelect() {
+  if (profileFinishSelect) profileFinishSelect.value = normalizeProfileFinish(currentStand?.profileFinish);
+}
+
+// Proje geneli profil rengi: standa yazılır (kayıt, dışa / içe aktarım, geri al) ve bütün
+// çerçeveler yeni renkle yeniden çizilir.
+profileFinishSelect?.addEventListener('change', () => {
+  if (!isEditingOpenStand()) {
+    syncProfileFinishSelect();
+    return;
+  }
+  const profileFinish = normalizeProfileFinish(profileFinishSelect.value);
+  currentStand = { ...currentStand, profileFinish };
+  if (scene3d.setProfileFinish(profileFinish)) rebuildWall({ resetView: false });
+});
 
 floorTypeSelect.addEventListener('change', () => {
   if (!isEditingOpenStand()) return;
@@ -3625,6 +3663,7 @@ function applyDesignSnapshot(snapshot) {
   currentModules = reuseUnchangedModules(currentModules, design.modules ?? []);
   let wallHeightChanged = false;
   let standSizeChanged = false;
+  let profileFinishChanged = false;
   if (currentStand && design.stand) {
     const previousWallHeightCm = activeWallHeightCm();
     // Yerleşim değişimi de sahneyi (koridor, salon) değiştirir: ölçü değişimi gibi baştan kurulur.
@@ -3644,6 +3683,9 @@ function applyDesignSnapshot(snapshot) {
     scene3d.setFloorArea(currentStand.floorArea ?? null);
     syncFloorTypeSelect(currentStand.itemKey);
     syncFloorAreaControls();
+    syncProfileFinishSelect();
+    // Profil rengi geri alınınca çerçeveler yeniden çizilir (değişmeyen modüller yeniden kurulmaz).
+    profileFinishChanged = scene3d.setProfileFinish(currentStand.profileFinish);
   }
   moduleContextMenu.close();
   moduleContextMenu.closePicker();
@@ -3655,7 +3697,7 @@ function applyDesignSnapshot(snapshot) {
     syncStandSizeInputs();
     return;
   }
-  if (wallHeightChanged) {
+  if (wallHeightChanged || profileFinishChanged) {
     rebuildWall({ resetView: false });
     return;
   }
@@ -3854,6 +3896,8 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     currentStand = assignStandFloorItem({ ...currentStand, boothType: normalizeBoothType(currentStand.boothType) }, resolvedFloor);
     syncFloorTypeSelect(resolvedFloor);
     syncStandStructureControls();
+    syncProfileFinishSelect();
+    scene3d.setProfileFinish(currentStand.profileFinish);
     const endSceneBuild = beginProjectOpenStep('scene-build');
     const stage = scene3d.createStage({
       widthCm: currentStand.xCm,
@@ -4445,6 +4489,12 @@ designRedoButton?.addEventListener('click', () => runDesignHistory('redo'));
 function scheduleDesignHistoryCapture() {
   window.setTimeout(() => designHistory.capture(), 0);
 }
+// Tarayıcı girdiyi zamanlayıcıdan önce işleyebilir: art arda iki tuşta (Shift+R, Shift+R) önceki
+// tuşun kaydı yeni tuştan sonraya kalır ve iki işlem tek adıma karışırdı. Yeni tuş, sahne
+// işlemeden önce (capture) bekleyen değişikliği ayrı adım olarak kaydeder.
+window.addEventListener('keydown', (event) => {
+  if (!isEditableKeyboardTarget(event.target)) designHistory.capture();
+}, { capture: true });
 window.addEventListener('pointerup', scheduleDesignHistoryCapture);
 window.addEventListener('keyup', scheduleDesignHistoryCapture);
 document.addEventListener('change', scheduleDesignHistoryCapture);

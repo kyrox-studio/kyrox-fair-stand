@@ -287,6 +287,49 @@ test('group rotation turns every member by 45 degrees around the group and keeps
   assert.ok(Math.abs(mean(before).y - mean(after).y) < 0.05);
 });
 
+test('grup dik açıda 5 cm ızgarada kalır: ortalaması ızgara dışı grup 90° ve 180° dönünce tam sayıda durur', () => {
+  // Üyeler 5 cm ızgarada, merkez ortalaması ızgara dışı (≈ 368,33); eski kural küsurat üretiyordu.
+  const modules = [
+    box('base', 200, 410, { widthCm: 100, depthCm: 50 }),
+    box('upright', 380, 405, { widthCm: 10, depthCm: 10 }),
+    box('panel', 470, 530, { widthCm: 100, depthCm: 10, rotationZDeg: 90 }),
+  ];
+  const { group } = createGroup(modules, ['base', 'upright', 'panel']);
+  [90, 90, 180].forEach((deltaDeg) => {
+    const plan = planGroupRotate(modules, group.id, deltaDeg, { standType: 'island', standXCm: 800, standYCm: 800 });
+    assert.equal(plan.ok, true, String(deltaDeg));
+    applyPlan(modules, plan);
+    modules.forEach((m) => {
+      const center = centerOf(m);
+      assert.equal(center.x % 5, 0, `${m.id} x ${center.x}`);
+      assert.equal(center.y % 5, 0, `${m.id} y ${center.y}`);
+    });
+  });
+});
+
+test('dört 90° ve sekiz 45° dönüş grubu tam başlangıcına getirir; iki 45° dik açıda tam sayı bırakır', () => {
+  const make = () => [box('a', 400, 350), box('b', 525, 405, { widthCm: 60 }), box('c', 340, 490, { widthCm: 50, rotationZDeg: 90 })];
+  [[90, 4], [45, 8]].forEach(([deltaDeg, count]) => {
+    const modules = make();
+    const { group } = createGroup(modules, ['a', 'b', 'c']);
+    const start = modules.map((m) => ({ ...m.placement }));
+    for (let step = 0; step < count; step += 1) {
+      applyPlan(modules, planGroupRotate(modules, group.id, deltaDeg, { standType: 'island', standXCm: 800, standYCm: 800 }));
+      if (((step + 1) * deltaDeg) % 90 === 0) {
+        modules.forEach((m) => {
+          assert.equal(Number.isInteger(m.placement.xCm * 2), true, `${deltaDeg} ${step} ${m.id} x ${m.placement.xCm}`);
+          assert.equal(Number.isInteger(m.placement.yCm * 2), true, `${deltaDeg} ${step} ${m.id} y ${m.placement.yCm}`);
+        });
+      }
+    }
+    modules.forEach((m, index) => {
+      assert.equal(m.placement.rotationZDeg, start[index].rotationZDeg);
+      assert.equal(m.placement.xCm, start[index].xCm);
+      assert.equal(m.placement.yCm, start[index].yCm);
+    });
+  });
+});
+
 test('eight 45-degree rotations bring the group back to its start', () => {
   const modules = [box('a', 200, 150), box('b', 320, 200, { widthCm: 60 })];
   const { group } = createGroup(modules, ['a', 'b']);

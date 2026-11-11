@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createModulePlacement } from '../src/modulePlacement.js';
+import { createModuleStateFromCatalogKey } from '../src/designState.js';
 import { resolveProjectBom } from '../src/projectBom.js';
 import { STAND_DIMENSIONS } from '../src/standDimensions.js';
 
@@ -191,4 +192,67 @@ test('a door on the same line does not reduce the baza', () => {
   assert.equal(qty(bom, 'profile_91'), 5);
   assert.equal(qty(bom, 'panel_98'), 5);
   assert.equal(qty(bom, 'connector_start'), 10);
+});
+
+function upright(id, { xCm, yCm, rotationZDeg = 90 }) {
+  return {
+    id,
+    itemKey: 'upright_346_5',
+    type: 'upright',
+    widthCm: 10,
+    depthCm: 10,
+    heightCm: 350,
+    placement: createModulePlacement({ xCm, yCm, rotationZDeg, wallId: 'free' }),
+  };
+}
+
+test('baza köşesinde duran 346,5 dikme o köşenin 49,5 dikmesinin yerini alır', () => {
+  // Kullanıcı sahnesi (2026-11-11): dikey baza x 230..280, y 105..305; arka yüz x 230.
+  // İki 346,5 dikme arka köşelerde (merkez 230/105 ve 230/305).
+  const base = baza('b', 'base_200', 200, { xCm: 255, yCm: 105, rotationZDeg: 90 });
+  const bothBack = resolveProjectBom([base, upright('u1', { xCm: 230, yCm: 100 }), upright('u2', { xCm: 230, yCm: 300 })]);
+  assert.equal(qty(bothBack, 'upright_49_5'), 2);
+  assert.equal(qty(bothBack, 'upright_346_5'), 2);
+  // Bazanın kendi parçaları değişmez.
+  assert.equal(qty(bothBack, 'profile_190'), 4);
+  assert.equal(qty(bothBack, 'profile_41_5'), 4);
+
+  const oneBack = resolveProjectBom([base, upright('u1', { xCm: 230, yCm: 100 })]);
+  assert.equal(qty(oneBack, 'upright_49_5'), 3);
+
+  // Ön köşede (x 280) duran dikme de sayılır.
+  const front = resolveProjectBom([base, upright('u3', { xCm: 280, yCm: 300 })]);
+  assert.equal(qty(front, 'upright_49_5'), 3);
+});
+
+test('bazanın yanına sıfır yaslanmış ya da uzaktaki dikme 49,5 düşürmez', () => {
+  const base = baza('b', 'base_200', 200, { xCm: 255, yCm: 105, rotationZDeg: 90 });
+  // Yan yüze yaslı (merkez 225: gövde 220..230), köşeyle hizalı.
+  const beside = resolveProjectBom([base, upright('u1', { xCm: 225, yCm: 105 })]);
+  assert.equal(qty(beside, 'upright_49_5'), 4);
+  const far = resolveProjectBom([base, upright('u2', { xCm: 100, yCm: 100 })]);
+  assert.equal(qty(far, 'upright_49_5'), 4);
+});
+
+test('köşenin içinde, iki dış yüzle hizalı dikme 49,5 köşe dikmesinin yerini alır; dışarıdan yaslı dikme almaz', () => {
+  // Kullanıcı kararı 2026-11-11: dikme baza köşesinin üstüne (iç köşeye) oturur.
+  const placed = (itemKey, xCm, yCm, rotationZDeg, extra = {}) => {
+    const moduleState = createModuleStateFromCatalogKey(itemKey);
+    Object.assign(moduleState, extra);
+    moduleState.placement = { xCm, yCm, zCm: 0, rotationZDeg, wallId: 'free' };
+    return moduleState;
+  };
+  const upright = { widthCm: 10, depthCm: 10 };
+  const base = placed('base_200', 230, 175, 90); // iz x 205–255, y 175–375
+  const count = (modules, itemKey) => resolveProjectBom(modules).lines
+    .filter((line) => line.itemKey === itemKey)
+    .reduce((sum, line) => sum + Number(line.quantity), 0);
+
+  assert.equal(count([base], 'upright_49_5'), 4);
+  // İç köşe (merkez köşeden 5, 5 içeride).
+  const inside = [placed('upright_346_5', 205, 180, 0, upright), placed('upright_346_5', 205, 370, 0, upright)];
+  assert.equal(count([base, ...inside], 'upright_49_5'), 2);
+  // Bazanın arka yüzüne dışarıdan sıfır yaslı (merkez x 200): köşe dikmesi kalır.
+  const beside = [placed('upright_346_5', 195, 180, 0, upright), placed('upright_346_5', 195, 370, 0, upright)];
+  assert.equal(count([base, ...beside], 'upright_49_5'), 4);
 });

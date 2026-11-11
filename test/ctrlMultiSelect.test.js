@@ -29,8 +29,12 @@ test('Ctrl/Cmd left click is captured before OrbitControls and selects a rectang
   assert.match(scene, /const crossWallResult = createPanelRangeSelection\([\s\S]*wallPanels[\s\S]*moduleIndex: Number\(anchorMesh\.userData\.moduleIndex\)[\s\S]*moduleIndex: Number\(mesh\.userData\.moduleIndex\)/);
   assert.doesNotMatch(scene, /anchorMeta\.wallId !== targetMeta\.wallId/);
   assert.match(scene, /const pathCm = wallId === 'back'[\s\S]*Number\(placement\.xCm\)[\s\S]*Number\(placement\.yCm\)/);
-  assert.match(scene, /orderedModules[\s\S]*sort\(\(a, b\) => \(a\.pathCm - b\.pathCm\)\)/);
-  assert.match(scene, /columnByModuleId/);
+  // Aynı düzlemde sütun duvar konumu (pathCm), satır panelin gerçek yüksekliğidir: üst üste duran
+  // modüllerde (iki short) aradaki panel atlanmaz (kullanıcı hatası 2026-11-11).
+  assert.match(scene, /const columnKey = \(meta\) => Math\.round\(Number\(meta\.pathCm\) \* 2\)/);
+  assert.match(scene, /const columnKeys = \[\.\.\.new Set\(planePanels\.map\(\(\{ meta \}\) => columnKey\(meta\)\)\)\]\.sort\(\(a, b\) => a - b\)/);
+  assert.match(scene, /const rowKey = \(surface\) => \{[\s\S]*getWorldPosition\(new THREE\.Vector3\(\)\)\.y/);
+  assert.match(scene, /stripIndex: rowOf\(surface\)/);
   assert.match(scene, /planePanels\.map/);
   assert.match(scene, /\.filter\(\(entry\) => entry\.meta\?\.planeKey === anchorMeta\.planeKey\)/);
 });
