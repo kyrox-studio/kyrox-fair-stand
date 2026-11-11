@@ -59,12 +59,13 @@ test('one metal group with a gap on the wall is listed as separate sheets', asyn
   expect(walls.map((module) => module.placement.xCm)).toEqual([0, 200, 400]);
 
   // Sabit ilk kamera açısında ilk ve son modülün en üst paneli; Ctrl ile üçünü kapsayan tek grup.
+  // Son modülde tıklama panelin sağ yarısına gelir: sol yarısının tepesinde duvar projektörü durur.
   await page.mouse.click(650, 145);
   await page.keyboard.down('Control');
-  await page.mouse.click(905, 205);
+  await page.mouse.click(925, 215);
   await page.keyboard.up('Control');
   const menu = page.getByRole('group', { name: 'Modül işlemleri' });
-  await page.mouse.click(905, 205, { button: 'right' });
+  await page.mouse.click(925, 215, { button: 'right' });
   await expect(menu).toBeVisible();
   // Panel dönüşümleri Diğer sekmesindedir.
   await openPanelTab(page, 'more');
