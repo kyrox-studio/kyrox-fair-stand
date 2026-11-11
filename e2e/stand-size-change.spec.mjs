@@ -41,33 +41,43 @@ test('open stand: width change applies at once, asks only when something is remo
 
   // Önizleme uygulamanın kendi penceresidir (tarayıcı confirm'i değil); yalnız bir şey kalkacaksa açılır.
   const dialog = page.getByRole('dialog', { name: /Stand ölçüsü/ });
-  const widthUp = page.getByRole('button', { name: 'Genişliği 0,5 m artır' });
+  const widthUp = page.getByRole('button', { name: 'Genişliği 1 m artır' });
 
-  // ▲: pencere açılmadan 0,5 m büyür.
+  // ▲: pencere açılmadan 1 m büyür.
   await widthUp.click();
   await expect(dialog).toBeHidden();
-  await expect(page.locator('#stand-size-x')).toHaveValue('5,5');
-  await expect(page.locator('#stand-summary-chip')).toContainText('5,5 × 4 m');
+  await expect(page.locator('#stand-size-x')).toHaveValue('6');
+  await expect(page.locator('#stand-summary-chip')).toContainText('6 × 4 m');
+
+  // Elle 0,5 m adımlı değer yazılır; ▲ ondan 1 m ileri gider.
+  await changeWidth(page, '6,5');
+  await expect(page.locator('#stand-summary-chip')).toContainText('6,5 × 4 m');
+  await widthUp.click();
+  await expect(page.locator('#stand-size-x')).toHaveValue('7,5');
+  await expect(page.locator('#stand-summary-chip')).toContainText('7,5 × 4 m');
 
   // Yazıp Enter: büyütmede de pencere açılmaz; sırt duvarı yeni genişliği kaplar.
-  await changeWidth(page, '7');
+  await changeWidth(page, '8');
   await expect(dialog).toBeHidden();
-  await expect(page.locator('#stand-summary-chip')).toContainText('7 × 4 m');
+  await expect(page.locator('#stand-summary-chip')).toContainText('8 × 4 m');
   const widened = await savedProject(page);
-  expect(widened.stand.xCm).toBe(700);
-  expect(backWallLength(widened)).toBe(700);
-  const initialIds = initial.modules.map((module) => module.id);
+  expect(widened.stand.xCm).toBe(800);
+  expect(backWallLength(widened)).toBe(800);
+  // Paneller ve öğeler kalır; boyu değişen sırt duvarın projektörleri kurulum kuralıyla yeniden dizilir
+  // (150 cm başına bir, yukarı yuvarlanır: 800 cm → 6).
+  const initialIds = initial.modules.filter((module) => module.type !== 'led-floodlight').map((module) => module.id);
   expect(initialIds.every((id) => widened.modules.some((module) => module.id === id))).toBe(true);
+  expect(widened.modules.filter((module) => module.type === 'led-floodlight' && module.placement?.wallId === 'back')).toHaveLength(6);
 
   // Daraltma panel kaldırır: önce sorar. İptal'de ölçü eski değere döner.
   await changeWidth(page, '3');
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('7 × 4 m → 3 × 4 m');
+  await expect(dialog).toContainText('8 × 4 m → 3 × 4 m');
   await expect(dialog).toContainText('duvar paneli kaldırılacak');
   await dialog.getByRole('button', { name: 'İptal' }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.locator('#stand-size-x')).toHaveValue('7');
-  await expect(page.locator('#stand-summary-chip')).toContainText('7 × 4 m');
+  await expect(page.locator('#stand-size-x')).toHaveValue('8');
+  await expect(page.locator('#stand-summary-chip')).toContainText('8 × 4 m');
 
   await changeWidth(page, '3');
   await dialog.getByRole('button', { name: 'Uygula' }).click();
@@ -76,7 +86,7 @@ test('open stand: width change applies at once, asks only when something is remo
   expect(backWallLength(narrowed)).toBe(300);
 
   await page.locator('#design-undo').click();
-  await expect(page.locator('#stand-summary-chip')).toContainText('7 × 4 m');
-  await expect(page.locator('#stand-size-x')).toHaveValue('7');
+  await expect(page.locator('#stand-summary-chip')).toContainText('8 × 4 m');
+  await expect(page.locator('#stand-size-x')).toHaveValue('8');
   expect(errors).toEqual([]);
 });

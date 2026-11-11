@@ -45,10 +45,13 @@ import {
   composeAutomaticBackWallWithDepot,
   composeAutomaticSideWallWithDepot,
   composeAutomaticStandWall,
+  automaticWallLampRunLengths,
   getAutomaticWallCapacityCm,
   planAutomaticDepotLampPlacements,
+  planAutomaticWallLampPlacements,
 } from './automaticWall.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
+import { inheritLockForNewModules } from './moduleLock.js';
 import { isTopPlacementModule, isWallOverlayModule, usesPanelSeamOverlaySnap } from './moduleBehavior.js';
 import { WALL_PANEL_BAND_PITCH_CM } from './wallPanelBand.js';
 import { getStandResizeRules } from './standResizeRules.js';
@@ -428,6 +431,7 @@ function emptySizeReport() {
     outsideItems: 0,
     collidingItems: 0,
     shortenedTulles: 0,
+    relaidLampWalls: 0,
     fasciaRebuilt: false,
     floorArea: 'kept',
   };
@@ -710,6 +714,47 @@ function removeFromChain(moduleState, report, removedSurfaceIds) {
  * stand: { standType, xCm, yCm, wallHeightCm, fascia, floorArea }.
  * Dönüş: { ok, changed, modules, floorArea, report } veya { ok: false, message }.
  */
+/**
+ * Yerleşimin zincir duvarlarındaki boşluklar (kullanıcı kararı 2026-11-10): ölçü ya da yerleşim
+ * değişince her duvar uçtan uca dolar; elle silinmiş paneller ve uçtaki açıklık yeni boş düz
+ * panelle tamamlanır, kalan paneller ve görselleri yerinde kalır. Doldurulan duvarları döner.
+ */
+function fillChainWallGaps(modules, { standType, standXCm, standYCm, wallHeightCm, report }) {
+  const filled = new Set();
+  for (const segment of getContinuousWallSegments(standType, standXCm, standYCm)) {
+    const { wallId } = segment;
+    const lengthCm = Number(segment.edgeWidthCm);
+    const covered = modules
+      .filter((moduleState) => WALL_FAMILY_TYPES.has(moduleState?.type) && moduleState.placement?.wallId === wallId)
+      .map(wallRange)
+      .sort((left, right) => left.start - right.start);
+    const gaps = [];
+    let cursor = 0;
+    for (const range of covered) {
+      if (range.start > cursor + EPSILON_CM) gaps.push({ startCm: cursor, lengthCm: Math.min(range.start, lengthCm) - cursor });
+      cursor = Math.max(cursor, range.end);
+      if (cursor >= lengthCm - EPSILON_CM) break;
+    }
+    if (cursor < lengthCm - EPSILON_CM) gaps.push({ startCm: cursor, lengthCm: lengthCm - cursor });
+    for (const gap of gaps) {
+      if (gap.lengthCm <= EPSILON_CM) continue;
+      const composed = composeStraightWall(gap.lengthCm);
+      if (!composed.ok) return { ok: false, message: composed.message };
+      let start = gap.startCm;
+      for (const widthCm of composed.modules) {
+        const panel = createStandWallPanelState(widthCm, wallHeightCm);
+        if (!panel) return { ok: false, message: `${widthCm} cm duvar paneli bulunamadı.` };
+        panel.placement = chainPlacement(wallId, start, standXCm);
+        modules.push(panel);
+        report.addedPanels += 1;
+        start += widthCm;
+      }
+      filled.add(wallId);
+    }
+  }
+  return { ok: true, filled };
+}
+
 export function planStandSizeChange({ stand, modules, toXCm, toYCm, boothType }) {
   const rules = getStandResizeRules(boothType);
   if (!rules) {
@@ -756,20 +801,6 @@ export function planStandSizeChange({ stand, modules, toXCm, toYCm, boothType })
     tulleSpans.set(moduleState.id, tulleSpanAxes(moduleState, fromX, fromY));
   }
 
-  // Açık uca kadar uzanan duvarlar (eski ölçüye göre): uzayan kenarda yalnız bunlara panel eklenir.
-  const reachesOpenEnd = { back: false, backStart: false, left: false, right: false };
-  for (const moduleState of sourceModules) {
-    const wallId = moduleState?.placement?.wallId;
-    if (!WALL_FAMILY_TYPES.has(moduleState?.type) || !chainWallIds.has(wallId)) continue;
-    const { start, end } = wallRange(moduleState);
-    if (wallId === 'back') {
-      if (start <= EPSILON_CM) reachesOpenEnd.backStart = true;
-      if (end >= fromX - EPSILON_CM) reachesOpenEnd.back = true;
-    } else if (end >= fromY - EPSILON_CM) {
-      reachesOpenEnd[wallId] = true;
-    }
-  }
-
   const freeIds = new Set();
   const movedIds = new Set();
   const next = [];
@@ -798,7 +829,8 @@ export function planStandSizeChange({ stand, modules, toXCm, toYCm, boothType })
       const lengthCm = wallId === 'back' ? toX : toY;
       const { start, end } = wallRange(moduleState);
       if (end <= EPSILON_CM || start >= lengthCm - EPSILON_CM) {
-        removeFromChain(moduleState, report, removedSurfaceIds);
+        // Projektör sayılmaz: değişen duvarın projektörleri aşağıda yeniden dizilir.
+        if (moduleState.type !== 'led-floodlight') removeFromChain(moduleState, report, removedSurfaceIds);
         continue;
       }
       if (start < -EPSILON_CM || end > lengthCm + EPSILON_CM) {
@@ -807,7 +839,7 @@ export function planStandSizeChange({ stand, modules, toXCm, toYCm, boothType })
           ? narrowWallPanel(moduleState, Math.min(lengthCm, end) - keptStart, wallHeightCm)
           : null;
         if (!narrowed) {
-          removeFromChain(moduleState, report, removedSurfaceIds);
+          if (moduleState.type !== 'led-floodlight') removeFromChain(moduleState, report, removedSurfaceIds);
           continue;
         }
         narrowed.placement = { ...narrowed.placement, [wallAxisKey(wallId)]: keptStart };
@@ -845,38 +877,18 @@ export function planStandSizeChange({ stand, modules, toXCm, toYCm, boothType })
     next.push(moduleState);
   }
 
-  // Uzayan kenar: açık uca yeni düz paneller.
-  const fills = [];
-  if (dX > 0 && chainWallIds.has('back')) {
-    if (standType === 'l-right') {
-      if (reachesOpenEnd.backStart) fills.push({ wallId: 'back', startCm: 0, lengthCm: dX });
-    } else if (symmetricWidth) {
-      if (leftGrowCm > 0 && reachesOpenEnd.backStart) fills.push({ wallId: 'back', startCm: 0, lengthCm: leftGrowCm });
-      if (dX - leftGrowCm > 0 && reachesOpenEnd.back) {
-        fills.push({ wallId: 'back', startCm: fromX + leftGrowCm, lengthCm: dX - leftGrowCm });
-      }
-    } else if (reachesOpenEnd.back) {
-      fills.push({ wallId: 'back', startCm: fromX, lengthCm: dX });
-    }
-  }
-  for (const wallId of ['left', 'right']) {
-    if (dY > 0 && chainWallIds.has(wallId) && reachesOpenEnd[wallId]) {
-      fills.push({ wallId, startCm: fromY, lengthCm: dY });
-    }
-  }
-  for (const fill of fills) {
-    const composed = composeStraightWall(fill.lengthCm);
-    if (!composed.ok) return { ok: false, message: composed.message };
-    let cursor = fill.startCm;
-    for (const widthCm of composed.modules) {
-      const panel = createStandWallPanelState(widthCm, wallHeightCm);
-      if (!panel) return { ok: false, message: `${widthCm} cm duvar paneli bulunamadı.` };
-      panel.placement = chainPlacement(fill.wallId, cursor, toX);
-      next.push(panel);
-      report.addedPanels += 1;
-      cursor += widthCm;
-    }
-  }
+  // Uzayan kenar ve elle silinmiş paneller: duvarlar uçtan uca dolar.
+  const gapFill = fillChainWallGaps(next, { standType, standXCm: toX, standYCm: toY, wallHeightCm, report });
+  if (!gapFill.ok) return gapFill;
+
+  // Boyu değişen duvarın projektörleri kurulum kuralıyla yeniden dizilir (uçta lambasız kısım kalmaz).
+  const lampWalls = wallsWithChangedLampRuns(
+    automaticWallLampRunLengths(sourceModules, fromY),
+    automaticWallLampRunLengths(next, toY),
+    chainWallIds,
+  );
+  report.relaidLampWalls = lampWalls.size;
+  relayAutomaticWallLamps(next, { standXCm: toX, standYCm: toY, wallIds: lampWalls });
 
   // Alınlık: yeni kenarlara göre yeniden kurulur, bantlar aynı konuma aktarılır.
   if (oldFascia.length && stand?.fascia?.enabled) {
@@ -926,6 +938,7 @@ export function planStandSizeChange({ stand, modules, toXCm, toYCm, boothType })
   const floorShift = island ? { dx: roundToStep(dX / 2, 50), dy: roundToStep(dY / 2, 50) } : { dx: 0, dy: 0 };
   const floor = resizeFloorArea(stand?.floorArea ?? null, toX, toY, floorShift);
   report.floorArea = floor.status;
+  inheritLockForNewModules(sourceModules, next);
   return { ok: true, changed: true, modules: next, floorArea: floor.area, report };
 }
 
@@ -946,6 +959,7 @@ export function describeStandSizeChangeReport(report) {
   if (report.removedPanels) lines.push(`${report.removedPanels} duvar paneli kaldırılacak.`);
   if (report.removedImages) lines.push(`${report.removedImages} görsel kaldırılan panellerle birlikte gidecek.`);
   if (report.removedItems) lines.push(`${report.removedItems} duvar üstü öğe kaldırılacak.`);
+  if (report.relaidLampWalls) lines.push('Boyu değişen duvarın projektörleri yeni boya göre yeniden dizilecek.');
   if (report.fasciaRebuilt) lines.push('Alınlık yeni kenara göre yeniden kurulacak; görseller aynı konuma taşınacak.');
   if (report.movedItems) lines.push(`${report.movedItems} öğe yakın olduğu kenarla birlikte taşınacak.`);
   if (report.clampedItems) lines.push(`${report.clampedItems} öğe bağlı olduğu kümeyle birlikte stand içine taşınacak.`);
@@ -1063,12 +1077,78 @@ export function createDepotLampStates(modules) {
   return lamps;
 }
 
+/**
+ * Zincir duvarların otomatik projektörleri (`led-floodlight`): `wallIds` duvarlarındaki projektörler
+ * kalkar, duvarın yeni koşularına kurulum kuralıyla (150 cm başına bir, yukarı yuvarlanır, eşit
+ * dağıtılır) yeniden dizilir ve üst profile yapışır. `modules` yerinde değişir; eklenen sayıyı döner.
+ * Kullanıcı kararı 2026-11-10: ölçü ve yerleşim değişiminde değişen duvarın lambaları eksik kalmaz.
+ */
+export function relayAutomaticWallLamps(modules, { standXCm, standYCm, wallIds, keepDepotSideLamps = true }) {
+  if (!wallIds?.size) return { added: 0, removed: 0 };
+  // Depo yan panelinin projektörü depo planına aittir (aynı wallId taşısa da) ve kalır; depo yeniden
+  // kuruluyorsa onu depo planı yeniden ekler, burada kalkar.
+  const depotSpans = modules
+    .filter((moduleState) => keepDepotSideLamps && moduleState?.depotSide
+      && wallIds.has(moduleState.placement?.wallId))
+    .map((moduleState) => ({ wallId: moduleState.placement.wallId, ...wallRange(moduleState) }));
+  const onDepotPanel = (lamp) => {
+    const { start, end } = wallRange(lamp);
+    const center = (start + end) / 2;
+    return depotSpans.some((span) => span.wallId === lamp.placement.wallId
+      && center >= span.start - EPSILON_CM && center <= span.end + EPSILON_CM);
+  };
+  let removed = 0;
+  for (let index = modules.length - 1; index >= 0; index -= 1) {
+    const moduleState = modules[index];
+    if (moduleState?.type !== 'led-floodlight' || moduleState.autoDepot === true) continue;
+    if (!wallIds.has(moduleState.placement?.wallId) || onDepotPanel(moduleState)) continue;
+    modules.splice(index, 1);
+    removed += 1;
+  }
+  const lamps = createAutomaticWallLampStates(modules, { standXCm, standYCm, wallIds });
+  modules.push(...lamps);
+  return { added: lamps.length, removed };
+}
+
+/** Kurulumda ve yeniden dizimde zincir duvar projektörleri; `modules` sahnedeki bütün modüllerdir. */
+export function createAutomaticWallLampStates(modules, { standXCm, standYCm, wallIds = null }) {
+  const lampItem = getTopLightItemForType('led-floodlight');
+  if (!lampItem) return [];
+  const planned = planAutomaticWallLampPlacements({
+    modules: modules.filter((moduleState) => moduleState?.type === 'flat-panel' && moduleState.placement),
+    standXCm,
+    standYCm,
+    lampWidthCm: Number(lampItem.dimensions?.widthCm) || 50,
+    wallIds,
+  });
+  const lamps = [];
+  for (const placement of planned) {
+    const lamp = createModuleStateFromDescriptor({ type: 'led-floodlight' });
+    if (!lamp) continue;
+    lamp.placement = snapPlacementToItemAnchor(lamp, placement, modules) ?? { ...placement };
+    lamps.push(lamp);
+  }
+  return lamps;
+}
+
+/** Koşu uzunlukları değişen zincir duvarlar (yalnız kayan duvar değişmiş sayılmaz). */
+function wallsWithChangedLampRuns(before, after, wallIds) {
+  const changed = new Set();
+  for (const wallId of wallIds) {
+    const left = (before.get(wallId) ?? []).join(',');
+    const right = (after.get(wallId) ?? []).join(',');
+    if (left !== right) changed.add(wallId);
+  }
+  return changed;
+}
+
 // ---------------------------------------------------------------------------
 // Yerleşim (Sırt Duvar / U / L Sol / L Sağ / Ada). Ürün kararları (kullanıcı, 2026-11-10):
 // - Yeni yerleşimde de olan duvar yerinde kalır; görseli, kaplaması ve üstündeki öğeler korunur.
 // - Yeni yerleşimde olmayan kenarın duvarı görselleri ve üstündeki öğelerle kalkar
 //   (Ada'ya geçişte bütün kenar duvarları). Kalkan görsel hatırlanmaz; Geri al döner.
-// - Yeni kenara boş, kilitli düz duvar gelir (otomatik projektör eklenmez).
+// - Yeni kenara boş, kilitli düz duvar gelir; projektörleri kurulum kuralıyla dizilir
+//   (kullanıcı kararı 2026-11-10, ilk kararı değiştirir: lambalar eksik kalmasın).
 // - Serbest öğeler yerinde kalır; yeni duvar / depoyla çakışan küme bütün hâlinde içeri alınır.
 // - Depo yeni yerleşimdeki yerine kurulur (yeri ve dizimi değişmiyorsa dokunulmaz); alınlık yeni
 //   açık kenarlara göre yeniden kurulur, görselleri aynı konumdaki panele aktarılır.
@@ -1112,6 +1192,8 @@ function emptyLayoutReport() {
     clampedItems: 0,
     outsideItems: 0,
     collidingItems: 0,
+    relaidLampWalls: 0,
+    filledPanels: 0,
   };
 }
 
@@ -1275,6 +1357,18 @@ export function planStandStructureChange({ stand, modules, to = {}, boothType })
     next.push(...fresh);
   }
 
+  // Elle silinmiş panellerin boşluğu da dolar (kullanıcı kararı 2026-11-10).
+  const panelsBeforeFill = report.addedPanels;
+  const gapFill = fillChainWallGaps(next, { standType: toType, standXCm: xCm, standYCm: yCm, wallHeightCm, report });
+  if (!gapFill.ok) return gapFill;
+  report.filledPanels = report.addedPanels - panelsBeforeFill;
+  report.addedPanels = panelsBeforeFill;
+
+  // Yeni, yeniden dizilen ya da boşluğu dolan duvarın projektörleri kurulum kuralıyla dizilir.
+  const lampWalls = new Set([...recomposedWalls, ...gapFill.filled]);
+  report.relaidLampWalls = lampWalls.size;
+  relayAutomaticWallLamps(next, { standXCm: xCm, standYCm: yCm, wallIds: lampWalls, keepDepotSideLamps: !rebuildDepot });
+
   if (rebuildDepot && newDepot?.ok) {
     next.push(...createDepotStates(newDepot, wallHeightCm));
     next.push(...createDepotLampStates(next));
@@ -1367,6 +1461,7 @@ export function planStandStructureChange({ stand, modules, to = {}, boothType })
   }
 
   applyFabricWork(next, { added: [], removedIds: removedSurfaceIds }, { extendedFabrics: 0 });
+  inheritLockForNewModules(sourceModules, next);
   return { ok: true, changed: true, modules: next, stand: nextStand, report };
 }
 
@@ -1425,6 +1520,8 @@ export function describeStandLayoutChangeReport(report) {
   if (report.addedWalls.length) {
     lines.push(`${report.addedWalls.map((wallId) => WALL_LABELS[wallId]).join(', ')} kenara boş duvar eklenecek (${report.addedPanels} panel).`);
   }
+  if (report.filledPanels) lines.push(`Duvardaki boşluklar ${report.filledPanels} boş panelle doldurulacak.`);
+  if (report.relaidLampWalls) lines.push('Yeni / yeniden dizilen duvarın projektörleri kurulum kuralıyla dizilecek.');
   if (report.depotAdded) lines.push('Depo eklenecek.');
   if (report.depotRemoved) lines.push('Depo ve içindekiler kaldırılacak.');
   if (report.depotRebuilt) lines.push('Depo yeni yerine yeniden kurulacak.');
