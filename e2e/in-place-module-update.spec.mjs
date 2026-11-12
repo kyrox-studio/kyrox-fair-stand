@@ -315,7 +315,8 @@ test('çoklu seçim, renk, cam ve sürükleme sahneyi baştan kurmaz', async ({ 
   const start = await surfacePoint(page, `(mesh) => mesh.userData.moduleType === 'box-block' && mesh.userData.faceSlot === 'top'`);
   await page.mouse.move(start.x, start.y);
   await page.mouse.down();
-  await page.mouse.move(start.x + 120, start.y, { steps: 16 });
+  // 4 adım: sürükleme eşiğini aşar; her adım bir kare çizdirir ve CI'daki yazılım GL'inde kare ~1 sn sürer.
+  await page.mouse.move(start.x + 120, start.y, { steps: 4 });
   await page.mouse.up();
   await expect.poll(() => page.evaluate(() => {
     const mesh = window.__sceneSurfaces().find((candidate) => candidate.userData.moduleType === 'box-block');
