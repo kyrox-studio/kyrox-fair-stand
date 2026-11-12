@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createStageFromWizard } from './helpers/standSetup.mjs';
+import { acceptConfirmDialog } from './helpers/inAppDialog.mjs';
 
 async function createIslandProject(page, { baseName, xCm, yCm, confirmExisting = false }) {
   // Açık proje varken önce Yeni ile sihirbaz açılır; sihirbaz açıkken sol menüye yazılanlar açık
@@ -27,13 +28,13 @@ async function createIslandProject(page, { baseName, xCm, yCm, confirmExisting =
 }
 
 async function switchProject(page, projectName) {
-  page.once('dialog', async (dialog) => dialog.accept());
   await page.locator('#project-select').evaluate((select, name) => {
     const option = [...select.options].find((item) => item.textContent === name);
     if (!option) throw new Error(`Project option not found: ${name}`);
     select.value = option.value;
     select.dispatchEvent(new Event('change', { bubbles: true }));
   }, projectName);
+  await acceptConfirmDialog(page, 'Proje değiştir');
   await expect(page.locator('#project-name-display')).toHaveText(projectName);
 }
 

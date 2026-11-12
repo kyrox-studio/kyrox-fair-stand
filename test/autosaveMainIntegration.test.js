@@ -72,7 +72,10 @@ test('main.js never saves image changes while autosave is off and confirms leavi
   // Görsel ekleme, kaldırma ve kullanılan görseli silme: kayıt yalnız otomatik kayıt açıkken.
   const guarded = mainSource.match(/!autosaveController\.isAutoSaveOff\(\)\s*&& \(/g) ?? [];
   assert.equal(guarded.length, 3);
-  assert.match(mainSource, /if \(!event\.target\?\.closest\?\.\('\.sidebar-back'\)\) return;/);
+  assert.match(mainSource, /const backButton = event\.target\?\.closest\?\.\('\.sidebar-back'\);\s*if \(!backButton\) return;/);
+  // Onay uygulamanın penceresinde: tık durdurulur, onaylanınca aynı düğme yeniden tıklanır.
+  assert.match(mainSource, /title: 'Kaydetmeden çık'/);
+  assert.match(mainSource, /leaveEditorConfirmed = true;\s*backButton\.click\(\);/);
   assert.match(mainSource, /if \(!autosaveController\.isAutoSaveOff\(\) \|\| !autosaveController\.hasUnsavedChanges\(\)\) return;/);
   assert.match(mainSource, /Kaydedilmemiş değişiklikler var\.\\n\\nKaydetmeden çıkılsın mı\?/);
   assert.match(mainSource, /document\.addEventListener\('click', onLeaveEditorClick, true\);/);

@@ -1416,7 +1416,7 @@ function getContextBackPanelState(context) {
   return Array.isArray(moduleState.backStrips);
 }
 
-function changeContextBackPanels(context, enabled) {
+async function changeContextBackPanels(context, enabled) {
   const index = findContextModuleIndex(context);
   const moduleState = index >= 0 ? currentModules[index] : null;
   if (!supportsFlatPanelBackStrips(moduleState)) return;
@@ -1429,7 +1429,11 @@ function changeContextBackPanels(context, enabled) {
     const decorated = (moduleState.backStrips ?? []).some((strip) => (
       strip?.imageAssetId || strip?.fabricGroupId || strip?.isGlass || strip?.isMetalSeparator
     ));
-    if (decorated && !window.confirm('Arka yüzdeki görsel ve panel ayarları silinecek. Devam edilsin mi?')) return;
+    if (decorated && !(await requestConfirmation({
+      title: 'Arka yüz panellerini kaldır',
+      message: 'Arka yüzdeki görsel ve panel ayarları silinecek. Devam edilsin mi?',
+      confirmLabel: 'Kaldır',
+    }))) return;
     if (!removeFlatPanelBackStrips(moduleState)) return;
     selectionInfo.textContent = 'Arka yüz panelleri kaldırıldı.';
   }
@@ -3372,7 +3376,7 @@ clearWallButton.addEventListener('click', () => {
   rebuildSceneFromSetup(sceneSetup);
 });
 
-resetModuleFeaturesButton.addEventListener('click', () => {
+resetModuleFeaturesButton.addEventListener('click', async () => {
   if (!currentModules.length) {
     renderWallResult('Sıfırlanacak modül yok.');
     return;
@@ -3382,8 +3386,10 @@ resetModuleFeaturesButton.addEventListener('click', () => {
   const illuminatedFoamCount = currentModules.filter(
     (module) => module?.type === 'illuminated-foam' && !isModuleLocked(module),
   ).length;
-  const confirmed = window.confirm(
-    'Tüm modül özellikleri varsayılan ayarlarına dönecektir. Onaylıyor musunuz?\n\n'
+  const confirmed = await requestConfirmation({
+    title: 'Tüm özellikleri kaldır',
+    confirmLabel: 'Kaldır',
+    message: 'Tüm modül özellikleri varsayılan ayarlarına dönecektir. Onaylıyor musunuz?\n\n'
       + 'Kaldırılacak özellikler:\n'
       + '• Atanan resimler\n'
       + '• Atanan cam özellikleri\n'
@@ -3391,7 +3397,7 @@ resetModuleFeaturesButton.addEventListener('click', () => {
       + '• Diğer panel özelleştirmeleri\n'
       + (illuminatedFoamCount > 0 ? `• ${illuminatedFoamCount} Işıklı Strafor sahneden silinecek\n` : '')
       + '\nDiğer modül türleri, genişlikleri, sıraları ve FAZ 2 yerleşimleri korunacaktır.',
-  );
+  });
   if (!confirmed) return;
 
   const resetCandidates = currentModules.filter(
@@ -4133,11 +4139,13 @@ async function requestDeleteImageAsset(assetId) {
   if (!asset) return false;
 
   const usageCount = getImageAssetUsageCount(assetId);
-  const confirmed = window.confirm(
-    usageCount > 0
+  const confirmed = await requestConfirmation({
+    title: 'Görseli sil',
+    confirmLabel: 'Sil',
+    message: usageCount > 0
       ? `"${asset.name}" şu anda sahnede bir veya daha fazla yere atanmış.\n\nBu görseli silersen atandığı panel/bezlerden de kaldırılacak.\n\nYine de silinsin mi?`
       : `"${asset.name}" görseli görsel kütüphanesinden kalıcı olarak silinecek.\n\nDevam edilsin mi?`,
-  );
+  });
   if (!confirmed) return false;
 
   closeAssetContextMenu();
@@ -5023,9 +5031,11 @@ projectSelect.addEventListener('change', async () => {
 
   const currentProjectName = projectNameInput.value.trim() || 'Adsız Proje';
   const targetProjectName = projectSelect.selectedOptions?.[0]?.textContent?.trim() || 'Adsız Proje';
-  const confirmed = window.confirm(
-    formatProjectSwitchMessage(currentProjectName, targetProjectName),
-  );
+  const confirmed = await requestConfirmation({
+    title: 'Proje değiştir',
+    confirmLabel: 'Değiştir',
+    message: formatProjectSwitchMessage(currentProjectName, targetProjectName),
+  });
   if (!confirmed) {
     restoreProjectSelectToActiveProject();
     projectStatus.textContent = 'Proje değişikliği iptal edildi.';
@@ -5044,7 +5054,11 @@ deleteProjectButton.addEventListener('click', async () => {
   const projectId = projectSelect.value;
   if (!projectId) return;
   const projectName = projectSelect.selectedOptions?.[0]?.textContent?.trim() || projectNameInput.value.trim() || 'Proje';
-  const confirmed = window.confirm(projectName + ' ve bu projeye ait tüm görseller silinecek. Devam edilsin mi?');
+  const confirmed = await requestConfirmation({
+    title: 'Projeyi sil',
+    confirmLabel: 'Sil',
+    message: projectName + ' ve bu projeye ait tüm görseller silinecek. Devam edilsin mi?',
+  });
   if (!confirmed) return;
   try {
     const deletingActive = projectId === activeProjectId;
@@ -5142,12 +5156,26 @@ if (initialProjectId) {
 
 // Otomatik kayıt kapalıyken "← Standlar" (sayfa içi geçiş; tarayıcı uyarısı çıkmaz) kaydedilmemiş
 // değişiklik varsa onay sorar. Açıkken çıkış arka planda kaydeder.
-function onLeaveEditorClick(event) {
-  if (!event.target?.closest?.('.sidebar-back')) return;
+// Onay uygulamanın penceresinde sorulur (asenkron): tık önce durdurulur, onaylanırsa aynı düğme yeniden tıklanır.
+let leaveEditorConfirmed = false;
+async function onLeaveEditorClick(event) {
+  const backButton = event.target?.closest?.('.sidebar-back');
+  if (!backButton) return;
+  if (leaveEditorConfirmed) {
+    leaveEditorConfirmed = false;
+    return;
+  }
   if (!autosaveController.isAutoSaveOff() || !autosaveController.hasUnsavedChanges()) return;
-  if (window.confirm('Kaydedilmemiş değişiklikler var.\n\nKaydetmeden çıkılsın mı?')) return;
   event.preventDefault();
   event.stopImmediatePropagation();
+  const confirmed = await requestConfirmation({
+    title: 'Kaydetmeden çık',
+    message: 'Kaydedilmemiş değişiklikler var.\n\nKaydetmeden çıkılsın mı?',
+    confirmLabel: 'Çık',
+  });
+  if (!confirmed) return;
+  leaveEditorConfirmed = true;
+  backButton.click();
 }
 document.addEventListener('click', onLeaveEditorClick, true);
 
