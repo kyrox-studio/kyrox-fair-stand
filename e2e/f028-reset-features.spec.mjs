@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
+import { acceptConfirmDialog } from './helpers/inAppDialog.mjs';
 
 async function openDb(page) {
   return page.evaluate(async () => {
@@ -114,11 +115,10 @@ test('Tüm Özellikleri Kaldır deletes illuminated foam and preserves other mod
   await expect(page.locator('#reset-module-features')).toBeVisible();
   await expect(page.locator('details.panel-card').filter({ has: page.locator('#reset-module-features') })).toHaveCount(0);
 
-  page.once('dialog', async (dialog) => {
-    expect(dialog.message()).toContain('1 Işıklı Strafor sahneden silinecek');
-    await dialog.accept();
-  });
   await page.locator('#reset-module-features').click();
+  await expect(page.getByRole('dialog', { name: 'Tüm özellikleri kaldır' }))
+    .toContainText('1 Işıklı Strafor sahneden silinecek');
+  await acceptConfirmDialog(page, 'Tüm özellikleri kaldır');
   await expect(page.locator('#selection-info')).toContainText('1 Işıklı Strafor sahneden silindi');
 
   await page.locator('#save-project').click();
