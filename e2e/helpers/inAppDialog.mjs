@@ -10,6 +10,13 @@ export async function answerTextDialog(page, title, value) {
   await expect(dialog).toHaveCount(0);
 }
 
+export async function dismissConfirmDialog(page, title) {
+  const dialog = page.getByRole('dialog', { name: title });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'İptal' }).click();
+  await expect(dialog).toHaveCount(0);
+}
+
 export async function acceptConfirmDialog(page, title) {
   const dialog = page.getByRole('dialog', { name: title });
   await expect(dialog).toBeVisible();

@@ -1,4 +1,5 @@
 import { getActiveAutosaveController } from './autosaveController.js';
+import { requestConfirmation } from './inAppDialogs.js';
 import { reportError } from './toastNotifications.js';
 
 const GUARDED_BUTTON_IDS = new Set([
@@ -18,6 +19,7 @@ const ACTION_FAILURE_MESSAGES = Object.freeze({
 export function bindProjectActionSaveGuard({
   documentRef = globalThis.document,
   getController = getActiveAutosaveController,
+  requestConfirm = requestConfirmation,
 } = {}) {
   if (!documentRef?.addEventListener) return () => {};
 
@@ -43,8 +45,8 @@ export function bindProjectActionSaveGuard({
     const message = actionId === 'export-project'
       ? 'Kaydedilmemiş değişiklikler dışa aktarılmaz; projenin son kaydı aktarılır.\n\nDevam edilsin mi?'
       : 'Kaydedilmemiş değişiklikler kaybolacak.\n\nDevam edilsin mi?';
-    const confirmFn = documentRef.defaultView?.confirm ?? globalThis.confirm;
-    return typeof confirmFn === 'function' ? Boolean(confirmFn(message)) : true;
+    return requestConfirm({ title: 'Kaydedilmemiş değişiklikler', message, confirmLabel: 'Devam et' })
+      .then(Boolean);
   }
 
   async function saveBeforeAction(failureMessage, actionId = null) {

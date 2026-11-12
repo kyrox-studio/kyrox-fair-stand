@@ -1,4 +1,5 @@
 import { openEditorSettings } from './helpers/editorSettings.mjs';
+import { acceptConfirmDialog, dismissConfirmDialog } from './helpers/inAppDialog.mjs';
 import { test, expect } from '@playwright/test';
 import { disableAutoFurniture, keepWallLock, createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
@@ -139,15 +140,13 @@ test('Kapalı: image upload, hidden tab, Aç and ← Standlar never save; only K
   await page.waitForTimeout(800);
   expect(await readStoredFloorType(page, projectName)).toBe(initialFloor);
 
-  const dialogs = [];
-  let acceptDialog = false;
-  page.on('dialog', (dialog) => {
-    dialogs.push(dialog.message());
-    void (acceptDialog ? dialog.accept() : dialog.dismiss());
-  });
+  // Onaylar uygulamanın kendi penceresindedir (src/inAppDialogs.js), tarayıcı confirm'i değil.
+  const nativeDialogs = [];
+  page.on('dialog', (dialog) => { nativeDialogs.push(dialog.message()); void dialog.dismiss(); });
   await clickProjectAction(page, 'open-project');
-  await expect.poll(() => dialogs.length).toBe(1);
-  expect(dialogs[0]).toContain('Kaydedilmemiş değişiklikler kaybolacak');
+  await expect(page.getByRole('dialog', { name: 'Kaydedilmemiş değişiklikler' }))
+    .toContainText('Kaydedilmemiş değişiklikler kaybolacak');
+  await dismissConfirmDialog(page, 'Kaydedilmemiş değişiklikler');
   expect(await readStoredFloorType(page, projectName)).toBe(initialFloor);
 
   // "← Standlar" (CRM'in kenar çubuğuna eklediği sayfa içi geçiş): önce onay sorar.
@@ -160,14 +159,14 @@ test('Kapalı: image upload, hidden tab, Aç and ← Standlar never save; only K
     document.querySelector('#sidebar').prepend(button);
   });
   await page.locator('.sidebar-back').click();
-  await expect.poll(() => dialogs.length).toBe(2);
-  expect(dialogs[1]).toContain('Kaydetmeden çıkılsın mı?');
+  await expect(page.getByRole('dialog', { name: 'Kaydetmeden çık' })).toContainText('Kaydetmeden çıkılsın mı?');
+  await dismissConfirmDialog(page, 'Kaydetmeden çık');
   expect(await page.evaluate(() => window.__leftEditor ?? 0)).toBe(0);
-  acceptDialog = true;
   await page.locator('.sidebar-back').click();
+  await acceptConfirmDialog(page, 'Kaydetmeden çık');
   await expect.poll(() => page.evaluate(() => window.__leftEditor ?? 0)).toBe(1);
   expect(await readStoredFloorType(page, projectName)).toBe(initialFloor);
-  acceptDialog = false;
+  expect(nativeDialogs).toEqual([]);
 
   await page.locator('#save-project').click();
   await expect.poll(() => readStoredFloorType(page, projectName)).toBe('hali');

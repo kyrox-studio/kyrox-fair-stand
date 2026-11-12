@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
+import { acceptConfirmDialog } from './helpers/inAppDialog.mjs';
 
 async function seedProjectsAndAssets(page) {
   await page.evaluate(async () => {
@@ -105,8 +106,8 @@ test('deleting a project removes its record and assets without touching another 
   });
   await expect(projectSelect).toHaveValue('f023-target-project');
 
-  page.once('dialog', async (dialog) => dialog.accept());
   await clickProjectAction(page, 'delete-project');
+  await acceptConfirmDialog(page, 'Projeyi sil');
   await expect(page.locator('#project-status')).toHaveText('Proje silindi.');
 
   const stored = await readStoredIds(page);
@@ -138,8 +139,8 @@ test('deleting the open project returns to the first-open empty scene without a 
     loadCount += 1;
   });
 
-  page.once('dialog', async (dialog) => dialog.accept());
   await clickProjectAction(page, 'delete-project');
+  await acceptConfirmDialog(page, 'Projeyi sil');
 
   await expect(page.locator('#viewport-empty')).toBeVisible();
   await expect(page.locator('#viewport-toolbar')).toBeHidden();

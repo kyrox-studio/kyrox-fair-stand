@@ -43,6 +43,7 @@ function createHarness({
   };
   const cleanup = bindProjectActionSaveGuard({
     documentRef,
+    requestConfirm: async ({ message }) => confirm(message),
     getController: () => controller,
   });
   return { listeners, status, projectSelect, cleanup };

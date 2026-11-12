@@ -115,7 +115,8 @@ export function requestConfirmation({ title, message, confirmLabel = 'Devam et' 
     cancelValue: false,
     buildBody(doc) {
       const text = doc.createElement('p');
-      text.style.cssText = 'margin:0;color:#334155';
+      // Çok satırlı onay metinleri (\n) satır satır görünür.
+      text.style.cssText = 'margin:0;color:#334155;white-space:pre-line';
       text.textContent = message;
       return { nodes: [text] };
     },
