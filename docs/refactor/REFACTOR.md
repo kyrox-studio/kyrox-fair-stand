@@ -15,6 +15,10 @@ Bu dosya Item mimarisine geçişin değişiklik günlüğüdür (2026-09-16 … 
 
 ---
 
+## 2026-11-11 — Baza dizisinde karşı yüzlerdeki host dikmeleri ayrı düşer
+
+**Hata:** Dizideki iki baza karşı uzun yüzlerden aynı genişlikte host'a yaslandığında (biri arkadan, biri önden) ortak sınırdaki iki 49,5 dikme tek parça sayılıyor, üretim listesi 2 yerine 3 yazıyordu. Düzeltme (`baseRunBom.js` `runTotals`): düşen köşe yüz hattı + sınır sırasıyla anahtarlanır; aynı hattaki ortak dikme yine bir kez düşer. Test: `test/placementBomProtected.test.js` (yerleşim / baza korunan davranışları: wall_200 dönüşü, türetilmiş yükseklikte host, short host değil, dikey host).
+
 ## 2026-10-22 — Uzun parça bölünüşü BOM etiketinde (migration 0080)
 
 **Ürün kararı:** 346,5 cm'yi aşan profil ve dikmeler üretim listesinde tek satır kalır, adın yanına parça bölünüşü yazılır: `N × Dikme 495 cm (346,5 + 8 + 140,5)`. BOM miktarı, reçete ve maliyet değişmez.
