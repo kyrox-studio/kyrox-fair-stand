@@ -48,6 +48,8 @@ export function createModuleDragSidebar({
   canDrag = () => false,
   createModuleState,
   onPreview,
+  // Yerleştirme açıkken sol tuşla sürükleme sahneyi döndürür (kısa tık bırakır; 2026-11-13).
+  onOrbit,
   onDrop,
   onCancel,
 } = {}) {
@@ -100,6 +102,11 @@ export function createModuleDragSidebar({
   // dokunulan nokta sürükleyip bırakmayla aynı önizleme/bırakma yolundan geçer.
   let armed = false;
   let placePointerId = null;
+  // Yerleştirme açıkken basılı sürükleme kamerayı döndürür; o bırakış yerleştirme sayılmaz.
+  const ORBIT_START_PX = 6;
+  let placeDownX = 0;
+  let placeDownY = 0;
+  let placeOrbiting = false;
   let suppressNextClick = false;
   // Dışarıdan verilen yerleştirme kaynağı (Kopyala): aynı dokun/tıkla yerleştirme yolu, her
   // bırakışta kaynaktan yeni durum alınır ve Esc / cancelPlacement'a kadar art arda sürer.
@@ -215,6 +222,9 @@ export function createModuleDragSidebar({
     event.preventDefault();
     event.stopImmediatePropagation();
     placePointerId = event.pointerId;
+    placeDownX = event.clientX;
+    placeDownY = event.clientY;
+    placeOrbiting = false;
     lastClientX = event.clientX;
     lastClientY = event.clientY;
     onPreview?.(activeModuleState, event.clientX, event.clientY, activeRotationZDeg, rotationLocked);
@@ -225,6 +235,17 @@ export function createModuleDragSidebar({
     if (!armed || (placePointerId === null && event.pointerType !== 'mouse')) return;
     if (placePointerId !== null && event.pointerId !== placePointerId) return;
     event.stopImmediatePropagation();
+    if (placePointerId !== null && typeof onOrbit === 'function'
+      && (placeOrbiting || Math.hypot(event.clientX - placeDownX, event.clientY - placeDownY) > ORBIT_START_PX)) {
+      if (!placeOrbiting) {
+        placeOrbiting = true;
+        viewport.setPointerCapture?.(event.pointerId);
+      }
+      onOrbit(event.clientX - lastClientX, event.clientY - lastClientY);
+      lastClientX = event.clientX;
+      lastClientY = event.clientY;
+      return;
+    }
     lastClientX = event.clientX;
     lastClientY = event.clientY;
     onPreview?.(activeModuleState, event.clientX, event.clientY, activeRotationZDeg, rotationLocked);
@@ -234,6 +255,15 @@ export function createModuleDragSidebar({
     if (!armed || placePointerId === null || event.pointerId !== placePointerId) return;
     event.preventDefault();
     event.stopImmediatePropagation();
+    if (placeOrbiting) {
+      // Sahne döndürüldü: bırakma yok, önizleme yeni açıda imlecin altına gelir.
+      placeOrbiting = false;
+      placePointerId = null;
+      suppressNextClick = true;
+      viewport.releasePointerCapture?.(event.pointerId);
+      onPreview?.(activeModuleState, event.clientX, event.clientY, activeRotationZDeg, rotationLocked);
+      return;
+    }
     if (placementSource) {
       const source = placementSource;
       placePointerId = null;

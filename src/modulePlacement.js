@@ -1213,6 +1213,107 @@ export function isProfileFlushOnFrameEnd(profile, wall) {
 }
 
 /**
+ * Profil gerçek boyundaki aralığa sığar (kullanıcı kararı 2026-11-13, proje 452d4cc1): aralık iki
+ * ucun (dikme, duvar uç dikmesi, dik profil) eksenden eksene uzaklığıdır; Profil 190 eksenleri 190
+ * cm aralıklı iki uç arasına girer. Sahne boyu (200) iki uçtaki düğüm karelerini örter; çizimde o
+ * uçlar kısalır. Profil uçla aynı hatta ve uca yalnız ucundan, en çok kare kadar giriyorsa çakışma
+ * sayılmaz; toplam giriş iki sahne fazlasını aşamaz (eksenleri 180 aralıklı iki uca Profil 190
+ * girmez). Duvarda profil üst / alt ray hizasında olmalı; short hariç.
+ */
+export function getProfileSceneSlackCm(module) {
+  if (!isProfileModule(module)) return 0;
+  const realWidthCm = Number(getItem(module.itemKey)?.dimensions?.widthCm);
+  const sceneWidthCm = Number(module.widthCm);
+  if (!Number.isFinite(realWidthCm) || !Number.isFinite(sceneWidthCm)) return 0;
+  return Math.max(0, sceneWidthCm - realWidthCm);
+}
+
+function profilePostOverlapAlong(profile, post) {
+  if (!isProfileModule(profile) || !profile.placement || !post?.placement) return null;
+  const isUpright = post.type === 'upright';
+  const isCrossProfile = isProfileModule(post);
+  if (!isUpright && !isCrossProfile && (!isWallFamilyModule(post) || isWallShortFamilyDescriptor(post))) return null;
+  const slackCm = getProfileSceneSlackCm(profile);
+  if (!(slackCm > EPSILON_CM)) return null;
+  const profileSegment = getGroundSegment(profile);
+  if (!profileSegment) return null;
+  let square = null;
+  if (isCrossProfile) {
+    // Dik duran profilin yüzü de uçtur (profil profilin her noktasına dik bağlanır).
+    const crossSegment = getGroundSegment(post);
+    if (!crossSegment || crossSegment.axis === profileSegment.axis) return null;
+    if (!collisionHeightsOverlap(profile, post)) return null;
+    const half = getModuleCollisionDepthCm(post) / 2;
+    if (profileSegment.fixedCm < crossSegment.startCm + half - EPSILON_CM
+      || profileSegment.fixedCm > crossSegment.endCm - half + EPSILON_CM) return null;
+    square = { from: crossSegment.fixedCm - half, to: crossSegment.fixedCm + half, center: profileSegment.fixedCm };
+  } else if (isUpright) {
+    const bounds = getModuleFootprintBoundsCm(post);
+    if (!bounds) return null;
+    square = profileSegment.axis === 'x'
+      ? { from: bounds.minXCm, to: bounds.maxXCm, center: (bounds.minYCm + bounds.maxYCm) / 2 }
+      : { from: bounds.minYCm, to: bounds.maxYCm, center: (bounds.minXCm + bounds.maxXCm) / 2 };
+    if (!collisionHeightsOverlap(profile, post)) return null;
+  } else {
+    const wallSegment = getGroundSegment(post);
+    if (!wallSegment || wallSegment.axis !== profileSegment.axis) return null;
+    if (!profileTouchesWallRailLine(post, profile)) return null;
+    const depthCm = getModuleCollisionDepthCm(post);
+    // Profil duvarın dışından gelir, yalnız o uçtaki kareye girer (duvar boyunca uzanan profil değil).
+    square = profileSegment.startCm < wallSegment.startCm - EPSILON_CM
+      ? { from: wallSegment.startCm, to: wallSegment.startCm + depthCm, center: wallSegment.fixedCm, side: 'start' }
+      : { from: wallSegment.endCm - depthCm, to: wallSegment.endCm, center: wallSegment.fixedCm, side: 'end' };
+  }
+  if (!nearlyEqual(profileSegment.fixedCm, square.center)) return null;
+  const fromStart = square.side !== 'end'
+    && profileSegment.endCm > square.from + EPSILON_CM && profileSegment.endCm <= square.to + EPSILON_CM
+    && profileSegment.startCm < square.from - EPSILON_CM;
+  const fromEnd = square.side !== 'start'
+    && profileSegment.startCm < square.to - EPSILON_CM && profileSegment.startCm >= square.from - EPSILON_CM
+    && profileSegment.endCm > square.to + EPSILON_CM;
+  if (!fromStart && !fromEnd) return null;
+  const overlapCm = fromStart ? profileSegment.endCm - square.from : square.to - profileSegment.startCm;
+  return overlapCm <= square.to - square.from + EPSILON_CM ? overlapCm : null;
+}
+
+/**
+ * Aynı hattaki iki profil bir düğümde buluşur (T ya da düz devam, kullanıcı projesi 452d4cc1): ikisi
+ * de sahnede düğüm karesini örter. Örtüşme yalnız uçlarda, en çok kesit kalınlığı kadar ve orada bir
+ * düğüm (dikme, dik profil, duvar ucu) varsa çakışma sayılmaz; ortadan geçen profiller çakışır.
+ */
+function isCollinearProfileNodeShare(profileA, profileB, modules) {
+  if (!isProfileModule(profileA) || !isProfileModule(profileB)) return false;
+  if (!collisionHeightsOverlap(profileA, profileB)) return false;
+  const a = getGroundSegment(profileA);
+  const b = getGroundSegment(profileB);
+  if (!a || !b || a.axis !== b.axis || !nearlyEqual(a.fixedCm, b.fixedCm)) return false;
+  const from = Math.max(a.startCm, b.startCm);
+  const to = Math.min(a.endCm, b.endCm);
+  const depthCm = Math.min(getModuleCollisionDepthCm(profileA), getModuleCollisionDepthCm(profileB));
+  if (!(to - from > EPSILON_CM) || to - from > depthCm + EPSILON_CM) return false;
+  // Uç uca: biri öbürünün içinden geçmiyor.
+  if (!((nearlyEqual(from, b.startCm) && nearlyEqual(to, a.endCm)) || (nearlyEqual(from, a.startCm) && nearlyEqual(to, b.endCm)))) return false;
+  const half = a.fixedCm;
+  return modules.some((node) => {
+    if (!node?.placement || node.id === profileA.id || node.id === profileB.id) return false;
+    if (node.type !== 'upright' && !isProfileModule(node) && !isWallFamilyModule(node)) return false;
+    if (!collisionHeightsOverlap(profileA, node)) return false;
+    const bounds = getModuleFootprintBoundsCm(node);
+    if (!bounds) return false;
+    const [alongMin, alongMax, acrossMin, acrossMax] = a.axis === 'x'
+      ? [bounds.minXCm, bounds.maxXCm, bounds.minYCm, bounds.maxYCm]
+      : [bounds.minYCm, bounds.maxYCm, bounds.minXCm, bounds.maxXCm];
+    return alongMin <= from + EPSILON_CM && alongMax >= to - EPSILON_CM
+      && acrossMin <= half + EPSILON_CM && acrossMax >= half - EPSILON_CM
+      && !(isProfileModule(node) && getGroundSegment(node)?.axis === a.axis);
+  });
+}
+
+function isProfileEndInPost(profile, post) {
+  return profilePostOverlapAlong(profile, post) !== null;
+}
+
+/**
  * Duvar (wall ailesi) bazanın arka kenarının içinde (kullanıcı kararı 2026-11-11, dikmeyle aynı kural):
  * duvar bazanın arka yüzüyle hizalı, bazanın arka şeridinde durur; baza o tarafta duvarın iskeletine
  * bağlanır. Bu durum çakışma sayılmaz; bazanın ön tarafındaki ya da ortasındaki duvar çakışmadır.
@@ -1334,12 +1435,22 @@ export function validatePlacementAgainstModules({
     snapTargetModuleId,
     snapKind,
   );
+  // Profilin uçlara toplam girişi iki sahne fazlasını aşamaz (eksenleri 180 aralıklı iki uca
+  // Profil 190 girmez; eksenleri 190 aralıklı iki uca girer, iki kareyi örter).
+  let postOverlapLeftCm = 2 * getProfileSceneSlackCm(candidate);
   const collision = modules.find((module) => {
     if (!module || module.id === moduleId) return false;
     if (exemptIds.has(module.id)) return false;
     if (isUprightOnBaseCorner(candidate, module) || isUprightOnBaseCorner(module, candidate)) return false;
     if (isProfileFlushOnFrameEnd(candidate, module) || isProfileFlushOnFrameEnd(module, candidate)) return false;
+    if (isProfileEndInPost(module, candidate)) return false;
+    if (isCollinearProfileNodeShare(candidate, module, modules)) return false;
     if (isWallInBaseBack(candidate, module) || isWallInBaseBack(module, candidate)) return false;
+    const postOverlapCm = profilePostOverlapAlong(candidate, module);
+    if (postOverlapCm !== null) {
+      postOverlapLeftCm -= postOverlapCm;
+      return postOverlapLeftCm < -EPSILON_CM;
+    }
     return placementsOverlap(candidate, module);
   });
 
@@ -2167,13 +2278,128 @@ export function snapPlacementToModules({
       });
     });
 
+    // İki uç (dikme, duvar uç dikmesi ya da dik profil) arası profilin gerçek boyu kadarsa profil oraya
+    // ortalı oturur (kullanıcı kararı 2026-11-13): sahne fazlası iki uca eşit girer (Profil 190: 200
+    // sahne, 190 boşluk, uçlar 5 cm; Profil 388: 400 sahne, 388 boşluk).
+    const movingSlackCm = getProfileSceneSlackCm({ type: 'profile', itemKey, widthCm: width });
+    if (movingSlackCm > EPSILON_CM) {
+      const lineOf = ({ module, post }) => {
+        const range = getModuleCollisionHeightRangeCm(module);
+        if (movingZCm > range.maxCm + EPSILON_CM || movingZCm + movingHeightCm < range.minCm - EPSILON_CM) return null;
+        return movingAxis === 'x'
+          ? { from: post.minXCm, to: post.maxXCm, across: (post.minYCm + post.maxYCm) / 2, module }
+          : { from: post.minYCm, to: post.maxYCm, across: (post.minXCm + post.maxXCm) / 2, module };
+      };
+      // Uç: dikme / duvar uç dikmesi (tek hat) ya da dik duran profil (gövdesi boyunca her hat).
+      const lines = postTargets.map(lineOf).filter(Boolean)
+        .map((line) => ({ ...line, acrossMin: line.across, acrossMax: line.across, ends: [line.across] }));
+      modules.forEach((module) => {
+        if (module?.id === moduleId || !isProfileModule(module) || !module.placement) return;
+        const segment = getGroundSegment(module);
+        if (!segment || segment.axis === movingAxis) return;
+        const range = getModuleCollisionHeightRangeCm(module);
+        if (!(movingZCm < range.maxCm - EPSILON_CM && range.minCm < movingZCm + movingHeightCm - EPSILON_CM)) return;
+        const half = getModuleCollisionDepthCm(module) / 2;
+        lines.push({
+          from: segment.fixedCm - half, to: segment.fixedCm + half, module,
+          // Uç kareleri L köşedir (profil uçları dış yüzden örter, profile-flush-corner); burada yalnız
+          // gövdeye T bağlantı.
+          acrossMin: segment.startCm + 3 * half, acrossMax: segment.endCm - 3 * half,
+          ends: [segment.startCm + half, segment.endCm - half],
+        });
+      });
+      // Duvar gövdesi de uçtur: profil duvara ray hizasında dik bağlanır (T); uç dikmeleri postTargets'ta.
+      modules.forEach((module) => {
+        if (module?.id === moduleId || !module?.placement || !isWallFamilyModule(module) || isWallShortFamilyDescriptor(module)) return;
+        const segment = getGroundSegment(module);
+        if (!segment || segment.axis === movingAxis) return;
+        if (!profileTouchesWallRailLine(module, { type: 'profile', itemKey, heightCm: movingHeightCm, widthCm: width, depthCm, placement: { xCm: 0, yCm: 0, zCm: movingZCm, rotationZDeg: resolvedRotation } })) return;
+        const half = getModuleCollisionDepthCm(module) / 2;
+        lines.push({
+          from: segment.fixedCm - half, to: segment.fixedCm + half, module,
+          acrossMin: segment.startCm + 3 * half, acrossMax: segment.endCm - 3 * half, ends: [],
+        });
+      });
+      const pointerAcross = movingAxis === 'x' ? pointerY : pointerX;
+      const acrossFor = (left, right) => {
+        // U / H: iki ucun uç kareleri (ya da dikme ekseni) aynı hattaysa profil o hatta, iki kare
+        // arasına girer (2026-11-13: çıkıntıların uçları arasında snap dört ayrı yere atlıyordu).
+        const shared = left.ends.filter((end) => right.ends.some((other) => nearlyEqual(end, other)));
+        const min = Math.max(left.acrossMin, right.acrossMin);
+        const max = Math.min(left.acrossMax, right.acrossMax);
+        if (min > max + EPSILON_CM) return shared;
+        if (max - min <= EPSILON_CM) return [...shared, min];
+        // İki profil arası: imlece en yakın 10 cm adım (profil T adımıyla aynı), uçlar dahil.
+        const stepped = min + Math.round((pointerAcross - min) / PROFILE_TEE_SNAP_STEP_CM) * PROFILE_TEE_SNAP_STEP_CM;
+        // İmleç uç karesinde ya da ona bir adım yakınsa (L / T köşe) aralık adayı yok; köşe kuralı
+        // geçerli (2026-11-13: ön hattaki profil 10 cm geriye, dik profilin gövdesine oturuyordu).
+        if (stepped < min + PROFILE_TEE_SNAP_STEP_CM - EPSILON_CM || stepped > max - PROFILE_TEE_SNAP_STEP_CM + EPSILON_CM) return shared;
+        return [...shared, stepped];
+      };
+      lines.forEach((left) => {
+        lines.forEach((right) => {
+          if (left === right) return;
+          acrossFor(left, right).forEach((acrossCm) => {
+            // Eksenden eksene aralık profilin gerçek boyu kadarsa sığar (±1 cm); 180'e Profil 190 girmez.
+            const centerGapCm = (right.from + right.to) / 2 - (left.from + left.to) / 2;
+            const faceGapCm = right.from - left.to;
+            if (!(faceGapCm > EPSILON_CM)) return;
+            // İki uyum (kullanıcı kararı 2026-11-13, hepsi Profil 190): eksenden eksene gerçek boy (190;
+            // iki düğüm karesini örter) ya da yüzden yüze sahne boyu (200; uçlara girmez).
+            const fitsAxis = Math.abs(centerGapCm - (width - movingSlackCm)) <= 1 + EPSILON_CM;
+            const fitsFace = Math.abs(faceGapCm - width) <= 1 + EPSILON_CM;
+            // Eksenden eksene sahne boyu (ör. duvar ekseni 0, dikme ekseni 400; Profil 388): bir uçtan yüzden
+            // başlar, öbür ucun karesini örter (çerçevedeki yan profil gibi).
+            const fitsAxisScene = Math.abs(centerGapCm - width) <= 1 + EPSILON_CM;
+            if (!fitsAxis && !fitsFace && !fitsAxisScene) return;
+            // Arada başka uç yoksa.
+            if (lines.some((other) => other !== left && other !== right
+              && other.acrossMin <= acrossCm + EPSILON_CM && other.acrossMax >= acrossCm - EPSILON_CM
+              && other.from < right.from - EPSILON_CM && other.to > left.to + EPSILON_CM)) return;
+            // Duvar gövdesindeki ucun karesi örtülmez (duvarın yüzünden başlar).
+            const leftIsWall = isWallFamilyModule(left.module);
+            let startCm;
+            if (fitsAxis) startCm = (left.from + left.to) / 2 - (width - centerGapCm) / 2;
+            else if (fitsFace) startCm = left.to + (faceGapCm - width) / 2;
+            else startCm = leftIsWall || !isWallFamilyModule(right.module) ? left.to : right.from - width;
+            const placement = createEndpointConnectionPlacement({
+              axis: movingAxis,
+              pointXCm: round(movingAxis === 'x' ? startCm : acrossCm),
+              pointYCm: round(movingAxis === 'y' ? startCm : acrossCm),
+              widthCm: width,
+              rotationZDeg: resolvedRotation,
+              movingEndpoint: 'start',
+              standType,
+              standXCm,
+            });
+            const center = getPlacementCenter(placement, width);
+            if (!center || Math.hypot(center.xCm - pointerX, center.yCm - pointerY) > threshold + EPSILON_CM) return;
+            placement.zCm = movingZCm;
+            addCandidate(placement, right.module.id, 'post-gap', -5, 0);
+          });
+        });
+      });
+    }
+
+    // Short ucunda dikme var mı: dikme uç karesinin içinde ya da ucun hemen dışında, short'un yüzüne
+    // değerek durabilir (2026-11-13: short dikmenin iç yüzünde bitiyordu, dikme karede aranınca
+    // bulunamıyor, profil dikme yerine short ucuna 10 cm kaymış oturuyordu).
     const endSquareHoldsUpright = (segment, postCm, half) => {
-      const square = segment.axis === 'x'
-        ? { minXCm: postCm - half, maxXCm: postCm + half, minYCm: segment.fixedCm - half, maxYCm: segment.fixedCm + half }
-        : { minXCm: segment.fixedCm - half, maxXCm: segment.fixedCm + half, minYCm: postCm - half, maxYCm: postCm + half };
-      return postTargets.some(({ module, post }) => module.type === 'upright'
-        && post.minXCm >= square.minXCm - EPSILON_CM && post.maxXCm <= square.maxXCm + EPSILON_CM
-        && post.minYCm >= square.minYCm - EPSILON_CM && post.maxYCm <= square.maxYCm + EPSILON_CM);
+      const outward = nearlyEqual(postCm, segment.startCm + half) ? -1 : 1;
+      const nearCm = postCm - outward * half;
+      const farCm = postCm + outward * 3 * half;
+      const alongMin = Math.min(nearCm, farCm);
+      const alongMax = Math.max(nearCm, farCm);
+      const acrossMin = segment.fixedCm - half;
+      const acrossMax = segment.fixedCm + half;
+      return postTargets.some(({ post }) => {
+        // Bağımsız dikme ya da duvar ailesinin uç dikmesi (dikme her yerde dikme).
+        const [postAlongMin, postAlongMax, postAcrossMin, postAcrossMax] = segment.axis === 'x'
+          ? [post.minXCm, post.maxXCm, post.minYCm, post.maxYCm]
+          : [post.minYCm, post.maxYCm, post.minXCm, post.maxXCm];
+        return postAlongMin < alongMax - EPSILON_CM && alongMin < postAlongMax - EPSILON_CM
+          && postAcrossMin < acrossMax - EPSILON_CM && acrossMin < postAcrossMax - EPSILON_CM;
+      });
     };
     // Köşe karesinde aynı hatta devam eden short / profil var mı (ör. short'un ucundaki dikmenin üstü)?
     const cornerSquareContinuesOnMovingLine = (placement, targetId) => {
@@ -2202,9 +2428,10 @@ export function snapPlacementToModules({
       if (!segment || segment.axis === movingAxis) return;
       const half = getModuleCollisionDepthCm(wall) / 2;
       [segment.startCm + half, segment.endCm - half].forEach((postCm) => {
-        // Short ucunda bağımsız dikme varsa o dikmedir: profil dikmenin yüzünde durur (yukarıdaki
-        // dikme adayı), short ucunu örten köşe adayı üretilmez.
-        if (!profileTarget && endSquareHoldsUpright(segment, postCm, half)) return;
+        // Short ya da profil ucunda bağımsız dikme varsa o dikmedir: profil dikmenin yüzünde durur
+        // (yukarıdaki dikme adayı), ucu örten köşe adayı üretilmez (2026-11-13: profil ucu dikmenin
+        // yüzünde bitiyorsa köşe adayı yeni profili dikmenin 10 cm yanına oturtuyordu).
+        if (endSquareHoldsUpright(segment, postCm, half)) return;
         [['start', segment.fixedCm - half], ['end', segment.fixedCm + half]].forEach(([movingEndpoint, faceCm]) => {
           const placement = createEndpointConnectionPlacement({
             axis: movingAxis,

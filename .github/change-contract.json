@@ -1,27 +1,20 @@
 {
   "schemaVersion": 2,
-  "id": "stand-kose-dikme-panel-kaldirma",
-  "kind": "feature",
-  "summary": "Üç iş (2026-11-12, kullanıcı kararları). (1) Köşe birleşiminde tek ortak dikme çizilir: dik köşede (iç ve dış) iki modülün uç dikmeleri ayrı çizilip \"+\" çıkıntı veriyordu; src/wallCornerJoints.js üretim listesinin eklem tespitini okur (duvar / kapı / separatör / vitrin: detectRelationshipJoints; kısa duvar: salt okuma detectShortCornerJoints), çerçeve köşede kendi dikmesini çizmez, sahip modül ortak kare dikmeyi çizer; paneller uzamaz, BOM değişmez. (2) Bant paneli kaldırma: düz duvarın (wall_50/100/150/200) tıklanan / seçilen ön ya da arka bant paneli sağ tık ile kaldırılır (strip.removed), duvara sağ tıkla geri eklenir; renderer ve baskı alanı kaldırılan bandı saymaz; src/panelRemovalBom.js ön panelde panel + iki yan aparatı (köşe yanında köşe aparatı), en alt bantta 2 başlangıç düşer; arka bantta aynı. (3) Arka yüz aparatı ön yüz kurallarıyla: arka yüz paneli olan duvarda reçetenin tekli ve başlangıcı arka yüz için de yazılır (applyBackFaceConnectors); relationshipBom.js hasBackFace ile yan yanada iki arka yüzde çiftli dönüşümü, köşe / T’de komşu arka taraftaysa arka yüz köşe aparatı öder. Profil short ucundaki dikmenin üstüne biner, bazayla hizalanır. (4) Profil yapışması: profil her dikmeye (bağımsız, short ucundaki, duvar ucundaki) dört yönden ortalanır, dikmenin yüzünde durur; dik profil L köşesi dış yüzden hizalı. (5) Aynalı kopya (Gelişmiş mod): Sağa / Sola / Öne / Arkaya; seçimin aynalı kopyası o kenarından hemen bitişiğine eklenir (planMirrorCopy); çakışma aranmaz, stand dışında eklenmez. (6) Baza ve düz banko duvara tam oturur: yüze yaslanan baza / banko duvar ucuna hizalanır; stand kenarındaki duvarda arka yüzle hizalı baza duvarın arkasına taşabilir (baseOverhangsEdgeWall). İki Nokta Profil (2026-11-13, kullanıcı istekleri): üst banttaki araçla iki uç (dikme, profil ucu, profil gövdesi, duvar ailesinin ucu ya da üst rayı) seçilir, araya en yakın boyda tek profil konur; gövde ucu öbür ucun dik izdüşümüne oturur; ilk uçtan sonra boşluğa tıklanırsa profil bir ucu boşta konur. Seçilebilir uçlar, seçilen uç ve aradaki kesik çizgi sahnede önizlenir (src/twoPointProfile.js, scene3d setPointPickHandler / setPointPickPreview). Profil her yerde profil, dikme her yerde dikme (2026-11-13): duvar ailesi yardımcısı profili ve dikmeyi duvar saymaz; profil–profil L köşesi bırakma sırasından bağımsız dış yüzden hizalanır. Köşede birleşik duvarlar ayrılınca uç dikmesi yeniden çizilir; üst bant iki satır olunca seçim çubuğu seçili parçanın üstüne binmez, altına geçer.",
+  "id": "stand-profil-gercek-boy-araligi",
+  "kind": "bugfix",
+  "summary": "Profil gerçek boyundaki aralığa oturur (kullanıcı kararları 2026-11-13, proje 452d4cc1): aralık iki ucun (dikme, duvar uç dikmesi, dik profil) eksenden eksene uzaklığıdır; Profil 190 190'a girer, 180'e girmez; bütün profiller katalogdaki gerçek boyla. Aynı hattaki iki profil düğüm karesini paylaşabilir. İki ucu da köşe olan profil (H / U) iki çıkıntının arasında kısa çizilir, tek köşeli L'de uzun profil kareyi tutar. Short / profil ucuna değen dikme dikmedir (profil 10 cm kaymaz). Katalogdan sürüklenen profil kendi yüksekliğindeki düzleme izdüşer. Taşınabilir modülde el imleci; yerleştirme / kopyalama açıkken sol sürükleme sahneyi döndürür. Bazanın yan yüzleri dar panel (dijital baskı listesi 4 baza için 4 × 200 + 8 × 50).",
   "owners": [
-    "index.html",
-    "src/configuratorMarkup.js",
     "src/designState.js",
+    "src/helpGuide.js",
     "src/main.js",
-    "src/moduleContextMenu.js",
-    "src/panelRemovalBom.js",
-    "src/projectBom.js",
-    "src/relationshipBom.js",
+    "src/moduleDragSidebar.js",
+    "src/modulePlacement.js",
     "src/scene3d.js",
-    "src/selectionToolbar.js",
-    "src/twoPointProfile.js",
     "src/wallCornerJoints.js"
   ],
   "sourceOfTruth": [
-    "src/wallCornerJoints.js",
-    "src/relationshipBom.js",
-    "src/panelRemovalBom.js",
-    "src/designState.js"
+    "src/modulePlacement.js",
+    "src/wallCornerJoints.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -255,6 +248,7 @@
       "test/automaticWallItemLookup.test.js",
       "test/autosaveMainIntegration.test.js",
       "test/barStool2.test.js",
+      "test/baseFacePanelIdentity.test.js",
       "test/baseItemsContract.test.js",
       "test/baseModule.test.js",
       "test/baseRecipes.test.js",
@@ -419,6 +413,7 @@
       "test/profileFinish.test.js",
       "test/profileIntrinsicProperties.test.js",
       "test/profileLength.test.js",
+      "test/profileRealLengthFit.test.js",
       "test/profileShortEndPostSnap.test.js",
       "test/profileUprightIdentity.test.js",
       "test/profileWallRailTee.test.js",
@@ -676,6 +671,7 @@
   },
   "tests": {
     "targeted": [
+      "test/baseFacePanelIdentity.test.js",
       "test/baseWallEndAlign.test.js",
       "test/cornerRefreshOnMove.test.js",
       "test/flatPanelBackStrips.test.js",
@@ -683,6 +679,7 @@
       "test/horizontalPanelRails.test.js",
       "test/mirrorCopy.test.js",
       "test/panelRemoval.test.js",
+      "test/profileRealLengthFit.test.js",
       "test/profileShortEndPostSnap.test.js",
       "test/profileUprightIdentity.test.js",
       "test/relationshipBomJoints.test.js",

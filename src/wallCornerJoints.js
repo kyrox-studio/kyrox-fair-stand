@@ -153,7 +153,7 @@ function pushProfileTrim(result, profile, target) {
  *   kendi dikmesini çizmez, rayı dikmenin iç yüzünde biter: `{ localXSign, postWidthCm }`.
  * - Short ucundaki dikmenin üstüne binen profil short'un iç yüzünde biter: `{ localXSign, trimCm }`.
  * - Dış yüzden hizalı iki profilin L köşesinde kareyi uzun profil (eşitse küçük kimlik) çizer; diğeri
- *   onun iç yüzünde biter.
+ *   onun iç yüzünde biter. İki ucu da köşe olan profil (H / U) iki çıkıntının arasına girer.
  * Köşe karesinde tek parça görünür; yüzler üst üste binip çift çizgi vermez.
  */
 function addFramePostEnds(list, result) {
@@ -192,9 +192,24 @@ function addFramePostEnds(list, result) {
     }
   }
 
+  // H / U (kullanıcı kararı 2026-11-13, proje 452d4cc1): iki uçta da dik profillerin uçlarına gelen
+  // profil, duvarın üst rayının iki dikmesi arasına girdiği gibi iki çıkıntının iç yüzleri arasına
+  // girer; köşe karelerini çıkıntılar tutar. Yalnız bir ucu köşe olan L'de uzun profil tutar.
+  const cornerCount = new Map();
   profiles.forEach((first, index) => {
     profiles.slice(index + 1).forEach((second) => {
       if (!isProfileFlushOnFrameEnd(first, second) || !isProfileFlushOnFrameEnd(second, first)) return;
+      cornerCount.set(first.id, (cornerCount.get(first.id) ?? 0) + 1);
+      cornerCount.set(second.id, (cornerCount.get(second.id) ?? 0) + 1);
+    });
+  });
+  const spansBetween = (profile, other) => (cornerCount.get(profile.id) ?? 0) >= 2
+    && (cornerCount.get(other.id) ?? 0) < 2;
+  profiles.forEach((first, index) => {
+    profiles.slice(index + 1).forEach((second) => {
+      if (!isProfileFlushOnFrameEnd(first, second) || !isProfileFlushOnFrameEnd(second, first)) return;
+      if (spansBetween(first, second)) { pushProfileTrim(result, first, second); return; }
+      if (spansBetween(second, first)) { pushProfileTrim(result, second, first); return; }
       const firstWidth = Number(first.widthCm) || 0;
       const secondWidth = Number(second.widthCm) || 0;
       const firstOwns = firstWidth > secondWidth
