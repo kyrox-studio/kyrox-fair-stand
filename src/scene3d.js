@@ -115,9 +115,18 @@ import { getModuleBehavior, getModuleDefaultRotationDeg, getModuleGhostBehavior,
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
 import { noteSceneRender, trackSceneModel, trackSceneTextureLoader } from './sceneAssetLoading.js';
 import { normalizeProfileFinish, profileFinishColorCss } from './profileFinish.js';
+import { resolveWallCornerEnds } from './wallCornerJoints.js';
 
 // Proje profil rengi (stand.profileFinish). Varsayılanda null: çerçeve katalog rengini kullanır.
 let activeProfileFinish = normalizeProfileFinish(null);
+// Son sahne kurulumundaki köşe birleşimleri (modül kimliği → köşedeki uçlar; `wallCornerJoints.js`).
+let renderCornerEndsByModule = new Map();
+
+// Sahne dışı çizim (sürükleme silüeti, moduleIndex < 0) tek başına çizilir: köşe kuralı yok.
+function cornerEndsForModule(moduleState, moduleIndex) {
+  if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
+  return renderCornerEndsByModule.get(moduleState?.id) ?? [];
+}
 
 function frameColorForModule(moduleState) {
   const finishColor = profileFinishColorCss(activeProfileFinish);
@@ -1106,6 +1115,8 @@ export function createStandScene(
   let floorSelected = false;
   let floorAreaSelected = false;
   let floorAreaDrawArmed = false;
+  // Nokta seçme aracı (iki nokta profil): açıkken sol tık seçim / sürükleme yerine noktayı verir.
+  let pointPickHandler = null;
   // Tablet çoklu seçim modu: 'module' açıkken modüle dokunmak Shift + tık gibi toplu seçime
   // ekler/çıkarır; 'panel' tek seferlik parmak taramasıdır (Ctrl + tık dikdörtgeni gibi).
   let multiSelectMode = false;
@@ -1620,6 +1631,11 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
   const measureGroup = new THREE.Group();
   measureGroup.name = 'measure-overlay';
   scene.add(measureGroup);
+  // İki nokta profil önizlemesi: seçilebilir uçlar, imleçteki uç, seçilen ilk uç ve aradaki kesik çizgi.
+  const pointPickGroup = new THREE.Group();
+  pointPickGroup.name = 'point-pick-overlay';
+  scene.add(pointPickGroup);
+  let pointPickLabel = null;
   let measureLabels = [];
   let measureSignature = '';
   let measurementsVisible = false;
@@ -1800,6 +1816,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       if (signature && vertical) measureFloorCeiling(box);
     }
     positionMeasureLabels();
+    positionPointPickLabel();
   }
 
   function createActiveWallGuides(standType, widthM, depthM) {
@@ -2645,9 +2662,72 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     });
   }
 
+  // Önceki çizimle köşe uçları farklı olan modül kimlikleri.
+  function cornerChangedModuleIds(modules, nextCornerEnds) {
+    const changed = new Set();
+    for (const moduleState of modules) {
+      const id = moduleState?.id;
+      if (!id) continue;
+      const before = JSON.stringify(renderCornerEndsByModule.get(id) ?? []);
+      const after = JSON.stringify(nextCornerEnds.get(id) ?? []);
+      if (before !== after) changed.add(id);
+    }
+    return changed;
+  }
+
+  // Tek modül eklenince / silinince komşusuyla köşe oluşabilir ya da bozulabilir: köşe durumu
+  // değişen modüller kendi sırasıyla yeniden kurulur (görsel dokusu devralınır, seçim korunur).
+  function refreshCornerJointGroups() {
+    const groups = [...wallRoot.children].filter((group) => group.userData?.moduleState);
+    const modules = groups.map((group) => group.userData.moduleState);
+    const nextCornerEnds = resolveWallCornerEnds(modules);
+    const changedIds = cornerChangedModuleIds(modules, nextCornerEnds);
+    renderCornerEndsByModule = nextCornerEnds;
+    if (!changedIds.size) return;
+    const selectedSurfaceIds = new Set(
+      [...selectedSurfaces].map((mesh) => mesh.userData.surfaceId).filter(Boolean),
+    );
+    const previousAnchorSurfaceId = selectionAnchorSurfaceId;
+    const retainedTextures = new Map();
+    const rebuild = groups.filter((group) => changedIds.has(group.userData.moduleState.id));
+    let fabricTouched = false;
+    rebuild.forEach((group) => {
+      if (groupHasFabric(group)) fabricTouched = true;
+      retainGroupTextures(group, retainedTextures);
+      wallRoot.remove(group);
+      deferredWallDisposal.push(group);
+    });
+    rebuildTextureTransfer = retainedTextures.size ? retainedTextures : null;
+    const inScene = new Set();
+    wallRoot.children.forEach((group) => group.traverse((object) => inScene.add(object)));
+    surfaceMeshes = surfaceMeshes.filter((surface) => inScene.has(surface));
+    rebuild.forEach((group) => {
+      const added = addModuleGroup(group.userData.moduleState, group.userData.moduleIndex);
+      if (added && groupHasFabric(added)) fabricTouched = true;
+    });
+    disposeUnusedRebuildTextures();
+    if (fabricTouched) rebuildFabricOverlays();
+    restoreSelectionAfterSync(selectedSurfaceIds, previousAnchorSurfaceId);
+  }
+
+  // Taşıma / döndürme / ok tuşu sonrası (kullanıcı hatası 2026-11-13): köşede birleşik iki duvar
+  // ayrılınca uç dikmesi yeniden çizilmeli; sürükleme yalnız konumu güncellediği için dikme kayıp
+  // kalıyordu. Köşe durumu bir sonraki karede bir kez yeniden hesaplanır, değişen modül yeniden kurulur.
+  let cornerJointRefreshScheduled = false;
+  function scheduleCornerJointRefresh() {
+    if (cornerJointRefreshScheduled) return;
+    cornerJointRefreshScheduled = true;
+    requestAnimationFrame(() => {
+      cornerJointRefreshScheduled = false;
+      refreshCornerJointGroups();
+      requestEditorRender();
+    });
+  }
+
   function appendModule(moduleState, moduleIndex) {
     clearPlacementDrag();
     if (!addModuleGroup(moduleState, moduleIndex)) return false;
+    refreshCornerJointGroups();
     notifySelection();
     requestEditorRender();
     return true;
@@ -2663,6 +2743,14 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
   function syncModules(modules, { rebuiltIds = null } = {}) {
     if (!Array.isArray(modules) || modules.some((moduleState) => !moduleState?.placement)) return false;
     clearPlacementDrag();
+    // Köşe birleşimi değişen modül (köşe oluştu / bozuldu, komşu silindi) yeniden çizilir:
+    // uç dikmesi ve ortak köşe dikmesi yeni eklem durumuna göre kurulur.
+    const nextCornerEnds = resolveWallCornerEnds(modules);
+    const cornerChangedIds = cornerChangedModuleIds(modules, nextCornerEnds);
+    renderCornerEndsByModule = nextCornerEnds;
+    if (cornerChangedIds.size) {
+      rebuiltIds = new Set([...(rebuiltIds ?? []), ...cornerChangedIds]);
+    }
     const selectedSurfaceIds = new Set(
       [...selectedSurfaces].map((mesh) => mesh.userData.surfaceId).filter(Boolean),
     );
@@ -2759,6 +2847,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     surfaceMeshes = surfaceMeshes.filter((surface) => !removedSurfaces.has(surface));
     deferredWallDisposal.push(group);
     reindexModuleGroups(modules);
+    refreshCornerJointGroups();
     notifySelection();
     requestEditorRender();
     return true;
@@ -2965,6 +3054,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     const totalWidth = modules.reduce((sum, module) => sum + module.widthCm / 100, 0);
     let cursorX = 0;
     let hasMultiEdgePlacement = false;
+    renderCornerEndsByModule = resolveWallCornerEnds(modules);
 
     modules.forEach((moduleState, moduleIndex) => {
       let module = null;
@@ -3814,6 +3904,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     clearPlacementFeedback();
     disposePlacementGhost();
     moduleState.placement = { ...nextPlacement };
+    scheduleCornerJointRefresh();
     moduleGroup.userData.placement = { ...nextPlacement };
     applyPlacementToGroup(moduleGroup, nextPlacement, moduleState.widthCm);
     rotationCursor.rotationZDeg = normalizeModuleRotationZDeg(nextPlacement.rotationZDeg);
@@ -4181,6 +4272,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       pointerXCm: ground.xCm,
       pointerYCm: ground.yCm,
       rotationZDeg: preferredRotationZDeg,
+      zCm: moduleState.placement?.zCm ?? null,
       modules: renderedModules,
       standType: stageLayout.standType,
       standXCm: stageLayout.widthCm,
@@ -4741,6 +4833,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       pointerXCm: ground.xCm,
       pointerYCm: ground.yCm,
       rotationZDeg: dragSession.preferredRotationZDeg,
+      zCm: moduleState.placement?.zCm ?? null,
       modules: renderedModules,
       standType: stageLayout.standType,
       standXCm: stageLayout.widthCm,
@@ -4848,6 +4941,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       const moduleState = moduleGroup?.userData?.moduleState;
       if (!moduleGroup || !moduleState) return;
       moduleState.placement = { ...placement };
+      scheduleCornerJointRefresh();
       moduleGroup.userData.placement = { ...placement };
       applyPlacementToGroup(moduleGroup, placement, moduleState.widthCm);
     });
@@ -4971,6 +5065,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
           surfaceMeshes.push(...replacement.surfaces);
         }
         moduleState.placement = { ...placement };
+        scheduleCornerJointRefresh();
         moduleGroup.userData.placement = { ...placement };
         applyPlacementToGroup(moduleGroup, placement, moduleState.widthCm);
       });
@@ -6797,7 +6892,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
   let lastModulePress = null;
   renderer.domElement.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey
-      || !stageLayout || floorAreaDrawArmed || multiSelectMode) {
+      || !stageLayout || floorAreaDrawArmed || pointPickHandler || multiSelectMode) {
       lastModulePress = null;
       return;
     }
@@ -6819,7 +6914,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
   // kameraya gitmez. (Shift + tık ile modül seçimi yoktur; boş alanda Shift kamerayı kaydırır.)
   renderer.domElement.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || multiSelectMode !== 'module' || event.ctrlKey || event.metaKey || event.altKey) return;
-    if (!stageLayout || floorAreaDrawArmed) return;
+    if (!stageLayout || floorAreaDrawArmed || pointPickHandler) return;
     const picked = pickModuleAt(event.clientX, event.clientY);
     const moduleId = picked?.moduleGroup?.userData?.moduleState?.id
       ?? picked?.moduleGroup?.userData?.moduleId
@@ -6875,6 +6970,39 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     }
     handleSurfaceSelectionAt(event.clientX, event.clientY, true);
   }, { capture: true });
+
+  renderer.domElement.addEventListener('pointerdown', (event) => {
+    if (!pointPickHandler || event.button !== 0 || event.ctrlKey || event.metaKey || !stageLayout) return;
+    const point = pickPointAt(event.clientX, event.clientY);
+    if (!point) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    pointPickHandler(point);
+  }, { capture: true });
+
+  // İmleç gezdikçe önizleme: aynı nokta hesabı, kare başına bir kez.
+  // Kural: sahnedeki pointermove pencereye bağlanır; imleç tuval dışındaysa önizleme imleç ucunu bırakır.
+  let pointPickHoverFrame = 0;
+  getFairStandHostWindow().addEventListener('pointermove', (event) => {
+    if (!pointPickHandler || !pointPickHoverHandler || !stageLayout || pointPickHoverFrame) return;
+    const { clientX, clientY } = event;
+    const overCanvas = event.target === renderer.domElement;
+    pointPickHoverFrame = requestAnimationFrame(() => {
+      pointPickHoverFrame = 0;
+      if (!pointPickHoverHandler) return;
+      pointPickHoverHandler(overCanvas ? pickPointAt(clientX, clientY) : null);
+    });
+  }, { signal });
+
+  // Modüle tıklandıysa vurulan noktanın zemindeki izdüşümü (dikme tepesi de olur); boşlukta zemin.
+  function pickPointAt(clientX, clientY) {
+    const picked = pickModuleAt(clientX, clientY);
+    const moduleId = picked?.moduleGroup?.userData?.moduleState?.id ?? picked?.moduleGroup?.userData?.moduleId ?? null;
+    const point = picked?.hit?.point
+      ? { xCm: picked.hit.point.x * 100, yCm: picked.hit.point.z * 100 }
+      : getGroundPoint(clientX, clientY);
+    return point ? { ...point, moduleId, clientX, clientY } : null;
+  }
 
   renderer.domElement.addEventListener('pointerdown', (event) => {
     if (!floorAreaDrawArmed || event.button !== 0 || event.ctrlKey || event.metaKey) return;
@@ -7124,6 +7252,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
               return;
             }
             moduleState.placement = { ...nextPlacement };
+            scheduleCornerJointRefresh();
             moduleGroup.userData.placement = { ...nextPlacement };
             applyPlacementToGroup(moduleGroup, nextPlacement, moduleState.widthCm);
             clearPlacementFeedback();
@@ -7140,6 +7269,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
             return;
           }
           moduleState.placement = { ...nextPlacement };
+          scheduleCornerJointRefresh();
           moduleGroup.userData.placement = { ...nextPlacement };
           applyPlacementToGroup(moduleGroup, nextPlacement, moduleState.widthCm);
           clearPlacementFeedback();
@@ -7218,6 +7348,8 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
         }
 
         moduleState.placement = { ...desiredPlacement };
+
+        scheduleCornerJointRefresh();
         moduleGroup.userData.placement = { ...desiredPlacement };
         applyPlacementToGroup(moduleGroup, desiredPlacement, moduleState.widthCm);
         clearPlacementFeedback();
@@ -7265,6 +7397,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
             zCm: nextZCm,
           };
           moduleState.placement = { ...desiredPlacement };
+          scheduleCornerJointRefresh();
           moduleGroup.userData.placement = { ...desiredPlacement };
           applyPlacementToGroup(moduleGroup, desiredPlacement, moduleState.widthCm);
           clearPlacementFeedback();
@@ -7312,6 +7445,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
           }
           const liftedPlacement = { ...moduleState.placement, zCm: nextZCm };
           moduleState.placement = { ...liftedPlacement };
+          scheduleCornerJointRefresh();
           moduleGroup.userData.placement = { ...liftedPlacement };
           applyPlacementToGroup(moduleGroup, liftedPlacement, moduleState.widthCm);
           clearPlacementFeedback();
@@ -7345,6 +7479,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
           return;
         }
         moduleState.placement = { ...desiredPlacement };
+        scheduleCornerJointRefresh();
         moduleGroup.userData.placement = { ...desiredPlacement };
         applyPlacementToGroup(moduleGroup, desiredPlacement, moduleState.widthCm);
         clearPlacementFeedback();
@@ -7391,6 +7526,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
           }
           const liftedPlacement = { ...moduleState.placement, zCm: nextZCm };
           moduleState.placement = { ...liftedPlacement };
+          scheduleCornerJointRefresh();
           moduleGroup.userData.placement = { ...liftedPlacement };
           applyPlacementToGroup(moduleGroup, liftedPlacement, moduleState.widthCm);
           clearPlacementFeedback();
@@ -7424,6 +7560,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
           return;
         }
         moduleState.placement = { ...desiredTopPlacement };
+        scheduleCornerJointRefresh();
         moduleGroup.userData.placement = { ...desiredTopPlacement };
         applyPlacementToGroup(moduleGroup, desiredTopPlacement, moduleState.widthCm);
         clearPlacementFeedback();
@@ -7473,6 +7610,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
         }
         const liftedPlacement = { ...moduleState.placement, zCm: nextZCm };
         moduleState.placement = { ...liftedPlacement };
+        scheduleCornerJointRefresh();
         moduleGroup.userData.placement = { ...liftedPlacement };
         applyPlacementToGroup(moduleGroup, liftedPlacement, moduleState.widthCm);
         clearPlacementFeedback();
@@ -7508,6 +7646,8 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       }
 
       moduleState.placement = { ...desiredPlacement };
+
+      scheduleCornerJointRefresh();
       moduleGroup.userData.placement = { ...desiredPlacement };
       applyPlacementToGroup(moduleGroup, desiredPlacement, moduleState.widthCm);
       clearPlacementFeedback();
@@ -7718,6 +7858,11 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       selectionAnchorBox.makeEmpty();
       groups.forEach((group) => selectionAnchorBox.expandByObject(group));
       selectionAnchorBox.getCenter(selectionAnchorPoint);
+      // Seçimin alt kenarı da verilir: çubuk üst bant yüzünden aşağı itilip seçimin üstüne binerse
+      // seçimin altına yerleşir (2026-11-13: üst bant iki satır olunca çip seçili parçayı örtüyordu).
+      const bottomPoint = selectionAnchorPoint.clone();
+      bottomPoint.y = selectionAnchorBox.min.y;
+      bottomPoint.project(camera);
       selectionAnchorPoint.y = selectionAnchorBox.max.y;
       selectionAnchorPoint.project(camera);
       const rect = renderer.domElement.getBoundingClientRect();
@@ -7729,6 +7874,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
         anchor = {
           clientX: Math.round(rect.left + ((selectionAnchorPoint.x + 1) / 2) * rect.width),
           clientY: Math.round(rect.top + ((1 - selectionAnchorPoint.y) / 2) * rect.height),
+          bottomClientY: Math.round(rect.top + ((1 - bottomPoint.y) / 2) * rect.height),
           count: groups.length,
           kind: multiSelectedModuleIds.size <= 1
             && [...selectedSurfaces].some((mesh) => mesh.userData?.selectionMode === 'panel' || isModuleFaceSurface(mesh))
@@ -7877,6 +8023,100 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     return currentFloorArea.color;
   }
 
+  // handler({ xCm, yCm, moduleId, clientX, clientY }) her sol tıkta; onHover aynı noktayı imleç
+  // gezdikçe verir (imleç boşluktaysa null). null aracı kapatır ve önizlemeyi siler.
+  let pointPickHoverHandler = null;
+  function setPointPickHandler(handler, { onHover = null } = {}) {
+    pointPickHandler = typeof handler === 'function' ? handler : null;
+    pointPickHoverHandler = pointPickHandler && typeof onHover === 'function' ? onHover : null;
+    renderer.domElement.style.cursor = pointPickHandler ? 'crosshair' : '';
+    if (!pointPickHandler) setPointPickPreview(null);
+    return Boolean(pointPickHandler);
+  }
+
+  function clearPointPickOverlay() {
+    pointPickGroup.children.slice().forEach((child) => {
+      pointPickGroup.remove(child);
+      child.geometry?.dispose?.();
+      child.material?.dispose?.();
+    });
+    pointPickLabel?.element.remove();
+    pointPickLabel = null;
+  }
+
+  // Plan noktası (xCm, yCm) ve yükseklik (zCm) → sahne (x, y yukarı, z derinlik).
+  function pointPickWorld(point) {
+    return new THREE.Vector3(Number(point.xCm) / 100, (Number(point.zCm) || 0) / 100, Number(point.yCm) / 100);
+  }
+
+  function addPointPickMarker(point, color, radiusM, opacity = 1) {
+    const marker = new THREE.Mesh(
+      new THREE.SphereGeometry(radiusM, 16, 12),
+      new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true, opacity }),
+    );
+    marker.position.copy(pointPickWorld(point));
+    marker.renderOrder = 31;
+    marker.raycast = () => {};
+    pointPickGroup.add(marker);
+  }
+
+  /**
+   * İki nokta profil önizlemesi. anchors: seçilebilir uçlar (küçük mavi), hover: imleçteki uç
+   * (büyük), start: seçilen ilk uç (turuncu). start ve hover varsa arada kesik turuncu çizgi ve
+   * aralık etiketi (label verilirse o yazılır). Noktalar { xCm, yCm, zCm, free? }; null önizlemeyi siler.
+   */
+  function setPointPickPreview(preview) {
+    clearPointPickOverlay();
+    if (preview) {
+      const { anchors = [], hover = null, start = null, label = null } = preview;
+      anchors.forEach((anchor) => addPointPickMarker(anchor, 0x2563eb, 0.03, 0.8));
+      // Boş uç (bir ucu boşta profil) gri; uç noktası seçimde turuncu / mavi.
+      if (hover) addPointPickMarker(hover, hover.free ? 0x64748b : (start ? 0xf97316 : 0x1d4ed8), 0.065);
+      if (start) addPointPickMarker(start, 0xf97316, 0.08);
+      if (start && hover) {
+        const from = pointPickWorld(start);
+        const to = pointPickWorld(hover);
+        const line = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([from, to]),
+          new THREE.LineDashedMaterial({ color: 0xf97316, dashSize: 0.08, gapSize: 0.05, depthTest: false, transparent: true }),
+        );
+        line.computeLineDistances();
+        line.renderOrder = 31;
+        line.raycast = () => {};
+        pointPickGroup.add(line);
+        const distanceCm = Math.hypot(Number(hover.xCm) - Number(start.xCm), Number(hover.yCm) - Number(start.yCm));
+        const element = document.createElement('div');
+        element.className = 'scene-point-pick-label';
+        element.textContent = label ?? `${String(Math.round(distanceCm * 10) / 10).replace('.', ',')} cm`;
+        element.style.cssText = [
+          'position:fixed', 'z-index:30', 'pointer-events:none', 'transform:translate(-50%,-140%)',
+          'padding:2px 6px', 'border-radius:4px', 'font:600 11px/1.3 system-ui,sans-serif', 'color:#fff',
+          'white-space:nowrap', 'background:rgba(234,88,12,.92)', 'box-shadow:0 1px 3px rgba(15,23,42,.25)',
+        ].join(';');
+        document.body.appendChild(element);
+        pointPickLabel = { element, world: from.clone().add(to).multiplyScalar(0.5) };
+        positionPointPickLabel();
+      }
+    }
+    requestEditorRender();
+  }
+
+  function positionPointPickLabel() {
+    if (!pointPickLabel) return;
+    const rect = renderer.domElement.getBoundingClientRect();
+    const projected = pointPickLabel.world.clone().project(camera);
+    const visible = projected.z > -1 && projected.z < 1 && rect.width > 0;
+    pointPickLabel.element.style.display = visible ? '' : 'none';
+    if (!visible) return;
+    pointPickLabel.element.style.left = `${rect.left + ((projected.x + 1) / 2) * rect.width}px`;
+    pointPickLabel.element.style.top = `${rect.top + ((1 - projected.y) / 2) * rect.height}px`;
+  }
+
+  // Katalog bırakma kuralı verilen zemin noktasında, dönüş kilitli; hayalet çizmez.
+  function planCatalogModuleAtPoint(moduleState, ground, rotationZDeg = 0) {
+    return withoutGhost(planCatalogModuleAtGround(moduleState, ground, rotationZDeg, true));
+  }
+
   function setFloorAreaDrawArmed(enabled, handler) {
     floorAreaDrawArmed = Boolean(enabled);
     if (typeof handler === 'function') onFloorAreaDrawn = handler;
@@ -7906,6 +8146,8 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     setFloorArea,
     setFloorAreaColor,
     setFloorAreaDrawArmed,
+    setPointPickHandler,
+    setPointPickPreview,
     isFloorAreaSelected: () => floorAreaSelected,
     getSelectedModuleIds,
     selectModulesById,
@@ -7941,6 +8183,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     clearCatalogModuleDrag,
     placeCatalogModuleOnModule,
     planCatalogModuleInFrontOf,
+    planCatalogModuleAtPoint,
     findFreeCatalogPlacement,
     revealAddedModule,
     getStageLayout: () => (stageLayout ? { ...stageLayout } : null),
@@ -9053,11 +9296,19 @@ function createProfileModule(moduleState, moduleIndex) {
     metalness: 0.68,
     roughness: 0.28,
   });
+  // Short ucundaki dikmeye binen profil (2026-11-12, yalnız çizim): short'un iç yüzünde biter,
+  // köşe karesini dikme tutar. Seçim kutusu ve BOM tam boyu korur.
+  const trims = cornerEndsForModule(moduleState, moduleIndex).filter((end) => end.trimCm != null);
+  const trimAt = (side) => (trims.find((end) => end.localXSign === side)?.trimCm ?? 0) / 100;
+  const drawnLeft = -widthM / 2 + trimAt(-1);
+  const drawnRight = widthM / 2 - trimAt(1);
+  const drawnWidthM = Math.max(drawnRight - drawnLeft, 0.02);
   const mesh = createFrameProfileMesh(
-    createSlottedProfileGeometry(widthM, railHeightM, thicknessM),
+    createSlottedProfileGeometry(drawnWidthM, railHeightM, thicknessM),
     frameMaterial,
     createFrameEdgeMaterial(frameMaterial),
   );
+  mesh.position.x = (drawnLeft + drawnRight) / 2;
   mesh.position.y = railHeightM / 2;
   mesh.userData = {
     kind: 'surface',
@@ -10887,12 +11138,29 @@ function createFrameProfileMesh(geometry, frameMaterial, edgeMaterial) {
 function addPanelModuleFrame(
   group,
   moduleState,
-  { widthM, frameBottomY, frameTopY, uprightTopY = frameTopY, uprightGap = null, frameMaterial },
+  { widthM, frameBottomY, frameTopY, uprightTopY = frameTopY, uprightGap = null, frameMaterial, cornerEnds: frameEnds = [] },
 ) {
   const { frameWidth, frameDepth } = getProceduralFrameCrossSectionM(moduleState);
   const frameHeight = Math.max(frameTopY - frameBottomY, 0.02);
   const uprightHeight = Math.max(uprightTopY - frameBottomY, 0.02);
-  const railLength = Math.max(widthM - frameWidth * 2, 0.02);
+  // Köşe birleşimi (kullanıcı kararı 2026-11-12): köşedeki uçta modülün kendi dikmesi çizilmez;
+  // iki duvar çizgisinin kesişiminde tek ortak dikme durur (BOM'daki tek dikme). Ray o dikmenin
+  // yüzüne kadar uzar.
+  const cornerEnds = frameEnds.filter((end) => end.postWidthCm == null && end.trimCm == null);
+  const cornerSides = new Set(cornerEnds.map((end) => end.localXSign));
+  // Short ucundaki bağımsız dikme (2026-11-12, yalnız çizim): o uçta kendi dikmesi çizilmez, ray
+  // dikmenin iç yüzünde biter; köşe karesinde tek dikme görünür.
+  const postWidthBySide = new Map(frameEnds
+    .filter((end) => end.postWidthCm != null && !cornerSides.has(end.localXSign))
+    .map((end) => [end.localXSign, end.postWidthCm / 100]));
+  const ownPostSides = new Set([...cornerSides, ...postWidthBySide.keys()]);
+  const railEdge = (side) => side * (widthM / 2 - (cornerSides.has(side)
+    ? frameDepth / 2
+    : (postWidthBySide.get(side) ?? frameWidth)));
+  const railLeft = railEdge(-1);
+  const railRight = railEdge(1);
+  const railLength = Math.max(railRight - railLeft, 0.02);
+  const railCenterX = (railLeft + railRight) / 2;
   const railHeight = Math.min(frameWidth, frameHeight / 2);
   const edgeMaterial = createFrameEdgeMaterial(frameMaterial);
 
@@ -10910,12 +11178,23 @@ function addPanelModuleFrame(
     if (segmentTop - segmentBottom <= 0) continue;
     const uprightGeometry = createSlottedProfileGeometry(frameWidth, segmentTop - segmentBottom, frameDepth);
     for (const side of [-1, 1]) {
+      if (ownPostSides.has(side)) continue;
       addProfile(uprightGeometry.clone(), side * (widthM / 2 - frameWidth / 2), (segmentBottom + segmentTop) / 2);
     }
   }
+  // Ortak köşe dikmesi: kesit duvar kalınlığında kare, merkezi duvar çizgisinin ucunda (iki çizginin
+  // kesişimi). Eklemin sahibi çizer; komşu yalnız kendi dikmesini bırakır.
+  for (const end of cornerEnds) {
+    if (!end.ownsPost) continue;
+    for (const [segmentBottom, segmentTop] of uprightSegments) {
+      if (segmentTop - segmentBottom <= 0) continue;
+      const postGeometry = createSlottedProfileGeometry(frameDepth, segmentTop - segmentBottom, frameDepth);
+      addProfile(postGeometry, end.localXSign * (widthM / 2), (segmentBottom + segmentTop) / 2);
+    }
+  }
   const railGeometry = createSlottedProfileGeometry(railLength, railHeight, frameDepth);
-  addProfile(railGeometry.clone(), 0, frameBottomY + railHeight / 2);
-  addProfile(railGeometry.clone(), 0, frameTopY - railHeight / 2);
+  addProfile(railGeometry.clone(), railCenterX, frameBottomY + railHeight / 2);
+  addProfile(railGeometry.clone(), railCenterX, frameTopY - railHeight / 2);
 }
 
 // Panel yüzü çerçevenin dış kenarından alt ve üstte 4 cm, sağ ve solda 2 cm içeride biter.
@@ -10970,11 +11249,13 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
   });
 
   // Ara yatay profiller yok; panel grubunda yalnız en alt ve en üst profil kalır.
+  const cornerEnds = cornerEndsForModule(moduleState, moduleIndex);
   addPanelModuleFrame(group, moduleState, {
     widthM,
     frameBottomY,
     frameTopY: frameBottomY + frameHeight,
     frameMaterial,
+    cornerEnds,
   });
 
   const railHeight = STAND_DIMENSIONS.panelRailHeight;
@@ -11068,10 +11349,13 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
       console.warn('Eksik panel strip state atlandı:', moduleState.type, moduleState.id, stripIndex);
       continue;
     }
+    // Kaldırılan panel (2026-11-12): bant boş çerçeve kalır; yüz ve gövde çizilmez, seçilemez.
+    if (surfaceState.removed === true) continue;
     addPanel(surfaceState, stripIndex, 'front');
   }
   if (Array.isArray(moduleState.backStrips)) {
     moduleState.backStrips.forEach((surfaceState, stripIndex) => {
+      if (surfaceState?.removed === true) return;
       if (surfaceState && stripIndex < visibleStripCount) addPanel(surfaceState, stripIndex, 'back');
     });
   }
@@ -11114,6 +11398,7 @@ function createDoorModule(moduleState, moduleIndex, onSurfaceReady) {
     frameBottomY: 0,
     frameTopY: height,
     frameMaterial,
+    cornerEnds: cornerEndsForModule(moduleState, moduleIndex),
   });
 
   const surfaces = [];
@@ -11292,22 +11577,35 @@ function createSeparatorModule(moduleState, moduleIndex) {
     roughness: 0.28,
   });
 
+  // Köşe birleşimi (2026-11-12): köşedeki uçta kendi dikmesi çizilmez, sahibiyse duvar çizgilerinin
+  // kesişiminde ortak dikme çizilir; ray o dikmenin yüzüne uzar (duvar çerçevesiyle aynı kural).
+  const cornerEnds = cornerEndsForModule(moduleState, moduleIndex);
+  const cornerSides = new Set(cornerEnds.map((end) => end.localXSign));
   const profileGeometry = createSlottedProfileGeometry(frameWidth, height, frameDepth);
   for (const side of [-1, 1]) {
+    if (cornerSides.has(side)) continue;
     const profile = new THREE.Mesh(profileGeometry.clone(), frameMaterial.clone());
     profile.position.set(side * (widthM / 2 - frameWidth / 2), height / 2, 0);
     profile.castShadow = true;
     group.add(profile);
   }
+  for (const end of cornerEnds) {
+    if (!end.ownsPost) continue;
+    const post = new THREE.Mesh(createSlottedProfileGeometry(frameDepth, height, frameDepth), frameMaterial.clone());
+    post.position.set(end.localXSign * (widthM / 2), height / 2, 0);
+    post.castShadow = true;
+    group.add(post);
+  }
 
+  const railEdge = (side) => side * (widthM / 2 - (cornerSides.has(side) ? frameDepth / 2 : frameWidth));
   const crossRailGeometry = createSlottedProfileGeometry(
-    Math.max(widthM - frameWidth * 2, 0.02),
+    Math.max(railEdge(1) - railEdge(-1), 0.02),
     frameWidth,
     frameDepth,
   );
   for (const y of [frameWidth / 2, height - frameWidth / 2]) {
     const rail = new THREE.Mesh(crossRailGeometry.clone(), frameMaterial.clone());
-    rail.position.set(0, y, 0);
+    rail.position.set((railEdge(-1) + railEdge(1)) / 2, y, 0);
     rail.castShadow = true;
     group.add(rail);
   }
@@ -11517,6 +11815,7 @@ function createShowcaseModule(moduleState, moduleIndex, onSurfaceReady) {
     uprightTopY: height,
     uprightGap: { bottomY: bodyBottom, topY: bodyTop },
     frameMaterial,
+    cornerEnds: cornerEndsForModule(moduleState, moduleIndex),
   });
 
   const sidePanelGeometry = new THREE.BoxGeometry(bodyThickness, bodyHeight, showcaseDepth);

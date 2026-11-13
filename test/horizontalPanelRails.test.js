@@ -18,8 +18,9 @@ test('panel systems keep only bottom and top horizontal profiles', () => {
   assert.doesNotMatch(scene, /for \(let index = 0; index <= stripCount; index \+= 1\)/);
   // Ortak çerçeve tam iki dikme + iki yatay profil çizer; ara yatay profil yok.
   assert.equal((panelFrame.match(/addProfile\(railGeometry\.clone\(\)/g) ?? []).length, 2);
-  assert.match(panelFrame, /addProfile\(railGeometry\.clone\(\), 0, frameBottomY \+ railHeight \/ 2\)/);
-  assert.match(panelFrame, /addProfile\(railGeometry\.clone\(\), 0, frameTopY - railHeight \/ 2\)/);
+  // Raylar köşe birleşiminde ortak dikmeye kadar uzar; merkez iki ucun ortasıdır (2026-11-12).
+  assert.match(panelFrame, /addProfile\(railGeometry\.clone\(\), railCenterX, frameBottomY \+ railHeight \/ 2\)/);
+  assert.match(panelFrame, /addProfile\(railGeometry\.clone\(\), railCenterX, frameTopY - railHeight \/ 2\)/);
 });
 
 test('wall, door and showcase frames draw all four edges with the stand frame cross-section', () => {

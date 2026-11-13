@@ -100,7 +100,8 @@ test('profile uses wall_200 move/rotate/snap contract and does not nest into a n
     standYCm: 600,
   });
   assert.equal(hit?.ok, true);
-  assert.equal(hit.snapKind, 'end-to-end');
+  // Duvarın uç dikmesine uç uca (2026-11-12 "dikme her yerde dikme": dikmenin yüzünde, ortalı).
+  assert.equal(hit.snapKind, 'upright-face');
   assert.equal(hit.placement.xCm, 200);
   assert.equal(hit.placement.yCm, 0);
   assert.equal(placementsOverlap(düzWall, neighborProfile), false);
@@ -163,7 +164,11 @@ test('field profile renderer is a thick top rail, not a 4mm line or a 7-strip pa
   const fn = source.slice(source.indexOf('function createProfileModule'), source.indexOf('function createKettleModule'));
   assert.match(fn, /requireModuleSceneBoxCm/);
   assert.doesNotMatch(fn, /getStraightWallNominalWidthForProfileItem/);
-  assert.match(fn, /createSlottedProfileGeometry\(widthM, railHeightM, thicknessM\)/);
+  // Çizilen boy sahne kutusu genişliğidir; yalnız köşede dış yüzden hizalı ucu (2026-11-12) komşunun
+  // kalınlığı kadar kısalır.
+  assert.match(fn, /const drawnLeft = -widthM \/ 2 \+ trimAt\(-1\)/);
+  assert.match(fn, /const drawnRight = widthM \/ 2 - trimAt\(1\)/);
+  assert.match(fn, /createSlottedProfileGeometry\(drawnWidthM, railHeightM, thicknessM\)/);
   assert.match(fn, /mesh\.position\.y = railHeightM \/ 2/);
   assert.doesNotMatch(fn, /STAND_DIMENSIONS/);
   assert.match(fn, /frameColorForModule\(moduleState\)/);

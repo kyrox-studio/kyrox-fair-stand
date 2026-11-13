@@ -18,6 +18,10 @@ import {
   normalizeModuleItemState,
   removeFlatPanelBackStrips,
   supportsFlatPanelBackStrips,
+  supportsPanelRemoval,
+  removePanelStrips,
+  restoreRemovedPanels,
+  countRemovedPanels,
   totalWallWidthCm,
   moduleWidths,
 } from './designState.js';
@@ -114,6 +118,7 @@ import {
   listGroups,
   nextGroupName,
   planGroupDuplicate,
+  planMirrorCopy,
   pruneGroups,
   removeFromGroup,
   renameGroup,
@@ -166,6 +171,7 @@ import {
   requestProfileLength,
   writeProfileLengthPreference,
 } from './profileLength.js';
+import { alignProfileBodyAnchor, findProfileAnchorAt, listProfileAnchorPoints, resolveFreeEndProfile, resolveTwoPointProfile, resolveTwoPointProfileZCm } from './twoPointProfile.js';
 import { describeModuleVariants, resolveModuleVariantItemKey } from './catalogWidthFamily.js';
 import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
@@ -188,6 +194,7 @@ import { createProductionBomPanel } from './productionBomPanel.js';
 import { waitForNextRender, waitForSceneAssets } from './sceneAssetLoading.js';
 import { PROFILE_FINISH_DEFAULT, normalizeProfileFinish } from './profileFinish.js';
 import { requestConfirmation, requestTextInput } from './inAppDialogs.js';
+import { clearFabricFields } from './surfaceStateBinding.js';
 import { beginEditorBootStep, beginProjectOpenStep, discardEditorBootTiming, timeSceneRefresh, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
 
 
@@ -284,6 +291,7 @@ const onboardingTips = createOnboardingTips({ container: viewportEmpty?.closest(
 const viewportToolbar = document.querySelector('#viewport-toolbar');
 const viewportToolbarToggle = document.querySelector('#viewport-toolbar-toggle');
 const toggleProductionBomButton = document.querySelector('#toggle-production-bom');
+const twoPointProfileButton = document.querySelector('#two-point-profile');
 const renderCurrentViewButton = document.querySelector('#render-current-view');
 const toggleStageLightButton = document.querySelector('#toggle-stage-light');
 const designUndoButton = document.querySelector('#design-undo');
@@ -689,6 +697,8 @@ function renderStageResult(message, isError = false) {
 
 function setStandEditingEnabled(enabled) {
   if (toggleProductionBomButton) toggleProductionBomButton.disabled = !enabled;
+  if (twoPointProfileButton) twoPointProfileButton.disabled = !enabled;
+  if (!enabled) setTwoPointProfileArmed(false);
   clearWallButton.disabled = !enabled;
   moduleDragSidebar?.setEnabled(Boolean(enabled && currentStand));
   if (!enabled) {
@@ -981,6 +991,27 @@ function startCopyPlacement() {
   selectionToolbar?.setCopyActive(true);
   selectionInfo.textContent = `Kopyalandı: ${label} · bırakmak için sahnede bir yere dokun · Esc: bitir`;
   return true;
+}
+
+// Aynalı kopya (kullanıcı kararı 2026-11-12, Gelişmiş mod): toplu seçim, sağ tıklanan öğenin grubu
+// ya da tek öğe o yöndeki kenarından aynalanıp hemen bitişiğine kopyalanır; çakışma aranmaz.
+const MIRROR_DIRECTION_LABELS = Object.freeze({ right: 'Sağa', left: 'Sola', front: 'Öne', back: 'Arkaya' });
+
+function mirrorContextSelection(context, direction) {
+  if (!currentStand || !context || !MIRROR_DIRECTION_LABELS[direction]) return;
+  const multi = Array.isArray(context.multiModuleIds) && context.multiModuleIds.length > 1;
+  const groupIds = context.group?.id ? getGroupMembers(currentModules, context.group.id).map((member) => member.id) : [];
+  const ids = multi ? context.multiModuleIds : (groupIds.length ? groupIds : [context.moduleId]);
+  const result = planMirrorCopy(currentModules, ids, direction, getGroupStand(), { duplicateModule: duplicateModuleState });
+  if (!result.ok) {
+    reportGroupResult(result.message, true);
+    return;
+  }
+  currentModules.push(...result.clones);
+  syncSceneToModules();
+  scene3d.selectModulesById(result.clones.map((clone) => clone.id));
+  const groupNote = result.groups.length ? ` · yeni grup “${result.groups.map((group) => group.name).join('”, “')}”` : '';
+  reportGroupResult(`${MIRROR_DIRECTION_LABELS[direction]} aynalı kopya eklendi · ${result.clones.length} parça${groupNote}.`);
 }
 
 function copyContextModule(context) {
@@ -1438,6 +1469,91 @@ async function changeContextBackPanels(context, enabled) {
     selectionInfo.textContent = 'Arka yüz panelleri kaldırıldı.';
   }
   syncSceneAfterModuleChange(capturedContent);
+}
+
+// Panel kaldırma (kullanıcı kararı 2026-11-12): seçili / tıklanan düz duvar bant panelleri
+// kaldırılır; duvara sağ tıkla "Kaldırılan panelleri geri ekle". Üretim listesinde panel ve iki
+// yan aparatı düşer (`panelRemovalBom.js`).
+function selectedRemovablePanels() {
+  const byId = new Map(currentModules.map((moduleState) => [moduleState.id, moduleState]));
+  return scene3d.getSelectedSurfaces()
+    .map((surface) => surface.userData ?? {})
+    .filter((data) => data.selectionMode === 'panel' && Number.isInteger(data.stripIndex))
+    .map((data) => ({
+      moduleState: byId.get(data.moduleId) ?? null,
+      side: data.panelSide === 'back' ? 'back' : 'front',
+      stripIndex: data.stripIndex,
+    }))
+    .filter((panel) => supportsPanelRemoval(panel.moduleState));
+}
+
+function getContextPanelRemovalState(context) {
+  const removable = selectedRemovablePanels().length;
+  const index = findContextModuleIndex(context);
+  const moduleState = index >= 0 ? currentModules[index] : null;
+  const removed = supportsPanelRemoval(moduleState) ? countRemovedPanels(moduleState) : 0;
+  if (!removable && !removed) return null;
+  return { removable, removed };
+}
+
+async function removeContextPanels() {
+  const panels = selectedRemovablePanels();
+  if (!panels.length) return;
+  if (panels.some((panel) => isModuleLocked(panel.moduleState))) {
+    renderWallResult(MODULE_LOCKED_MESSAGE, true);
+    scene3d.showPlacementFeedback(MODULE_LOCKED_MESSAGE, { durationMs: 2200 });
+    return;
+  }
+  const strip = (panel) => (panel.side === 'back' ? panel.moduleState.backStrips : panel.moduleState.strips)
+    ?.find((entry, fallbackIndex) => (Number.isInteger(entry?.stripIndex) ? entry.stripIndex : fallbackIndex) === panel.stripIndex);
+  const decorated = panels.some((panel) => {
+    const state = strip(panel);
+    return state?.imageAssetId || state?.fabricGroupId || state?.isGlass || state?.isMetalSeparator;
+  });
+  if (decorated && !(await requestConfirmation({
+    title: 'Paneli kaldır',
+    message: 'Kaldırılan paneldeki görsel, cam, metal ve kumaş ayarı silinecek. Kumaş birden çok panele yayılıyorsa kumaş bütün panellerden kalkar. Devam edilsin mi?',
+    confirmLabel: 'Kaldır',
+  }))) return;
+  const capturedContent = captureModuleContent();
+  // Kaldırılan panelin kumaşı başka panellere yayılıyorsa kumaş bütün grubundan kalkar.
+  const fabricGroups = new Set(panels.map((panel) => strip(panel)?.fabricGroupId).filter(Boolean));
+  if (fabricGroups.size) {
+    for (const moduleState of currentModules) {
+      for (const state of [...(moduleState.strips ?? []), ...(moduleState.backStrips ?? [])]) {
+        if (state?.fabricGroupId && fabricGroups.has(state.fabricGroupId)) clearFabricFields(state);
+      }
+    }
+  }
+  const byModule = new Map();
+  for (const panel of panels) {
+    if (!byModule.has(panel.moduleState)) byModule.set(panel.moduleState, []);
+    byModule.get(panel.moduleState).push({ side: panel.side, stripIndex: panel.stripIndex });
+  }
+  let removed = 0;
+  for (const [moduleState, list] of byModule) removed += removePanelStrips(moduleState, list);
+  if (!removed) return;
+  scene3d.clearSelection();
+  syncSceneAfterModuleChange(capturedContent);
+  selectionInfo.textContent = removed > 1 ? `${removed} panel kaldırıldı.` : 'Panel kaldırıldı.';
+  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+}
+
+function restoreContextPanels(context) {
+  const index = findContextModuleIndex(context);
+  const moduleState = index >= 0 ? currentModules[index] : null;
+  if (!supportsPanelRemoval(moduleState)) return;
+  if (isModuleLocked(moduleState)) {
+    renderWallResult(MODULE_LOCKED_MESSAGE, true);
+    scene3d.showPlacementFeedback(MODULE_LOCKED_MESSAGE, { durationMs: 2200 });
+    return;
+  }
+  const capturedContent = captureModuleContent();
+  const restored = restoreRemovedPanels(moduleState);
+  if (!restored) return;
+  syncSceneAfterModuleChange(capturedContent);
+  selectionInfo.textContent = restored > 1 ? `${restored} panel geri eklendi.` : 'Panel geri eklendi.';
+  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
 }
 
 function changeContextFabricMode(context, enabled) {
@@ -2042,6 +2158,7 @@ const moduleContextMenu = createModuleContextMenu({
   },
   onDelete: deleteContextModule,
   onDuplicate: copyContextModule,
+  onMirror: mirrorContextSelection,
   onAdd: addCatalogModule,
   onGlassModeChange: changeContextPanelGlassMode,
   onMetalSeparatorModeChange: changeContextMetalSeparatorMode,
@@ -2052,6 +2169,9 @@ const moduleContextMenu = createModuleContextMenu({
   onShelfLightingChange: changeContextShelfLighting,
   getBackPanelState: getContextBackPanelState,
   onBackPanelChange: changeContextBackPanels,
+  getPanelRemovalState: getContextPanelRemovalState,
+  onRemovePanels: () => void removeContextPanels(),
+  onRestorePanels: restoreContextPanels,
   onLockChange: changeModuleLock,
   onRotate: (context, deltaDeg) => scene3d.rotateModuleById(context.moduleId, deltaDeg),
   onGroupAction: (action, context) => void handleGroupAction(action, {
@@ -2503,6 +2623,137 @@ async function handleGroupAction(action, { groupId = null, moduleId = null, modu
     reportGroupResult(`“${group.name}” grubu silindi · ${ids.size} parça.`);
   }
 }
+
+// İki nokta profil: düğme açıkken iki dikme / profil ucu seçilir, araya en yakın boyda tek profil
+// konur (bırakma kuralıyla). Araç açık kalır; düğme ya da Esc kapatır.
+let twoPointProfileStart = null;
+
+function setTwoPointProfileArmed(armed) {
+  twoPointProfileStart = null;
+  twoPointProfileButton?.setAttribute('aria-pressed', String(Boolean(armed)));
+  scene3d.setPointPickHandler(armed ? handleTwoPointProfilePick : null, {
+    onHover: armed ? handleTwoPointProfileHover : null,
+  });
+  if (armed) refreshTwoPointPreview(null);
+}
+
+// Önizleme (kullanıcı isteği 2026-11-13: seçilen noktalar belli olsun, araya çizgi): seçilebilir
+// uçlar küçük noktalar, imleçteki uç büyük nokta, seçilen ilk uç turuncu; ilk uçtan imlece kesik çizgi.
+// Nokta yüksekliği ucun tepesidir (profilin oturacağı yer).
+function twoPointPreviewPoint(anchor) {
+  return anchor
+    ? { xCm: anchor.xCm, yCm: anchor.yCm, zCm: Number.isFinite(anchor.topZCm) ? anchor.topZCm : 0, free: anchor.free === true }
+    : null;
+}
+
+function formatTwoPointCm(value) {
+  return String(Math.round(Number(value) * 10) / 10).replace('.', ',');
+}
+
+// Bir ucu boşta (kullanıcı isteği 2026-11-13): ilk uçtan sonra imleç boşluktaysa profilin bittiği yer.
+function twoPointFreeEnd(point) {
+  if (!twoPointProfileStart || !point) return null;
+  const resolved = resolveFreeEndProfile(twoPointProfileStart, point, listProfileLengthItems());
+  if (!resolved.ok) return null;
+  return {
+    resolved,
+    anchor: { xCm: resolved.endXCm, yCm: resolved.endYCm, topZCm: twoPointProfileStart.topZCm, free: true },
+  };
+}
+
+function refreshTwoPointPreview(hoverAnchor, label = null) {
+  const anchors = listProfileAnchorPoints(currentModules).map(twoPointPreviewPoint);
+  // İlk uç profil gövdesindeyse imleçteki uca göre yeniden hizalanır (çizgi hep düz hatta görünür);
+  // boş uçta hizalanmaz (boş uç zaten ilk ucun hattındadır).
+  const start = hoverAnchor?.free ? twoPointProfileStart : alignProfileBodyAnchor(twoPointProfileStart, hoverAnchor);
+  scene3d.setPointPickPreview({
+    anchors,
+    hover: twoPointPreviewPoint(hoverAnchor),
+    start: twoPointPreviewPoint(start),
+    label,
+  });
+}
+
+function handleTwoPointProfileHover(point) {
+  const anchor = point ? findProfileAnchorAt(currentModules, point.xCm, point.yCm, twoPointProfileStart) : null;
+  if (!anchor) {
+    const free = twoPointFreeEnd(point);
+    if (free) {
+      refreshTwoPointPreview(free.anchor, `${formatTwoPointCm(free.resolved.lengthCm)} cm profil · boş uç`);
+      return;
+    }
+  }
+  refreshTwoPointPreview(anchor);
+}
+
+// Mesaj köşedeki bildirimde kalır (imleç yanındaki kısa geri bildirim gözden kaçıyordu).
+function twoPointFeedback(message, _point, { info = false } = {}) {
+  showToast(message, { kind: info ? 'info' : 'error', durationMs: info ? 2600 : 4000 });
+}
+
+function handleTwoPointProfilePick(point) {
+  const anchor = findProfileAnchorAt(currentModules, point.xCm, point.yCm, twoPointProfileStart);
+  if (!anchor && !twoPointProfileStart) {
+    twoPointFeedback('Bir dikmeye, profile ya da duvar ucuna tıkla.', point);
+    return;
+  }
+  if (!twoPointProfileStart) {
+    twoPointProfileStart = anchor;
+    refreshTwoPointPreview(anchor);
+    twoPointFeedback('İlk nokta seçildi. Şimdi ikinci ucu seç ya da boşluğa tıkla (boş uç).', point, { info: true });
+    return;
+  }
+  let start;
+  let resolved;
+  if (anchor) {
+    // Profil gövdesindeki ilk uç ikinci uca göre hizalanır (dikmeden profile, profilden profile T).
+    start = alignProfileBodyAnchor(twoPointProfileStart, anchor);
+    resolved = resolveTwoPointProfile(start, anchor, listProfileLengthItems());
+  } else {
+    start = twoPointProfileStart;
+    resolved = resolveFreeEndProfile(start, point, listProfileLengthItems());
+  }
+  twoPointProfileStart = null;
+  refreshTwoPointPreview(null);
+  if (!resolved.ok) {
+    twoPointFeedback(resolved.message, point);
+    return;
+  }
+  const moduleState = createCatalogModuleState({ itemKey: resolved.itemKey }, { itemKey: resolved.itemKey });
+  if (!moduleState || !applyProfileItemKey(moduleState, resolved.itemKey)) {
+    twoPointFeedback('Profil kataloğu bulunamadı.', point);
+    return;
+  }
+  const plan = scene3d.planCatalogModuleAtPoint(
+    moduleState,
+    { xCm: resolved.centerXCm, yCm: resolved.centerYCm },
+    resolved.rotationZDeg,
+  );
+  // Yükseklik: profilin üstü ilk ucun tepesiyle aynı hizada (kısa dikmede havada kalmaz).
+  const zCm = resolveTwoPointProfileZCm(start, anchor, moduleState.heightCm);
+  if (plan?.ok && plan.placement && zCm != null) plan.placement = { ...plan.placement, zCm };
+  const committed = commitDroppedCatalogModule(moduleState, plan, resolved.itemKey);
+  if (!committed.ok) {
+    twoPointFeedback(committed.message ?? 'Profil buraya konamadı.', point);
+    return;
+  }
+  // Yeni profilin uçları da seçilebilir uç olur.
+  refreshTwoPointPreview(null);
+  const lengthLabel = formatTwoPointCm(resolved.lengthCm);
+  showToast(anchor
+    ? `Profil konuldu · ${lengthLabel} cm (aralık ${formatTwoPointCm(resolved.distanceCm)} cm).`
+    : `Profil konuldu · ${lengthLabel} cm, bir ucu boşta.`, { kind: 'success' });
+}
+
+twoPointProfileButton?.addEventListener('click', () => {
+  setTwoPointProfileArmed(twoPointProfileButton.getAttribute('aria-pressed') !== 'true');
+});
+
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && twoPointProfileButton?.getAttribute('aria-pressed') === 'true') {
+    setTwoPointProfileArmed(false);
+  }
+});
 
 moduleDragSidebar = createModuleDragSidebar({
   container: document.querySelector('#module-add-content'),

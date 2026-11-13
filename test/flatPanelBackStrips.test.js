@@ -105,7 +105,10 @@ test('duvarın arka yüzüne dayanan modül: arka yüz köşe paneli olur, ön y
   // b'nin önü a'dan uzağa bakar: ön yüz düz, a'ya dayanan arka yüz köşe.
   assert.equal(moduleQty(bom, 'b', 'panel_98'), 7);
   assert.equal(moduleQty(bom, 'b', 'panel_corner_92'), 7);
-  assert.equal(qty(bom, 'connector_corner'), 6, 'aparat kuralı aynı');
+  // Arka yüz ön yüz kurallarıyla aparat alır (kullanıcı kararı 2026-11-12): b'nin a'ya dayanan
+  // arka yüzü de köşe aparatı öder. a: ön 13 − 6 + arka 13; b: ön 13 + arka 13 − 6 → tekli 40.
+  assert.equal(qty(bom, 'connector_corner'), 12);
+  assert.equal(qty(bom, 'connector_single'), 40);
 });
 
 test('T: gövdeye dikilen kolun iki yüzü de köşe; gövde mevcut T kuralıyla düz kalır', () => {

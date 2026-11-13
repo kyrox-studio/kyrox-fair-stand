@@ -1,4 +1,4 @@
-import { remapCopiedSurfaceGroups } from './surfaceStateBinding.js';
+import { clearFabricFields, remapCopiedSurfaceGroups } from './surfaceStateBinding.js';
 import { normalizeStripOccupancy } from './stripOccupancy.js';
 import { clearDuplicateLock } from './moduleLock.js';
 import {
@@ -14,6 +14,7 @@ import {
   getShowcaseItemKeyForType,
   itemDefaultColorCss,
   getItemType,
+  isWallShortFamilyDescriptor,
   itemHasSceneRender,
   listEmbeddedRenderParts,
   listWidthVariants,
@@ -242,6 +243,67 @@ export function removeFlatPanelBackStrips(moduleState) {
   if (!Array.isArray(moduleState?.backStrips)) return false;
   delete moduleState.backStrips;
   return true;
+}
+
+// Panel kaldırma (kullanıcı kararı 2026-11-12): yalnız tam boy düz duvarın (wall_50/100/150/200)
+// ön ve arka bant panelleri. Kaldırılan bant `removed: true` taşır; kimliği ve sırası durur,
+// görsel / cam / metal / kumaş ayarı silinir. Ölçü değişiminde kaldırılmış kalır.
+const PANEL_REMOVAL_WALL_RE = /^wall_(50|100|150|200)_\d+$/;
+const REMOVED_PANEL_CLEARED_KEYS = Object.freeze(['isGlass', 'isMetalSeparator']);
+
+export function supportsPanelRemoval(moduleState) {
+  return supportsFlatPanelBackStrips(moduleState)
+    && PANEL_REMOVAL_WALL_RE.test(String(moduleState.itemKey ?? ''))
+    && !isWallShortFamilyDescriptor(moduleState);
+}
+
+export function isRemovedPanel(surfaceState) {
+  return surfaceState?.removed === true;
+}
+
+function stripsOfSide(moduleState, side) {
+  return side === 'back' ? moduleState?.backStrips : moduleState?.strips;
+}
+
+/**
+ * Seçili bant panellerini kaldırır. `panels`: `{ side: 'front' | 'back', stripIndex }` listesi.
+ * @returns {number} kaldırılan panel sayısı
+ */
+export function removePanelStrips(moduleState, panels = []) {
+  if (!supportsPanelRemoval(moduleState)) return 0;
+  let removed = 0;
+  for (const panel of Array.isArray(panels) ? panels : []) {
+    const strips = stripsOfSide(moduleState, panel?.side === 'back' ? 'back' : 'front');
+    if (!Array.isArray(strips)) continue;
+    const index = strips.findIndex((strip, fallbackIndex) => (
+      (Number.isInteger(strip?.stripIndex) ? strip.stripIndex : fallbackIndex) === panel.stripIndex
+    ));
+    const strip = strips[index];
+    if (!strip || isRemovedPanel(strip)) continue;
+    REMOVED_PANEL_CLEARED_KEYS.forEach((key) => { delete strip[key]; });
+    clearFabricFields(strip);
+    strip.imageAssetId = null;
+    strip.imageTransform = createDefaultImageTransform();
+    strip.removed = true;
+    removed += 1;
+  }
+  return removed;
+}
+
+export function countRemovedPanels(moduleState) {
+  return [...(moduleState?.strips ?? []), ...(moduleState?.backStrips ?? [])]
+    .filter(isRemovedPanel).length;
+}
+
+/** Duvardaki bütün kaldırılmış panelleri geri ekler (boş panel olarak). */
+export function restoreRemovedPanels(moduleState) {
+  let restored = 0;
+  for (const strip of [...(moduleState?.strips ?? []), ...(moduleState?.backStrips ?? [])]) {
+    if (!isRemovedPanel(strip)) continue;
+    delete strip.removed;
+    restored += 1;
+  }
+  return restored;
 }
 
 // Arka bant sayısı ön yüzü izler (ör. duvar yüksekliği değişince); fazlası atılır, eksiği eklenir.

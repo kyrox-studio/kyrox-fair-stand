@@ -12,7 +12,10 @@
 // - Grup kilidi bütün üyeleri kilitli sayar (bkz. moduleLock.isModuleLocked).
 
 import { remapCopiedSurfaceGroups } from './surfaceStateBinding.js';
-import { isVerticalModuleRotation } from './modulePlacement.js';
+import {
+  getModuleFootprintBoundsCm,
+  isVerticalModuleRotation,
+} from './modulePlacement.js';
 import { STAND_DIMENSIONS } from './standDimensions.js';
 import { usesWallBackboneCollisionDepth } from './moduleBehavior.js';
 
@@ -511,6 +514,149 @@ export function planGroupDuplicate(modules = [], groupId, stand, { duplicateModu
   });
   remapCopiedSurfaceGroups(members, clones);
   return { ok: true, group, clones, offset };
+}
+
+export const MIRROR_OUTSIDE_STAND_MESSAGE = 'Aynalı kopya stand alanına sığmıyor.';
+const MIRROR_SUFFIX = ' (ayna)';
+
+// Ayna açısı (sahne: 0 ön, 90 sağ, 180 arka, 270 sol). Sağ-sol aynada sağ ↔ sol (90 ↔ 270),
+// ön-arka aynada ön ↔ arka (0 ↔ 180); ara açılar da aynı yansımayla döner.
+function mirrorRotationDeg(rotationZDeg, axis) {
+  const rotation = normalizeRotation(rotationZDeg);
+  return normalizeRotation(axis === 'x' ? 360 - rotation : 180 - rotation);
+}
+
+function mirrorWallId(wallId, axis) {
+  if (axis === 'x') {
+    if (wallId === 'left') return 'right';
+    if (wallId === 'right') return 'left';
+    return wallId === 'back' ? 'back' : 'free';
+  }
+  return wallId === 'left' || wallId === 'right' ? wallId : 'free';
+}
+
+function footprintCenter(moduleState, placement) {
+  const bounds = getModuleFootprintBoundsCm({ ...moduleState, placement });
+  if (!bounds) return null;
+  return { xCm: (bounds.minXCm + bounds.maxXCm) / 2, yCm: (bounds.minYCm + bounds.maxYCm) / 2 };
+}
+
+/** Seçimin zemindeki kaplama alanı (öğelerin gerçek kaplama sınırlarının birleşimi). */
+function selectionFootprintBounds(members) {
+  let bounds = null;
+  members.forEach((moduleState) => {
+    const value = getModuleFootprintBoundsCm(moduleState);
+    if (!value) return;
+    bounds = bounds
+      ? {
+        minXCm: Math.min(bounds.minXCm, value.minXCm),
+        maxXCm: Math.max(bounds.maxXCm, value.maxXCm),
+        minYCm: Math.min(bounds.minYCm, value.minYCm),
+        maxYCm: Math.max(bounds.maxYCm, value.maxYCm),
+      }
+      : { ...value };
+  });
+  return bounds;
+}
+
+export const MIRROR_DIRECTIONS = Object.freeze(['right', 'left', 'front', 'back']);
+const MIRROR_AXIS_BY_DIRECTION = Object.freeze({ right: 'x', left: 'x', front: 'y', back: 'y' });
+
+/**
+ * Ayna çizgisi seçimin o yöndeki kenarı (kullanıcı kararı 2026-11-12): kopya seçimin hemen
+ * bitişiğine düşer. Sağ = +x, sol = −x, ön = +y (stand önü), arka = −y (stand arkası).
+ */
+export function mirrorLineFor(members, direction) {
+  const bounds = selectionFootprintBounds(members);
+  if (!bounds) return null;
+  if (direction === 'right') return bounds.maxXCm;
+  if (direction === 'left') return bounds.minXCm;
+  if (direction === 'front') return bounds.maxYCm;
+  if (direction === 'back') return bounds.minYCm;
+  return null;
+}
+
+/**
+ * Öğenin ayna çizgisine göre yerleşimi: zemindeki kaplama alanının merkezi yansır, açı
+ * yansıtılır. Yerleşim çapası türe göre değiştiği için (uç, merkez, arka kenar) yeni yerleşim
+ * kaplama merkezi tutacak biçimde kaydırılır.
+ * @param {'x'|'y'} axis x: dikey çizgi (sağ-sol), y: yatay çizgi (ön-arka)
+ * @param {number} lineCm ayna çizgisinin konumu
+ */
+export function mirrorPlacement(moduleState, axis, lineCm) {
+  const placement = moduleState?.placement;
+  const line = Number(lineCm);
+  if (!placement || (axis !== 'x' && axis !== 'y') || !Number.isFinite(line)) return null;
+  const sourceCenter = footprintCenter(moduleState, placement);
+  if (!sourceCenter) return null;
+  const target = axis === 'x'
+    ? { xCm: 2 * line - sourceCenter.xCm, yCm: sourceCenter.yCm }
+    : { xCm: sourceCenter.xCm, yCm: 2 * line - sourceCenter.yCm };
+  const rotationZDeg = mirrorRotationDeg(placement.rotationZDeg, axis);
+  const anchor = memberCenterCm(moduleState, placement);
+  const draft = placementFromMemberCenter(moduleState, placement, anchor.xCm, anchor.yCm, rotationZDeg);
+  const draftCenter = footprintCenter(moduleState, draft);
+  if (!draftCenter) return null;
+  return {
+    ...draft,
+    xCm: roundCmTo(draft.xCm + target.xCm - draftCenter.xCm, ROTATION_ROUND_CARDINAL),
+    yCm: roundCmTo(draft.yCm + target.yCm - draftCenter.yCm, ROTATION_ROUND_CARDINAL),
+    wallId: mirrorWallId(placement.wallId, axis),
+  };
+}
+
+/**
+ * Aynalı kopya (kullanıcı kararı 2026-11-12, 3ds Max "Mirror" + "Copy"; yalnız Gelişmiş modda):
+ * seçim o yöndeki kenarından aynalanıp hemen bitişiğine kopyalanır (sağa, sola, öne, arkaya);
+ * orijinaller yerinde kalır, kopyalar üretim listesine kendi parçalarıyla girer. Her öğenin zemin
+ * kaplama merkezi yansır, açısı yansır (sağ-sol 360 − θ, ön-arka 180 − θ); yükseklik aynı.
+ * Görseller ters dönmez. Yönlü öğe (L banko, kapı) sol/sağ el değiştirmez.
+ * Tamamı seçili her grup kopyada yeni, kilitsiz bir gruba alınır (" (ayna)"); grubun bir kısmı
+ * seçiliyse kopyalar grupsuz kalır.
+ * Grup çoğaltma gibi başka öğelerle çakışma aranmaz ("ayna dediğinde çakışmayı atlayacak"); tek
+ * ret: kopya stand dışına taşarsa hiçbir şey eklenmez.
+ * @param {'right'|'left'|'front'|'back'} direction
+ * @param {{ duplicateModule: Function }} options designState.duplicateModuleState
+ */
+export function planMirrorCopy(modules = [], moduleIds = [], direction, stand, { duplicateModule } = {}) {
+  if (!MIRROR_DIRECTIONS.includes(direction)) throw new TypeError(`Unknown mirror direction: ${direction}`);
+  if (typeof duplicateModule !== 'function') throw new TypeError('duplicateModule is required.');
+  const ids = new Set(moduleIds);
+  const members = modules.filter((moduleState) => moduleState?.placement && ids.has(moduleState.id));
+  if (!members.length) return { ok: false, message: 'Aynalanacak öğe yok.' };
+  const axis = MIRROR_AXIS_BY_DIRECTION[direction];
+  const lineCm = mirrorLineFor(members, direction);
+
+  const placements = new Map();
+  for (const moduleState of members) {
+    const next = mirrorPlacement(moduleState, axis, lineCm);
+    if (!next || !memberInsideStand(moduleState, next, stand)) {
+      return { ok: false, message: MIRROR_OUTSIDE_STAND_MESSAGE };
+    }
+    placements.set(moduleState.id, next);
+  }
+
+  const groupMap = new Map();
+  new Set(members.map((moduleState) => getModuleGroup(moduleState)?.id).filter(Boolean)).forEach((groupId) => {
+    const all = getGroupMembers(modules, groupId);
+    if (!all.length || !all.every((member) => ids.has(member.id))) return;
+    groupMap.set(groupId, {
+      id: createGroupId(),
+      name: normalizeGroupName(`${all[0].group.name}${MIRROR_SUFFIX}`),
+      locked: false,
+    });
+  });
+
+  const clones = members.map((moduleState) => {
+    const clone = duplicateModule(moduleState);
+    clone.placement = { ...placements.get(moduleState.id) };
+    const group = groupMap.get(getModuleGroup(moduleState)?.id);
+    if (group) clone.group = { id: group.id, name: group.name, locked: false };
+    return clone;
+  });
+
+  remapCopiedSurfaceGroups(members, clones);
+  return { ok: true, clones, groups: [...groupMap.values()] };
 }
 
 /** İçe aktarma doğrulaması: `group` alanının biçimi ve gruplar arası tutarlılık. */

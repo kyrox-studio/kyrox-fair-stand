@@ -24,6 +24,12 @@ import {
 } from './relationshipBom.js';
 import { applyBaseRunBom, isBaseRunItemKey } from './baseRunBom.js';
 import { collectPrintAreas } from './printAreaBom.js';
+import {
+  applyBackFaceConnectors,
+  applyRemovedFrontPanels,
+  isRemovedPanelSurface,
+  removedPanelCornerCharges,
+} from './panelRemovalBom.js';
 import { resolveSplitFloorBomLines } from './floorArea.js';
 
 const DEFAULT_PROJECT_ITEM_KEY = 'elektrik_panosu';
@@ -127,8 +133,18 @@ function resolveModuleEntry(moduleState, index, {
       lines = swapped.lines;
       surfaces = swapped.surfaces;
     }
+    // Kaldırılan ön bant paneli (2026-11-12): paneli ve iki yan aparatı düşer; yüzey sayılmaz.
+    const removedFront = surfaces.filter(isRemovedPanelSurface);
+    if (removedFront.length) {
+      lines = applyRemovedFrontPanels(lines, recipeLines, removedFront);
+      surfaces = surfaces.filter((surface) => !isRemovedPanelSurface(surface));
+    }
     // Arka yüz panelleri: bant başına bir panel; arka yüz köşede ise köşe paneline döner.
-    const backCollected = collectBackPanelSurfaces(moduleState);
+    // Arka yüz aparatı ön yüzle aynı reçeteden (2026-11-12); kaldırılan arka panel sayılmaz.
+    const allBack = collectBackPanelSurfaces(moduleState);
+    const removedBack = allBack.filter(isRemovedPanelSurface);
+    const backCollected = allBack.filter((surface) => !isRemovedPanelSurface(surface));
+    if (allBack.length) lines = applyBackFaceConnectors(lines, recipeLines, removedBack);
     if (backCollected.length) {
       let backSurfaces = backCollected;
       if (swapBackPanels) backSurfaces = applyCornerPanelSwapToSurfaces(backCollected);
@@ -147,6 +163,8 @@ function resolveModuleEntry(moduleState, index, {
       status: 'ok',
       lines: Object.freeze(split.lines.map(freezeLine)),
       glassMoved: Object.freeze(glassSplit.moved),
+      removedFrontPanels: removedFront.length,
+      removedBackPanels: removedBack.length,
       message: null,
     });
   } catch (error) {
@@ -252,8 +270,12 @@ function mergedConnectorCharges(relationshipCharges, shortCharges) {
       double: 0,
       profile: 0,
       start: 0,
+      frontCorner: 0,
+      backCorner: 0,
       profileKey: null,
     };
+    current.frontCorner += charge.frontCorner || 0;
+    current.backCorner += charge.backCorner || 0;
     current.single += charge.single || 0;
     current.corner += charge.corner || 0;
     current.double += charge.double || 0;
@@ -348,7 +370,13 @@ export function resolveProjectBom(modules = [], stand = null, assetNames = null)
     aggregateLines(wallLinesOf()),
     joints,
   );
-  const wallShortLines = applyWallShortBomDeltas(adjusted.lines, wallShort);
+  const baseCharges = mergedConnectorCharges(adjusted.moduleCharges, wallShort.moduleCharges);
+  // Kaldırılan panelin köşe tarafındaki aparatı tekli değil köşe aparatıdır.
+  const removalCharges = removedPanelCornerCharges(moduleEntries, baseCharges, list);
+  const wallShortLines = removalCharges.reduce(
+    (acc, charge) => applyModuleConnectorCharge(acc, charge),
+    applyWallShortBomDeltas(adjusted.lines, wallShort),
+  );
   const baza = applyBaseRunBom(list);
   const glassNotes = summarizeGlassMoves(
     moduleEntries
@@ -367,7 +395,7 @@ export function resolveProjectBom(modules = [], stand = null, assetNames = null)
   ]);
   const chargedModules = chargeModuleEntries(
     moduleEntries,
-    mergedConnectorCharges(adjusted.moduleCharges, wallShort.moduleCharges),
+    mergedConnectorCharges(baseCharges, removalCharges),
   );
 
   return Object.freeze({

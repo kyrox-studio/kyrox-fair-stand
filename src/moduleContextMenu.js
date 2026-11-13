@@ -26,6 +26,7 @@ export function createModuleContextMenu({
   onClearSelection,
   onDelete,
   onDuplicate,
+  onMirror,
   onAdd,
   onGlassModeChange,
   onMetalSeparatorModeChange,
@@ -36,6 +37,10 @@ export function createModuleContextMenu({
   onShelfLightingChange,
   getBackPanelState,
   onBackPanelChange,
+  // Panel kaldırma (2026-11-12): { removable, removed } ya da null; düz duvar bant panelleri.
+  getPanelRemovalState,
+  onRemovePanels,
+  onRestorePanels,
   onLockChange,
   onGroupAction,
   onRotate,
@@ -100,6 +105,12 @@ export function createModuleContextMenu({
           ${[-45, -15, 15, 45].map((angle) => `<button type="button" data-module-action="rotate" data-rotation-delta="${angle}" aria-label="${angle < 0 ? 'Sola' : 'Sağa'} ${Math.abs(angle)} derece döndür">${angle > 0 ? '+' : '−'}${Math.abs(angle)}°</button>`).join('')}
         </div>
       </div>
+      <div class="selection-mirror-controls" role="group" aria-label="Aynalı kopya" hidden>
+        <div class="selection-mirror-heading"><span>Aynala</span></div>
+        <div class="selection-mirror-buttons">
+          ${[['right', 'Sağ', 'sağına'], ['left', 'Sol', 'soluna'], ['front', 'Ön', 'önüne'], ['back', 'Arka', 'arkasına']].map(([direction, label, side]) => `<button type="button" data-module-action="mirror" data-mirror-direction="${direction}" title="Aynalı kopya, hemen ${side}" aria-label="${label} aynala">${label}</button>`).join('')}
+        </div>
+      </div>
     </div>
     <div class="selection-property-tabs" role="tablist" aria-label="Özellik bölümleri">
       ${PANEL_TABS.map((key) => `<button type="button" role="tab" id="selection-tab-${key}" data-panel-tab="${key}" aria-controls="selection-pane-${key}"></button>`).join('')}
@@ -118,6 +129,8 @@ export function createModuleContextMenu({
     <div class="selection-property-pane module-context-menu" id="selection-pane-more" role="tabpanel" aria-labelledby="selection-tab-more" data-panel-pane="more">
       <button type="button" data-module-action="toggle-shelf-light" hidden>Raf altı aydınlatmayı aç</button>
       <button type="button" data-module-action="toggle-back-panels" hidden>Arka yüze panel ekle</button>
+      <button type="button" data-module-action="remove-panels" hidden>Paneli kaldır</button>
+      <button type="button" data-module-action="restore-panels" hidden>Kaldırılan panelleri geri ekle</button>
       <div class="module-context-advanced" hidden>
         <button type="button" data-module-action="toggle-glass" hidden>Cam Panele Çevir</button>
         <button type="button" data-module-action="toggle-metal-separator" hidden>Metal Separatöre Çevir</button>
@@ -196,6 +209,8 @@ export function createModuleContextMenu({
   const fabricLightingButton = menu.querySelector('[data-module-action="toggle-fabric-light"]');
   const shelfLightingButton = menu.querySelector('[data-module-action="toggle-shelf-light"]');
   const backPanelButton = menu.querySelector('[data-module-action="toggle-back-panels"]');
+  const removePanelsButton = menu.querySelector('[data-module-action="remove-panels"]');
+  const restorePanelsButton = menu.querySelector('[data-module-action="restore-panels"]');
   const addButton = menu.querySelector('[data-module-action="add"]');
   const lockButton = menu.querySelector('[data-module-action="toggle-lock"]');
   const lockSelectionButton = menu.querySelector('[data-module-action="lock-selection"]');
@@ -205,6 +220,14 @@ export function createModuleContextMenu({
   const rotationControls = menu.querySelector('.selection-rotation-controls');
   const rotationValue = menu.querySelector('.selection-rotation-value');
   const duplicateButton = menu.querySelector('[data-module-action="duplicate"]');
+  const mirrorButtons = [...menu.querySelectorAll('[data-module-action="mirror"]')];
+  const mirrorControls = menu.querySelector('.selection-mirror-controls');
+  // Aynala yalnız öğe / toplu seçimde görünür (zeminde yok). Kopya orijinale dokunmaz;
+  // kilitli seçim de aynalanabilir.
+  const showMirrorControls = (visible) => {
+    mirrorControls.hidden = !visible;
+    mirrorButtons.forEach((button) => { button.hidden = !visible; setDisabled(button, false); });
+  };
   // Panel dönüşümleri (Cam, Metal Separatör, Lightbox, Mesh) ayrı bir açılır sekme olmadan
   // listede doğrudan görünür; desteklenen dönüşüm yoksa bölüm gizlenir.
   const advancedSection = menu.querySelector('.module-context-advanced');
@@ -370,6 +393,12 @@ export function createModuleContextMenu({
     deleteButton.hidden = false;
     deleteButton.textContent = 'Seçilenleri sil';
     setDisabled(deleteButton, lockedCount > 0);
+    // Birden fazla duvardan seçilen bant panelleri birlikte kaldırılabilir.
+    const removable = Number(getPanelRemovalState?.(context)?.removable) || 0;
+    removePanelsButton.hidden = removable < 1;
+    removePanelsButton.textContent = removable > 1 ? `Seçili ${removable} paneli kaldır` : 'Paneli kaldır';
+    setDisabled(removePanelsButton, lockedCount > 0);
+    showMirrorControls(true);
     showMultiGroupSection(context.groupOptions);
   }
   const pickerTitle = pickerBackdrop.querySelector('#module-picker-title');
@@ -555,6 +584,7 @@ export function createModuleContextMenu({
   function renderFloor(context) {
     placeDimensionFields(context.fields);
     rotationControls.hidden = true;
+    showMirrorControls(false);
     activeContext = null;
     emptyHint.hidden = true;
     menu.hidden = false;
@@ -633,6 +663,7 @@ export function createModuleContextMenu({
     });
     duplicateButton.hidden = false;
     setDisabled(duplicateButton, false);
+    showMirrorControls(true);
     const summary = context.surfaceSummary ?? null;
     const multiSurface = (summary?.count ?? 0) > 1;
     const panelSuffix = context.supportsGlass && Number.isInteger(context.stripNumber)
@@ -689,6 +720,18 @@ export function createModuleContextMenu({
     backPanelButton.hidden = backPanelState == null;
     backPanelButton.textContent = backPanelState ? 'Arka yüz panellerini kaldır' : 'Arka yüze panel ekle';
     setDisabled(backPanelButton, locked);
+    // Panel kaldırma: seçili bant panelleri kaldırılır; duvarda kaldırılmış panel varsa geri eklenir.
+    const panelRemoval = getPanelRemovalState?.(context) ?? null;
+    const removable = Number(panelRemoval?.removable) || 0;
+    const removedCount = Number(panelRemoval?.removed) || 0;
+    removePanelsButton.hidden = removable < 1;
+    removePanelsButton.textContent = removable > 1 ? `Seçili ${removable} paneli kaldır` : 'Paneli kaldır';
+    setDisabled(removePanelsButton, locked);
+    restorePanelsButton.hidden = removedCount < 1;
+    restorePanelsButton.textContent = removedCount > 1
+      ? `Kaldırılan ${removedCount} paneli geri ekle`
+      : 'Kaldırılan paneli geri ekle';
+    setDisabled(restorePanelsButton, locked);
     addButton.hidden = !allowsModuleSideInsert(context);
     // Toplu yüzey işlemi yalnız seçimin tamamı destekliyorsa açılır; kısmi destekte gerekçeli pasif.
     [
@@ -1010,6 +1053,11 @@ export function createModuleContextMenu({
       return;
     }
 
+    if (action === 'mirror') {
+      onMirror?.(context, button.dataset.mirrorDirection);
+      return;
+    }
+
     if (action === 'toggle-glass' && context.supportsGlass) {
       onGlassModeChange?.(context, !context.isGlass);
       return;
@@ -1038,6 +1086,18 @@ export function createModuleContextMenu({
     if (action === 'toggle-shelf-light' && (context.moduleType ?? context.type) === 'shelf') {
       const nextState = !Boolean(getShelfLightingState?.(context));
       onShelfLightingChange?.(context, nextState);
+      return;
+    }
+
+    if (action === 'remove-panels') {
+      if (!(Number(getPanelRemovalState?.(context)?.removable) > 0)) return;
+      onRemovePanels?.(context);
+      return;
+    }
+
+    if (action === 'restore-panels') {
+      if (!(Number(getPanelRemovalState?.(context)?.removed) > 0)) return;
+      onRestorePanels?.(context);
       return;
     }
 

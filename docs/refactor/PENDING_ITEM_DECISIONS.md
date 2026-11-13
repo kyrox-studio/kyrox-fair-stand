@@ -162,7 +162,7 @@ Her item kendi ölçü/BOM’unu taşır; stand tavanı yalnız **max zarf** (ö
 - **Karar:** Kilitli çift, tam boy duvar, kapı, separatör (sarmaşık dahil) ve vitrin 2/3 arasındaki her birleşimdir. Separatör, duvar yüzüyle aynı dikme ve aparat hesabını kullanır. Yan yana: ortak dikme, çiftli aparat, paneller aynı kalır. İç köşe: ortak dikme, köşe aparatı, çiftli 0. T: ortak dikme, köşe aparatı, çiftli 0. Düz panel `panel_48_5/98/147_5/197` → `panel_corner_42_5/92/142_5/192`. Kapı ve vitrin `panel_98` → `panel_corner_92`. Separatör paneli değişmez.
 - **Yan yana (tek eklem):** Duvar↔duvar ve duvar↔separatör: tekli 12 (6+6), çiftli 7, dikme 3, başlangıç 4. Duvar↔kapı: tekli 8 (6+2), çiftli 3. Duvar↔vitrin 3: tekli 12 (9+3), çiftli 4, başlangıç 6. Duvar↔vitrin 2: tekli 12 (8+4), çiftli 5, başlangıç 6. Aynı yüz hesabı duvarsız çiftte de durur. İki separatör 50: tekli 12, çiftli 7, dikme 3. İki kapı: tekli 4, çiftli 3, dikme 3. Vitrin 2↔vitrin 3: tekli 8, çiftli 4, dikme 3.
 - **İç köşe (tek eklem):** Duvar tarafı −6 tekli +6 köşe, kalan tekli 7. Kapı −2/+2. Vitrin 3 −3/+3. Vitrin 2 −4/+4. İki duvar: tekli 14, köşe 12, dikme 3. Duvar+kapı: tekli 10, köşe 8. Duvar+vitrin 3: tekli 11, köşe 9. Duvar+vitrin 2: tekli 12, köşe 10. Separatör köşesi B.12.
-- **Ön / arka:** Köşe aparatı yalnız diğer modülün gövdesi bu modülün ön yüzündeyse yazılır. Arkada duran modül tekliyi korur, köşe almaz. Panel değişimi iki katılımcıda da olur. Dikme −1 durur. İki `wall_100`, arka yüz: tekli 20, köşe 6, başlangıç 4, dikme 3.
+- **Ön / arka:** Köşe aparatı yalnız diğer modülün gövdesi bu modülün ön yüzündeyse yazılır. Arkada duran modül tekliyi korur, köşe almaz. Panel değişimi iki katılımcıda da olur. Dikme −1 durur. İki `wall_100`, arka yüz: tekli 20, köşe 6, başlangıç 4, dikme 3. **Arka yüz paneli olan modül (kullanıcı kararı 2026-11-12):** arka yüz ön yüzle aynı kurallarla aparat alır — reçetenin tekli ve başlangıcı arka yüz için de yazılır; yan yanada iki modülün de arka yüzü varsa arka yüzde de tekli → çiftli dönüşümü olur; köşe ve T'de komşu arka taraftaysa arka yüz köşe aparatı öder (`relationshipBom.js` `hasBackFace`, `panelRemovalBom.js` `applyBackFaceConnectors`). Örnek `wall_200_350` iki yüz: tekli 26, başlangıç 4.
 - **T:** Çiftli 0. Dikme tasarrufu katılımcı sayısı − 1. Köşe, ön yüze bakan ucun kilitli iç köşe deltasıdır. Duvarın ortasına gelen dal: host düz paneli korur ve köşe ödemez, dal öder (dikme 3, çiftli 0, köşe 6). **2026-10-21 ürün kararı:** tek duvarın ortasında dikme olmadığı için bu bağlantı gerçekte yoktur; yerleşim artık reddeder ("Dik bağlantı yalnız dikme olan noktaya yapılır."), snap yalnız uçlara aday üretir. BOM kuralı eski kayıtlar için durur. Aynı noktada iki doğrultuda duvar + dal tek T’dir (dikme 4, çiftli 0, köşe 16, başlangıç 8).
 - **Baza:** Serbest dizide `n` baza için panel `2n+2`, başlangıç panel × 2, tekli `2n+6`, dikme 49,5 ve profil 41,5 `2n+2`, dışta 2 yanak. Aynı genişlikte duvar, separatör veya vitrin sırtında o bazanın uzun profili 2 kalır, uzun panelden biri düşer. Host’un yaslandığı yüz hattındaki dikmeler düşer; aynı hatta iki host’lu bazanın ortak dikmesi bir kez düşer, karşı yüzlerdeki iki dikme ayrı parçadır (ikisi de düşer). Host satırı durur. **2026-11-11 kullanıcı kararı:** tek başına duran dikme (346,5 …) gövdesiyle bir baza köşesinin üstündeyse (merkez köşeye yarım kesitten yakın; arka ya da ön hat) o köşenin 49,5 dikmesi düşer; bazanın yanına sıfır yaslanmış dikme düşürmez.
 - **Kaynak:** `src/relationshipBom.js`, `src/baseRunBom.js`. Test: `test/relationshipBomJoints.test.js`, `test/baseRunBom.test.js`.
@@ -190,6 +190,13 @@ Her item kendi ölçü/BOM’unu taşır; stand tavanı yalnız **max zarf** (ö
 - **Kaynak:** `src/projectBom.js`, `src/printAreaBom.js`, `src/bomLineGroups.js`, `src/productionBomPanel.js`.
 - **Yasak:** Baskı alanını ayrı “Baskı alanları” kartı yapmak; camı hem panel hem görsel saymak; short-up eklemi uydurmak
 
+### B.17. Bant paneli kaldırma
+
+- **Durum:** YAPILDI — 2026-11-12 (`src/designState.js` `removePanelStrips` / `restoreRemovedPanels`, BOM `src/panelRemovalBom.js`).
+- **Kullanıcı kararları (2026-11-12):** yalnız tam boy düz duvar (`wall_50/100/150/200`) ön ve arka bant paneli kaldırılır (kısa duvar, kapı, vitrin, separatör hariç). Tıklanan ya da seçilen paneller sağ tık → **Paneli kaldır**; bant boş çerçeve kalır, kaldırılan panelin görsel / cam / metal / kumaş ayarı silinir (kumaş birden çok panele yayılıyorsa bütün grubundan kalkar). Geri ekleme: duvara sağ tık → **Kaldırılan panelleri geri ekle** (o duvardakilerin hepsi, boş panel). Ölçü / yükseklik değişiminde kaldırılan bant kaldırılmış kalır; yalnız yeni eklenen bant boş panel gelir. Kilitli duvarda kapalı.
+- **Üretim listesi:** kaldırılan her bant (ön ya da arka) için panel (köşe / cam dönüşümünden sonraki kimliğiyle) 1 düşer ve panelin iki yanı için birer aparat düşer: yan köşe aparatı ödüyorsa köşe aparatı, değilse tekli. En alt bant kalkarsa o yüzün 2 başlangıcı düşer. Arka yüz ön yüzle aynı aparatı aldığından arka bantta da aynı düşüm olur. Çerçeve (profil, dikme) aynı kalır; kalem sıfırın altına inmez. Örnek `wall_200_350` ortadan bir panel: panel 197 × 6, tekli × 11, başlangıç × 2; iki duvarlı iç köşede bir panel: köşe paneli 192 × 13, tekli × 13, köşe aparatı × 11.
+- **Kaynak:** `test/panelRemoval.test.js`, `e2e/panel-removal.spec.mjs`.
+
 ### B.16. Açık standın duvar yüksekliğini sonradan değiştirmek
 
 - **Durum:** YAPILDI — 2026-11-10 (yeniden boyutlandırma motorunun ilk adımı; `src/standResize.js`, kurallar `src/standResizeRules.js`).
@@ -201,6 +208,14 @@ Her item kendi ölçü/BOM’unu taşır; stand tavanı yalnız **max zarf** (ö
 - **Kapsam dışı:** Paket ve Özel Tasarım kuralları.
 - **Kaynak:** `REFACTOR.md` 2026-10-19 Duvar yüksekliği kuralı.
 ---
+### B.18. İki Nokta Profil — YAPILDI (2026-11-12 / 2026-11-13)
+
+- **Kullanıcı kararları:** boy, iki nokta arasına en yakın katalog sahne boyudur; tam denk gelmezse de tek profil, eşitlikte kısa boy. Profilin üstü ilk seçilen ucun tepesiyle aynı hizadadır. Noktalar aynı hatta (yatay / dikey) olmalı.
+- **Uçlar:** tek başına dikme, profil ucu, uçlarında dikme olan duvar ailesinin uçları; 2026-11-13'ten beri profilin gövdesi ve duvar ailesinin üst rayı da (her noktaya T). Gövde ucu öbür ucun dik izdüşümüne oturur; öbür uç yoksa 10 cm adım.
+- **Bir ucu boşta (2026-11-13):** ilk uçtan sonra boşluğa tıklanınca profil o uçtan imlece doğru, imlecin çok kaydığı eksende en yakın boyda konur; dikme / gövdeden yüzden, profil / duvar ucundan aynı hatta uzatmada uçtan başlar.
+- **Önizleme (2026-11-13):** seçilebilir uçlar, seçilen ilk uç ve imleçteki uç işaretlenir; ilk uçtan imlece kesik çizgi ve aralık / boy etiketi.
+- Kod: `src/twoPointProfile.js`, `src/main.js` (araç), `src/scene3d.js` (`setPointPickHandler`, `setPointPickPreview`). Testler: `test/twoPointProfile.test.js`, `e2e/two-point-profile.spec.mjs`.
+
 ## C. Stand zarfı ve DB (Item tablosu değil)
 
 ### C.1. `fair_stand_dimensions.strip_count` / `strip_height_m` / height CHECK

@@ -331,11 +331,15 @@ function cornerCharge(participant, partners, point) {
   if (!side) return null;
   const faces = partners.some((partner) => partnerOnFront(participant, partner, point));
   const backFaces = partners.some((partner) => partnerOnBack(participant, partner, point));
+  // Arka yüz (2026-11-12, kullanıcı kararı): arka yüzü olan modülde komşu arka taraftaysa arka yüz
+  // de ön yüz kuralıyla köşe aparatı öder (tekli yerine).
+  const backPays = backFaces && participant.hasBackFace === true;
   return {
     singleRemove: faces ? side.singleRemove : 0,
     cornerAdd: faces ? side.cornerAdd : 0,
+    backSingleRemove: backPays ? side.singleRemove : 0,
+    backCornerAdd: backPays ? side.cornerAdd : 0,
     swapPanels: faces && side.swapPanels,
-    // Bağlantı aparatı (singleRemove/cornerAdd) yalnız ön yüz kuralıyla kalır; arka yüz yalnız paneli değiştirir.
     swapBackPanels: backFaces && side.swapPanels,
   };
 }
@@ -371,11 +375,15 @@ function cornerSide(role, singles, bands = 7) {
 
 function connectorCharge(moduleId, side) {
   if (!moduleId || !side) return null;
-  if (!side.singleRemove && !side.cornerAdd) return null;
+  const singleRemove = (side.singleRemove || 0) + (side.backSingleRemove || 0);
+  const cornerAdd = (side.cornerAdd || 0) + (side.backCornerAdd || 0);
+  if (!singleRemove && !cornerAdd) return null;
   return {
     moduleId,
-    single: -side.singleRemove,
-    corner: side.cornerAdd,
+    single: -singleRemove,
+    corner: cornerAdd,
+    frontCorner: side.cornerAdd || 0,
+    backCorner: side.backCornerAdd || 0,
   };
 }
 
@@ -406,8 +414,8 @@ function jointAdjustmentCounts(joint) {
       const others = joint.participants.filter((entry) => entry.moduleId !== participant.moduleId);
       const side = cornerCharge(participant, others, joint.point);
       if (!side) continue;
-      single -= side.singleRemove;
-      corner += side.cornerAdd;
+      single -= side.singleRemove + side.backSingleRemove;
+      corner += side.cornerAdd + side.backCornerAdd;
       if (side.swapPanels) swapModuleIds.push(participant.moduleId);
       if (side.swapBackPanels) backSwapModuleIds.push(participant.moduleId);
       const charge = connectorCharge(participant.moduleId, side);
@@ -425,17 +433,20 @@ function jointAdjustmentCounts(joint) {
     const keepB = endToEndKeep(b, a);
     const doubles = endToEndDoubles(a, b);
     if (keepA == null || keepB == null || doubles == null) return null;
-    const removeA = Math.max(0, recipeSingleCount(a.itemKey) - keepA);
-    const removeB = Math.max(0, recipeSingleCount(b.itemKey) - keepB);
+    // İki modülün de arka yüzü varsa arka yüzde de aynı tekli → çiftli dönüşümü olur.
+    const faces = a.hasBackFace === true && b.hasBackFace === true ? 2 : 1;
+    const removeA = Math.max(0, recipeSingleCount(a.itemKey) - keepA) * faces;
+    const removeB = Math.max(0, recipeSingleCount(b.itemKey) - keepB) * faces;
+    const faceDoubles = doubles * faces;
     return {
       upright: -1,
       single: -(removeA + removeB),
-      double: doubles,
+      double: faceDoubles,
       corner: 0,
       swapModuleIds: [],
       charges: [
-        { moduleId: a.moduleId, single: -removeA, corner: 0, double: doubles },
-        { moduleId: b.moduleId, single: -removeB, corner: 0, double: doubles },
+        { moduleId: a.moduleId, single: -removeA, corner: 0, double: faceDoubles },
+        { moduleId: b.moduleId, single: -removeB, corner: 0, double: faceDoubles },
       ],
     };
   }
@@ -446,9 +457,9 @@ function jointAdjustmentCounts(joint) {
     if (!sideA || !sideB) return null;
     return {
       upright: -1,
-      single: -(sideA.singleRemove + sideB.singleRemove),
+      single: -(sideA.singleRemove + sideA.backSingleRemove + sideB.singleRemove + sideB.backSingleRemove),
       double: 0,
-      corner: sideA.cornerAdd + sideB.cornerAdd,
+      corner: sideA.cornerAdd + sideA.backCornerAdd + sideB.cornerAdd + sideB.backCornerAdd,
       swapModuleIds: [
         ...(sideA.swapPanels ? [a.moduleId] : []),
         ...(sideB.swapPanels ? [b.moduleId] : []),
@@ -464,6 +475,10 @@ function jointAdjustmentCounts(joint) {
   return null;
 }
 
+function hasBackFace(module) {
+  return Array.isArray(module?.backStrips) && module.backStrips.some(Boolean);
+}
+
 function collectSegments(modules) {
   const segments = [];
   modules.forEach((module, index) => {
@@ -474,6 +489,8 @@ function collectSegments(modules) {
       ...segment,
       role,
       moduleId: moduleIdentity(module, index),
+      // Arka yüz paneli (backStrips) varsa arka yüz aparatı ön yüz kurallarıyla hesaplanır.
+      hasBackFace: hasBackFace(module),
     });
   });
   return segments;
@@ -491,6 +508,7 @@ function freezeParticipant(segment, { payCorner = true } = {}) {
     endCm: segment.endCm,
     frontX: segment.frontX,
     frontY: segment.frontY,
+    hasBackFace: segment.hasBackFace === true,
   });
 }
 
@@ -681,10 +699,14 @@ function buildPlan(joints) {
         single: 0,
         corner: 0,
         double: 0,
+        frontCorner: 0,
+        backCorner: 0,
       };
       current.single += charge.single || 0;
       current.corner += charge.corner || 0;
       current.double += charge.double || 0;
+      current.frontCorner += charge.frontCorner ?? charge.corner ?? 0;
+      current.backCorner += charge.backCorner || 0;
       plan.moduleCharges.set(charge.moduleId, current);
     }
     plan.upright += adjustment.upright;
@@ -1810,6 +1832,47 @@ function applyProfileRail(book, wall, profile) {
  * Shorts stacked on a 346.5 post replace those uprights with upright_396, upright_445_5,
  * or upright_495. One post per plan end; a shared end counts once.
  */
+/**
+ * Kısa duvar (wall-short) dik köşeleri — yalnız okuma; renderer'ın ortak köşe dikmesi için
+ * (`wallCornerJoints.js`). Üretim listesi hesabını değiştirmez: `planWallShortRelationshipBom`
+ * ile aynı çift sınıflaması (köşe, yükseklik uyumu) ve aynı tutulan dikme kuralı kullanılır.
+ */
+export function detectShortCornerJoints(modules = []) {
+  const list = Array.isArray(modules) ? modules : [];
+  const frames = [];
+  list.forEach((module, index) => {
+    const frame = shortRelationshipFrame(module, index) ?? structuralRelationshipFrame(module, index);
+    if (frame) frames.push(frame);
+  });
+  const participant = (frame) => Object.freeze({
+    moduleId: frame.moduleId,
+    axis: frame.axis,
+    fixedCm: frame.fixedCm,
+    startCm: frame.startCm,
+    endCm: frame.endCm,
+    frontX: frame.frontX,
+    frontY: frame.frontY,
+  });
+  const joints = [];
+  for (let i = 0; i < frames.length; i += 1) {
+    for (let j = i + 1; j < frames.length; j += 1) {
+      const a = frames[i];
+      const b = frames[j];
+      if (a.kind !== 'short' && b.kind !== 'short') continue;
+      const geometry = classifyShortPair(a, b);
+      if (geometry?.kind !== 'corner' || !pairZOk(a, b)) continue;
+      const dropped = droppedShortFrame(a, b);
+      const kept = dropped === a ? b : a;
+      joints.push(Object.freeze({
+        point: Object.freeze({ xCm: geometry.point.xCm, yCm: geometry.point.yCm }),
+        kept: participant(kept),
+        dropped: participant(dropped),
+      }));
+    }
+  }
+  return Object.freeze(joints);
+}
+
 export function planWallShortRelationshipBom(modules = []) {
   const list = Array.isArray(modules) ? modules : [];
   const shorts = [];

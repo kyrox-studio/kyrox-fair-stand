@@ -147,6 +147,14 @@ export function createSelectionToolbar({ onRotate, onDuplicate, onDelete, onMult
       if (left < toolbarRect.right && left + width > toolbarRect.left
         && top < toolbarRect.bottom && top + height > toolbarRect.top) {
         top = toolbarRect.bottom + margin;
+        // Aşağı itilen çubuk seçili parçanın üstüne biniyorsa parçanın altına geçer; çubuk tıklamayı
+        // yutup parçayı seçtirmiyordu (2026-11-13, üst bant iki satır).
+        const bottom = Number(anchor.bottomClientY);
+        const viewportBottom = window?.innerHeight ?? 768;
+        if (Number.isFinite(bottom) && top + height > anchor.clientY - margin
+          && bottom + 14 + height + margin <= viewportBottom) {
+          top = Math.max(top, bottom + 14);
+        }
       }
     }
     bar.style.left = `${Math.round(left)}px`;
