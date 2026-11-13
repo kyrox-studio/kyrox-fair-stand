@@ -205,6 +205,7 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/uprightHeight.js': frozenDomains('ui', 'catalog', 'state'),
   'src/propertyPanelPlacement.js': frozenDomains('ui', 'accessibility'),
   'src/profileLength.js': frozenDomains('ui', 'catalog', 'state'),
+  'src/twoPointProfile.js': frozenDomains('ui', 'catalog', 'state', 'placement'),
   'src/itemSizeDialog.js': frozenDomains('ui', 'catalog', 'accessibility'),
   'src/wallShortWidth.js': frozenDomains('ui', 'catalog', 'state'),
   'src/catalogWidthFamily.js': frozenDomains('ui', 'catalog', 'state'),
@@ -222,6 +223,8 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/profileFinish.js': frozenDomains('state', 'renderer', 'importExport'),
   'src/profileGeometry.js': frozenDomains('renderer', 'performance'),
   'src/wallReflow.js': frozenDomains('behavior', 'placement'),
+  'src/wallCornerJoints.js': frozenDomains('renderer', 'placement'),
+  'src/panelRemovalBom.js': frozenDomains('bom', 'state'),
 });
 
 // İnsan/AI yönetim yüzeyleri de mimari sözleşmenin parçasıdır.

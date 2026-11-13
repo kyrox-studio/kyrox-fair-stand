@@ -789,6 +789,7 @@ button.asset-tile > span {
 /* Paneldeki düğmeler zeminden net ayrılır: beyaz zemin, koyu kenar ve yazı. */
 .selection-property-panel .selection-quick-actions.module-context-menu button,
 .selection-property-panel .selection-rotation-host .selection-rotation-buttons button,
+.selection-property-panel .selection-rotation-host .selection-mirror-controls button,
 .selection-property-panel .selection-property-pane.module-context-menu button,
 .selection-property-variants button {
   border: 1px solid #94a3b8;
@@ -800,6 +801,7 @@ button.asset-tile > span {
 
 .selection-property-panel .selection-quick-actions.module-context-menu button:hover,
 .selection-property-panel .selection-rotation-host .selection-rotation-buttons button:hover,
+.selection-property-panel .selection-rotation-host .selection-mirror-controls button:hover,
 .selection-property-panel .selection-property-pane.module-context-menu button:hover,
 .selection-property-variants button:hover {
   border-color: #1e3a5f;
@@ -971,6 +973,40 @@ button.asset-tile > span {
 .selection-rotation-host .selection-rotation-buttons {
   flex: 1;
   min-width: 0;
+}
+
+/* Aynala satırı döndürme satırıyla aynı düzende (etiket + dört düğme); yalnız Gelişmiş modda. */
+.selection-rotation-host .selection-mirror-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 0;
+}
+
+.selection-rotation-host .selection-mirror-controls[hidden],
+#app:not([data-editor-mode="advanced"]) .selection-mirror-controls {
+  display: none;
+}
+
+.selection-rotation-host .selection-mirror-heading {
+  white-space: nowrap;
+  font-size: 12px;
+  color: #334155;
+}
+
+.selection-rotation-host .selection-mirror-buttons {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.selection-property-panel .selection-rotation-host .selection-mirror-buttons button {
+  min-height: 32px;
+  padding: 4px 2px;
+  text-align: center;
+  border-radius: 6px;
 }
 
 /* Tür ve Grup komutları liste değil, iki sütunlu sıkı düğmeler. */

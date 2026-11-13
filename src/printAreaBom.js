@@ -57,6 +57,8 @@ function collectStripFaces(modules) {
     const sides = [[front, moduleIndex], [back, BACK_FACE_INDEX_OFFSET + moduleIndex]];
     sides.forEach(([strips, faceModuleIndex]) => strips.forEach((strip, fallbackIndex) => {
       if (!strip || typeof strip !== 'object') return;
+      // Kaldırılan panel (2026-11-12) baskı / kumaş / metal yüzeyi değildir.
+      if (strip.removed === true) return;
       const size = panelSizeCm(strip);
       if (!size) return;
       const stripIndex = Number.isInteger(strip.stripIndex) ? strip.stripIndex : fallbackIndex;
