@@ -587,6 +587,9 @@ export function createBaseModuleState(widthCmOrDescriptor) {
     right: createEditablePanelState(null, baseFaceColor),
   };
   stampRenderParts(Object.values(faces), item, ['panel', 'separator-panel']);
+  // Bazada da ön geniş, yanlar dar (2026-11-13, proje 452d4cc1): reçete sırası 200, 200, 50 olduğu için
+  // sol yüze 200'lük panel yazılıyor, dijital baskı listesi 4 baza için 8 × 200 sayıyordu.
+  applyCounterFacePanelIdentity(faces, item, 'stamp');
   const state = applySceneFootprint({
     id: createId('module'),
     itemKey: item.itemKey,
@@ -1113,6 +1116,8 @@ export function normalizeModuleItemState(moduleState) {
         getItem(resolvedKey),
         ['panel', 'separator-panel'],
       );
+      // Eski kayıtta sol yüz 200'lük panel kalmış olabilir: açılışta dar panele düzeltilir (görsel, renk durur).
+      applyCounterFacePanelIdentity(moduleState.faces, getItem(resolvedKey), 'repair');
     }
     return moduleState;
   }

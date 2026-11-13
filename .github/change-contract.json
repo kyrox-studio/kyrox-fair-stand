@@ -2,8 +2,9 @@
   "schemaVersion": 2,
   "id": "stand-profil-gercek-boy-araligi",
   "kind": "bugfix",
-  "summary": "Profil gerçek boyundaki aralığa oturur (kullanıcı kararları 2026-11-13, proje 452d4cc1): aralık iki ucun (dikme, duvar uç dikmesi, dik profil) eksenden eksene uzaklığıdır; Profil 190 190'a girer, 180'e girmez; bütün profiller katalogdaki gerçek boyla. Aynı hattaki iki profil düğüm karesini paylaşabilir. İki ucu da köşe olan profil (H / U) iki çıkıntının arasında kısa çizilir, tek köşeli L'de uzun profil kareyi tutar. Short / profil ucuna değen dikme dikmedir (profil 10 cm kaymaz). Katalogdan sürüklenen profil kendi yüksekliğindeki düzleme izdüşer. Taşınabilir modülde el imleci; yerleştirme / kopyalama açıkken sol sürükleme sahneyi döndürür.",
+  "summary": "Profil gerçek boyundaki aralığa oturur (kullanıcı kararları 2026-11-13, proje 452d4cc1): aralık iki ucun (dikme, duvar uç dikmesi, dik profil) eksenden eksene uzaklığıdır; Profil 190 190'a girer, 180'e girmez; bütün profiller katalogdaki gerçek boyla. Aynı hattaki iki profil düğüm karesini paylaşabilir. İki ucu da köşe olan profil (H / U) iki çıkıntının arasında kısa çizilir, tek köşeli L'de uzun profil kareyi tutar. Short / profil ucuna değen dikme dikmedir (profil 10 cm kaymaz). Katalogdan sürüklenen profil kendi yüksekliğindeki düzleme izdüşer. Taşınabilir modülde el imleci; yerleştirme / kopyalama açıkken sol sürükleme sahneyi döndürür. Bazanın yan yüzleri dar panel (dijital baskı listesi 4 baza için 4 × 200 + 8 × 50).",
   "owners": [
+    "src/designState.js",
     "src/helpGuide.js",
     "src/main.js",
     "src/moduleDragSidebar.js",
@@ -247,6 +248,7 @@
       "test/automaticWallItemLookup.test.js",
       "test/autosaveMainIntegration.test.js",
       "test/barStool2.test.js",
+      "test/baseFacePanelIdentity.test.js",
       "test/baseItemsContract.test.js",
       "test/baseModule.test.js",
       "test/baseRecipes.test.js",
@@ -669,6 +671,7 @@
   },
   "tests": {
     "targeted": [
+      "test/baseFacePanelIdentity.test.js",
       "test/baseWallEndAlign.test.js",
       "test/cornerRefreshOnMove.test.js",
       "test/flatPanelBackStrips.test.js",

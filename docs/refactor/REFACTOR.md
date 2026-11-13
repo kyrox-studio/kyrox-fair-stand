@@ -26,7 +26,8 @@ Kullanıcı projesi 452d4cc1 üzerinde, 5176 önizlemesinde kullanıcıyla birli
 - **Uyumlar (hepsi Profil 190 ile denendi):** eksenden eksene gerçek boy (190; iki düğüm karesini örter), yüzden yüze sahne boyu (200; uçlara girmez) ya da eksenden eksene sahne boyu (400; duvar yüzünden başlar, dikmeyi örter). Duvar gövdesi ray hizasında uçtur (T). U'da çıkıntıların iki ortak ucu varsa imlece yakın olan seçilir.
 - **El imleci:** taşınabilir modülün üstünde açık el, sürüklerken kapalı el (`scene3d.js`).
 - **Kopyalarken sahne döner:** yerleştirme / kopyalama açıkken sol tuşla basılı sürükleme kamerayı döndürür, kısa tık bırakır (`moduleDragSidebar.js` `onOrbit`, `scene3d.orbitCameraBy`).
-Testler: `test/profileRealLengthFit.test.js`, `test/profileShortEndPostSnap.test.js`, `test/scene3dPublicContract.test.js`.
+- **Baza yüz panelleri:** bazanın ön yüzü geniş, iki yanı dar paneldir; reçete sırasıyla damgalanınca sol yan 200'lük panel alıyor, dijital baskı listesi dört baza için 8 × 200×49,5 + 4 × 50×49,5 yazıyordu (doğrusu 4 × 200 + 8 × 50). `designState.js` bankodaki kuralı (`applyCounterFacePanelIdentity`) bazada da uygular; açılışta eski kayıt düzelir, görsel ve renk durur.
+Testler: `test/profileRealLengthFit.test.js`, `test/profileShortEndPostSnap.test.js`, `test/scene3dPublicContract.test.js`, `test/baseFacePanelIdentity.test.js`.
 
 ## 2026-11-13 — Köşe ayrılınca uç dikmesi geri çizilir; seçim çubuğu seçimi örtmez
 
