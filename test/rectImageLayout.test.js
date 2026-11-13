@@ -156,3 +156,32 @@ for (const rotationDeg of [0, 90, 180, 270]) {
   }
 }
 }
+
+test('köşeden dönen yüzler kenarları uç uca ise tek şerit olur (kullanıcı kararı 2026-11-13)', async () => {
+  const { visualImageColumnItems, createRectImageLayout } = await import('../src/rectImageLayout.js');
+  // Plan: ön duvar x 0–200 (y 0), köşeden yan duvar y 0–50 (x 200), sonra diğer duvar x 200–400 (y 50).
+  const item = (moduleId, moduleIndex, left, right, width) => ({
+    moduleId, moduleIndex, stripIndex: 0, width, height: 0.5, axis: null, planeKey: null,
+    leftEdgeCm: left, rightEdgeCm: right, columnKey: moduleId,
+  });
+  const items = [
+    item('diger', 0, { x: 205, y: 50 }, { x: 405, y: 50 }, 2),
+    item('on', 1, { x: 0, y: 0 }, { x: 200, y: 0 }, 2),
+    item('yan', 2, { x: 205, y: 5 }, { x: 205, y: 45 }, 0.5),
+  ];
+  const ordered = visualImageColumnItems(items);
+  assert.deepEqual(ordered.map((entry) => [entry.moduleId, entry.moduleIndex]), [['diger', 2], ['on', 0], ['yan', 1]]);
+  const layout = createRectImageLayout(ordered);
+  assert.equal(layout.ok, true);
+  assert.equal(layout.columnCount, 3);
+  assert.equal(layout.totalWidth, 4.5);
+});
+
+test('köşede kenarlar değmiyorsa (uzak yüzler) şerit kurulmaz', async () => {
+  const { visualImageColumnItems } = await import('../src/rectImageLayout.js');
+  const item = (moduleId, moduleIndex, left, right) => ({
+    moduleId, moduleIndex, stripIndex: 0, width: 2, height: 0.5, leftEdgeCm: left, rightEdgeCm: right, columnKey: moduleId,
+  });
+  const items = [item('a', 0, { x: 0, y: 0 }, { x: 200, y: 0 }), item('b', 1, { x: 400, y: 300 }, { x: 400, y: 500 })];
+  assert.deepEqual(visualImageColumnItems(items).map((entry) => entry.moduleIndex), [0, 1]);
+});

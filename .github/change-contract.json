@@ -1,20 +1,16 @@
 {
   "schemaVersion": 2,
-  "id": "stand-profil-gercek-boy-araligi",
-  "kind": "bugfix",
-  "summary": "Profil gerçek boyundaki aralığa oturur (kullanıcı kararları 2026-11-13, proje 452d4cc1): aralık iki ucun (dikme, duvar uç dikmesi, dik profil) eksenden eksene uzaklığıdır; Profil 190 190'a girer, 180'e girmez; bütün profiller katalogdaki gerçek boyla. Aynı hattaki iki profil düğüm karesini paylaşabilir. İki ucu da köşe olan profil (H / U) iki çıkıntının arasında kısa çizilir, tek köşeli L'de uzun profil kareyi tutar. Short / profil ucuna değen dikme dikmedir (profil 10 cm kaymaz). Katalogdan sürüklenen profil kendi yüksekliğindeki düzleme izdüşer. Taşınabilir modülde el imleci; yerleştirme / kopyalama açıkken sol sürükleme sahneyi döndürür. Bazanın yan yüzleri dar panel (dijital baskı listesi 4 baza için 4 × 200 + 8 × 50).",
+  "id": "stand-kose-donen-gorsel",
+  "kind": "feature",
+  "summary": "Köşeden dönen panellere tek görsel (kullanıcı isteği 2026-11-13, 5173'te denendi): birden çok panele tek görsel yalnız aynı hattaki panellerde yayılıyordu. Seçili yüzler aynı hatta değilse her yüzün sağ kenarı bir sonrakinin sol kenarına (köşede 25 cm'e kadar açıklıkla) değiyorsa yüzler uç uca tek şerit sayılır, görsel katlanmış afiş gibi döner (rectImageLayout.chainImageColumns, scene3d.imageColumnEdges). Üretim Listesi aynı bloğun birbirini sürdüren bölgelerini modül sırasından bağımsız tek baskı sayar (printAreaBom, yalnız blok kimlikli kayıtta).",
   "owners": [
-    "src/designState.js",
-    "src/helpGuide.js",
-    "src/main.js",
-    "src/moduleDragSidebar.js",
-    "src/modulePlacement.js",
-    "src/scene3d.js",
-    "src/wallCornerJoints.js"
+    "src/printAreaBom.js",
+    "src/rectImageLayout.js",
+    "src/scene3d.js"
   ],
   "sourceOfTruth": [
-    "src/modulePlacement.js",
-    "src/wallCornerJoints.js"
+    "src/rectImageLayout.js",
+    "src/printAreaBom.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -679,9 +675,11 @@
       "test/horizontalPanelRails.test.js",
       "test/mirrorCopy.test.js",
       "test/panelRemoval.test.js",
+      "test/printAreaBom.test.js",
       "test/profileRealLengthFit.test.js",
       "test/profileShortEndPostSnap.test.js",
       "test/profileUprightIdentity.test.js",
+      "test/rectImageLayout.test.js",
       "test/relationshipBomJoints.test.js",
       "test/scene3dPublicContract.test.js",
       "test/twoPointProfile.test.js",

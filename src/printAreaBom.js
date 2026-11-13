@@ -202,11 +202,22 @@ function clusterRect(faces) {
       const lower = indexByKey.get(`${cell.moduleIndex}:${cell.stripIndex + 1}`);
       if (lower != null && regionsContinueVertically(cell, cells[lower])) union(index, lower);
     });
+    // Köşeden dönen blok (2026-11-13): sütunlar modül sırasında komşu değildir; aynı bloğun görsel
+    // bölgeleri birbirini sürdürüyorsa da tek baskıdır. Blok kimliği olmayan eski kayıtta aynı görselin
+    // ayrı blokları karışabileceği için yalnız kimlikli blokta.
+    if (cells[0]?.transform?.blockId) cells.forEach((cell, index) => {
+      cells.forEach((other, otherIndex) => {
+        if (otherIndex <= index) return;
+        if (regionsContinueHorizontally(cell, other) || regionsContinueHorizontally(other, cell)
+          || regionsContinueVertically(cell, other) || regionsContinueVertically(other, cell)) union(index, otherIndex);
+      });
+    });
     for (const members of groupBy(cells, (cell) => find(cells.indexOf(cell))).values()) {
       const widths = new Map();
       const heights = new Map();
       for (const member of members) {
-        widths.set(member.moduleIndex, member.widthCm);
+        // Sütun anahtarı görsel bölgesidir: köşeden dönen blokta aynı modülün iki yüzü ayrı sütundur.
+        widths.set(`${member.moduleIndex}:${Math.round(Number(member.transform?.regionStartX ?? 0) * 1e6)}`, member.widthCm);
         heights.set(member.stripIndex, member.heightCm);
       }
       const made = piece(
