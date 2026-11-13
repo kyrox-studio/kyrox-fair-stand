@@ -15,6 +15,19 @@ Bu dosya Item mimarisine geçişin değişiklik günlüğüdür (2026-09-16 … 
 
 ---
 
+## 2026-11-13 — Profil gerçek boyundaki aralığa oturur; H / U köşe; uç dikmesi
+
+Kullanıcı projesi 452d4cc1 üzerinde, 5176 önizlemesinde kullanıcıyla birlikte denendi.
+- **Aralık kuralı (kullanıcı kararı):** profil gerçek boyundaki aralığa sığar; aralık iki ucun (dikme, duvar uç dikmesi ya da dik profil) **eksenden eksene** uzaklığıdır. Profil 190 eksenleri 190 aralıklı iki uca girer, 180'e girmez; bütün profiller için katalogdaki gerçek boy (`dimensions.widthCm`) kullanılır. Sahne boyu (Profil 190 → 200) iki uçtaki düğüm karelerini örter. `snapPlacementToModules` aralık adayı (`post-gap`) üretir; U'da iki çıkıntının uçları da uçtur. `validatePlacementAgainstModules` profilin uçlara toplam girişini iki sahne fazlasıyla sınırlar (`getProfileSceneSlackCm`, `profilePostOverlapAlong`).
+- **Düğüm paylaşımı:** aynı hattaki iki profil bir düğüm karesini (dikme, dik profil ucu, duvar ucu) birlikte örtebilir (T düğümü); ortadan geçen profil çakışır (`isCollinearProfileNodeShare`).
+- **H / U çizimi (kullanıcı kararı):** iki ucu da dik profillerin uçlarına gelen profil, duvarın üst rayının iki dikmesi arasına girdiği gibi iki çıkıntının iç yüzleri arasında kısa çizilir; köşe karelerini çıkıntılar tutar (`wallCornerJoints.js`). Tek köşeli L'de 12.11 kuralı sürer: kareyi uzun profil tutar. Baza çerçevesindeki ön profil de bir U olduğundan artık 49,5'ların arasına girer.
+- **Uç dikmesi:** short ya da profil dikmenin içinde değil yüzünde bitince dikme uç karesinde aranıyor, bulunamıyor, köşe adayı profili 10 cm kaymış short / profil ucuna oturtuyordu; eşit adaylarda kazananı kimliğin alfabetik sırası belirliyordu. `endSquareHoldsUpright` uca değen dikmeyi ve duvar uç dikmesini de bulur.
+- **Katalogdan sürükleme:** imleç zemine (z=0) izdüşüyordu; 340 cm'deki profil perspektifte metrelerce kayıyor, snap yanlış yeri yakalıyordu. Profil artık kendi orta yüksekliğindeki düzleme izdüşer (`scene3d.js` `getCatalogDragPoint`).
+- **Uyumlar (hepsi Profil 190 ile denendi):** eksenden eksene gerçek boy (190; iki düğüm karesini örter), yüzden yüze sahne boyu (200; uçlara girmez) ya da eksenden eksene sahne boyu (400; duvar yüzünden başlar, dikmeyi örter). Duvar gövdesi ray hizasında uçtur (T). U'da çıkıntıların iki ortak ucu varsa imlece yakın olan seçilir.
+- **El imleci:** taşınabilir modülün üstünde açık el, sürüklerken kapalı el (`scene3d.js`).
+- **Kopyalarken sahne döner:** yerleştirme / kopyalama açıkken sol tuşla basılı sürükleme kamerayı döndürür, kısa tık bırakır (`moduleDragSidebar.js` `onOrbit`, `scene3d.orbitCameraBy`).
+Testler: `test/profileRealLengthFit.test.js`, `test/profileShortEndPostSnap.test.js`, `test/scene3dPublicContract.test.js`.
+
 ## 2026-11-13 — Köşe ayrılınca uç dikmesi geri çizilir; seçim çubuğu seçimi örtmez
 
 **Hata 1:** Köşede birleşik iki duvar sürüklenerek ayrılınca ortak dikmeyi çizmeyen duvarın uç dikmesi (profil) kayıp kalıyordu; sürükleme yalnız konumu güncelliyordu. **Düzeltme:** `scene3d.js` `scheduleCornerJointRefresh` her taşıma / döndürme / ok tuşu / grup taşıma kaydından sonra köşe durumunu bir sonraki karede yeniden hesaplar, köşesi değişen modülü yeniden kurar. Test: `test/cornerRefreshOnMove.test.js`.

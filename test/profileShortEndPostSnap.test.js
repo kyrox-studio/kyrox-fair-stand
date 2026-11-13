@@ -79,6 +79,46 @@ test('short ucunda dikme varsa o dikmedir: profil ortalanır, dikmenin yüzünde
   }
 });
 
+// Kullanıcı projesi 452d4cc1 (2026-11-13): short'lar bir uçta dikmenin üstünde, öbür uçta dikmenin
+// iç yüzünde bitiyor (short y 395–595, dikmeler y 395–405 ve 595–605). Dikme karede aranınca ikinci
+// uçta bulunamıyor, profil dikme yerine short ucuna 10 cm kaymış oturuyordu (x 50, y 590); hangi
+// adayın kazanacağını modül kimliğinin alfabetik sırası belirliyordu.
+function userFrame({ shortIds = ['s1', 's2'] } = {}) {
+  return [
+    placed('u-front', 'upright_346_5', { xCm: 50, yCm: 600, rotationZDeg: 0 }, UPRIGHT_SCENE),
+    placed('u-back', 'upright_346_5', { xCm: 50, yCm: 400, rotationZDeg: 0 }, UPRIGHT_SCENE),
+    placed(shortIds[0], 'wall_200_short_2', { xCm: 55, yCm: 395, zCm: 200, rotationZDeg: 270 }),
+    placed(shortIds[1], 'wall_200_short_1', { xCm: 55, yCm: 395, zCm: 300, rotationZDeg: 270 }),
+    // Dikmenin önünden devam eden 49,5 profil: ucu dikmenin yüzünde biter; köşe yine dikmedir.
+    placed(`${shortIds[0]}-p`, 'profile_49_5', { xCm: 55, yCm: 605, zCm: 340, rotationZDeg: 270 }),
+  ];
+}
+
+function snapLongProfile(modules, pointerXCm, pointerYCm) {
+  const result = snapPlacementToModules({
+    moduleId: 'p', moduleType: 'profile', itemKey: 'profile_190', heightCm: 10, widthCm: 200, depthCm: 10,
+    pointerXCm, pointerYCm, rotationZDeg: 0, zCm: 340, modules, ...STAND,
+  });
+  assert.ok(result, `imleç (${pointerXCm}, ${pointerYCm}): yaslanma yok`);
+  return { result, bounds: getModuleFootprintBoundsCm({ widthCm: 200, depthCm: 10, placement: result.placement }) };
+}
+
+test('short ya da profil dikmenin yüzünde bitse de o uçtaki dikme dikmedir: profil dikmenin yüzünde durur', () => {
+  // Kimlik sırası sonucu değiştirmemeli: short kimlikleri dikmeden önce de sonra da sıralansa aynı.
+  for (const shortIds of [['s1', 's2'], ['a1', 'a2'], ['z1', 'z2']]) {
+    const modules = userFrame({ shortIds });
+    for (const [px, py] of [[160, 605], [160, 600], [155, 598], [175, 610]]) {
+      const { result, bounds } = snapLongProfile(modules, px, py);
+      const label = `${shortIds.join('/')} imleç (${px}, ${py})`;
+      assert.equal(result.snapKind, 'upright-face', label);
+      assert.equal(cm(bounds.minXCm), 60, `${label}: profil dikmenin yüzünden başlar`);
+      assert.equal(cm(bounds.maxXCm), 260, label);
+      assert.equal(cm(bounds.minYCm), 595, `${label}: profil dikmenin ekseninde`);
+      assert.equal(cm(bounds.maxYCm), 605, label);
+    }
+  }
+});
+
 test('short ucunda dikme yoksa profil short ucunu örter (köşe kuralı)', () => {
   const modules = frame().filter((moduleState) => moduleState.type !== 'upright');
   const baseBounds = getModuleFootprintBoundsCm(modules[0]);
@@ -181,7 +221,8 @@ test('profil–profil L köşesi dış yüzden hizalı: ön profil bazanın içi
   const baseBounds = getModuleFootprintBoundsCm(modules[0]);
   for (const [px, py] of [[10, 320], [15, 320], [18, 330], [12, 310]]) {
     const { result, bounds } = snapFront(modules, px, py);
-    assert.equal(result.snapKind, 'profile-flush-corner', `imleç (${px}, ${py})`);
+    // U: iki 49,5'un uçları arası eksenden eksene 190 (aralık kuralı) ya da köşe kuralı; yer aynı.
+    assert.ok(['profile-flush-corner', 'post-gap'].includes(result.snapKind), `imleç (${px}, ${py}): ${result.snapKind}`);
     assert.equal(cm(bounds.minXCm), cm(baseBounds.minXCm), 'ön profil bazanın ön yüzünde');
     assert.equal(cm(bounds.maxXCm), cm(baseBounds.minXCm) + 10);
     assert.equal(cm(bounds.minYCm), cm(baseBounds.minYCm));
@@ -201,18 +242,25 @@ test('ön profil varken 49,5 profil de dış yüzden hizalı oturur', () => {
   assert.equal(cm(bounds.minYCm), 220);
 });
 
-test('çizim: L köşede kareyi uzun profil tutar, 49,5 iki ucunda da kısa çizilir', () => {
+// Kullanıcı kararı 2026-11-13 (H / U, proje 452d4cc1): iki ucu da dik profillerin uçlarına gelen ön
+// profil, duvarın üst rayının iki dikmesi arasına girdiği gibi iki 49,5'un iç yüzleri arasına girer;
+// köşe karelerini 49,5'lar tutar. Yalnız bir ucu köşe olan L'de kareyi uzun profil tutar (12.11).
+test('çizim: U köşede ön profil iki 49,5 arasına girer; L köşede kareyi uzun profil tutar', () => {
   const front = { ...frontProfileState(), id: 'q', placement: { xCm: 15, yCm: 220, zCm: 340, rotationZDeg: 270, wallId: 'free' } };
   const modules = [...frame(), ...sideProfiles(), front];
   const ends = resolveWallCornerEnds(modules);
   const sorted = (id) => [...(ends.get(id) ?? [])].sort((a, b) => a.localXSign - b.localXSign);
   for (const id of ['p0', 'p1']) {
-    assert.deepEqual(sorted(id), [
-      { localXSign: -1, trimCm: 10 },
-      { localXSign: 1, trimCm: 10 },
-    ], id);
+    assert.deepEqual(sorted(id), [{ localXSign: 1, trimCm: 10 }], `${id}: yalnız short ucunda kısa, köşe karesini tutar`);
   }
-  assert.equal(ends.get('q'), undefined, 'uzun profil tam boy çizilir');
+  assert.deepEqual(sorted('q'), [
+    { localXSign: -1, trimCm: 10 },
+    { localXSign: 1, trimCm: 10 },
+  ], 'ön profil iki ucunda 49,5 kalınlığı kadar kısa');
+  // L: tek 49,5 varsa kareyi uzun profil tutar, 49,5 iki ucunda da kısa çizilir.
+  const lEnds = resolveWallCornerEnds([...frame(), sideProfiles()[0], front]);
+  assert.equal(lEnds.get('q'), undefined, 'L köşede uzun profil tam boy');
+  assert.equal(lEnds.get('p0')?.length, 2);
   // Farklı yükseklikteki profil köşe sayılmaz.
   const low = { ...front, placement: { ...front.placement, zCm: 200 } };
   assert.equal(resolveWallCornerEnds([...frame(), ...sideProfiles(), low]).get('p0')?.length, 1);

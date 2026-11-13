@@ -2760,6 +2760,7 @@ moduleDragSidebar = createModuleDragSidebar({
   viewport,
   canDrag: () => Boolean(currentStand),
   createModuleState: (module, moduleKey) => createCatalogModuleState(module, { itemKey: moduleKey }),
+  onOrbit: (dxPx, dyPx) => scene3d.orbitCameraBy(dxPx, dyPx),
   onPreview: (moduleState, clientX, clientY, rotationZDeg, rotationLocked) => (
     scene3d.previewCatalogModuleDrag(
       moduleState,

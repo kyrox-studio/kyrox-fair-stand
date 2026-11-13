@@ -3232,6 +3232,40 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     };
   }
 
+  // Katalogdan sürüklenen profil kendi yüksekliğinde (ör. 340 cm) görünür; imleç zemine izdüşerse
+  // perspektifte metrelerce kayar, snap yanlış yeri yakalar (2026-11-13, proje 452d4cc1). Profil
+  // taşırken olduğu gibi imleç profilin orta yüksekliğindeki yatay düzleme izdüşer.
+  function getCatalogDragPoint(moduleState, clientX, clientY) {
+    if (moduleState?.type === 'profile') {
+      const zCm = Number(withItemZ(moduleState, { xCm: 0, yCm: 0, zCm: 0, rotationZDeg: 0, wallId: 'free' })?.zCm);
+      const heightCm = Number(moduleState.heightCm) || 0;
+      if (Number.isFinite(zCm) && zCm > 0) {
+        const point = getDragPlanePoint(clientX, clientY, (zCm + heightCm / 2) / 100);
+        if (point) return point;
+      }
+    }
+    return getGroundPoint(clientX, clientY);
+  }
+
+  // Kamerayı hedef çevresinde ekran pikseli kadar döndürür (OrbitControls'un sol sürüklemesiyle aynı
+  // oran); yerleştirme / kopyalama açıkken sol sürükleme bunu kullanır (2026-11-13).
+  function orbitCameraBy(dxPx, dyPx) {
+    if (!controls.enableRotate) return;
+    const height = renderer.domElement.clientHeight || 1;
+    const speed = Number(controls.rotateSpeed) || 1;
+    const offset = camera.position.clone().sub(controls.target);
+    const spherical = new THREE.Spherical().setFromVector3(offset);
+    spherical.theta -= (2 * Math.PI * Number(dxPx || 0) / height) * speed;
+    spherical.phi -= (2 * Math.PI * Number(dyPx || 0) / height) * speed;
+    spherical.phi = Math.min(Math.max(spherical.phi, controls.minPolarAngle, 0.0001), controls.maxPolarAngle, Math.PI - 0.0001);
+    spherical.theta = Math.min(Math.max(spherical.theta, controls.minAzimuthAngle), controls.maxAzimuthAngle);
+    offset.setFromSpherical(spherical);
+    camera.position.copy(controls.target).add(offset);
+    camera.lookAt(controls.target);
+    controls.update();
+    requestEditorRender();
+  }
+
   function getDragPlanePoint(clientX, clientY, worldY) {
     if (!Number.isFinite(Number(worldY))) return null;
     setPointerFromClient(clientX, clientY);
@@ -4175,7 +4209,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       return { ok: false, message };
     }
 
-    const ground = getGroundPoint(clientX, clientY);
+    const ground = getCatalogDragPoint(moduleState, clientX, clientY);
     if (!ground) {
       disposePlacementGhost();
       const message = 'Modülü aktif stand alanına bırak.';
@@ -7151,6 +7185,37 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     updatePlacementDrag(event);
   }, { signal });
 
+  // El imleci (rakiplerdeki gibi, 2026-11-13): taşınabilir modülün üstünde açık el (grab), sürüklerken
+  // kapalı el (grabbing). Kilitli modülde değişmez; İki Nokta Profil açıkken artı (crosshair) kalır.
+  let sceneCursorFrame = 0;
+  let sceneCursorPoint = null;
+  function applySceneCursor() {
+    sceneCursorFrame = 0;
+    const canvas = renderer.domElement;
+    if (pointPickHandler) { canvas.style.cursor = 'crosshair'; return; }
+    if (dragSession && !dragSession.locked) { canvas.style.cursor = 'grabbing'; return; }
+    if (!sceneCursorPoint || !stageLayout) { canvas.style.cursor = ''; return; }
+    const moduleState = pickModuleAt(sceneCursorPoint.clientX, sceneCursorPoint.clientY)?.moduleGroup?.userData?.moduleState;
+    canvas.style.cursor = moduleState && !isModuleLocked(moduleState) ? 'grab' : '';
+  }
+  function scheduleSceneCursor(point) {
+    sceneCursorPoint = point;
+    if (!sceneCursorFrame) sceneCursorFrame = requestAnimationFrame(applySceneCursor);
+  }
+  hostWindow.addEventListener('pointermove', (event) => {
+    if (event.pointerType === 'touch') return;
+    const insideCanvas = event.target === renderer.domElement;
+    if (!insideCanvas && !dragSession) return;
+    scheduleSceneCursor(insideCanvas ? { clientX: event.clientX, clientY: event.clientY } : null);
+  }, { signal });
+  hostWindow.addEventListener('pointerup', (event) => {
+    if (event.pointerType === 'touch') return;
+    scheduleSceneCursor(event.target === renderer.domElement ? { clientX: event.clientX, clientY: event.clientY } : null);
+  }, { signal });
+  renderer.domElement.addEventListener('pointerleave', () => {
+    if (!dragSession) scheduleSceneCursor(null);
+  }, { signal });
+
   hostWindow.addEventListener('keydown', (event) => {
     const pressedKey = String(event.key).toLowerCase();
 
@@ -8180,6 +8245,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     clearImageAssetById,
     previewCatalogModuleDrag,
     dropCatalogModuleDrag,
+    orbitCameraBy,
     clearCatalogModuleDrag,
     placeCatalogModuleOnModule,
     planCatalogModuleInFrontOf,
