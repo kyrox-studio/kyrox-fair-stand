@@ -2,13 +2,14 @@
   "schemaVersion": 2,
   "id": "surum-kilidi-sunucu-esas",
   "kind": "tooling",
-  "summary": "Sürüm kilidi (kullanıcı kararı 2026-11-13): yerel, CI ve sunucu A'dan Z'ye aynı sürümle çalışır, esas canlı sunucudur. .nvmrc 22.23.3, .python-version 3.12.3, backend/requirements.lock.txt (sunucu venv pip freeze; uvloop yalnız Linux). CI ubuntu-24.04, Node/Python sürümünü dosyadan okur, Python paketlerini kilitten kurar, pip-audit kilidi tarar. package.json engines + volta (Node 22.23.3, npm 10.9.9). Uygulama kodu değişmez.",
+  "summary": "Sürüm kilidi (kullanıcı kararı 2026-11-13): yerel, CI ve sunucu A'dan Z'ye aynı sürümle çalışır, esas canlı sunucudur. .nvmrc 22.23.3, .python-version 3.12.3, backend/requirements.lock.txt (sunucu venv pip freeze; uvloop yalnız Linux). CI ubuntu-24.04, Node/Python sürümünü dosyadan okur, Python paketlerini kilitten kurar, pip-audit kilidi tarar. package.json engines + volta (Node 22.23.3, npm 10.9.9). Uygulama kodu değişmez. Ayrıca e2e/base-edge-under-fascia: baza sürüklemesi 16 yerine 4 adım (sonuç yalnız son konuma bağlı); başsız tarayıcı sahneyi yazılımla çizdiği için her adım bir kare (~0,3 sn yerel, ~1,4 sn yavaş CI) ve 16 adım 30 sn test sınırını aşıyordu (#381 ve #382 CI'ında düştü).",
   "owners": [
     ".github/workflows/ci.yml",
     "package.json",
     "backend/requirements.lock.txt",
     "test/runtimeVersionPins.test.js",
-    "README.md"
+    "README.md",
+    "e2e/base-edge-under-fascia.spec.mjs"
   ],
   "sourceOfTruth": [
     ".nvmrc",
@@ -42,7 +43,8 @@
       "backend/requirements.lock.txt",
       "test/runtimeVersionPins.test.js",
       "scripts/verify-change-contract.mjs",
-      "src/systemChangeContract.js"
+      "src/systemChangeContract.js",
+      "e2e/base-edge-under-fascia.spec.mjs"
     ],
     "affectedTests": [
       "test/runtimeVersionPins.test.js",
@@ -52,7 +54,8 @@
       "test/systemChangeGateCiContract.test.js",
       "test/systemChangeGateLocalDiff.test.js",
       "test/systemChangeSecurityControls.test.js",
-      "test/developerEntrypointDocs.test.js"
+      "test/developerEntrypointDocs.test.js",
+      "e2e/base-edge-under-fascia.spec.mjs"
     ],
     "affectedDocs": [
       "README.md",
@@ -89,9 +92,11 @@
     "fullSuite": true,
     "build": true,
     "e2e": {
-      "required": false,
-      "targeted": [],
-      "reason": "Tarayıcıda görünen davranış değişmez (yalnız CI / sürüm dosyaları); tam E2E CI'da yine koşar."
+      "required": true,
+      "targeted": [
+        "e2e/base-edge-under-fascia.spec.mjs"
+      ],
+      "reason": "Düzeltilen spec'in kendisi: baza alınlık altındaki açık kenara sıfır oturur (yerelde 3/3, 6x yavaş CPU'da geçti)."
     }
   },
   "risk": {
