@@ -72,7 +72,12 @@ Repository ilk MVP taslağının ötesindedir. Mevcut uygulama aşağıdaki ana 
 
 ## Kurulum
 
-CI Node 22 kullanır.
+Sürümler canlı sunucuyla birebir aynıdır ve dosyayla kilitlidir (kullanıcı kararı 2026-11-13; ayrıntı: `kyrox-platform` `standards/development/ORTAM_SURUMLERI.md`): Node `.nvmrc` (22.23.3; `package.json` `engines` + `volta`, npm 10.9.9), Python `.python-version` (3.12.3), backend paketleri `backend/requirements.lock.txt` (canlı venv'in `pip freeze`'i). CI, yerel kurulum ve deploy bu dosyalardan okur; `test/runtimeVersionPins.test.js` tutarlılığı denetler. Yerelde Node'u Volta, Python'u `uv` seçer:
+
+```bash
+uv venv --python 3.12.3 backend/.venv
+uv pip install --python backend/.venv -r backend/requirements.lock.txt
+```
 
 ```bash
 npm ci

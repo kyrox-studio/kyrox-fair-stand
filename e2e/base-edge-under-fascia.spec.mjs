@@ -90,7 +90,9 @@ test('alınlık altındaki açık kenara sürüklenen baza kenara sıfır oturur
   const { start, end } = await baseDragPoints(page, dropped.id, 250 - centerXCm, 395 - Number(dropped.placement.yCm));
   await page.mouse.move(start.x, start.y);
   await page.mouse.down();
-  await page.mouse.move(end.x, end.y, { steps: 16 });
+  // 4 adım: sonuç yalnız bırakılan son konuma bağlı. Başsız tarayıcı sahneyi yazılımla çizer; her
+  // adım bir kare (~0,3 sn, yavaş CI makinesinde ~1,4 sn) olduğundan 16 adım 30 sn sınırını aşıyordu.
+  await page.mouse.move(end.x, end.y, { steps: 4 });
   await page.mouse.up();
 
   const moved = (await savedProject(page)).modules.find((module) => module.id === dropped.id);
