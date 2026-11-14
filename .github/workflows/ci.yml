@@ -11,7 +11,8 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # Sürümler canlı sunucuyla aynı (kyrox-platform standards/development/ORTAM_SURUMLERI.md).
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,7 +22,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Change contract gate
@@ -42,23 +43,22 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version-file: .python-version
 
       - name: Catalog API tests
         working-directory: backend
         run: |
-          python -m pip install -r requirements.txt
+          python -m pip install -r requirements.lock.txt
           python -m pytest
 
-      # Uyarı yalnız (SECURITY_PROGRAM F-G2): deploy aynı major içindeki
-      # güvenlik yamalarını kendisi uygular; major yükseltme ayrı PR ister.
+      # Uyarı yalnız: açık varsa deploy durur (2026-11-13 kararı); yama requirements.lock.txt'de PR ile yapılır.
       - name: Python dependency audit (warning only)
         working-directory: backend
         run: |
           python -m venv "$RUNNER_TEMP/pip-audit"
           "$RUNNER_TEMP/pip-audit/bin/pip" install --quiet "pip-audit>=2.7"
-          if ! "$RUNNER_TEMP/pip-audit/bin/pip-audit" -r requirements.txt --progress-spinner off > "$RUNNER_TEMP/pip-audit.txt" 2>&1; then
-            echo "::warning title=pip-audit::backend/requirements.txt için bilinen açık (veya denetim hatası); adım log'una bakın. Deploy aynı major yamalarını otomatik uygular; major yükseltme PR ister."
+          if ! "$RUNNER_TEMP/pip-audit/bin/pip-audit" -r requirements.lock.txt --progress-spinner off > "$RUNNER_TEMP/pip-audit.txt" 2>&1; then
+            echo "::warning title=pip-audit::backend/requirements.lock.txt için bilinen açık (veya denetim hatası); adım log'una bakın. Açık varsa deploy durur; yama kilit dosyasında PR ile yapılır."
           fi
           cat "$RUNNER_TEMP/pip-audit.txt"
 

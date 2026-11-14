@@ -525,7 +525,10 @@
       "test/wallShortRelationshipBom.test.js",
       "test/wallShortVerticalMove.test.js",
       "test/wallShortWidth.test.js",
-      "test/wallShowcaseItemContract.test.js"
+      "test/wallShowcaseItemContract.test.js",
+      "test/hygieneGates.test.js",
+      "test/pythonPatchArchive.test.js",
+      "test/systemChangeGateCiContract.test.js"
     ],
     "affectedDocs": [
       "MODULE_BEHAVIOR_STANDARD.md",
@@ -639,7 +642,14 @@
       "docs/refactor/REFACTOR.md",
       "docs/refactor/SCENE_POSE.md",
       "docs/refactor/STAND_FRAME_REMOVAL.md",
-      "public/textures/floor/SOURCES.md"
+      "public/textures/floor/SOURCES.md",
+      "audit/evidence/A00_BASELINE.md",
+      "audit/evidence/A18_TEST_REGRESSION_ARCHITECTURE.md",
+      "audit/evidence/A20_BUILD_CI_DEPLOY.md",
+      "audit/evidence/A21_REPOSITORY_HYGIENE_GOVERNANCE.md",
+      "audit/remediation/A21_F043_CLOSURE.md",
+      "audit/remediation/A21_F045_CLOSURE.md",
+      "scripts/archive/README.md"
     ],
     "relatedFindings": {
       "affected": [],
@@ -660,7 +670,11 @@
         "F-025",
         "F-028",
         "F-029",
-        "F-033"
+        "F-033",
+        "F-040",
+        "F-043",
+        "F-045",
+        "F-046"
       ]
     },
     "notes": "Köşe dikmesi yalnız 3D çizim; relationshipBom.js içine yalnız okuyan detectShortCornerJoints eklendi. Panel kaldırma kayıtlı projeye isteğe bağlı strip.removed ekler (alan yoksa panel var); DB, Item ve katalog değişmez. BOM: kaldırılan bant için panel ve aparat düşümü panelRemovalBom.js."
