@@ -6227,8 +6227,24 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
         planeKey: meta?.planeKey ?? null,
         width: mesh.geometry.parameters.width,
         height: mesh.geometry.parameters.height,
+        ...imageColumnEdges(mesh),
       };
     }));
+  }
+
+  // Yüzün plandaki sol / sağ kenarı (cm) ve yönü: köşeden dönen görsel sütunları uç uca bağlar.
+  function imageColumnEdges(mesh) {
+    mesh.updateWorldMatrix(true, false);
+    const center = mesh.getWorldPosition(new THREE.Vector3());
+    const right = new THREE.Vector3(1, 0, 0).transformDirection(mesh.matrixWorld);
+    const half = Number(mesh.geometry?.parameters?.width) / 2;
+    if (!Number.isFinite(half)) return {};
+    const edge = (sign) => ({ x: (center.x + right.x * half * sign) * 100, y: (center.z + right.z * half * sign) * 100 });
+    return {
+      leftEdgeCm: edge(-1),
+      rightEdgeCm: edge(1),
+      columnKey: `${mesh.userData.moduleId ?? mesh.userData.moduleIndex}:${Math.round(right.x * 10)}:${Math.round(right.z * 10)}`,
+    };
   }
 
   function sharedFabricImage(meshes) {

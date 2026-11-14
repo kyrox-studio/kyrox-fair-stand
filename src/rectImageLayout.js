@@ -29,9 +29,62 @@ function sharesImageColumnLine(items) {
  * Scene moduleIndex is insertion order. Columns follow the wall line, including
  * a run that continues from a stand wall onto a free module on the same line.
  */
+// Köşeden dönen görsel (kullanıcı kararı 2026-11-13): seçili yüzler aynı hatta değilse, her sütunun
+// (modül yüzü) sağ kenarı bir sonrakinin sol kenarına değiyorsa sütunlar uç uca tek şerit sayılır;
+// görsel katlanmış afiş gibi köşeden döner. Kenarlar plan koordinatında (cm); köşede duvar kalınlığı
+// kadar açıklık olabilir.
+const IMAGE_CORNER_EDGE_TOLERANCE_CM = 25;
+
+function planDistanceCm(a, b) {
+  return Math.hypot(Number(a.x) - Number(b.x), Number(a.y) - Number(b.y));
+}
+
+function chainImageColumns(items) {
+  const columns = new Map();
+  for (const item of items) {
+    const key = item.columnKey ?? item.moduleId ?? item.moduleIndex;
+    if (columns.has(key)) continue;
+    if (!item.leftEdgeCm || !item.rightEdgeCm) return null;
+    columns.set(key, { key, left: item.leftEdgeCm, right: item.rightEdgeCm });
+  }
+  const list = [...columns.values()];
+  if (list.length < 2) return null;
+  const nextOf = (column) => {
+    let best = null;
+    let bestDistance = IMAGE_CORNER_EDGE_TOLERANCE_CM;
+    for (const other of list) {
+      if (other === column) continue;
+      const distance = planDistanceCm(column.right, other.left);
+      if (distance <= bestDistance) {
+        best = other;
+        bestDistance = distance;
+      }
+    }
+    return best;
+  };
+  const hasPrevious = new Set(list.map(nextOf).filter(Boolean));
+  const starts = list.filter((column) => !hasPrevious.has(column));
+  if (starts.length !== 1) return null;
+  const order = [];
+  const seen = new Set();
+  for (let column = starts[0]; column && !seen.has(column); column = nextOf(column)) {
+    seen.add(column);
+    order.push(column.key);
+  }
+  if (order.length !== list.length) return null;
+  return new Map(order.map((key, index) => [key, index]));
+}
+
 export function visualImageColumnItems(items) {
   if (!Array.isArray(items) || !items.length) return items ?? [];
-  if (!sharesImageColumnLine(items)) return items;
+  if (!sharesImageColumnLine(items)) {
+    const chain = chainImageColumns(items);
+    if (!chain) return items;
+    return items.map((item) => ({
+      ...item,
+      moduleIndex: chain.get(item.columnKey ?? item.moduleId ?? item.moduleIndex),
+    }));
+  }
 
   const pathByModule = new Map();
   let missingPath = false;

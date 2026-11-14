@@ -658,3 +658,15 @@ test('aynı görseli kullanan bağımsız kopya bloklar baskıda iki ayrı parç
   assert.equal(print.lines[0].quantity, 2);
   assert.equal(print.totalAreaM2, 2);
 });
+
+test('köşeden dönen görsel bloğu modül sırası komşu olmasa da tek baskıdır (2026-11-13)', () => {
+  // Ön duvar, köşedeki kısa yan duvar ve diğer duvar: sahne sırası köşede atlar (a, c, b).
+  const cell = (column) => strip(0, {
+    imageAssetId: 'asset-rect',
+    imageTransform: { mode: 'rect-group', blockId: 'kose', regionStartX: column / 3, regionWidth: 1 / 3, regionStartY: 0, regionHeight: 1 },
+  });
+  const modules = [wall('a', 100, [cell(0)]), wall('c', 100, [cell(2)]), wall('b', 100, [cell(1)])];
+  const images = section(collectPrintAreas(modules), 'image');
+  assert.equal(images.lines.length, 1);
+  assert.equal(images.lines[0].quantity, 1, 'üç yüz tek baskı');
+});
