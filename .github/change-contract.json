@@ -691,7 +691,8 @@
       "required": true,
       "targeted": [
         "e2e/shelf-rows-flow.spec.mjs",
-        "e2e/wall-short-width.spec.mjs"
+        "e2e/wall-short-width.spec.mjs",
+        "e2e/shelf-width-variant.spec.mjs"
       ],
       "reason": "Rafın en üst kenara katalogdan bırakılması ve kayıt sonucu tarayıcıda doğrulanır. Kısa panel gövde rengi kayıtlı proje açılarak doğrulanır."
     }
