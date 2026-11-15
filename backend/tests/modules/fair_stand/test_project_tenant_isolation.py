@@ -89,6 +89,12 @@ def test_foreign_organization_cannot_update_reassign_or_delete_project(
         json={"customerId": str(uuid4())},
     )
     assert foreign_customer.status_code == 404
+    foreign_assignments = client.patch(
+        f"{PROJECTS}/{project_id}/assignments",
+        headers=foreign_headers,
+        json={"fairId": str(uuid4()), "customerId": None},
+    )
+    assert foreign_assignments.status_code == 404
 
     assert client.delete(f"{PROJECTS}/{project_id}", headers=foreign_headers).status_code == 404
 
@@ -96,6 +102,7 @@ def test_foreign_organization_cannot_update_reassign_or_delete_project(
     assert own.status_code == 200
     assert own.json()["name"] == "ABC Stand"
     assert own.json()["customerId"] == CUSTOMER_ID
+    assert own.json()["fairId"] is None
 
 
 def test_foreign_organization_cannot_reach_assets_or_export(

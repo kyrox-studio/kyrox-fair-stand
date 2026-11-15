@@ -35,7 +35,8 @@ def test_unit_catalog_revision_is_single_head():
     from alembic.script import ScriptDirectory
 
     script = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert script.get_heads() == ["0096_drop_rotation_step_backup"]
+    assert script.get_heads() == ["0097_project_fair_assignment"]
+    assert script.get_revision("0097_project_fair_assignment").down_revision == "0096_drop_rotation_step_backup"
     assert script.get_revision("0096_drop_rotation_step_backup").down_revision == "0095_variant_families"
     assert script.get_revision("0095_variant_families").down_revision == "0094_demo_usage"
     assert script.get_revision("0094_demo_usage").down_revision == "0093_hidden_items_maxima"

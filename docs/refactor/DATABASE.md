@@ -85,15 +85,15 @@ Sistem kataloğu (organizasyon satırı yok): kategoriler, önizleme kartları, 
 
 Org kapanışında tenant verisinin imhası için üretim worker'ı **yoktur**; OL08-D bunu ayrıca yetkilendirmeden yazılmaz.
 
-### `customer_id` bağlantı kuralı
+### Proje müşteri ve fuar bağlantıları
 
-`crm_customers` başka veritabanında olduğu için FK kurulamaz. Kural:
+CRM kayıtları ayrı veritabanındadır. Stand, CRM tablolarına FK kurmaz.
 
-1. `customer_id`, aynı `organization_id` içindeki CRM müşteri kimliğine mantıksal referanstır; her sorgu önce `organization_id` ile süzülür (`ix_fair_stand_projects_organization_id_customer_id`).
-2. Yetki veya organizasyon sınırı kaynağı değildir; başka organizasyonun müşteri kimliği yazılsa bile proje yalnız kendi organizasyonunda görünür.
-3. CRM müşterisi silinirse Stand projesi silinmez; kimlik sarkık kalabilir. Proje organizasyona aittir ve organizasyonla birlikte imha edilir.
-4. `00000000-0000-4000-8000-000000000001` atanmamış eski satırların işaretidir; CRM satırı değildir.
-5. Müşteri silindiğinde projelerin ne olacağı (sil / atanmamışa çek) ürün kararıdır; karar verilmeden davranış eklenmez.
+1. Proje, Stand tarafında her zaman kendi `organization_id` kapsamına göre okunur ve yazılır. Müşteri ve fuar kimlikleri atama bilgisidir.
+2. Atanan müşteri aynı organizasyona ait ve silinmemiş olmalıdır. Atanan fuar aynı organizasyona ait veya organizasyon kimliği boş olan sistem fuarı olmalıdır. Silinmiş fuar kabul edilmez.
+3. Stand API, yeni bağlantıları aynı kullanıcı oturumu ve organizasyon kapsamıyla CRM detay uçlarından doğrular. `FAIR_CRM_BASE_URL` varsayılanı `http://127.0.0.1:8001` değeridir. CRM erişilemiyorsa yeni bağlantı kaydedilmez.
+4. Atanmamış müşteri `00000000-0000-4000-8000-000000000001` ile saklanır. Bu kimlik CRM kaydına karşılık gelmez. Atanmamış fuar `NULL` olarak saklanır.
+5. `PATCH /{id}/assignments` isteğinde yalnız gönderilen alanlar güncellenir, açık `null` ilgili bağlantıyı kaldırır. Var olan projeyi çizim kaydıyla güncellemek iki bağlantıyı da korur. Müşteri sonradan silinirse proje ve eski bağlantı kimliği saklanır, CRM seçicide silinmiş müşteriyi göstermez.
 
 ### Askıdaki / kapanan organizasyon
 
@@ -496,7 +496,8 @@ Auth: org-scoped Core verify; `X-Organization-Id` + Bearer. API: `backend/app/mo
 |---|---|---|---|---|
 | `id` | `id` | Proje UUID PK | İstemci ve asset path aynı id | `projectRemote`, asset `storage_key` |
 | `organization_id` | `organizationId` | Core org UUID (FK yok) | Çok kiracılı izolasyon | list/get filtre; disk `{org}/…` |
-| `customer_id` | `customerId` | Zorunlu UUID. `crm_customers` FK’si yok (bağlantı kuralı: “`customer_id` bağlantı kuralı”). Boş eski satırlar `00000000-0000-4000-8000-000000000001` | Proje bir müşteriye bağlıdır | kolon + index `ix_fair_stand_projects_organization_id_customer_id`. Çizim kaydı (PUT payload) bu değeri değiştirmez. Başka müşteri `PATCH /{id}/customer` |
+| `customer_id` | `customerId` | Boş geçilemeyen depolama UUID'si. Müşterisiz kayıtta atanmamış kimliği kullanılır | İsteğe bağlı CRM müşteri bağlantısı | `ix_fair_stand_projects_organization_id_customer_id`; `PATCH /{id}/assignments` ve mevcut `PATCH /{id}/customer` |
+| `fair_id` | `fairId` | UUID veya `NULL`, migration `0097_project_fair_assignment` | İsteğe bağlı CRM fuar bağlantısı | `PATCH /{id}/assignments`; mevcut projelerde alan boş başlar |
 | `name` | `name` | Görünen ad (trim, boş değil) | Liste / başlık | UI proje listesi |
 | `version` | `version` | Optimistic / sıra (`> 0`) | İstemci sürüm bilinci | API response |
 | `payload` | `payload` (+ düz `stand` / `modules`) | JSONB proje gövdesi | Tek blob; kolon patlatma yok | `ProjectService`; `buildProjectSnapshot` şekli |

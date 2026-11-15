@@ -20,6 +20,7 @@ from app.modules.fair_stand.api.dependencies import (
     get_core_http_client,
 )
 from app.modules.fair_stand.infrastructure import models as _fair_stand_models  # noqa: F401
+from app.integrations.crm_references import get_crm_reference_validator
 from app.integrations.kyrox_core.ports import AuthorizationPort
 
 
@@ -130,6 +131,7 @@ def client(
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_authorization_adapter] = lambda: AllowAllAuthorization()
+    app.dependency_overrides[get_crm_reference_validator] = lambda: lambda kind, reference_id: None
     app.dependency_overrides[get_core_http_client] = lambda: FakeCoreHttp()
     app.dependency_overrides[get_audit_adapter] = lambda: audit_adapter
     try:
