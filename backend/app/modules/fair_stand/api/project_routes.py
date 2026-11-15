@@ -12,6 +12,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.integrations.crm_references import ReferenceValidator, get_crm_reference_validator
 from app.integrations.kyrox_core.audit import SCOPE_ORGANIZATION, StandAuditRecorder
 from app.integrations.kyrox_core.auth import AuthContext
 from app.integrations.kyrox_core.dev_bypass import dev_bypass_enabled
@@ -38,6 +39,7 @@ from app.modules.fair_stand.application.projects import (
     ProjectSummary,
     RevisionDetail,
     RevisionSummary,
+    UNASSIGNED_PROJECT_CUSTOMER_ID,
 )
 
 router = APIRouter(prefix="/fair-stand/projects", tags=["fair-stand-projects"])
@@ -62,7 +64,7 @@ class ProjectCreateBody(BaseModel):
     id: UUID | None = None
     name: str = Field(min_length=1, max_length=256)
     version: int = Field(default=1, ge=1)
-    customer_id: UUID = Field(alias="customerId")
+    customer_id: UUID | None = Field(default=None, alias="customerId")
     payload: ProjectPayloadBody = Field(default_factory=ProjectPayloadBody)
 
 
@@ -79,6 +81,12 @@ class ProjectUpdateBody(BaseModel):
 class ProjectCustomerBody(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     customer_id: UUID = Field(alias="customerId")
+
+
+class ProjectAssignmentsBody(BaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    fair_id: UUID | None = Field(default=None, alias="fairId")
+    customer_id: UUID | None = Field(default=None, alias="customerId")
 
 
 def _raise_service(exc: ProjectServiceError) -> None:
@@ -128,6 +136,7 @@ def _summary_json(project: ProjectSummary) -> dict[str, Any]:
         "organizationId": str(project.organization_id),
         "name": project.name,
         "customerId": str(project.customer_id),
+        "fairId": str(project.fair_id) if project.fair_id else None,
         "version": project.version,
         "createdAt": _ms(project.created_at),
         "updatedAt": _ms(project.updated_at),
@@ -178,7 +187,10 @@ def create_project(
     body: ProjectCreateBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_PROJECTS_CREATE)),
     service: ProjectService = Depends(get_project_service),
+    validate_reference: ReferenceValidator = Depends(get_crm_reference_validator),
 ) -> dict[str, Any]:
+    if body.customer_id not in (None, UNASSIGNED_PROJECT_CUSTOMER_ID):
+        validate_reference("customers", body.customer_id)
     try:
         project = service.create_project(
             organization_id=auth.organization_id,
@@ -214,6 +226,7 @@ def update_project(
     authorization: AuthorizationPort = Depends(get_authorization_adapter),
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     service: ProjectService = Depends(get_project_service),
+    validate_reference: ReferenceValidator = Depends(get_crm_reference_validator),
 ) -> dict[str, Any]:
     # Upsert: first save / ZIP import uses PUT with a client-generated id.
     # Existing row requires update; missing row requires create.
@@ -229,6 +242,8 @@ def update_project(
             access_token=credentials.credentials,
         ):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
+    if existing is None and body.customer_id not in (None, UNASSIGNED_PROJECT_CUSTOMER_ID):
+        validate_reference("customers", body.customer_id)
     try:
         project = service.update_project(
             project_id=project_id,
@@ -266,12 +281,54 @@ def assign_project_customer(
     body: ProjectCustomerBody,
     auth: AuthContext = Depends(require_permission(PERMISSION_PROJECTS_UPDATE)),
     service: ProjectService = Depends(get_project_service),
+    validate_reference: ReferenceValidator = Depends(get_crm_reference_validator),
 ) -> dict[str, Any]:
+    validate_reference("customers", body.customer_id)
     try:
         project = service.assign_customer(
             project_id=project_id,
             organization_id=auth.organization_id,
             customer_id=body.customer_id,
+        )
+    except ProjectServiceError as exc:
+        _raise_service(exc)
+    return _detail_json(project)
+
+
+@router.patch("/{project_id}/assignments")
+def update_project_assignments(
+    project_id: UUID,
+    body: ProjectAssignmentsBody,
+    auth: AuthContext = Depends(require_permission(PERMISSION_PROJECTS_UPDATE)),
+    authorization: AuthorizationPort = Depends(get_authorization_adapter),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    service: ProjectService = Depends(get_project_service),
+    validate_reference: ReferenceValidator = Depends(get_crm_reference_validator),
+) -> dict[str, Any]:
+    assignments = body.model_dump(exclude_unset=True)
+    if not dev_bypass_enabled():
+        if credentials is None or not credentials.credentials:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        for field, permission in (
+            ("fair_id", "fair_crm.fairs.read"),
+            ("customer_id", "fair_crm.customers.read"),
+        ):
+            if field in assignments and not authorization.check_permission(
+                organization_id=auth.organization_id,
+                user_id=auth.user_id,
+                permission_code=permission,
+                access_token=credentials.credentials,
+            ):
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
+    if body.customer_id is not None:
+        validate_reference("customers", body.customer_id)
+    if body.fair_id is not None:
+        validate_reference("fairs", body.fair_id)
+    try:
+        project = service.update_assignments(
+            project_id=project_id,
+            organization_id=auth.organization_id,
+            assignments=assignments,
         )
     except ProjectServiceError as exc:
         _raise_service(exc)

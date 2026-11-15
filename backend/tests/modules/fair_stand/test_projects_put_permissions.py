@@ -48,6 +48,9 @@ def test_put_create_vs_update_permission_split(client, auth_headers, tmp_path, m
         json={"name": "Guncelle", "payload": {"stand": None, "modules": []}},
     )
     assert blocked.status_code == 403
+    assignments_url = f"/api/v1/fair-stand/projects/{project_id}/assignments"
+    fair_id = str(uuid4())
+    assert client.patch(assignments_url, headers=auth_headers, json={"fairId": fair_id}).status_code == 403
 
     app.dependency_overrides[get_authorization_adapter] = lambda: update_only
     updated = client.put(
@@ -57,6 +60,16 @@ def test_put_create_vs_update_permission_split(client, auth_headers, tmp_path, m
     )
     assert updated.status_code == 200, updated.text
     assert updated.json()["name"] == "Guncelle"
+    assert updated.json()["fairId"] is None
+    assert client.patch(assignments_url, headers=auth_headers, json={"fairId": fair_id}).status_code == 403
+    update_only.allowed.add("fair_crm.fairs.read")
+    assert client.patch(
+        assignments_url, headers=auth_headers, json={"fairId": fair_id, "customerId": None},
+    ).status_code == 403
+    assigned = client.patch(assignments_url, headers=auth_headers, json={"fairId": fair_id})
+    assert assigned.status_code == 200, assigned.text
+    assert assigned.json()["fairId"] == fair_id
+    assert assigned.json()["customerId"] == created.json()["customerId"]
 
     # update-only cannot create missing
     missing_id = str(uuid4())

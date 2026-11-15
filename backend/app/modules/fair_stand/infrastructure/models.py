@@ -964,6 +964,7 @@ class FairStandProjectModel(Base):
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     organization_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
     customer_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    fair_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
     name: Mapped[str] = mapped_column(String(256), nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     payload: Mapped[dict] = mapped_column(PayloadJSON, nullable=False)

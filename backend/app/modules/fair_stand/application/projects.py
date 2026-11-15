@@ -73,6 +73,7 @@ class ProjectSummary:
     id: UUID
     organization_id: UUID
     customer_id: UUID
+    fair_id: UUID | None
     name: str
     version: int
     created_at: datetime
@@ -119,6 +120,7 @@ def _summary(row: FairStandProjectModel) -> ProjectSummary:
         id=row.id,
         organization_id=row.organization_id,
         customer_id=row.customer_id,
+        fair_id=row.fair_id,
         name=row.name,
         version=row.version,
         created_at=row.created_at,
@@ -134,6 +136,7 @@ def _detail(
         id=row.id,
         organization_id=row.organization_id,
         customer_id=row.customer_id,
+        fair_id=row.fair_id,
         name=row.name,
         version=row.version,
         created_at=row.created_at,
@@ -313,13 +316,11 @@ class ProjectService:
         cleaned_name = (name or "").strip()
         if not cleaned_name:
             raise ProjectServiceError("Project name is required")
-        if customer_id is None:
-            raise ProjectServiceError("customerId is required")
         now = _now()
         row = FairStandProjectModel(
             id=project_id or uuid4(),
             organization_id=organization_id,
-            customer_id=customer_id,
+            customer_id=customer_id if customer_id is not None else UNASSIGNED_PROJECT_CUSTOMER_ID,
             name=cleaned_name[:256],
             version=max(1, int(version or 1)),
             payload=_normalize_payload(payload),
@@ -404,6 +405,25 @@ class ProjectService:
         row.updated_at = _now()
         self._session.flush()
         self._session.refresh(row)
+        return self._project_detail(row)
+
+    def update_assignments(
+        self,
+        *,
+        project_id: UUID,
+        organization_id: UUID,
+        assignments: dict[str, UUID | None],
+    ) -> ProjectDetail:
+        row = self._get_org_project(project_id, organization_id)
+        if row is None:
+            raise ProjectServiceError("Project not found", status_code=404)
+        if "fair_id" in assignments:
+            row.fair_id = assignments["fair_id"]
+        if "customer_id" in assignments:
+            row.customer_id = assignments["customer_id"] or UNASSIGNED_PROJECT_CUSTOMER_ID
+        if self._session.is_modified(row):
+            row.updated_at = _now()
+        self._session.flush()
         return self._project_detail(row)
 
     def get_revision(

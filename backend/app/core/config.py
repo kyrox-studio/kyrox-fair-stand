@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "change-me-in-production-use-a-long-random-string"
     jwt_algorithm: str = "HS256"
     kyrox_core_base_url: str = "http://127.0.0.1:8000"
+    fair_crm_base_url: str = "http://127.0.0.1:8001"
     app_env: str = "development"
     log_level: str = "INFO"
     host: str = "127.0.0.1"
