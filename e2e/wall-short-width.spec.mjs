@@ -89,6 +89,18 @@ async function createIslandProject(page, name, modules) {
   await expect(page.locator('#project-status')).toContainText('Açıldı:');
 }
 
+test('tek ve çift sıra kısa panellerin ön panel arkaları aynı açık renkte', async ({ page }) => {
+  await exposeScene(page);
+  await createIslandProject(page, 'Kısa panel arka renk', [
+    { itemKey: 'wall_100_short_1', place: { xCm: 100, yCm: 100, wallId: 'free' } },
+    { itemKey: 'wall_100_short_2', place: { xCm: 250, yCm: 100, wallId: 'free' } },
+  ]);
+  const colors = await page.evaluate(() => window.__sceneSurfaces()
+    .filter((surface) => !surface.userData.panelSide && surface.userData.backing)
+    .map((surface) => surface.userData.backing.material.color.getHex()));
+  expect(colors).toEqual([0xe5e7eb, 0xe5e7eb, 0xe5e7eb]);
+});
+
 function moduleScreenPoint(page, moduleId) {
   return page.evaluate((id) => {
     const surface = window.__sceneSurfaces().find((mesh) => mesh.userData.moduleId === id);

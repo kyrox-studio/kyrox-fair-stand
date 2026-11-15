@@ -17,6 +17,7 @@ import {
   listInternalSeamsInOccupancyRange,
   overlayZCmFromSeamHeight,
   snapPanelSeamOverlayPlacement,
+  stepPanelSeamOverlayPlacement,
   WALL_OVERLAY_DEFAULT_CENTER_CM,
 } from '../src/modulePlacement.js';
 import {
@@ -143,7 +144,7 @@ test('B-D raf sığdığı wall/panel support span’e bağlanır; taşarsa inva
   assert.equal(shelf100On200Edge.placement.xCm, 0);
 });
 
-test('G-I panel internal seam snap: geçerli birleşim, orta ve dış sınır reddi', () => {
+test('G-I raf birleşime ve en üst kenara takılır; panel ortası ve zemin reddedilir', () => {
   const metrics = getStandStripMetrics();
   const seams = getStandInternalSeamHeightsCm();
   assert.equal(metrics.stripCount, 7);
@@ -192,7 +193,17 @@ test('G-I panel internal seam snap: geçerli birleşim, orta ve dış sınır re
     wallPoint: seamWallPoint(50, 350),
     modules: [wall],
   });
-  assert.equal(topEdge.ok, false);
+  assert.equal(topEdge.ok, true);
+  assert.equal(topEdge.seamHeightCm, 350);
+  assert.equal(topEdge.placement.zCm, overlayZCmFromSeamHeight(350, shelf.heightCm));
+  const stepped = stepPanelSeamOverlayPlacement({
+    moduleState: { ...valid.resolvedModuleState, placement: {
+      ...valid.placement, zCm: overlayZCmFromSeamHeight(300, shelf.heightCm),
+    } },
+    modules: [wall],
+    seamDelta: 1,
+  });
+  assert.equal(stepped.zCm, topEdge.placement.zCm);
 });
 
 test('J shelf wall capacity’ye 100/150/200 cm eklemez', () => {

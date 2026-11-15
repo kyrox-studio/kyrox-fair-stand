@@ -25,7 +25,9 @@ test('kapı üstü raf birleşimleri tüm stand yüksekliklerinde gerçek panell
         const placed = first ? { ...first.resolvedModuleState, placement: first.placement } : null;
         const duplicate = first ? snap({ moduleState: create({ itemKey: card }), modules: [host, placed],
           wallPoint: { wallId: 'back', pointerXCm: 50, pointerYCm: 0, absoluteHeightCm: first.seamHeightCm } }) : null;
-        results.push({ height, card, seams: seams(host), bottom: at(200).ok, top: at(height).ok,
+        const top = at(height);
+        results.push({ height, card, seams: seams(host), bottom: at(200).ok,
+          top: top.ok, topMountHeight: top.seamHeightCm,
           duplicateRejected: !duplicate || !duplicate.ok,
           accepted: seams(host).filter((z) => at(z).ok) });
       }
@@ -36,7 +38,9 @@ test('kapı üstü raf birleşimleri tüm stand yüksekliklerinde gerçek panell
     const seams = Array.from({ length: result.height / 50 - 5 }, (_, i) => 250 + i * 50);
     expect(result.seams).toEqual(seams);
     expect(result.bottom).toBe(false);
-    expect(result.top).toBe(false);
+    const allowsTopEdge = result.card === 'shelf_row_1';
+    expect(result.top).toBe(allowsTopEdge);
+    expect(result.topMountHeight).toBe(allowsTopEdge ? result.height : null);
     expect(result.duplicateRejected).toBe(true);
     expect(result.accepted).toEqual(seams.filter((z) => z + (result.card === 'shelf_row_1' ? 1.8 : 51.8) <= result.height));
   }

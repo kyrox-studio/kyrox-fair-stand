@@ -146,10 +146,10 @@ test('editor light budget: only one DirectionalLight (key); stage light adds no 
   assert.doesNotMatch(scene, /STAGE_FILL_LIGHT|fillLight/);
 });
 
-test('auto fascia panels get a light backing body; other panels keep the dark body', () => {
+test('short panels and auto fascia get the same light backing body', () => {
   assert.match(scene, /const FASCIA_BACK_COLOR = 0x[0-9a-f]{6};/);
   const helper = scene.slice(scene.indexOf('function opaquePanelBackColor('), scene.indexOf('function opaquePanelBackColor(') + 200);
-  assert.match(helper, /moduleState\?\.autoFascia === true \? FASCIA_BACK_COLOR : PANEL_BACK_COLOR/);
+  assert.match(helper, /moduleState\?\.autoFascia === true \|\| isWallShortFamilyDescriptor\(moduleState\)\s*\? FASCIA_BACK_COLOR\s*:\s*PANEL_BACK_COLOR/);
   const flat = scene.slice(scene.indexOf('function createFlatPanelModule('), scene.indexOf('function createDoorModule('));
   assert.match(flat, /const opaqueBackColor = opaquePanelBackColor\(moduleState\);/);
   assert.match(flat, /color: isGlass \? PANEL_GLASS_BACKING_APPEARANCE\.color : opaqueBackColor,/);

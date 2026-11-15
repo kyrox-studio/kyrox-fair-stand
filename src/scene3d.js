@@ -161,7 +161,9 @@ const PANEL_BACK_COLOR = 0x4b5563;
 const FASCIA_BACK_COLOR = 0xe5e7eb;
 
 function opaquePanelBackColor(moduleState) {
-  return moduleState?.autoFascia === true ? FASCIA_BACK_COLOR : PANEL_BACK_COLOR;
+  return moduleState?.autoFascia === true || isWallShortFamilyDescriptor(moduleState)
+    ? FASCIA_BACK_COLOR
+    : PANEL_BACK_COLOR;
 }
 
 function panelFaceBackingMaterial(isGlass) {

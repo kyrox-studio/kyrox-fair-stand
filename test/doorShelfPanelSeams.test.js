@@ -21,7 +21,8 @@ test('kapı üstü raf yalnız gerçek panel birleşimlerine oturur: 250–500 c
       const shelf = createModuleStateFromDescriptor({ itemKey: card });
       const snap = (z) => snapPanelSeamOverlayPlacement({ moduleState: shelf, modules: [host],
         wallPoint: { wallId: 'back', pointerXCm: 50, pointerYCm: 0, absoluteHeightCm: z, rotationZDeg: 0 } });
-      for (const edge of [0, 50, 100, 150, 200, height]) assert.equal(snap(edge).ok, false, `${height}/${card}/${edge}`);
+      for (const edge of [0, 50, 100, 150, 200]) assert.equal(snap(edge).ok, false, `${height}/${card}/${edge}`);
+      assert.equal(snap(height).ok, card === 'shelf_row_1');
       for (const seam of expected) {
         const result = snap(seam);
         const fits = seam + shelf.heightCm <= height;

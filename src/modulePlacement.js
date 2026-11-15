@@ -283,11 +283,19 @@ export function overlayZCmFromSeamHeight(seamHeightCm, panelThicknessCm) {
   return Number(seamHeightCm) + Number(panelThicknessCm) / 2 - WALL_OVERLAY_DEFAULT_CENTER_CM;
 }
 
-// Overlay'in alt kenarı birleşime oturur; tamamı (çok sıralı rafta üst tahta dahil) duvarın içinde kalmalı.
-function seamsFittingOverlayHeight(validSeams, occupancyRange, heightCm) {
+// Çok sıralı rafın tamamı duvara sığar. Tekli raf duvarın üst kenarına da oturabilir.
+function listShelfMountHeights(occupancyRange, host, shelf) {
+  const validSeams = listInternalSeamsInOccupancyRange(occupancyRange, host);
   const maxCm = Number(occupancyRange?.maxCm);
   if (!Number.isFinite(maxCm)) return validSeams;
-  return validSeams.filter((seam) => seam + Number(heightCm) <= maxCm + EPSILON_CM);
+  const heights = validSeams.filter((seam) => seam + Number(shelf.heightCm) <= maxCm + EPSILON_CM);
+  const rows = resolveShelfRows(getItem(shelf.itemKey));
+  const topStrip = host.strips?.find((strip, index) =>
+    (strip.stripIndex ?? index) === Math.round(Number(host.heightCm) / WALL_PANEL_BAND_PITCH_CM) - 1);
+  if (rows?.count === 1 && (!Array.isArray(host.strips) || (topStrip && !topStrip.removed))) {
+    heights.push(maxCm);
+  }
+  return heights;
 }
 
 export function listInternalSeamsInOccupancyRange(occupancyRange, hostModule = null) {
@@ -430,7 +438,7 @@ export function snapPanelSeamOverlayPlacement({
   let resolvedModuleState = moduleState;
   const hitHeightCm = Number(wallPoint?.absoluteHeightCm);
   let fallback = overlayPlacementFromPointer(moduleState, wallPoint);
-  const invalidMessage = 'Rafı iki panel arasındaki birleşime bırak.';
+  const invalidMessage = 'Rafı panel birleşimine veya tekli rafı en üst kenara bırak.';
   const missingHostMessage = 'Rafı sığdığı duvar veya panel üzerine bırak.';
 
   if (
@@ -477,11 +485,7 @@ export function snapPanelSeamOverlayPlacement({
   }
 
   const occupancyRange = getModuleCollisionHeightRangeCm(target);
-  const validSeams = seamsFittingOverlayHeight(
-    listInternalSeamsInOccupancyRange(occupancyRange, target),
-    occupancyRange,
-    heightCm,
-  );
+  const validSeams = listShelfMountHeights(occupancyRange, target, resolvedModuleState);
 
   let seamHeightCm = null;
   let seamDistanceCm = Number.POSITIVE_INFINITY;
@@ -557,11 +561,7 @@ export function stepPanelSeamOverlayPlacement({
   }
 
   const targetRange = getModuleCollisionHeightRangeCm(target);
-  const validSeams = seamsFittingOverlayHeight(
-    listInternalSeamsInOccupancyRange(targetRange, target),
-    targetRange,
-    heightCm,
-  );
+  const validSeams = listShelfMountHeights(targetRange, target, moduleState);
   if (!validSeams.length) return null;
 
   const currentBottomCm = Number(placement.zCm) + WALL_OVERLAY_DEFAULT_CENTER_CM - heightCm / 2;

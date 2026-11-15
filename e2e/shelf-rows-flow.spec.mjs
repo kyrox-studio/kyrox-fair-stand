@@ -318,6 +318,39 @@ test('raf altı aydınlatma açılınca üçlü rafın bütün sıralarında yan
   expect(errors).toEqual([]);
 });
 
+test('tekli raf katalogdan duvarın üst kenarına bırakılır ve kaydedilir', async ({ page }) => {
+  await exposeScene(page);
+  const opened = await openProjectWithShelves(page, 'E2E Üst Kenar Rafı', []);
+  const host = opened.modules.find((module) => module.itemKey === 'wall_150_350');
+  const target = await screenPoint(page, `() => {
+    const strip = window.__sceneSurfaces().find((mesh) =>
+      mesh.userData.moduleId === ${JSON.stringify(host.id)} && mesh.userData.stripIndex === 6);
+    strip.updateMatrixWorld(true);
+    const point = strip.getWorldPosition(strip.position.clone());
+    point.y += 0.20;
+    return point;
+  }`);
+  const ghost = await page.evaluate(({ x, y }) => {
+    const source = document.querySelector('.module-drag-card[data-module-key="shelf_row_1"]');
+    const viewport = document.querySelector('#viewport');
+    const dataTransfer = new DataTransfer();
+    source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer }));
+    viewport.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer, clientX: x, clientY: y }));
+    const state = viewport.querySelector(':scope > canvas').dataset.placementGhost;
+    viewport.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer, clientX: x, clientY: y }));
+    return state;
+  }, target);
+  expect(ghost).toBe('valid');
+  const project = await saveAndReadProject(page);
+  const shelf = project.modules.find((module) => module.type === 'shelf');
+  expect(shelf.itemKey).toBe('shelf_150');
+  const lowerEdge = await page.evaluate(async ({ zCm, heightCm }) => {
+    const { WALL_OVERLAY_DEFAULT_CENTER_CM } = await import('/src/modulePlacement.js');
+    return zCm + WALL_OVERLAY_DEFAULT_CENTER_CM - heightCm / 2;
+  }, { zCm: shelf.placement.zCm, heightCm: shelf.heightCm });
+  expect(lowerEdge).toBeCloseTo(350);
+});
+
 test('tablet boyutunda Raf kartı görünür, duvara takılır ve sıra panelden seçilir', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
