@@ -257,3 +257,26 @@ test('köşenin içinde, iki dış yüzle hizalı dikme 49,5 köşe dikmesinin y
   const beside = [placed('upright_346_5', 195, 180, 0, upright), placed('upright_346_5', 195, 370, 0, upright)];
   assert.equal(count([base, ...beside], 'upright_49_5'), 4);
 });
+
+// Sahne (kullanıcı kararı 2026-11-16): serbest bazada ön ve arka uzun raylar çizilir (listede 4);
+// duvar sırtındaki bazada duvar tarafındaki ray çizilmez (listede 2). 100 / 150 / 200 aynı.
+test('sahne: duvar sırtındaki bazanın duvar tarafı işaretlenir, serbest bazada işaret yok', async () => {
+  const { resolveWallCornerEnds } = await import('../src/wallCornerJoints.js');
+  for (const [itemKey, widthCm, wallKey] of [
+    ['base_100', 100, 'wall_100_350'], ['base_150', 150, 'wall_150_350'], ['base_200', 200, 'wall_200_350'],
+  ]) {
+    const hosted = resolveWallCornerEnds([host('wall', wallKey, widthCm), baza('base', itemKey, widthCm, { xCm: 0 })]);
+    const ends = (hosted.get('base') ?? []).filter((end) => end.baseHost);
+    assert.equal(ends.length, 1, itemKey);
+    // Duvar bazanın arkasında: yerel z'de ön (+1) değil arka (-1) yüz.
+    assert.equal(ends[0].localZSign, -1, itemKey);
+    const bom = resolveProjectBom([host('wall', wallKey, widthCm), baza('base', itemKey, widthCm, { xCm: 0 })]);
+    assert.equal(qty(bom, getProfileKey(itemKey)), 4, itemKey);
+    const free = resolveWallCornerEnds([baza('base', itemKey, widthCm, { xCm: 0, yCm: 300 })]);
+    assert.equal((free.get('base') ?? []).filter((end) => end.baseHost).length, 0, itemKey);
+  }
+});
+
+function getProfileKey(itemKey) {
+  return { base_100: 'profile_91', base_150: 'profile_140_5', base_200: 'profile_190' }[itemKey];
+}

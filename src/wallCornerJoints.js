@@ -17,6 +17,7 @@ import {
 } from './relationshipBom.js';
 import { getItem, isWallShortFamilyDescriptor } from './items.js';
 import { resolveBoxRunEnds } from './boxRunJoints.js';
+import { resolveBaseHostSides } from './baseRunBom.js';
 import {
   getModuleFootprintBoundsCm,
   isProfileFlushOnFrameEnd,
@@ -163,7 +164,35 @@ export function resolveWallCornerEnds(modules = []) {
   addShortRailRuns(list, result);
   addRunInfills(list, result);
   addBoxRunEnds(list, result);
+  addBaseHostEnds(list, result);
   return result;
+}
+
+/**
+ * Duvar sırtındaki baza (kullanıcı kararı 2026-11-16): serbest bazada ön ve arka uzun raylar çizilir
+ * (4 profil); duvara dayalı bazada duvar tarafındaki uzun ray çizilmez (2 profil, listeyle aynı).
+ * `{ baseHost: true, localZSign }`: duvarın bazanın yerel z ekseninde hangi yüzde olduğu (+1 ön).
+ */
+function addBaseHostEnds(list, result) {
+  let sides;
+  try {
+    sides = resolveBaseHostSides(list);
+  } catch {
+    return;
+  }
+  const byId = new Map(list.filter((module) => module?.id).map((module) => [module.id, module]));
+  for (const [moduleId, planSide] of sides) {
+    const module = byId.get(moduleId);
+    if (!module || !isCardinal(module)) continue;
+    const theta = normalizeModuleRotationZDeg(module.placement.rotationZDeg) * Math.PI / 180;
+    // Yerel +z'nin plan yönü (sin θ, cos θ); baza x hattındaysa dik eksen y, y hattındaysa x.
+    const front = Math.round(normalizeModuleRotationZDeg(module.placement.rotationZDeg)) % 180 === 0
+      ? Math.cos(theta)
+      : Math.sin(theta);
+    const localZSign = Math.sign(planSide * front);
+    if (!localZSign) continue;
+    result.set(moduleId, [...(result.get(moduleId) ?? []), Object.freeze({ baseHost: true, localZSign })]);
+  }
 }
 
 /** Yan yana baza / banko birleşimi (`boxRunJoints.js`): `{ boxRun: true, localXSign, ownsPost }`. */

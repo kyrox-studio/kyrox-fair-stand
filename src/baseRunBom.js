@@ -272,6 +272,25 @@ function runTotals(run, hosts, uprights = []) {
   return { totals, hostedCount, joints: Math.max(0, run.length - 1) };
 }
 
+/**
+ * Duvar sırtına dayalı bazalar (`hostCovers`): baza kimliği → duvarın plan tarafı (bazanın merkezinden
+ * dik eksende -1 / +1). Sahne o yüzün uzun rayını çizmez; listede o bazanın uzun profili 2'dir.
+ */
+export function resolveBaseHostSides(modules = []) {
+  const list = Array.isArray(modules) ? modules : [];
+  const hosts = list.map(hostFrame).filter(Boolean);
+  const result = new Map();
+  for (const module of list) {
+    const frame = bazaFrame(module);
+    if (!frame?.moduleId) continue;
+    const host = hosts.find((entry) => hostCovers(frame, entry));
+    if (!host) continue;
+    const side = Math.sign(host.fixedCm - frame.centerFixed);
+    if (side) result.set(frame.moduleId, side);
+  }
+  return result;
+}
+
 function linesFromTotals(totals) {
   return [...totals.entries()].map(([itemKey, quantity]) => {
     const item = getItem(itemKey);

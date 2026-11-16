@@ -128,7 +128,7 @@ let renderCornerEndsByModule = new Map();
 // Sahne dışı çizim (sürükleme silüeti, moduleIndex < 0) tek başına çizilir: köşe kuralı yok.
 function cornerEndsForModule(moduleState, moduleIndex) {
   if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
-  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => !end.stack && !end.railRun && !end.infill && !end.boxRun);
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => !end.stack && !end.railRun && !end.infill && !end.boxRun && !end.baseHost);
 }
 
 // Yan yana baza / banko birleşim uçları (`boxRunJoints.js`); yalnız sahnedeki modül.
@@ -139,7 +139,15 @@ function boxRunEndsForModule(moduleState, moduleIndex) {
 
 // Birleşimde baza / banko çerçevesi: dikmeyi çizmeyen uçta (ownsPost false) iki köşe dikmesi ve yan
 // raylar çizilmez, ön ray birleşim çizgisine kadar uzar; iki modülde de içteki yan yüzler çizilmez.
-function boxRunFrameParts({ widthM, depthM, profileM, frameDepthM }, ends) {
+// Bazada duvar sırtı (`wallCornerJoints.js` addBaseHostEnds): duvar tarafının yerel z işareti.
+function baseHostZSigns(moduleState, moduleIndex) {
+  if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? [])
+    .filter((end) => end.baseHost)
+    .map((end) => end.localZSign);
+}
+
+function boxRunFrameParts({ widthM, depthM, profileM, frameDepthM, longRailZSides = [1] }, ends) {
   const skipSides = new Set(ends.filter((end) => !end.ownsPost).map((end) => end.localXSign));
   const innerSides = new Set(ends.map((end) => end.localXSign));
   const posts = [-1, 1]
@@ -151,12 +159,12 @@ function boxRunFrameParts({ widthM, depthM, profileM, frameDepthM }, ends) {
   const extendLeft = skipSides.has(-1) ? profileM : 0;
   const extendRight = skipSides.has(1) ? profileM : 0;
   const rails = [
-    {
+    ...longRailZSides.map((zSide) => ({
       axis: 'x',
       length: Math.max(widthM - profileM * 2, 0.02) + extendLeft + extendRight,
       x: (extendRight - extendLeft) / 2,
-      z: depthM / 2 - frameDepthM / 2,
-    },
+      z: zSide * (depthM / 2 - frameDepthM / 2),
+    })),
     ...[-1, 1]
       .filter((xSide) => !skipSides.has(xSide))
       .map((xSide) => ({ axis: 'z', length: Math.max(depthM - profileM * 2, 0.02), x: xSide * (widthM / 2 - frameDepthM / 2), z: 0 })),
@@ -3400,7 +3408,8 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     };
 
     const wall = createFlatPanelModule(wallState, moduleIndex, applyStoredImage);
-    const base = createBaseModule(baseState, moduleIndex, applyStoredImage);
+    // Panel bazalı duvarda duvar bazanın sırtındadır: yalnız ön uzun ray (değişmedi).
+    const base = createBaseModule(baseState, moduleIndex, applyStoredImage, { wallBacked: true });
     const group = new THREE.Group();
     group.userData.kind = 'module';
     group.userData.moduleId = moduleState.id;
@@ -11025,7 +11034,7 @@ function placeBoxPanelFace(backing, surface, anchor, outward, backingDepth) {
   backing.position.copy(anchor).addScaledVector(outward, PANEL_FACE_OFFSET_M - 0.003 - backingDepth / 2);
 }
 
-function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
+function createBaseModule(moduleState, moduleIndex, onSurfaceReady, { wallBacked = false } = {}) {
   const widthCm = Number(moduleState.widthCm);
   const depthCm = Number(moduleState.depthCm) || 50;
   const heightCm = Number(moduleState.heightCm) || 50;
@@ -11063,8 +11072,14 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
   });
   // Baza dış ölçüsü korunur; ara yatay profil yok (her yüz tek panel).
   const railYs = [0, frameHeightM];
-  // Yan yana bazada ortak uç tek çizilir (`boxRunJoints.js`, 2026-11-16).
-  const boxRun = boxRunFrameParts({ widthM, depthM, profileM, frameDepthM }, boxRunEndsForModule(moduleState, moduleIndex));
+  // Yan yana bazada ortak uç tek çizilir (`boxRunJoints.js`, 2026-11-16). Uzun raylar ön ve arkada
+  // (listede 4 profil); duvar sırtındaki bazada duvar tarafı çizilmez (2 profil).
+  const hostZSigns = baseHostZSigns(moduleState, moduleIndex);
+  const longRailZSides = wallBacked ? [1] : [1, -1].filter((zSide) => !hostZSigns.includes(zSide));
+  const boxRun = boxRunFrameParts(
+    { widthM, depthM, profileM, frameDepthM, longRailZSides },
+    boxRunEndsForModule(moduleState, moduleIndex),
+  );
   addBoxModuleFrame(group, frameMaterial, {
     posts: boxRun.posts,
     rails: boxRun.rails,

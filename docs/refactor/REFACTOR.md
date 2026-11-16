@@ -23,6 +23,8 @@ Bu dosya Item mimarisine geçişin değişiklik günlüğüdür (2026-09-16 … 
 
 **Baza arka paneli (aynı gün kullanıcı kararı):** bazanın arka yüzü panelsizdir; liste her bazada 1 uzun panel sayar (n baza: n + 2 panel), modül satırı da (`baseRunBom.js` `withoutBaseBackPanel`). Panel dökümü ve sahne ile aynı.
 
+**Baza uzun rayları (aynı gün kullanıcı kararı):** sahne serbest bazada ön ve arka uzun rayları çizer (listede 4 profil); duvar sırtındaki bazada duvar tarafı çizilmez (listede 2). 100 / 150 / 200 aynı (`baseRunBom.js` `resolveBaseHostSides`, `wallCornerJoints.js` `addBaseHostEnds`).
+
 **Gerileme düzeltmesi (aynı gün):** #385'te `collectPanelSurfaces` yüzlere reçete sırasıyla panel kimliği yazınca 2026-11-13 kararı (ön geniş, yanlar dar; proje 452d4cc1) liste tarafında bozuldu: bazada sol yanak, L bankoda sol / sağ yüzler yanlış panel sayılıyordu (panel dökümü, cam ikizi). Baza / banko yüzü artık rolünden kimlik alır (`designState.js` `resolveBoxFacePanelItemKey`, `panelGlassBom.js`); duvar bantları sıradan onarılmaya devam eder. Testler liste katmanını da kapsar (`test/baseFacePanelIdentity.test.js`, `e2e/desk-banko-items-contract.spec.mjs` ölçü değişiminden sonra yüz kimliği).
 
 ## 2026-11-13 — Profil gerçek boyundaki aralığa oturur; H / U köşe; uç dikmesi
