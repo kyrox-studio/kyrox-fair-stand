@@ -147,7 +147,7 @@ function baseHostZSigns(moduleState, moduleIndex) {
     .map((end) => end.localZSign);
 }
 
-function boxRunFrameParts({ widthM, depthM, profileM, frameDepthM, longRailZSides = [1] }, ends) {
+function boxRunFrameParts({ widthM, depthM, profileM, frameDepthM, longRailZSides = [1], longRailYsBySide = {} }, ends) {
   const skipSides = new Set(ends.filter((end) => !end.ownsPost).map((end) => end.localXSign));
   const innerSides = new Set(ends.map((end) => end.localXSign));
   const posts = [-1, 1]
@@ -164,6 +164,7 @@ function boxRunFrameParts({ widthM, depthM, profileM, frameDepthM, longRailZSide
       length: Math.max(widthM - profileM * 2, 0.02) + extendLeft + extendRight,
       x: (extendRight - extendLeft) / 2,
       z: zSide * (depthM / 2 - frameDepthM / 2),
+      ys: longRailYsBySide[zSide],
     })),
     ...[-1, 1]
       .filter((xSide) => !skipSides.has(xSide))
@@ -11013,11 +11014,12 @@ function addBoxModuleFrame(group, frameMaterial, { posts, rails, railYs, frameHe
   const postGeometry = createSlottedProfileGeometry(profileM, frameHeightM, profileM);
   posts.forEach(([x, z]) => addProfile(postGeometry.clone(), x, frameHeightM / 2, z));
   const railCenterY = (y) => Math.min(Math.max(y, profileM / 2), frameHeightM - profileM / 2);
-  rails.forEach(({ axis, length, x, z }) => {
+  // Rayın kendi kotları (`ys`) yoksa bütün kotlarda çizilir.
+  rails.forEach(({ axis, length, x, z, ys }) => {
     const geometry = axis === 'x'
       ? createSlottedProfileGeometry(length, profileM, profileM)
       : createSlottedProfileGeometry(profileM, profileM, length);
-    railYs.forEach((y) => addProfile(geometry.clone(), x, railCenterY(y), z));
+    (ys ?? railYs).forEach((y) => addProfile(geometry.clone(), x, railCenterY(y), z));
   });
 }
 
@@ -11206,8 +11208,12 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   // 4 köşe dikmesi; ara yatay profil kaldırıldı, yalnız en alt ve en üst profil kalır.
   const railYs = [0, frameHeightM];
   const frameDepthM = getProceduralFrameCrossSectionM(moduleState).frameDepth;
-  // Yan yana bankoda ortak uç tek çizilir (`boxRunJoints.js`, 2026-11-16).
-  const boxRun = boxRunFrameParts({ widthM, depthM, profileM, frameDepthM }, boxRunEndsForModule(moduleState, moduleIndex));
+  // Yan yana bankoda ortak uç tek çizilir (`boxRunJoints.js`, 2026-11-16). Uzun profil 3 (listeyle aynı):
+  // ön alt, ön üst ve tablanın altında arka üst (kullanıcı kararı 2026-11-16); arkada alt ray yok.
+  const boxRun = boxRunFrameParts(
+    { widthM, depthM, profileM, frameDepthM, longRailZSides: [1, -1], longRailYsBySide: { '-1': [frameHeightM] } },
+    boxRunEndsForModule(moduleState, moduleIndex),
+  );
   addBoxModuleFrame(group, frameMaterial, {
     posts: boxRun.posts,
     rails: boxRun.rails,
@@ -11334,7 +11340,8 @@ function createLCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   const group = new THREE.Group();
   group.userData = { kind:'module', moduleIndex, moduleId:moduleState.id, type:'counter', widthCm, depthCm, heightCm:100, counterShape:'L' };
   const frameMaterial = new THREE.MeshStandardMaterial({ color:frameColorForModule(moduleState), metalness:0.68, roughness:0.28 });
-  const railYs=[0,stripHeightM,frameHeightM];
+  // Orta kot rayı yok (kullanıcı kararı 2026-11-16): yalnız alt ve üst raylar.
+  const railYs = [0, frameHeightM];
   addBoxModuleFrame(group, frameMaterial, {
     posts: [
       [-widthM / 2 + profileM / 2, -depthM / 2 + profileM / 2],
@@ -11348,6 +11355,23 @@ function createLCounterModule(moduleState, moduleIndex, onSurfaceReady) {
       { axis: 'z', length: Math.max(depthM - profileM * 2, 0.02), x: widthM / 2 - frameDepthM / 2, z: 0 },
       { axis: 'z', length: Math.max(armM - profileM * 2, 0.02), x: -widthM / 2 + frameDepthM / 2, z: -depthM / 2 + armM / 2 },
       { axis: 'x', length: Math.max(armM - profileM * 2, 0.02), x: widthM / 2 - armM / 2, z: depthM / 2 - frameDepthM / 2 },
+      // Tablanın altında iç kenar rayları, yalnız üstte (kullanıcı kararı 2026-11-16, 1 m örneği):
+      // iç kol dikmesinden karşı uzun raya giden uzun ray (100'de 91) ve öbür iç dikmeden ona giden
+      // kısa ray (100'de 41,5). 150 / 200 aynı düzende kendi ölçüsünde.
+      {
+        axis: 'z',
+        length: Math.max(depthM - profileM * 2, 0.02),
+        x: widthM / 2 - armM + profileM / 2,
+        z: 0,
+        ys: [frameHeightM],
+      },
+      {
+        axis: 'x',
+        length: Math.max(widthM - armM - profileM, 0.02),
+        x: (profileM - armM) / 2,
+        z: -depthM / 2 + armM - profileM / 2,
+        ys: [frameHeightM],
+      },
     ],
     railYs,
     frameHeightM,

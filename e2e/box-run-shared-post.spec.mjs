@@ -81,7 +81,7 @@ test('yan yana baza ve bankoda ortak dikme listede ve sahnede tektir', async ({ 
   expect(texts.filter((text) => text === '99')).toHaveLength(6);
   // Yan profil 41,5: baza 3 hat × 2 kot, banko 3 hat × 2 kot.
   expect(texts.filter((text) => text === '41,5')).toHaveLength(12);
-  // Uzun profil 91: serbest bazada ön + arka × 2 kot (2 baza = 8), bankoda ön × 2 kot (2 banko = 4).
-  expect(texts.filter((text) => text === '91')).toHaveLength(12);
+  // Uzun profil 91: serbest bazada ön + arka × 2 kot (2 baza = 8), bankoda ön alt + ön üst + arka üst (2 banko = 6).
+  expect(texts.filter((text) => text === '91')).toHaveLength(14);
   expect(errors).toEqual([]);
 });
