@@ -80,7 +80,8 @@ Kullanıcı istekleri: seçilen noktalar belli olsun, araya çizgi çekilsin; di
 
 **DB:** `0080_item_length_parts` — `fair_stand_item_length_parts` (sıralı), yeni `profile_8` (8 cm, gizli, sahnede çizilmez). Alt Item yapısı seçilmedi: sıra kolonu yok ve `itemSnap.js` alt Item'ları snap hattı sayar (uzun dikme kısa panele profil hattı gibi davranırdı).
 
-**Kod:** Katalog verisinde `lengthParts` (item_mapper; admin kopyalama da taşır). `items.js > formatItemLengthParts` parça boylarını (en uzun ölçü) "346,5 + 8 + 140,5" olarak yazar; `productionBomPanel.js > lineLabel` ekranda ve "Metin indir"de adın yanına ekler.
+**Kod:** Katalog verisinde `lengthParts` (item_mapper; admin kopyalama da taşır). `items.js > formatItemLengthParts` parça boylarını (en uzun ölçü) "346,5 + 8 + 140,5" olarak yazar; `items.js > withItemLengthParts` etiketin yanına parantezle ekler. Kullanan yerler: `productionBomPanel.js > lineDisplayLabel` (ekran ve "Metin indir"), İskelet alt özeti (`main.js > skeletonSummaryText`, "Profil 388 (346,5 + 41,5): 2") ve İskelet sahne etiketi (`scene3d.js > rebuildSkeletonLabels`, "388 (346,5 + 41,5)"; 2026-11-16).
+
 ## 2026-10-22 — Kısa panel kartı ve genişlik seçimi (migration 0079)
 
 **Ürün kararı:** Kısa panel profil gibi katalogda tek kartla gelir: Tek Sıra (`wall_100_short_1`, "Panel Tek Sıra 100") ve Çift Sıra (`wall_100_short_2`, "Panel Çift Sıra 100"). Ad sahnedeki öğenin ölçüsünü yazar: kısa panel "Panel Tek Sıra 50 … 200" / "Panel Çift Sıra 50 … 200", profil ve dikme gerçek boyla ("Profil 41,5" … "Profil 487", "Dikme 49,5" … "Dikme 495"); kart da kendi Item adını gösterir. Sağ tık başlığı katalogda gizli Item için Item adını yazar (`getModuleCatalogLabel`). Bırakırken genişlik sorulur: 50 / 100 / 150 / 200. Sağ tık menüsü eklenmez; "Bir daha sorma" tercihi yoktur. **0086 ile değişti:** kart 100 cm bırakılır, pencere açılmaz; genişlik Özellikler panelindeki varyant düğmelerinden seçilir.

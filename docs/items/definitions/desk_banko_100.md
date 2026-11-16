@@ -76,4 +76,5 @@
 - `test/sceneBomAcceptance.test.js`
 - `test/standResizeLayout.test.js`
 - `test/standResizeSize.test.js`
+- `test/twoPointProfile.test.js`
 - `test/verticalMoveUprightHeight.test.js`

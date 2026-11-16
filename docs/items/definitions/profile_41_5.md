@@ -69,6 +69,8 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 - `test/relationshipBomJoints.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/separatorRecipes.test.js`
+- `test/shortJointStructuralUpright.test.js`
+- `test/shortStackColumn.test.js`
 - `test/wallHeightProjectBom.test.js`
 - `test/wallHeightRecipe.test.js`
 - `test/wallShortCanonicalRename.test.js`

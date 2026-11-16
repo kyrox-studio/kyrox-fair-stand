@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { resolveItemBom } from '../src/itemBom.js';
-import { formatItemLengthParts, getItem } from '../src/items.js';
+import { formatItemLengthParts, getItem, withItemLengthParts } from '../src/items.js';
 import { listProfileLengthItems } from '../src/profileLength.js';
 import { formatProductionBomText } from '../src/productionBomPanel.js';
 
@@ -54,6 +54,17 @@ test('üretim listesi satırı adın yanında bölünüşü yazar (ekran ve meti
   assert.match(text, /2 × Dikme 495 \(346,5 \+ 8 \+ 140,5\) · adet · upright_495/);
   const plain = { itemKey: 'upright_346_5', name: getItem('upright_346_5').name, quantity: 1, unit: 'adet' };
   assert.doesNotMatch(formatProductionBomText({ modules: [], lines: [plain], printAreas: [] }), /upright_346_5[^\n]*\(/);
-  const panel = readFileSync(new URL('../src/productionBomPanel.js', import.meta.url), 'utf8');
-  assert.match(panel, /const parts = formatItemLengthParts\(line\.itemKey\);/);
+  // Ekran satırı, İskelet özeti ve İskelet etiketi aynı yardımcıyı kullanır.
+  const source = (file) => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
+  assert.match(source('productionBomPanel.js'), /withItemLengthParts\(line\.name, line\.itemKey\)/);
+  assert.match(source('main.js'), /withItemLengthParts\(line\.name, line\.itemKey\)/);
+  assert.match(source('scene3d.js'), /withItemLengthParts\(format\(lengthCm\), item\)/);
+});
+
+test('etiketin yanına parça bölünüşü parantezle yazılır (Üretim Listesi ve İskelet aynı biçim)', () => {
+  assert.equal(withItemLengthParts('388', 'profile_388'), '388 (346,5 + 41,5)');
+  assert.equal(withItemLengthParts('Dikme 495', getItem('upright_495')), 'Dikme 495 (346,5 + 8 + 140,5)');
+  // Bölünüşü olmayan ya da bilinmeyen parça etiketi değişmez.
+  assert.equal(withItemLengthParts('346,5', 'upright_346_5'), '346,5');
+  assert.equal(withItemLengthParts('41,5', null), '41,5');
 });

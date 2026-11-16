@@ -13,6 +13,7 @@ import {
   detectShortCornerJoints,
   detectShortEndToEndJoints,
   detectShortProfileRuns,
+  detectShortRunInfills,
 } from './relationshipBom.js';
 import { getItem, isWallShortFamilyDescriptor } from './items.js';
 import {
@@ -159,7 +160,33 @@ export function resolveWallCornerEnds(modules = []) {
   addFramePostEnds(list, result);
   addShortStackEnds(list, result);
   addShortRailRuns(list, result);
+  addRunInfills(list, result);
   return result;
+}
+
+/**
+ * Açıklık içi ara profil (`detectShortRunInfills`): o noktadaki dikey parça dikme değil profildir;
+ * çizen modülün o ucuna `{ infill: true, localXSign, pieces }` yazılır (İskelet etiketi profil).
+ */
+function addRunInfills(list, result) {
+  let infills = [];
+  try {
+    infills = detectShortRunInfills(list);
+  } catch {
+    return;
+  }
+  const byId = new Map(list.filter((module) => module?.id).map((module) => [module.id, module]));
+  for (const infill of infills) {
+    for (const moduleId of infill.moduleIds) {
+      const module = byId.get(moduleId);
+      const bounds = module ? getModuleFootprintBoundsCm(module) : null;
+      if (!bounds) continue;
+      const localXSign = localXSignOfPoint(module, bounds, infill.point);
+      if (!localXSign) continue;
+      const entry = Object.freeze({ infill: true, localXSign, pieces: Object.freeze([infill.profileKey]) });
+      result.set(moduleId, [...(result.get(moduleId) ?? []), entry]);
+    }
+  }
 }
 
 /**

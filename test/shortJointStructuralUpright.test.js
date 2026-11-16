@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { createModuleStateFromCatalogKey, normalizeModuleItemState } from '../src/designState.js';
 import { resolveProjectBom } from '../src/projectBom.js';
+import { detectShortRunInfills } from '../src/relationshipBom.js';
 
 function shortPanel(itemKey, id, xCm, yCm = 0, rotationZDeg = 180, zCm = 300) {
   const module = createModuleStateFromCatalogKey(itemKey);
@@ -25,8 +26,10 @@ const quantity = (modules, itemKey) => resolveProjectBom(modules).lines
 test('uç uca kısa panel birleşiminde tam boy dikme varsa kalan tek 49,5 de düşer', () => {
   const left = shortPanel('wall_200_short_1', 'short-a', 0);
   const right = shortPanel('wall_200_short_1', 'short-b', 200);
-  // Birleşim yalnız iki panelle: 3 dikme (iki dış uç + ortak uç).
-  assert.equal(quantity([left, right], 'upright_49_5'), 3);
+  // Birleşim yalnız iki panelle: iki dış uç dikme; ortak uç taşıyıcısız açıklık içinde ara profil 41,5
+  // (kullanıcı kararı 2026-11-16).
+  assert.equal(quantity([left, right], 'upright_49_5'), 2);
+  assert.equal(quantity([left, right], 'profile_41_5'), 1);
   // Birleşimde tam boy dikme: ortak uç dikmesi de düşer, yalnız iki dış uç kalır.
   const post = upright('post', 196, 0);
   assert.equal(quantity([left, right, post], 'upright_49_5'), 2);
@@ -51,7 +54,10 @@ for (const level of [1, 2]) {
         const a = shortPanel(key, 'a', 0, 0, rotation, z);
         const b = shortPanel(key, 'b', vertical ? 0 : width, vertical ? width : 0, rotation, z);
         const post = upright('post', vertical ? 0 : width - 4, vertical ? width - 4 : 0, rotation);
-        assert.equal(quantity([a, b], uprightKey), 3);
+        // Taşıyıcısız ortak uç ara profil olur (2026-11-16): 2 dikme + 1 ara profil.
+        assert.equal(quantity([a, b], uprightKey), 2);
+        assert.deepEqual(detectShortRunInfills([a, b]).map((infill) => infill.profileKey),
+          [level === 1 ? 'profile_41_5' : 'profile_91']);
         const inputs = [[a, b, post], [b, post, a], [post, a, b], [post, b, a]];
         for (const modules of inputs) {
           assert.equal(quantity(modules, uprightKey), 2);
@@ -76,7 +82,9 @@ test('taşıyıcı birleşimden uzakta, gövde ortasında veya yükseklik bandı
   partialBand.placement.zCm = 320;
   for (const post of [upright('far', 500, 0), upright('middle', 96, 0),
     upright('wrong-line', 196, 20), outsideBand, tooShort, partialBand]) {
-    assert.equal(quantity([...pair, post], 'upright_49_5'), 3, post.id);
+    // Taşıyıcı sayılmayan dikme açıklığı bölmez: ortak uç yine ara profildir (2026-11-16).
+    assert.equal(quantity([...pair, post], 'upright_49_5'), 2, post.id);
+    assert.equal(quantity([...pair, post], 'profile_41_5'), 1, post.id);
   }
 });
 
@@ -85,7 +93,9 @@ test('mevcut 3,5 cm üst boşluk toleransının dışındaki taşıyıcı ortak 
   const post = upright('post', 196, 0);
   assert.equal(quantity([...pair, post], 'upright_49_5'), 2);
   post.placement.zCm = -0.1;
-  assert.equal(quantity([...pair, post], 'upright_49_5'), 3);
+  // Tolerans dışındaki dikme taşıyıcı değil: ortak uç açıklık içinde ara profil (2026-11-16).
+  assert.equal(quantity([...pair, post], 'upright_49_5'), 2);
+  assert.equal(quantity([...pair, post], 'profile_41_5'), 1);
 });
 
 test('49,5 ve 99 aynı uçta birleşince yalnız kalan uzun kısa dikme ikame edilir', () => {
@@ -107,7 +117,9 @@ test('farklı yükseklik bantları tek ortak dikme gibi birleştirilmez', () => 
 
 test('üç kısa panelin iki birleşimi ayrı izlenir; tekrarlı taşıyıcı fazla düşüm yapmaz', () => {
   const panels = [0, 100, 200].map((x, i) => shortPanel('wall_100_short_1', `s${i}`, x));
-  assert.equal(quantity(panels, 'upright_49_5'), 4);
+  // Taşıyıcısız iki birleşim açıklık içinde ara profil 41,5 olur (2026-11-16).
+  assert.equal(quantity(panels, 'upright_49_5'), 2);
+  assert.equal(quantity(panels, 'profile_41_5'), 2);
   const posts = [upright('p1', 96, 0), upright('p2', 196, 0)];
   assert.equal(quantity([...panels, ...posts], 'upright_49_5'), 2);
   const allEnds = [upright('left', -4, 0), ...posts, upright('right', 296, 0), upright('duplicate', 96, 0)];

@@ -35,11 +35,13 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 - `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/baseRunBom.js`
+- `src/panelRemovalBom.js`
 - `src/relationshipBom.js`
 
 ## Testler
 
 - `backend/tests/modules/fair_stand/test_item_surface_flags.py`
+- `e2e/panel-removal.spec.mjs`
 - `test/baseRunBom.test.js`
 - `test/counterRecipes.test.js`
 - `test/doorCompositeItemContract.test.js`
@@ -50,6 +52,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 - `test/lCounter200Contract.test.js`
 - `test/mapCatalogSeed.mjs`
 - `test/moduleRecipes.test.js`
+- `test/panelRemoval.test.js`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/relationshipBomEndToEnd.test.js`
 - `test/relationshipBomJoints.test.js`

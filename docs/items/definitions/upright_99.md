@@ -54,6 +54,7 @@ Alt kalem olarak kullanıldığı Item'lar: `desk_banko_100`, `desk_banko_100_l`
 - `backend/tests/modules/fair_stand/test_variant_families.py`
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
 - `e2e/short-joint-structural-upright.spec.mjs`
+- `e2e/two-point-profile.spec.mjs`
 - `test/catalogDomainBoundary.test.js`
 - `test/counterRecipes.test.js`
 - `test/illuminatedFoamInteraction.test.js`

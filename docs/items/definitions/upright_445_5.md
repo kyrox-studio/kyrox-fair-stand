@@ -50,6 +50,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `backend/tests/modules/fair_stand/test_item_length_parts_migration.py`
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
 - `test/mapCatalogSeed.mjs`
+- `test/standaloneUprightWallEnd.test.js`
 - `test/wallHeightProjectBom.test.js`
 - `test/wallHeightRecipe.test.js`
 - `test/wallShortRelationshipBom.test.js`

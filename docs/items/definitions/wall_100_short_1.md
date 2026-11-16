@@ -63,6 +63,8 @@
 - `test/itemCatalogFields.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/shortJointStructuralUpright.test.js`
+- `test/shortStackColumn.test.js`
+- `test/standaloneUprightWallEnd.test.js`
 - `test/uprightFieldPlacement.test.js`
 - `test/wallShortCanonicalRename.test.js`
 - `test/wallShortProfileSnapCollision.test.js`

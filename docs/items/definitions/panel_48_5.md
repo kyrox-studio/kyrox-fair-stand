@@ -39,6 +39,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 ## Testler
 
 - `backend/tests/modules/fair_stand/test_catalog_api.py`
+- `test/baseFacePanelIdentity.test.js`
 - `test/baseRunBom.test.js`
 - `test/boardMaterialItemContract.test.js`
 - `test/cornerPanelsItemContract.test.js`
@@ -48,6 +49,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 - `test/lCounter200Contract.test.js`
 - `test/mapCatalogSeed.mjs`
 - `test/moduleRecipes.test.js`
+- `test/panelAssignmentBom.test.js`
 - `test/panelCamFamily.test.js`
 - `test/panelGlassBom.test.js`
 - `test/printAreaBom.test.js`

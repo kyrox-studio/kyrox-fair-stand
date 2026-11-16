@@ -66,6 +66,8 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/ledFloodlightModule.test.js`
 - `test/lightingItemsContract.test.js`
 - `test/moduleRotationPolicy.test.js`
+- `test/standResizeLayout.test.js`
+- `test/standResizeSize.test.js`
 - `test/standResizeWallHeight.test.js`
 - `test/verticalMoveUprightHeight.test.js`
 - `test/wallHeightTopRail.test.js`

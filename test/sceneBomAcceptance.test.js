@@ -126,11 +126,19 @@ function bump(map, itemKey, delta) {
 }
 
 /** Uç uca kısa panel açıklığı: her rayda paneller kendi profilini düşer, açıklık profili girer. */
-function shortRun(map, { drop, add: pieces, rails }) {
+// Açıklık içi ara profil (kullanıcı kararı 2026-11-16): alt ve üst ray kesintisizse (rails: 2) ortak
+// uçtaki kısa panel dikmesi taşıyıcı değildir, 8 cm kısa profil olur (49,5 → 41,5, 99 → 91).
+const RUN_INFILL = Object.freeze({ upright_49_5: 'profile_41_5', upright_99: 'profile_91' });
+
+function shortRun(map, { drop, add: pieces, rails, infill = null }) {
   let next = { ...map };
   for (let rail = 0; rail < rails; rail += 1) {
     for (const itemKey of drop) next = bump(next, itemKey, -1);
     for (const itemKey of pieces) next = bump(next, itemKey, 1);
+  }
+  if (infill) {
+    next = bump(next, infill, -1);
+    next = bump(next, RUN_INFILL[infill], 1);
   }
   return next;
 }
@@ -418,8 +426,8 @@ test('wall short structural partners lock short-band finals, not full-height con
 });
 
 test('wall short to wall short scenes lock shared uprights once', () => {
-  assertBom('short-1 end', [shortOf('a', 'wall_200_short_1'), shortOf('b', 'wall_150_short_1', { xCm: 200 })], shortRun(expectShortJoint('wall_200_short_1', 'wall_150_short_1', 'end'), { drop: ['profile_190', 'profile_140_5'], add: ['profile_346_5'], rails: 2 }));
-  assertBom('short-2 end', [shortOf('a', 'wall_200_short_2'), shortOf('b', 'wall_200_short_2', { xCm: 200 })], shortRun(expectShortJoint('wall_200_short_2', 'wall_200_short_2', 'end'), { drop: ['profile_190', 'profile_190'], add: ['profile_388'], rails: 2 }));
+  assertBom('short-1 end', [shortOf('a', 'wall_200_short_1'), shortOf('b', 'wall_150_short_1', { xCm: 200 })], shortRun(expectShortJoint('wall_200_short_1', 'wall_150_short_1', 'end'), { drop: ['profile_190', 'profile_140_5'], add: ['profile_346_5'], rails: 2, infill: 'upright_49_5' }));
+  assertBom('short-2 end', [shortOf('a', 'wall_200_short_2'), shortOf('b', 'wall_200_short_2', { xCm: 200 })], shortRun(expectShortJoint('wall_200_short_2', 'wall_200_short_2', 'end'), { drop: ['profile_190', 'profile_190'], add: ['profile_388'], rails: 2, infill: 'upright_99' }));
   assertBom('short-1 corner', [shortOf('a', 'wall_100_short_1'), cornerOf('b', 'wall_100_short_1', 100, { zCm: 300, heightCm: 50 })], expectShortJoint('wall_100_short_1', 'wall_100_short_1', 'corner'));
   assertBom('short-2 corner', [shortOf('a', 'wall_100_short_2'), cornerOf('b', 'wall_100_short_2', 100, { zCm: 250, heightCm: 100 })], expectShortJoint('wall_100_short_2', 'wall_100_short_2', 'corner'));
   assertBom('short tee', [shortOf('host', 'wall_200_short_1'), cornerOf('branch', 'wall_100_short_1', 100, { zCm: 300, heightCm: 50 })], expectShortJoint('wall_200_short_1', 'wall_100_short_1', 'tee'));
@@ -438,7 +446,7 @@ test('field upright consumes one free short endpoint and keeps its own line', ()
   const pair = [shortOf('a', 'wall_200_short_2'), shortOf('b', 'wall_200_short_2', { xCm: 200 })];
   const shared = expectShortJoint('wall_200_short_2', 'wall_200_short_2', 'end');
   assertBom('structural post replaces the remaining shared short upright', [...pair, post('post', { xCm: 196 })], bump(add(shared, RECIPE.upright_346_5), 'upright_99', -1));
-  assertBom('free endpoint after a shared joint', [...pair, post('post', { xCm: 396 })], shortRun(bump(add(shared, RECIPE.upright_346_5), 'upright_99', -1), { drop: ['profile_190', 'profile_190'], add: ['profile_388'], rails: 2 }));
+  assertBom('free endpoint after a shared joint', [...pair, post('post', { xCm: 396 })], shortRun(bump(add(shared, RECIPE.upright_346_5), 'upright_99', -1), { drop: ['profile_190', 'profile_190'], add: ['profile_388'], rails: 2, infill: 'upright_99' }));
   assertBom('body middle', [shortOf('a', 'wall_200_short_2'), post('post', { xCm: 96 })], alone('wall_200_short_2'));
   assertBom('z outside', [shortOf('a', 'wall_200_short_2'), post('post', { xCm: 196, zCm: 400 })], alone('wall_200_short_2'));
   assertBom('wrong footprint', [shortOf('a', 'wall_200_short_2'), post('post', { xCm: 196, yCm: 20 })], alone('wall_200_short_2'));

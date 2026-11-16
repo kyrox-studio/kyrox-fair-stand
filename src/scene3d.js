@@ -29,6 +29,7 @@ import {
   isParquetFloorItem,
   listFloorItems,
   listRegisteredItems,
+  withItemLengthParts,
   applyItemPlacementZCm,
   isWallShortFamilyDescriptor,
   itemMovesVertically,
@@ -127,7 +128,13 @@ let renderCornerEndsByModule = new Map();
 // Sahne dışı çizim (sürükleme silüeti, moduleIndex < 0) tek başına çizilir: köşe kuralı yok.
 function cornerEndsForModule(moduleState, moduleIndex) {
   if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
-  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => !end.stack && !end.railRun);
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => !end.stack && !end.railRun && !end.infill);
+}
+
+// Açıklık içi ara profil uçları (`wallCornerJoints.js` addRunInfills).
+function infillEndsForModule(moduleState, moduleIndex) {
+  if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => end.infill);
 }
 
 // Kısa panel ray açıklıkları (`wallCornerJoints.js` addShortRailRuns); yalnız sahnedeki modül.
@@ -1968,8 +1975,8 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     });
   }
 
-  // Çizilen parça boyu → katalogdaki en yakın dikme / profil Item'ının gerçek boyu.
-  function skeletonCatalogLengthCm(drawnCm, vertical) {
+  // Çizilen parça boyu → katalogdaki en yakın dikme / profil Item'ı ve gerçek boyu.
+  function skeletonCatalogLength(drawnCm, vertical) {
     const type = vertical ? 'upright' : 'profile';
     let best = null;
     for (const item of listRegisteredItems()) {
@@ -1978,9 +1985,11 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       if (!(realCm > 10)) continue;
       const scene = Number(vertical ? item.sceneDimensions?.heightCm : item.sceneDimensions?.widthCm);
       const diff = Math.min(Math.abs(realCm - drawnCm), Number.isFinite(scene) ? Math.abs(scene - drawnCm) : Infinity);
-      if (!best || diff < best.diff) best = { realCm, diff };
+      if (!best || diff < best.diff) best = { realCm, diff, item };
     }
-    return best && best.diff <= 12 ? best.realCm : Math.round(drawnCm * 10) / 10;
+    return best && best.diff <= 12
+      ? { lengthCm: best.realCm, item: best.item }
+      : { lengthCm: Math.round(drawnCm * 10) / 10, item: null };
   }
 
   function clearSkeletonLabels() {
@@ -1998,21 +2007,31 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       const drawnCm = lengthM * 100 * (vertical ? Math.abs(object.scale?.y || 1) : 1);
       if (!(drawnCm >= 20)) return;
       const element = document.createElement('div');
-      element.className = `scene-skeleton-label is-${vertical ? 'upright' : 'profile'}`;
-      element.dataset.skeletonKind = vertical ? 'upright' : 'profile';
+      const listedPieces = object.userData.bomPieces;
+      const asProfile = Array.isArray(listedPieces) && listedPieces.length
+        ? getItem(listedPieces[0])?.type === 'profile'
+        : !vertical;
+      element.className = `scene-skeleton-label is-${asProfile ? 'profile' : 'upright'}`;
+      element.dataset.skeletonKind = asProfile ? 'profile' : 'upright';
       // Ray açıklığında etiket listedeki profil parçalarıdır (ör. 487 ya da 346,5 + 140,5).
+      // Bölünüşü olan uzun parça bileşenleriyle yazılır: "388 (346,5 + 41,5)".
       const pieces = object.userData.bomPieces;
-      element.textContent = Array.isArray(pieces) && pieces.length
-        ? pieces.map((key) => format(Number(getItem(key)?.dimensions?.widthCm) || 0)).join(' + ')
-        : format(skeletonCatalogLengthCm(drawnCm, vertical));
+      if (Array.isArray(pieces) && pieces.length) {
+        element.textContent = pieces
+          .map((key) => withItemLengthParts(format(Number(getItem(key)?.dimensions?.widthCm) || 0), key))
+          .join(' + ');
+      } else {
+        const { lengthCm, item } = skeletonCatalogLength(drawnCm, vertical);
+        element.textContent = withItemLengthParts(format(lengthCm), item);
+      }
       element.style.cssText = [
         'position:fixed', 'z-index:29', 'pointer-events:none', 'transform:translate(-50%,-50%)',
         'padding:1px 5px', 'border-radius:4px', 'font:600 10px/1.3 system-ui,sans-serif',
         'white-space:nowrap', 'box-shadow:0 1px 3px rgba(15,23,42,.25)', 'visibility:hidden',
-        vertical ? 'background:rgba(30,58,95,.92);color:#fff' : 'background:rgba(255,255,255,.95);color:#334155;border:1px solid #94a3b8',
+        asProfile ? 'background:rgba(255,255,255,.95);color:#334155;border:1px solid #94a3b8' : 'background:rgba(30,58,95,.92);color:#fff',
       ].join(';');
       document.body.appendChild(element);
-      skeletonLabels.push({ element, mesh: object, count: vertical ? 2 : 1, width: element.offsetWidth, height: element.offsetHeight });
+      skeletonLabels.push({ element, mesh: object, count: asProfile ? 1 : 2, width: element.offsetWidth, height: element.offsetHeight });
       element.style.display = 'none';
       element.style.visibility = '';
     });
@@ -11684,6 +11703,7 @@ function addPanelModuleFrame(
     skipTopRail = false,
     skipUprights = false,
     railRuns = [],
+    infillEnds = [],
   },
 ) {
   const { frameWidth, frameDepth } = getProceduralFrameCrossSectionM(moduleState);
@@ -11726,7 +11746,10 @@ function addPanelModuleFrame(
     const uprightGeometry = createSlottedProfileGeometry(frameWidth, segmentTop - segmentBottom, frameDepth);
     for (const side of [-1, 1]) {
       if (ownPostSides.has(side)) continue;
-      addProfile(uprightGeometry.clone(), side * (widthM / 2 - frameWidth / 2), (segmentBottom + segmentTop) / 2);
+      const upright = addProfile(uprightGeometry.clone(), side * (widthM / 2 - frameWidth / 2), (segmentBottom + segmentTop) / 2);
+      // Açıklık içinde bu parça dikme değil ara profildir (listede de profil sayılır).
+      const infill = infillEnds.find((end) => end.localXSign === side);
+      if (infill) upright.userData.bomPieces = infill.pieces;
     }
   }
   // Ortak köşe dikmesi: kesit duvar kalınlığında kare, merkezi duvar çizgisinin ucunda (iki çizginin
@@ -11825,6 +11848,7 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
     skipTopRail: Boolean(stack?.above),
     skipUprights: Boolean(stack?.below),
     railRuns: railRunsForModule(moduleState, moduleIndex),
+    infillEnds: infillEndsForModule(moduleState, moduleIndex),
   });
 
   const railHeight = STAND_DIMENSIONS.panelRailHeight;

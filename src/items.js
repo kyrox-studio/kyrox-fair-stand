@@ -137,6 +137,15 @@ export function formatItemLengthParts(itemOrKey) {
   return lengths.map((length) => String(length).replace('.', ',')).join(' + ');
 }
 
+/**
+ * Etiketin yanına parça bölünüşü: ("Profil 388", profile_388) → "Profil 388 (346,5 + 41,5)".
+ * Üretim Listesi, İskelet etiketi ve İskelet özeti aynı biçimi kullanır. Bölünüş yoksa etiket aynen döner.
+ */
+export function withItemLengthParts(label, itemOrKey) {
+  const parts = itemOrKey ? formatItemLengthParts(itemOrKey) : null;
+  return parts ? `${label} (${parts})` : label;
+}
+
 /** Item.defaultColor (DB) → css hex. Görünür başlangıç rengi bundan okunur. */
 export function itemDefaultColorCss(itemOrKey) {
   const item = typeof itemOrKey === 'string' ? getItem(itemOrKey) : itemOrKey;

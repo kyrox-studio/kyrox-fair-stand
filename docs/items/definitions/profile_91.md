@@ -52,6 +52,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `desk_banko_100`, `desk_
 - `backend/tests/modules/fair_stand/test_profile_lengths_migration.py`
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
 - `e2e/flat-panel-back-strips.spec.mjs`
+- `e2e/two-point-profile.spec.mjs`
 - `e2e/vertical-move-upright-height.spec.mjs`
 - `test/baseItemsContract.test.js`
 - `test/baseRecipes.test.js`
@@ -74,6 +75,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `desk_banko_100`, `desk_
 - `test/relationshipBomJoints.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/separatorRecipes.test.js`
+- `test/shortJointStructuralUpright.test.js`
 - `test/showcaseRecipes.test.js`
 - `test/wallHeightProjectBom.test.js`
 - `test/wallHeightRecipe.test.js`

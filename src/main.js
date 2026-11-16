@@ -175,7 +175,7 @@ import {
 } from './profileLength.js';
 import { alignProfileBodyAnchor, findProfileAnchorAt, listProfileAnchorPoints, resolveFreeEndProfile, resolveTwoPointProfile, resolveTwoPointProfileZCm } from './twoPointProfile.js';
 import { describeModuleVariants, resolveModuleVariantItemKey } from './catalogWidthFamily.js';
-import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, isWallShortFamilyDescriptor, listFloorItems, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
+import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, isWallShortFamilyDescriptor, listFloorItems, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight, withItemLengthParts } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
 import {
@@ -563,7 +563,7 @@ function skeletonSummaryText() {
       || Number(b.item.dimensions?.heightCm ?? b.item.dimensions?.widthCm ?? 0)
         - Number(a.item.dimensions?.heightCm ?? a.item.dimensions?.widthCm ?? 0));
   if (!rows.length) return 'Dikme ve profil yok';
-  return rows.map(({ line }) => `${line.name}: ${line.quantity}`).join(' · ');
+  return rows.map(({ line }) => `${withItemLengthParts(line.name, line.itemKey)}: ${line.quantity}`).join(' · ');
 }
 
 function refreshSkeleton() {

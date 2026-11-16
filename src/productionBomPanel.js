@@ -1,6 +1,6 @@
 import { groupBomLines } from './bomLineGroups.js';
 import { resolveProjectBom } from './projectBom.js';
-import { formatItemLengthParts, getItem } from './items.js';
+import { getItem, withItemLengthParts } from './items.js';
 import {
   formatPanelAssignmentRow,
   formatPanelSizeHeading,
@@ -57,9 +57,7 @@ function escapeHtml(value) {
 
 function lineDisplayLabel(line) {
   // Uzun profil/dikmede parça bölünüşü adın yanında: "Dikme 495 cm (346,5 + 8 + 140,5)".
-  const parts = formatItemLengthParts(line.itemKey);
-  const name = parts ? `${line.name} (${parts})` : line.name;
-  return `${formatNumber(line.quantity)} × ${name} · ${line.unit}`;
+  return `${formatNumber(line.quantity)} × ${withItemLengthParts(line.name, line.itemKey)} · ${line.unit}`;
 }
 
 // Kopyalanan üretim metni parça kodunu taşır (üretim ekibi için).

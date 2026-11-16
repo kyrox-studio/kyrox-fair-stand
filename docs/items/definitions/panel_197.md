@@ -35,12 +35,14 @@ Alt kalem olarak kullanıldığı Item'lar: `base_200`, `desk_banko_200`, `desk_
 - `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/baseRunBom.js`
+- `src/designState.js`
 
 ## Testler
 
 - `backend/tests/modules/fair_stand/test_item_default_z.py`
 - `backend/tests/modules/fair_stand/test_item_snap.py`
 - `backend/tests/modules/fair_stand/test_item_surface_flags.py`
+- `test/baseFacePanelIdentity.test.js`
 - `test/baseItemsContract.test.js`
 - `test/baseRecipes.test.js`
 - `test/baseRunBom.test.js`
@@ -63,9 +65,12 @@ Alt kalem olarak kullanıldığı Item'lar: `base_200`, `desk_banko_200`, `desk_
 - `test/metalSeparator.test.js`
 - `test/moduleRecipes.test.js`
 - `test/panel197ItemContract.test.js`
+- `test/panelAssignmentBom.test.js`
 - `test/panelCamFamily.test.js`
 - `test/panelCorner192ItemContract.test.js`
 - `test/panelGlassBom.test.js`
+- `test/panelIdentityRepair.test.js`
+- `test/panelRemoval.test.js`
 - `test/printAreaBom.test.js`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/relationshipBomEndToEnd.test.js`

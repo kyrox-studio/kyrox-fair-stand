@@ -326,24 +326,26 @@ test('same-height wall shorts share one upright and one double', () => {
     short1('a', 'wall_200_short_1', { widthCm: 200 }),
     short1('b', 'wall_150_short_1', { xCm: 200, widthCm: 150 }),
   ]);
-  assert.equal(qty(pair1, 'upright_49_5'), 3);
+  // Ortak uç açıklık içinde: dikme ara profil 41,5 olur (2026-11-16); aparat değişmez.
+  assert.equal(qty(pair1, 'upright_49_5'), 2);
+  assert.equal(qty(pair1, 'profile_41_5'), 1);
   assert.equal(qty(pair1, 'connector_single'), 4);
   assert.equal(qty(pair1, 'connector_double'), 1);
   assert.equal(qty(pair1, 'profile_190'), 0);
   assert.equal(qty(pair1, 'profile_140_5'), 0);
   assert.equal(qty(pair1, 'profile_346_5'), 2);
   assert.equal(qty(pair1, 'profile_289'), 0);
-  assert.equal(qty(pair1, 'profile_41_5'), 0);
   assert.equal(qty(pair1, 'panel_197'), 1);
   assert.equal(qty(pair1, 'panel_147_5'), 1);
   const pair2 = resolveProjectBom([
     short2('a', 'wall_100_short_2', { widthCm: 100 }),
     short2('b', 'wall_100_short_2', { xCm: 100, widthCm: 100 }),
   ]);
-  assert.equal(qty(pair2, 'upright_99'), 3);
+  // Ortak uç açıklık içinde ara profil 91 (2026-11-16); rayın kendi 91'i açıklıkta 190'a döner.
+  assert.equal(qty(pair2, 'upright_99'), 2);
   assert.equal(qty(pair2, 'connector_single'), 4);
   assert.equal(qty(pair2, 'connector_double'), 1);
-  assert.equal(qty(pair2, 'profile_91'), 0);
+  assert.equal(qty(pair2, 'profile_91'), 1);
   assert.equal(qty(pair2, 'profile_190'), 2);
   const corner = resolveProjectBom([
     short1('a', 'wall_100_short_1', { widthCm: 100 }),
@@ -553,14 +555,18 @@ test('a field upright on the free endpoint drops the second short upright once',
     short2('b', 'wall_200_short_2', { xCm: 200, widthCm: 200 }),
   ];
   const sharedOnly = resolveProjectBom(pair);
-  assert.equal(qty(sharedOnly, 'upright_99'), 3);
+  // Taşıyıcısız ortak uç ara profil 91 olur (2026-11-16).
+  assert.equal(qty(sharedOnly, 'upright_99'), 2);
+  assert.equal(qty(sharedOnly, 'profile_91'), 1);
   const post = frame('post', 'upright_346_5', {
     xCm: 396,
     widthCm: 8,
     heightCm: 346.5,
   });
   const bom = resolveProjectBom([...pair, post]);
-  assert.equal(qty(bom, 'upright_99'), 2);
+  // Boştaki uca konan dikme o ucun 99'unu alır; ortak uç ara profil 91 kalır (2026-11-16).
+  assert.equal(qty(bom, 'upright_99'), 1);
+  assert.equal(qty(bom, 'profile_91'), 1);
   assert.equal(qty(bom, 'upright_346_5'), 1);
   assert.equal(qty(bom, 'connector_single'), qty(sharedOnly, 'connector_single'));
   assert.equal(qty(bom, 'connector_double'), qty(sharedOnly, 'connector_double'));
@@ -579,12 +585,15 @@ test('a field upright on the free endpoint drops the second short upright once',
     ...pair,
     frame('post', 'upright_346_5', { xCm: 96, widthCm: 8, heightCm: 346.5 }),
   ]);
-  assert.equal(qty(throughBody, 'upright_99'), 3);
+  // Gövde ortasındaki dikme taşıyıcı değil: ortak uç açıklık içinde ara profil 91 (2026-11-16).
+  assert.equal(qty(throughBody, 'upright_99'), 2);
+  assert.equal(qty(throughBody, 'profile_91'), 1);
   const above = resolveProjectBom([
     ...pair,
     frame('post', 'upright_346_5', { xCm: 396, zCm: 400, widthCm: 8, heightCm: 346.5 }),
   ]);
-  assert.equal(qty(above, 'upright_99'), 3);
+  assert.equal(qty(above, 'upright_99'), 2);
+  assert.equal(qty(above, 'profile_91'), 1);
   assert.equal(qty(above, 'upright_346_5'), 1);
 });
 
@@ -894,9 +903,10 @@ test('short run profiles span from support to support: L stand front scene', () 
     post('p3', 950, 800),
   ]);
   // 950 hattı: 0–400 ve 400–800 → 388; 800 hattı: 0–500 → 487, 500–950 → 388 + 41,5. İki ray.
+  // Açıklık içi birleşimler (y 200 / 600, x 200 / 400 / 550 / 750) ara profil 41,5 olur (2026-11-16).
   assert.equal(qty(bom, 'profile_388'), 6);
   assert.equal(qty(bom, 'profile_487'), 2);
-  assert.equal(qty(bom, 'profile_41_5'), 2);
+  assert.equal(qty(bom, 'profile_41_5'), 2 + 6);
   assert.equal(qty(bom, 'profile_190'), 0);
   assert.equal(qty(bom, 'profile_91'), 0);
   assert.ok(bom.relationshipNotes.includes('Kısa panel profil birleşimi: 8 açıklık.'));

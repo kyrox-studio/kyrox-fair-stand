@@ -59,6 +59,7 @@
 
 - `backend/tests/modules/fair_stand/test_banko_base_cards_migration.py`
 - `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `e2e/base-edge-under-fascia.spec.mjs`
 - `e2e/base-items-contract.spec.mjs`
 - `e2e/helpers/catalogWidth.mjs`
 - `e2e/selection-stale-clear.spec.mjs`

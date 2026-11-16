@@ -66,6 +66,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_150`, `desk_banko_150`, `desk_
 - `test/recipeCompositionItemsContract.test.js`
 - `test/relationshipBomJoints.test.js`
 - `test/sceneBomAcceptance.test.js`
+- `test/shortStackColumn.test.js`
 - `test/wallHeightRecipe.test.js`
 - `test/wallShortCanonicalRename.test.js`
 - `test/wallShortRelationshipBom.test.js`

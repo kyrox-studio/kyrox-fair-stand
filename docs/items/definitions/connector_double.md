@@ -39,6 +39,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/itemSceneDimensions.test.js`
 - `test/mapCatalogSeed.mjs`
 - `test/moduleRecipes.test.js`
+- `test/panelRemoval.test.js`
 - `test/productionBomPanelEntry.test.js`
 - `test/relationshipBomEndToEnd.test.js`
 - `test/relationshipBomJoints.test.js`

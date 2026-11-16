@@ -60,6 +60,7 @@
 - `test/mapCatalogSeed.mjs`
 - `test/relationshipBomJoints.test.js`
 - `test/sceneBomAcceptance.test.js`
+- `test/wallCornerJoints.test.js`
 - `test/wallHeightProjects.mjs`
 - `test/wallHeightRecipe.test.js`
 - `test/wallSeparatorItemsContract.test.js`

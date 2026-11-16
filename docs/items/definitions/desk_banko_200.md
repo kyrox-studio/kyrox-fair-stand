@@ -63,6 +63,7 @@
 - `e2e/desk-banko-items-contract.spec.mjs`
 - `e2e/double-click-select.spec.mjs`
 - `e2e/selection-stale-clear.spec.mjs`
+- `test/baseWallEndAlign.test.js`
 - `test/deskBankoItemsContract.test.js`
 - `test/mapCatalogSeed.mjs`
 - `test/moduleBehaviorPolicy.test.js`

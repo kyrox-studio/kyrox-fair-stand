@@ -40,6 +40,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `desk_banko_100`, `desk_
 
 - `backend/tests/modules/fair_stand/test_item_unit_fk_migration.py`
 - `e2e/flat-panel-back-strips.spec.mjs`
+- `e2e/panel-removal.spec.mjs`
 - `test/baseItemsContract.test.js`
 - `test/baseRecipes.test.js`
 - `test/baseRunBom.test.js`
@@ -54,7 +55,9 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `desk_banko_100`, `desk_
 - `test/itemIsRenderFactory.test.js`
 - `test/mapCatalogSeed.mjs`
 - `test/moduleRecipes.test.js`
+- `test/panelAssignmentBom.test.js`
 - `test/panelCamFamily.test.js`
+- `test/panelIdentityRepair.test.js`
 - `test/printAreaBom.test.js`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/relationshipBomEndToEnd.test.js`

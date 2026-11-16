@@ -73,6 +73,7 @@
 - `test/showcaseAppearance.test.js`
 - `test/showcaseBodyColorRegression.test.js`
 - `test/showcaseRecipes.test.js`
+- `test/wallCornerJoints.test.js`
 - `test/wallHeightProjects.mjs`
 - `test/wallHeightRecipe.test.js`
 - `test/wallShortRelationshipBom.test.js`

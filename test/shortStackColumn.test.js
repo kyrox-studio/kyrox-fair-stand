@@ -44,16 +44,17 @@ test('kısa panel kolonu her uçta tek dikme sayılır', () => {
   );
 });
 
-test('yan yana iki kolonun ortak ucu tek dikmedir', () => {
-  assert.deepEqual(
-    uprights([
-      short('a', 'wall_100_short_2', 0, 0),
-      short('b', 'wall_100_short_1', 0, 100),
-      short('c', 'wall_100_short_2', 100, 0),
-      short('d', 'wall_100_short_1', 100, 100),
-    ]),
-    { upright_148_5: 3 },
-  );
+test('yan yana iki kolonun ortak ucu açıklık içinde ara profildir (148,5 → 140,5)', () => {
+  const modules = [
+    short('a', 'wall_100_short_2', 0, 0),
+    short('b', 'wall_100_short_1', 0, 100),
+    short('c', 'wall_100_short_2', 100, 0),
+    short('d', 'wall_100_short_1', 100, 100),
+  ];
+  // Alt ray (a, c) ve üst ray (b, d) kesintisiz: ortak uç taşıyıcı değil (2026-11-16).
+  assert.deepEqual(uprights(modules), { upright_148_5: 2 });
+  const profile140 = resolveProjectBom(modules).lines.find((line) => line.itemKey === 'profile_140_5');
+  assert.equal(profile140?.quantity, 1);
 });
 
 test('bitişik olmayan (binen) kısa paneller birleşmez', () => {
@@ -132,4 +133,18 @@ test('sahne: yan yana kısa panellerin rayı listedeki açıklık profiliyle tek
   assert.equal(railRuns('l').length, 2);
   assert.ok(railRuns('l').every((end) => end.owner && end.toCm - end.fromCm === 400));
   assert.ok(railRuns('r').every((end) => !end.owner));
+});
+
+test('sahne: açıklık içindeki ortak uç ara profil olarak çizilir, dış uçlar dikme kalır', async () => {
+  const { resolveWallCornerEnds } = await import('../src/wallCornerJoints.js');
+  const left = short('l', 'wall_200_short_1', 0, 300);
+  const right = short('r', 'wall_200_short_1', 200, 300);
+  const infills = [...resolveWallCornerEnds([left, right]).values()].flat().filter((end) => end.infill);
+  // Ortak uç tek kez ara profildir (Profil 41,5); listedeki parçayla aynı kalem.
+  assert.equal(infills.length, 1);
+  assert.deepEqual([...infills[0].pieces], ['profile_41_5']);
+  assert.ok([-1, 1].includes(infills[0].localXSign));
+  // Tek panelde açıklık yok: ara profil de yok.
+  const single = [...resolveWallCornerEnds([left]).values()].flat().filter((end) => end.infill);
+  assert.equal(single.length, 0);
 });

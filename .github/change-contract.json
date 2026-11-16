@@ -1,23 +1,20 @@
 {
   "schemaVersion": 2,
-  "id": "karolaj-panel-dokumu-dikme-kurallari",
+  "id": "ara-profil-iskelet-parca-bolunusu",
   "kind": "feature",
-  "summary": "Karolaj yarım karo ve profil adetleri; Paneller dökümü (görsel / renk / varsayılan / depo içi) ve Panel Ölçüleri sahne etiketi; daraltılan duvarda panel kimliği onarımı; köşede üst üste kısa panel; bağımsız dikme uzun olan; kısa panel kolonu tek dikme (148,5 / 198), 50 cm ızgara, bırakınca / açılışta oturma ve tek kolon çizimi; İskelet görünümü (yalnız dikme ve profil, boy etiketleri).",
+  "summary": "Kısa panel ray açıklığının içindeki birleşimde taşıyıcı olmayan dikme, dikmeden 8 cm kısa ara profil sayılır ve çizilir (49,5 → 41,5, 99 → 91, 148,5 → 140,5, 198 → 190); İskelet etiketi ve alt özeti uzun parçayı bölünüşüyle yazar (388 (346,5 + 41,5)).",
   "owners": [
-    "src/projectBom.js",
     "src/relationshipBom.js",
-    "src/floorArea.js",
-    "src/panelAssignmentBom.js",
-    "src/modulePlacement.js",
-    "src/wallCornerJoints.js"
+    "src/wallCornerJoints.js",
+    "src/scene3d.js",
+    "src/items.js",
+    "src/main.js",
+    "src/productionBomPanel.js"
   ],
   "sourceOfTruth": [
-    "src/projectBom.js",
     "src/relationshipBom.js",
-    "src/floorArea.js",
-    "src/panelAssignmentBom.js",
-    "backend/alembic/versions/0098_karolaj_parts.py",
-    "backend/alembic/versions/0099_upright_148_5_198.py"
+    "src/wallCornerJoints.js",
+    "src/items.js"
   ],
   "impact": {
     "catalog": "affected",
@@ -41,40 +38,10 @@
   "impactAnalysis": {
     "mode": "full-system",
     "affectedFiles": [
-      "README.md",
-      "backend/alembic/versions/0013_drop_component_sort_order.py",
-      "backend/alembic/versions/0098_karolaj_parts.py",
-      "backend/alembic/versions/0099_upright_148_5_198.py",
-      "backend/app/modules/fair_stand/api/live_share_routes.py",
-      "backend/app/modules/fair_stand/infrastructure/booth_type_seed.py",
-      "backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py",
-      "backend/app/modules/fair_stand/infrastructure/item_snap_seed.py",
-      "backend/app/modules/fair_stand/infrastructure/item_type_behavior_seed.py",
       "backend/app/modules/fair_stand/infrastructure/variant_family_seed.py",
       "backend/scripts/verify_live_item_type_placement_motor.mjs",
       "backend/tests/modules/fair_stand/test_admin_catalog_api.py",
-      "backend/tests/modules/fair_stand/test_catalog_api.py",
-      "backend/tests/modules/fair_stand/test_catalog_constraints.py",
-      "backend/tests/modules/fair_stand/test_catalog_dump_seed.py",
-      "backend/tests/modules/fair_stand/test_catalog_seed.py",
-      "backend/tests/modules/fair_stand/test_demo_access.py",
-      "backend/tests/modules/fair_stand/test_karolaj_parts_migration.py",
-      "backend/tests/modules/fair_stand/test_live_share.py",
-      "backend/tests/modules/fair_stand/test_unit_catalog.py",
-      "backend/tests/modules/fair_stand/test_upright_148_5_198_migration.py",
-      "docs/items/contract/ITEM_CONTRACT.md",
-      "docs/items/definitions/karolaj.md",
-      "docs/items/definitions/karolaj_yarim.md",
-      "docs/items/definitions/profile_karolaj_100.md",
-      "docs/items/definitions/profile_karolaj_50.md",
-      "docs/items/definitions/upright_148_5.md",
-      "docs/items/definitions/upright_198.md",
-      "docs/refactor/DATABASE.md",
-      "docs/refactor/PENDING_ITEM_DECISIONS.md",
-      "docs/refactor/REFACTOR.md",
-      "e2e/panel-assignment-labels.spec.mjs",
       "index.html",
-      "public/fonts/OFL.txt",
       "scripts/archive/add-tv-sizes.py",
       "scripts/archive/add-video-wall-2x2.py",
       "scripts/archive/fix-tv-screen-face.py",
@@ -91,21 +58,13 @@
       "src/catalogBootstrap.js",
       "src/catalogPreviewRenderer.js",
       "src/catalogWidthFamily.js",
-      "src/configuratorMarkup.js",
       "src/configuratorStyles.js",
-      "src/demoMode.css",
-      "src/demoMode.js",
-      "src/demoProductionBom.js",
-      "src/demoSession.js",
       "src/designState.js",
-      "src/featureContracts.js",
       "src/floorArea.js",
       "src/groundLayout.js",
       "src/groupTemplates.js",
-      "src/helpGuide.css",
       "src/helpGuide.js",
       "src/imageOptimize.js",
-      "src/inAppDialogs.js",
       "src/itemAdminPreview.js",
       "src/itemAssembly.js",
       "src/itemBom.js",
@@ -113,7 +72,6 @@
       "src/itemSizeDialog.js",
       "src/itemSnap.js",
       "src/items.js",
-      "src/liveTabShare.js",
       "src/main.js",
       "src/moduleBehavior.js",
       "src/moduleContextMenu.js",
@@ -126,27 +84,19 @@
       "src/modulePlacement.js",
       "src/moduleRecipes.js",
       "src/mountFairStand.js",
-      "src/newProjectWizard.js",
       "src/panelAssignmentBom.js",
       "src/panelGlassBom.js",
       "src/panelRemovalBom.js",
       "src/printAreaBom.js",
-      "src/productionBomPanel.css",
       "src/productionBomPanel.js",
-      "src/profileGeometry.js",
       "src/profileLength.js",
-      "src/projectActionSaveGuard.js",
       "src/projectBom.js",
       "src/projectImportValidation.js",
-      "src/projectNaming.js",
       "src/projectRemote.js",
-      "src/propertyPanelPlacement.js",
       "src/rectSelection.js",
       "src/relationshipBom.js",
       "src/scene3d.js",
       "src/selectionFeedback.js",
-      "src/selectionToolbar.js",
-      "src/standChangeDialog.js",
       "src/standResize.js",
       "src/standResizeRules.js",
       "src/standStandardsCopy.js",
@@ -160,76 +110,31 @@
       "src/wallLockNotice.js",
       "src/wallPanelBand.js",
       "src/wallReflow.js",
-      "src/wallShortWidth.js",
-      "test/catalogDomainBoundary.test.js",
-      "test/catalogItemProjection.test.js",
-      "test/catalogPreviewConfig.test.js",
-      "test/depotInnerPanels.test.js",
-      "test/fixtures/itemCatalogSeed.json",
-      "test/floorArea.test.js",
-      "test/itemCatalogFields.test.js",
-      "test/itemRotation.test.js",
-      "test/itemSceneDimensions.test.js",
-      "test/itemSurfaceFlagAudit.test.js",
-      "test/panelAssignmentBom.test.js",
-      "test/panelIdentityRepair.test.js",
-      "test/printAreaBom.test.js",
-      "test/projectBom.test.js",
-      "test/scene3dPublicContract.test.js",
-      "test/shortStackColumn.test.js",
-      "test/standaloneUprightWallEnd.test.js",
-      "test/wallShortRelationshipBom.test.js",
-      "vite.config.js"
+      "src/wallShortWidth.js"
     ],
     "affectedTests": [
-      "backend/tests/modules/fair_stand/test_catalog_api.py",
-      "backend/tests/modules/fair_stand/test_catalog_constraints.py",
-      "backend/tests/modules/fair_stand/test_catalog_dump_seed.py",
-      "backend/tests/modules/fair_stand/test_catalog_seed.py",
-      "backend/tests/modules/fair_stand/test_karolaj_parts_migration.py",
-      "backend/tests/modules/fair_stand/test_unit_catalog.py",
-      "backend/tests/modules/fair_stand/test_upright_148_5_198_migration.py",
-      "e2e/autosave-interval.spec.mjs",
       "e2e/base-corner-upright-bom.spec.mjs",
       "e2e/base-edge-under-fascia.spec.mjs",
-      "e2e/base-items-contract.spec.mjs",
       "e2e/box-block-corners.spec.mjs",
       "e2e/box-block-face-image-restore.spec.mjs",
       "e2e/camera-pointer-lifecycle.spec.mjs",
       "e2e/catalog-drop-append.spec.mjs",
-      "e2e/color-image-capability.spec.mjs",
-      "e2e/commercial-items-contract.spec.mjs",
       "e2e/demo-host.html",
-      "e2e/demo-mode.spec.mjs",
       "e2e/design-undo.spec.mjs",
-      "e2e/desk-banko-items-contract.spec.mjs",
       "e2e/double-click-select.spec.mjs",
       "e2e/duplicate-metal-separator.spec.mjs",
       "e2e/f010-module-construction.spec.mjs",
       "e2e/f011-module-behavior.spec.mjs",
-      "e2e/f020-save-before-project-actions.spec.mjs",
-      "e2e/f023-atomic-project-delete.spec.mjs",
-      "e2e/f027-scene-reset.spec.mjs",
-      "e2e/f028-reset-features.spec.mjs",
       "e2e/flat-panel-back-strips.spec.mjs",
-      "e2e/floor-area.spec.mjs",
-      "e2e/floor-items-contract.spec.mjs",
       "e2e/floor-showcase-brochure-copy-rotate.spec.mjs",
       "e2e/free-props-collision-none.spec.mjs",
       "e2e/furniture-items-contract.spec.mjs",
       "e2e/glass-bar-table.spec.mjs",
       "e2e/group-template.spec.mjs",
       "e2e/grouped-image-direction.spec.mjs",
-      "e2e/helpers/catalogDrop.mjs",
       "e2e/helpers/module-lock-fixture.mjs",
-      "e2e/helpers/standSetup.mjs",
-      "e2e/illuminated-foam-placement-feedback.spec.mjs",
       "e2e/in-place-module-update.spec.mjs",
-      "e2e/indoor-plant-items-contract.spec.mjs",
       "e2e/invalid-placement-ghost.spec.mjs",
-      "e2e/lighting-items-contract.spec.mjs",
-      "e2e/live-tab-share.spec.mjs",
-      "e2e/long-part-split-label.spec.mjs",
       "e2e/metal-separator-bom-gap.spec.mjs",
       "e2e/mini-fridge-dimensions.spec.mjs",
       "e2e/mirror-copy.spec.mjs",
@@ -237,48 +142,32 @@
       "e2e/module-group.spec.mjs",
       "e2e/module-lock.spec.mjs",
       "e2e/module-move-snap.spec.mjs",
-      "e2e/new-project-wizard.spec.mjs",
-      "e2e/panel-assignment-labels.spec.mjs",
       "e2e/panel-removal.spec.mjs",
       "e2e/panel-sweep.spec.mjs",
       "e2e/pinch-zoom-no-drag.spec.mjs",
       "e2e/plastic-trash-bin-module.spec.mjs",
       "e2e/profile-finish.spec.mjs",
       "e2e/project-import-export-roundtrip.spec.mjs",
-      "e2e/project-open-asset-cache.spec.mjs",
-      "e2e/project-open-timing.spec.mjs",
-      "e2e/project-open-wait-scene.spec.mjs",
-      "e2e/project-revision-session.spec.mjs",
       "e2e/rapid-actions-responsive.spec.mjs",
       "e2e/reload-restore.spec.mjs",
-      "e2e/render-stand-top-spot.spec.mjs",
       "e2e/scene-select-all.spec.mjs",
       "e2e/selection-property-panel.spec.mjs",
       "e2e/selection-stale-clear.spec.mjs",
       "e2e/selection-toolbar.spec.mjs",
-      "e2e/shelf-items-contract.spec.mjs",
       "e2e/shelf-rows-flow.spec.mjs",
       "e2e/shelf-width-variant.spec.mjs",
       "e2e/short-joint-structural-upright.spec.mjs",
       "e2e/short-panel-context-add.spec.mjs",
       "e2e/skeleton-view.spec.mjs",
-      "e2e/smoke.spec.mjs",
       "e2e/stage-result-after-restore.spec.mjs",
-      "e2e/stand-layout-change.spec.mjs",
-      "e2e/stand-size-change.spec.mjs",
-      "e2e/toast-notifications.spec.mjs",
       "e2e/two-point-profile.spec.mjs",
       "e2e/upright-base-corner.spec.mjs",
-      "e2e/variant-families-admin.spec.mjs",
       "e2e/variant-snap-fit.spec.mjs",
       "e2e/vertical-move-upright-height.spec.mjs",
-      "e2e/view-cube-home.spec.mjs",
-      "e2e/viewport-chrome-layout.spec.mjs",
       "e2e/visible-ui-b.spec.mjs",
       "e2e/wall-flat-panel-items-contract.spec.mjs",
       "e2e/wall-height-matrix.spec.mjs",
       "e2e/wall-height.spec.mjs",
-      "e2e/wall-media-items-contract.spec.mjs",
       "e2e/wall-reflow-u-stand.spec.mjs",
       "e2e/wall-separator-items-contract.spec.mjs",
       "e2e/wall-short-width.spec.mjs",
@@ -409,7 +298,6 @@
       "test/lightboxFabricLighting.test.js",
       "test/lightboxFabricPerformance.test.js",
       "test/lightingItemsContract.test.js",
-      "test/liveTabShare.test.js",
       "test/materialAppearance.test.js",
       "test/metalSeparator.test.js",
       "test/miniFridge.test.js",
@@ -453,7 +341,6 @@
       "test/profile190ItemContract.test.js",
       "test/profileFieldPlacement.test.js",
       "test/profileFinish.test.js",
-      "test/profileGeometry.test.js",
       "test/profileIntrinsicProperties.test.js",
       "test/profileLength.test.js",
       "test/profileRealLengthFit.test.js",
@@ -461,20 +348,16 @@
       "test/profileUprightIdentity.test.js",
       "test/profileWallRailTee.test.js",
       "test/profilesItemContract.test.js",
-      "test/projectActionSaveGuard.test.js",
       "test/projectAtomicDeletion.test.js",
       "test/projectBom.test.js",
       "test/projectCustomerPanel.test.js",
       "test/projectDropdownSwitchIntegration.test.js",
       "test/projectImportFlow.test.js",
       "test/projectImportValidation.test.js",
-      "test/projectNaming.test.js",
-      "test/projectNamingSaveAs.test.js",
       "test/projectOpenFastPath.test.js",
       "test/projectOpenTiming.test.js",
       "test/projectRemoteSync.test.js",
       "test/projectRevisionSession.test.js",
-      "test/projectSaveAs.test.js",
       "test/projectUiMainIntegration.test.js",
       "test/propertyPanelPlacement.test.js",
       "test/raisedPlatform.test.js",
@@ -576,34 +459,25 @@
       "ARCHITECTURE_RULES.md",
       "MODULE_BEHAVIOR_STANDARD.md",
       "PROJECT_RULES.md",
-      "README.md",
       "ROADMAP.md",
       "ROADMAP_PHASE_4.md",
       "SYSTEM_AUDIT_CHECKLIST.md",
-      "SYSTEM_CHANGE_GATE.md",
       "SYSTEM_DEVELOPMENT_CONTRACT.md",
-      "SYSTEM_IMPACT_SWEEP.md",
       "SYSTEM_MODULE_CATALOG.md",
       "audit/FINDINGS.md",
-      "audit/FULL_SWEEP_STATE.md",
       "audit/SISTEM_MUTABAKAT_RAPORU.md",
-      "audit/evidence/A01_DOCS_SOURCE_OF_TRUTH.md",
       "audit/evidence/A02_CHANGE_GATE.md",
       "audit/evidence/A03_ARCHITECTURE.md",
       "audit/evidence/A04_CATALOG_MODULE_CONTRACTS.md",
       "audit/evidence/A05_MODULE_BEHAVIOR.md",
-      "audit/evidence/A06_PLACEMENT_MOVE_ROTATION_COLLISION_REFLOW.md",
       "audit/evidence/A07_STATE_MODEL_FACTORIES.md",
       "audit/evidence/A08_PERSISTENCE_AUTOSAVE_ISOLATION.md",
       "audit/evidence/A09_RENDERER_SCENE_RUNTIME.md",
-      "audit/evidence/A10_UI_CONTROLS.md",
       "audit/evidence/A11_FEATURE_COMPOSITION.md",
       "audit/evidence/A13_STORAGE_ASSETS_REFERENCES.md",
       "audit/evidence/A17_PERFORMANCE_BUNDLE_RENDER_LIFECYCLE.md",
       "audit/evidence/A22_FILE_BY_FILE_SWEEP.md",
-      "audit/remediation/A02_CLOSURE.md",
       "audit/remediation/A02_F005_CLOSURE.md",
-      "audit/remediation/A02_F006_CLOSURE.md",
       "audit/remediation/A03_CLOSURE.md",
       "audit/remediation/A03_F010_CLOSURE.md",
       "audit/remediation/A03_F011_CLOSURE.md",
@@ -782,35 +656,14 @@
         "F-033"
       ]
     },
-    "notes": "Üretim Listesi kuralları: karolaj yarım karo ve 1 m / 0.5 m profil (ortak kenar bir kez); depo içine bakan yüz alttaki 4 bant; panel kimliği reçeteden; köşede üst üste short her biri köşe eklemi; bağımsız dikmede uzun olan; yalnız short kolonu tek dikme. Sahne: Panel Ölçüleri etiketi, üst üste short tek kolon çizimi, short 50 cm ızgara ve ±25 cm oturma. Aparat sayıları yalnız köşe kuralında değişir."
+    "notes": "Üretim Listesi: kısa panel açıklığı içindeki taşıyıcısız ortak uçta dikme yerine ara profil (applyRunInfillProfiles); aparat değişmez. Sahne: aynı nokta profil olarak çizilir ve İskelet etiketi profil alır (detectShortRunInfills → addRunInfills). Etiket: withItemLengthParts Üretim Listesi, İskelet etiketi ve özetinde ortak. Şema, API, migration yok."
   },
   "tests": {
     "targeted": [
-      "backend/tests/modules/fair_stand/test_catalog_api.py",
-      "backend/tests/modules/fair_stand/test_catalog_constraints.py",
-      "backend/tests/modules/fair_stand/test_catalog_dump_seed.py",
-      "backend/tests/modules/fair_stand/test_catalog_seed.py",
-      "backend/tests/modules/fair_stand/test_karolaj_parts_migration.py",
-      "backend/tests/modules/fair_stand/test_unit_catalog.py",
-      "backend/tests/modules/fair_stand/test_upright_148_5_198_migration.py",
-      "e2e/panel-assignment-labels.spec.mjs",
-      "e2e/skeleton-view.spec.mjs",
-      "test/catalogDomainBoundary.test.js",
-      "test/catalogItemProjection.test.js",
-      "test/catalogPreviewConfig.test.js",
-      "test/depotInnerPanels.test.js",
-      "test/floorArea.test.js",
-      "test/itemCatalogFields.test.js",
-      "test/itemRotation.test.js",
-      "test/itemSceneDimensions.test.js",
-      "test/itemSurfaceFlagAudit.test.js",
-      "test/panelAssignmentBom.test.js",
-      "test/panelIdentityRepair.test.js",
-      "test/printAreaBom.test.js",
-      "test/projectBom.test.js",
-      "test/scene3dPublicContract.test.js",
+      "test/itemLengthParts.test.js",
+      "test/sceneBomAcceptance.test.js",
+      "test/shortJointStructuralUpright.test.js",
       "test/shortStackColumn.test.js",
-      "test/standaloneUprightWallEnd.test.js",
       "test/wallShortRelationshipBom.test.js"
     ],
     "fullSuite": true,
@@ -818,113 +671,110 @@
     "e2e": {
       "required": true,
       "targeted": [
-        "e2e/floor-area.spec.mjs",
-        "e2e/panel-assignment-labels.spec.mjs",
-        "e2e/short-joint-structural-upright.spec.mjs",
         "e2e/skeleton-view.spec.mjs",
-        "e2e/stand-size-change.spec.mjs"
+        "e2e/short-joint-structural-upright.spec.mjs"
       ],
-      "reason": "Panel Ölçüleri, Üretim Listesi dökümü, kısa panel oturma ve zemin listesi tarayıcıda kontrol edilir."
+      "reason": "İskelet etiketi / özeti ve kısa panel ortak ucu tarayıcıda kontrol edilir."
     }
   },
   "risk": {
     "level": "medium",
-    "notes": "Üretim Listesi adetleri değişir (karolaj, depo içi panel, köşe ve dikme kuralları). 0098 ve 0099 yeni gizli Item ekler; CRM fiyatları ayrıca girilmelidir. Açılış onarımı kısa panelin Z değerini ±25 cm içinde değiştirebilir; kayıtla kalıcı olur."
+    "notes": "Üretim Listesi adedi değişir: yan yana kısa panellerin açıklık içindeki ortak ucunda dikme 1 azalır, ara profil 1 artar. Kayıtlı proje verisi değişmez."
   },
   "migration": {
-    "required": true,
-    "notes": "0098_karolaj_parts: karolaj_yarim, profile_karolaj_100, profile_karolaj_50 ve floor-piece türü. 0099_upright_148_5_198: upright_148_5, upright_198 (Maksima). Var olan satır değişmez."
+    "required": false,
+    "notes": "Migration yok; kullanılan profile_41_5 / profile_91 / profile_140_5 / profile_190 katalogda mevcut."
   },
-  "rollback": "Uygulamayı önceki sürüme alın; 0099 ve 0098 downgrade yeni satırları ve floor-piece türünü siler. Kayıtlı projelerdeki onarılan Z ve panel kimliği geri alınmaz (önceki sürüm de okuyabilir).",
+  "rollback": "Uygulamayı önceki sürüme alın; veri ve şema değişmediği için geri alma yalnız koddur.",
   "security": {
     "controls": {
       "SEC-01": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-02": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-03": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-04": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-05": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-06": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-07": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-08": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-09": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-10": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-11": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-12": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-13": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-14": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-15": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-16": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-17": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-18": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-19": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-20": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-21": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       },
       "SEC-22": {
         "status": "na",
-        "reason": "Değişiklik katalog satırı, üretim listesi hesabı ve sahne çizimidir; bu kontrolün yüzeyi değişmiyor."
+        "reason": "Değişiklik üretim listesi hesabı, sahne çizimi ve etiket metnidir; bu kontrolün yüzeyi değişmiyor."
       }
     }
   }
