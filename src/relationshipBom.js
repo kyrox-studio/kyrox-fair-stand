@@ -1162,7 +1162,7 @@ function uprightStack(column) {
   if (parts.size < 2) return null;
   const combinedKey = combinedUprightKey(parts);
   if (!combinedKey) return null;
-  return { host: hosts[0], combinedKey, parts };
+  return { host: hosts[0], combinedKey, parts, shorts: members.filter((frame) => frame.kind === 'short') };
 }
 
 /**
@@ -1180,7 +1180,7 @@ function applyStackedUprightPosts(book, stacks) {
       else points.set(key, [stack]);
     }
   }
-  for (const bucket of points.values()) {
+  for (const [key, bucket] of points) {
     let combinedKey = bucket[0].combinedKey;
     for (const stack of bucket) {
       if ((STACKED_UPRIGHT_RANK[stack.combinedKey] ?? 0) > (STACKED_UPRIGHT_RANK[combinedKey] ?? 0)) {
@@ -1193,6 +1193,72 @@ function applyStackedUprightPosts(book, stacks) {
       for (const part of stack.parts) remove.add(part);
     }
     for (const part of remove) book.add(part, -1);
+    const point = segmentEndpoints(bucket[0].host)[pointSideOf(bucket[0].host, key)];
+    for (const stack of bucket) {
+      for (const frame of stack.shorts ?? []) book.dropShortUpright(frame, point);
+    }
+  }
+}
+
+function pointSideOf(frame, key) {
+  const ends = segmentEndpoints(frame);
+  return pointKey(ends.start) === key ? 'start' : 'end';
+}
+
+/**
+ * Yalnız kısa panellerden oluşan kolon (kullanıcı kararı 2026-11-16): bir plan noktasında üst üste
+ * kalan kısa panel dikmeleri (birleşimlerden sonra hâlâ sayılanlar) tek dikme olur; toplam boyda
+ * katalog dikmesi varsa: 49,5 + 49,5 → 99, 99 + 49,5 → 148,5, 99 + 99 → 198, 99 + 99 + 49,5 → 247,5.
+ * Dikmeler alttakinin bittiği yerde başlamalıdır (Z bitişik); karşılığı olmayan toplam ayrı kalır.
+ */
+function uprightKeyByLength(lengthCm) {
+  for (const item of listRegisteredItems()) {
+    if (item?.type !== 'upright') continue;
+    if (nearlyEqual(uprightLengthCm(item.itemKey), lengthCm)) return item.itemKey;
+  }
+  return null;
+}
+
+function applyShortOnlyStackedUprights(book, shorts) {
+  const byPoint = new Map();
+  for (const frame of shorts) {
+    if (!frame.uprightKey) continue;
+    const ends = segmentEndpoints(frame);
+    for (const side of ['start', 'end']) {
+      const key = pointKey(ends[side]);
+      if (book.droppedShortUprights.has(`${frame.moduleId}|${key}`)) continue;
+      const bucket = byPoint.get(key) ?? [];
+      if (bucket.some((entry) => entry.frame === frame)) continue;
+      bucket.push({ frame, point: ends[side] });
+      byPoint.set(key, bucket);
+    }
+  }
+  for (const bucket of byPoint.values()) {
+    if (bucket.length < 2) continue;
+    const sorted = bucket.slice().sort((a, b) => a.frame.z.minCm - b.frame.z.minCm);
+    let chain = [sorted[0]];
+    const chains = [];
+    for (const entry of sorted.slice(1)) {
+      const last = chain[chain.length - 1];
+      if (nearlyEqual(entry.frame.z.minCm, last.frame.z.maxCm)) chain.push(entry);
+      else {
+        chains.push(chain);
+        chain = [entry];
+      }
+    }
+    chains.push(chain);
+    for (const members of chains) {
+      if (members.length < 2) continue;
+      const total = members.reduce((sum, entry) => sum + uprightLengthCm(entry.frame.uprightKey), 0);
+      const combinedKey = uprightKeyByLength(total);
+      if (!combinedKey) continue;
+      for (const entry of members) {
+        book.add(entry.frame.uprightKey, -1);
+        book.dropShortUpright(entry.frame, entry.point);
+      }
+      book.add(combinedKey, 1);
+      book.noteJoint();
+    }
   }
 }
 
@@ -1350,6 +1416,15 @@ function applyShortRunProfiles(book, shorts, partners, uprights) {
         book.charge(short.moduleId, 0, 0, 0, { profile: -1, profileKey: short.profileKey });
       }
       for (const itemKey of pieces) book.add(itemKey, 1);
+      book.profileRuns.push(Object.freeze({
+        rail: span[0].rail,
+        axis: span[0].short.axis,
+        fixedCm: span[0].short.fixedCm,
+        startCm: span[0].short.startCm,
+        endCm: span[span.length - 1].short.endCm,
+        moduleIds: Object.freeze(span.map((entry) => entry.short.moduleId)),
+        pieces: Object.freeze([...pieces]),
+      }));
       book.noteProfileRun();
     }
   }
@@ -1517,19 +1592,76 @@ function applyStructuralUprightToSharedJoints(book, upright) {
     if (!uprightFootprintContains(upright, shared.point)) continue;
     shared.consumed = true;
     book.add(shared.frame.uprightKey, -1);
+    book.dropShortUpright(shared.frame, shared.point);
     book.noteJoint();
   }
 }
 
+function uprightLengthCm(itemKey) {
+  const item = itemKey ? getItem(itemKey) : null;
+  const length = Number(item?.dimensions?.heightCm ?? item?.sceneDimensions?.heightCm);
+  return Number.isFinite(length) ? length : 0;
+}
+
+/**
+ * Tam boy duvarın (duvar, kapı, separatör, vitrin) ucunda bağımsız dikme duruyorsa o uçta tek
+ * dikme sayılır: uzun olan kalır (kullanıcı kararı 2026-11-16). Aynı noktada iki duvar birleşiyorsa
+ * (ortak dikme) nokta bir kez işlenir. Aparat değişmez.
+ */
+function applyStandaloneUprightsAtWallEnds(book, walls, uprights) {
+  const handledPoints = new Set();
+  const usedUprights = new Set();
+  for (const wall of walls) {
+    const wallUprightKey = recipeChildKeyByType(wall.itemKey, 'upright');
+    if (!wallUprightKey) continue;
+    const ends = segmentEndpoints(wall);
+    for (const side of ['start', 'end']) {
+      const point = ends[side];
+      const pointKey = `${Math.round(point.xCm * 10)}:${Math.round(point.yCm * 10)}`;
+      if (handledPoints.has(pointKey)) continue;
+      const upright = uprights.find((candidate) => (
+        !usedUprights.has(candidate.moduleId)
+        && rangesOverlap(candidate.z, wall.z)
+        && candidate.z.minCm <= wall.z.minCm + EPSILON_CM
+        && uprightFootprintContains(candidate, point)
+      ));
+      if (!upright) continue;
+      handledPoints.add(pointKey);
+      usedUprights.add(upright.moduleId);
+      if (uprightLengthCm(upright.itemKey) >= uprightLengthCm(wallUprightKey)) {
+        book.add(wallUprightKey, -1);
+      } else {
+        book.add(upright.itemKey, -1);
+      }
+      book.noteJoint();
+    }
+  }
+}
+
+// Kısa panel ucundaki bağımsız dikme: uzun olan kalır (kullanıcı kararı 2026-11-16). Dikme kısa
+// panelin bandını kaplıyorsa kısa panelin dikmesi düşer; aynı tabandan başlayan daha kısa bağımsız
+// dikme ise kendisi düşer (ör. zemindeki Çift Sıra 99 + 49,5 → tek 99).
 function applyStructuralUprightPost(book, wall, upright) {
-  if (!uprightCoversShortBand(upright, wall) || !wall.uprightKey) return;
+  if (!wall.uprightKey) return;
+  const covers = uprightCoversShortBand(upright, wall);
+  const shorterOnSameBase = !covers
+    && rangesOverlap(upright.z, wall.z)
+    && Math.abs(upright.z.minCm - wall.z.minCm) <= EPSILON_CM
+    && uprightLengthCm(upright.itemKey) < uprightLengthCm(wall.uprightKey);
+  if (!covers && !shorterOnSameBase) return;
   const ends = segmentEndpoints(wall);
   for (const side of ['start', 'end']) {
     if (!uprightFootprintContains(upright, ends[side])) continue;
     if (!slotFree(wall, side, 'upright')) continue;
-    takeSlot(wall, side, 'upright');
-    book.add(wall.uprightKey, -1);
+    if (covers) {
+      takeSlot(wall, side, 'upright');
+      book.add(wall.uprightKey, -1);
+      book.dropShortUpright(wall, ends[side]);
+    } else {
+      book.add(upright.itemKey, -1);
+    }
     book.noteJoint();
+    if (!covers) return;
   }
 }
 
@@ -1648,6 +1780,10 @@ function createDeltaBook() {
   const backSwapModuleIds = [];
   const backPanelSwaps = [];
   const sharedJointUprights = [];
+  // Kısa panel uç dikmesi düşen noktalar (`${moduleId}|${pointKey}`); kolon birleştirme kalanları okur.
+  const droppedShortUprights = new Set();
+  // Kısa panel ray açıklıkları (sahne tek profil çizer; `detectShortProfileRuns`).
+  const profileRuns = [];
   const moduleCharges = new Map();
   let jointCount = 0;
   let railCount = 0;
@@ -1684,6 +1820,11 @@ function createDeltaBook() {
     backSwapModuleIds,
     backPanelSwaps,
     sharedJointUprights,
+    droppedShortUprights,
+    profileRuns,
+    dropShortUpright(frame, point) {
+      if (frame?.kind === 'short' && point) droppedShortUprights.add(`${frame.moduleId}|${pointKey(point)}`);
+    },
     moduleCharges,
     add,
     charge,
@@ -1708,6 +1849,7 @@ function applyEndToEndShortJoint(book, a, b, geometry) {
   takeSlot(a, geometry.sideA, 'upright');
   takeSlot(b, geometry.sideB, 'upright');
   book.add(dropped.uprightKey, -1);
+  book.dropShortUpright(dropped, segmentEndpoints(a)[geometry.sideA]);
   noteSharedJointUpright(book, segmentEndpoints(a)[geometry.sideA], dropped === a ? b : a);
   if (bothPay) {
     takeSlot(a, geometry.sideA, 'single');
@@ -1729,20 +1871,40 @@ function shortCornerUnits(payer, partner) {
   return singles > 0 ? Math.min(count, singles) : count;
 }
 
+/**
+ * Köşede tam boy duvara üst üste birden çok kısa panel bağlanabilir (ör. Çift Sıra + üstünde Tek Sıra).
+ * Tam boy duvarın köşe yuvası kısa panelin yükseklik aralığı başına tutulur; yalnız aynı aralığı
+ * kaplayan ikinci kısa panel reddedilir. Kısa panelin kendi yuvası tektir (hata düzeltmesi 2026-11-16:
+ * üstteki kısa panel köşe sayılmıyor, 197 kalıyordu).
+ */
+function cornerSingleFree(frame, side, partner) {
+  if (frame.kind === 'short') return slotFree(frame, side, 'single');
+  const taken = frame.cornerSingleRanges?.[side] ?? [];
+  return !taken.some((range) => rangeContains(range, partner.z) || rangeContains(partner.z, range));
+}
+
+function takeCornerSingle(frame, side, partner) {
+  takeSlot(frame, side, 'single');
+  if (frame.kind === 'short') return;
+  frame.cornerSingleRanges ??= {};
+  (frame.cornerSingleRanges[side] ??= []).push(partner.z);
+}
+
 function applyCornerShortJoint(book, a, b, geometry) {
   if (!pairZOk(a, b)) return;
   const payA = partnerOnFront(a, b, geometry.point) && hasEndpointSingle(a);
   const payB = partnerOnFront(b, a, geometry.point) && hasEndpointSingle(b);
   if (!slotFree(a, geometry.sideA, 'upright') || !slotFree(b, geometry.sideB, 'upright')) return;
-  if (payA && !slotFree(a, geometry.sideA, 'single')) return;
-  if (payB && !slotFree(b, geometry.sideB, 'single')) return;
+  if (payA && !cornerSingleFree(a, geometry.sideA, b)) return;
+  if (payB && !cornerSingleFree(b, geometry.sideB, a)) return;
   const dropped = droppedShortFrame(a, b);
   if (dropped.kind !== 'short' || !dropped.uprightKey) return;
   takeSlot(a, geometry.sideA, 'upright');
   takeSlot(b, geometry.sideB, 'upright');
-  if (payA) takeSlot(a, geometry.sideA, 'single');
-  if (payB) takeSlot(b, geometry.sideB, 'single');
+  if (payA) takeCornerSingle(a, geometry.sideA, b);
+  if (payB) takeCornerSingle(b, geometry.sideB, a);
   book.add(dropped.uprightKey, -1);
+  book.dropShortUpright(dropped, geometry.point ?? segmentEndpoints(a)[geometry.sideA]);
   noteSharedJointUpright(book, geometry.point ?? segmentEndpoints(a)[geometry.sideA], dropped === a ? b : a);
   const unitsA = payA ? shortCornerUnits(a, b) : 0;
   const unitsB = payB ? shortCornerUnits(b, a) : 0;
@@ -1767,7 +1929,10 @@ function applyTeeShortJoint(book, branch, host, geometry) {
   if (branch.kind === 'short' && !branch.uprightKey) return;
   if (branch.kind !== 'short' && host.kind !== 'short') return;
   takeSlot(branch, geometry.branchSide, 'upright');
-  if (branch.kind === 'short') book.add(branch.uprightKey, -1);
+  if (branch.kind === 'short') {
+    book.add(branch.uprightKey, -1);
+    book.dropShortUpright(branch, segmentEndpoints(branch)[geometry.branchSide]);
+  }
   if (branchPays) {
     takeSlot(branch, geometry.branchSide, 'single');
     book.add('connector_single', -1);
@@ -1837,7 +2002,16 @@ function applyProfileRail(book, wall, profile) {
  * (`wallCornerJoints.js`). Üretim listesi hesabını değiştirmez: `planWallShortRelationshipBom`
  * ile aynı çift sınıflaması (köşe, yükseklik uyumu) ve aynı tutulan dikme kuralı kullanılır.
  */
+/** Kısa panel yan yana (uç uca) birleşimleri; listede tutulan dikme `kept`, düşen `dropped`. */
+export function detectShortEndToEndJoints(modules = []) {
+  return detectShortJointsOfKind(modules, 'end-to-end');
+}
+
 export function detectShortCornerJoints(modules = []) {
+  return detectShortJointsOfKind(modules, 'corner');
+}
+
+function detectShortJointsOfKind(modules, kind) {
   const list = Array.isArray(modules) ? modules : [];
   const frames = [];
   list.forEach((module, index) => {
@@ -1860,7 +2034,7 @@ export function detectShortCornerJoints(modules = []) {
       const b = frames[j];
       if (a.kind !== 'short' && b.kind !== 'short') continue;
       const geometry = classifyShortPair(a, b);
-      if (geometry?.kind !== 'corner' || !pairZOk(a, b)) continue;
+      if (geometry?.kind !== kind || !pairZOk(a, b)) continue;
       const dropped = droppedShortFrame(a, b);
       const kept = dropped === a ? b : a;
       joints.push(Object.freeze({
@@ -1949,8 +2123,14 @@ export function planWallShortRelationshipBom(modules = []) {
     applyStructuralUprightPost(book, candidate.wall, candidate.upright);
   }
   for (const upright of uprights) applyStructuralUprightToSharedJoints(book, upright);
+  applyStandaloneUprightsAtWallEnds(
+    book,
+    [...partners].sort((left, right) => (left.moduleId < right.moduleId ? -1 : 1)),
+    [...uprights].sort((left, right) => (left.moduleId < right.moduleId ? -1 : 1)),
+  );
 
   applySameWidthShortColumns(book, structural);
+  applyShortOnlyStackedUprights(book, shorts);
   applyShortRunProfiles(book, shorts, partners, uprights);
 
   const notes = [];
@@ -1973,8 +2153,17 @@ export function planWallShortRelationshipBom(modules = []) {
     moduleCharges: Object.freeze([...book.moduleCharges.values()].map((charge) => Object.freeze({ ...charge }))),
     jointCount: book.jointCount,
     railCount: book.railCount,
+    profileRuns: Object.freeze([...book.profileRuns]),
     notes: Object.freeze(notes),
   });
+}
+
+/**
+ * Listenin tek profil saydığı kısa panel ray açıklıkları (sahne çizimi için): her kayıt bir hat,
+ * ray (`bottom` / `top`), plan aralığı, açıklıktaki modüller ve profil parçaları.
+ */
+export function detectShortProfileRuns(modules = []) {
+  return planWallShortRelationshipBom(modules).profileRuns ?? Object.freeze([]);
 }
 
 function mergePanelSwaps(entries) {

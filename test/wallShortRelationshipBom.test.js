@@ -11,7 +11,7 @@ import {
 } from '../src/items.js';
 import { getModuleMagneticSnapStrategy } from '../src/moduleBehavior.js';
 import { resolveProjectBom } from '../src/projectBom.js';
-import { relationshipBomRole } from '../src/relationshipBom.js';
+import { planWallShortRelationshipBom, relationshipBomRole } from '../src/relationshipBom.js';
 import { initializeStandDimensions } from '../src/standDimensions.js';
 import { CANONICAL_STAND_DIMENSIONS } from './mapCatalogSeed.mjs';
 
@@ -789,9 +789,11 @@ test('shorts stacked on a 346.5 post become one upright per plan end', () => {
     short2('lower', 'wall_200_short_2', { widthCm: 200, zCm: 250 }),
     short1('upper', 'wall_200_short_1', { widthCm: 200, zCm: 350 }),
   ]);
+  // Kullanıcı kararı 2026-11-16: yalnız short kolonu da her uçta tek dikme (99 + 49,5 → 148,5).
   assert.equal(qty(shortsOnly, 'upright_495'), 0);
-  assert.equal(qty(shortsOnly, 'upright_99'), 2);
-  assert.equal(qty(shortsOnly, 'upright_49_5'), 2);
+  assert.equal(qty(shortsOnly, 'upright_148_5'), 2);
+  assert.equal(qty(shortsOnly, 'upright_99'), 0);
+  assert.equal(qty(shortsOnly, 'upright_49_5'), 0);
 
   const besidePlain = resolveProjectBom([
     frame('wall', 'wall_200_350', { widthCm: 200, heightCm: 350 }),
@@ -939,4 +941,22 @@ test('a lone short keeps its own rails', () => {
   const bom = resolveProjectBom([short1('a', 'wall_200_short_1', { widthCm: 200 })]);
   assert.equal(qty(bom, 'profile_190'), 2);
   assert.equal(bom.relationshipNotes.some((note) => note.includes('profil birleşimi')), false);
+});
+
+// Hata düzeltmesi (2026-11-16): köşede tam boy duvara üst üste iki kısa panel (Çift Sıra + üstünde
+// Tek Sıra) bağlanınca yalnız alttaki köşe sayılıyordu; üstteki kısa panelin arka yüz paneli ve
+// tam boy duvarın o hizadaki bandı 197 kalıyordu.
+test('köşede üst üste iki kısa panelin ikisi de köşe kuralından geçer', () => {
+  const wall = frame('wall', 'wall_200_350', { xCm: 0, yCm: 0, rotationZDeg: 0, widthCm: 200, heightCm: 350 });
+  const lower = frame('lower', 'wall_200_short_2', { xCm: 0, yCm: 0, zCm: 0, rotationZDeg: 270, widthCm: 200, heightCm: 100 });
+  const upper = frame('upper', 'wall_200_short_1', { xCm: 0, yCm: 0, zCm: 100, rotationZDeg: 270, widthCm: 200, heightCm: 50 });
+  const plan = planWallShortRelationshipBom([wall, lower, upper]);
+  assert.deepEqual([...plan.backSwapModuleIds].sort(), ['lower', 'upper']);
+  const wallBands = plan.panelSwaps.find((entry) => entry.moduleId === 'wall')?.bands ?? [];
+  assert.deepEqual([...wallBands].sort(), [0, 1, 2]);
+
+  // Aynı yükseklikte ikinci kısa panel (çift kayıt) yine reddedilir.
+  const duplicate = frame('dup', 'wall_200_short_1', { xCm: 0, yCm: 0, zCm: 100, rotationZDeg: 270, widthCm: 200, heightCm: 50 });
+  const twice = planWallShortRelationshipBom([wall, lower, upper, duplicate]);
+  assert.equal(twice.backSwapModuleIds.includes('dup') && twice.backSwapModuleIds.includes('upper'), false);
 });

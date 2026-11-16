@@ -41,11 +41,15 @@ test('dış köşe: ön yüzler dışa bakınca da uçlar ve tek sahip aynı kur
   assert.deepEqual(ends.get('b'), [{ localXSign: 1, ownsPost: false }]);
 });
 
-test('yan yana birleşim köşe dikmesi kuralına girmez', () => {
-  assert.equal(resolveWallCornerEnds([
+test('yan yana birleşim köşe dikmesi kuralına girmez; ortak dikmeyi bir taraf çizer', () => {
+  // Kullanıcı kararı 2026-11-16: listedeki ortak tek dikme sahnede de tektir.
+  const ends = resolveWallCornerEnds([
     wall('a', { xCm: 0, yCm: 0, rotationZDeg: 0 }),
     wall('b', { xCm: 200, yCm: 0, rotationZDeg: 0 }),
-  ]).size, 0);
+  ]);
+  assert.equal([...ends.values()].flat().some((end) => end.ownsPost != null), false);
+  assert.equal(ends.has('a'), false);
+  assert.deepEqual(ends.get('b'), [{ localXSign: -1, postWidthCm: 0 }]);
 });
 
 test('separatör ve vitrin köşesi: ortak dikmeyi kimliği büyük olsa da duvar çizer', () => {

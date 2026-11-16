@@ -598,7 +598,9 @@ test('an imported strip without a panel identity takes it from the parent recipe
     itemKey: 'wall_50_350',
     strips: [{ id: 's', stripIndex: 0, itemKey: 'panel_98', imageAssetId: 'keep' }],
   });
-  assert.equal(kept.strips[0].itemKey, 'panel_98');
+  // Eskimiş panel kimliği reçeteye göre onarılır, görsel kalır (hata düzeltmesi 2026-11-16:
+  // daraltılan duvarda kalan geniş panel kimliği listeyi ve baskıyı yanlış ölçüyle yazıyordu).
+  assert.equal(kept.strips[0].itemKey, 'panel_48_5');
   assert.equal(kept.strips[0].imageAssetId, 'keep');
 
   const door = normalizeModuleItemState({

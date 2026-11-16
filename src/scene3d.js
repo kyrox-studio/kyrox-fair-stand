@@ -96,6 +96,8 @@ import {
   stepMountBottomZCm,
   stepTulleFabricZCm,
   stepWallShortFloorZCm,
+  stepWallShortStackZCm,
+  seatWallShortZCm,
   validatePlacementAgainstModules,
 } from './modulePlacement.js';
 import {
@@ -125,7 +127,19 @@ let renderCornerEndsByModule = new Map();
 // Sahne dışı çizim (sürükleme silüeti, moduleIndex < 0) tek başına çizilir: köşe kuralı yok.
 function cornerEndsForModule(moduleState, moduleIndex) {
   if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
-  return renderCornerEndsByModule.get(moduleState?.id) ?? [];
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => !end.stack && !end.railRun);
+}
+
+// Kısa panel ray açıklıkları (`wallCornerJoints.js` addShortRailRuns); yalnız sahnedeki modül.
+function railRunsForModule(moduleState, moduleIndex) {
+  if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => end.railRun);
+}
+
+// Üst üste kısa panel kolonu (`wallCornerJoints.js` addShortStackEnds); yalnız sahnedeki modül.
+function shortStackForModule(moduleState, moduleIndex) {
+  if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return null;
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).find((end) => end.stack) ?? null;
 }
 
 function frameColorForModule(moduleState) {
@@ -1641,6 +1655,417 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
   let measureLabels = [];
   let measureSignature = '';
   let measurementsVisible = false;
+
+  // Panel Ölçüleri katmanı (yalnız görüntü): her panelin üstünde Üretim Listesi'ndeki gerçek ölçü ve
+  // atama (görsel adı / renk / Varsayılan Panel). Etiket metni main.js'te aynı BOM sayımından gelir.
+  let panelLabels = [];
+  const panelLabelMeshes = new Map();
+  const panelLabelNormal = new THREE.Vector3();
+  const panelLabelWorld = new THREE.Vector3();
+  const panelLabelPoint = new THREE.Vector3();
+  const panelLabelQuaternion = new THREE.Quaternion();
+  const panelLabelRaycaster = new THREE.Raycaster();
+  const panelLabelRayDirection = new THREE.Vector3();
+  // Görünürlük (arkada kalan panel) her karede değil, kamera durunca en çok 150 ms'de bir ölçülür.
+  const PANEL_LABEL_OCCLUSION_INTERVAL_MS = 150;
+  let panelLabelOcclusionAt = 0;
+  let panelLabelOcclusionPending = false;
+  let panelLabelOcclusionTimer = null;
+  // Kamera durduktan sonra görünürlüğü ölçecek kareyi ister (çizim döngüsü istek bayrağını kare
+  // sonunda sıfırladığı için istek döngünün dışından gelir).
+  function schedulePanelLabelOcclusion() {
+    panelLabelOcclusionPending = true;
+    if (panelLabelOcclusionTimer) clearTimeout(panelLabelOcclusionTimer);
+    panelLabelOcclusionTimer = setTimeout(() => {
+      panelLabelOcclusionTimer = null;
+      requestEditorRender();
+    }, PANEL_LABEL_OCCLUSION_INTERVAL_MS);
+  }
+  const panelLabelCameraPosition = new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN);
+  const panelLabelCameraQuaternion = new THREE.Quaternion(Number.NaN, Number.NaN, Number.NaN, Number.NaN);
+
+  function clearPanelLabels() {
+    if (panelLabelOcclusionTimer) clearTimeout(panelLabelOcclusionTimer);
+    panelLabelOcclusionTimer = null;
+    panelLabels.forEach(({ element }) => element.remove());
+    panelLabels = [];
+    panelLabelMeshes.clear();
+  }
+
+  function rebuildPanelLabelMeshIndex() {
+    panelLabelMeshes.clear();
+    scene.traverse((object) => {
+      const id = object.userData?.surfaceId;
+      if (object.isMesh && id && object.userData.selectionMode === 'panel') panelLabelMeshes.set(id, object);
+    });
+  }
+
+  function findPanelSurfaceMesh(surfaceId) {
+    const cached = panelLabelMeshes.get(surfaceId);
+    if (cached?.parent) return cached;
+    rebuildPanelLabelMeshIndex();
+    return panelLabelMeshes.get(surfaceId) ?? null;
+  }
+
+  function panelLabelStyle(group, color) {
+    if (group === 'image') return 'background:rgba(30,58,95,.9);color:#fff';
+    if (group === 'color') return `background:rgba(255,255,255,.94);color:#0f172a;border-left:8px solid ${color}`;
+    if (group === 'depot') return 'background:rgba(254,243,199,.95);color:#92400e';
+    return 'background:rgba(255,255,255,.92);color:#475569';
+  }
+
+  /**
+   * Panel Ölçüleri etiketleri (kullanıcı kararı 2026-11-16): aynı duvar yüzünde alt alta gelen ve
+   * metni aynı paneller tek etikettir ("197 · Varsayılan · 2", ortalarında). Arkada kalan panelin etiketi
+   * gizlenir; ekranda üst üste binen etiketlerden çok panelli ve yakın olan kalır.
+   * @param {Array<{ surfaceId: string, text: string, group: string, color?: string|null }>|null} entries
+   */
+  function setPanelLabels(entries) {
+    clearPanelLabels();
+    const valid = (entries ?? []).filter((entry) => entry?.surfaceId && entry.text);
+    if (!valid.length) {
+      requestEditorRender();
+      return 0;
+    }
+    rebuildPanelLabelMeshIndex();
+    const placed = valid
+      .map((entry) => {
+        const mesh = panelLabelMeshes.get(entry.surfaceId);
+        if (!mesh) return null;
+        // Üst üste kısa paneller tek kolon: kolonun alttaki modülü ve kolondaki bant sırası kullanılır.
+        const stack = (renderCornerEndsByModule.get(mesh.userData.moduleId) ?? []).find((end) => end.stack);
+        return {
+          entry,
+          moduleId: String(stack?.chainId ?? mesh.userData.moduleId ?? ''),
+          side: mesh.userData.panelSide ?? 'front',
+          strip: Number(mesh.userData.stripIndex) + (stack?.bandOffset ?? 0),
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.moduleId.localeCompare(b.moduleId)
+        || a.side.localeCompare(b.side)
+        || a.strip - b.strip);
+    const runs = [];
+    for (const item of placed) {
+      const last = runs[runs.length - 1];
+      const prev = last?.items[last.items.length - 1];
+      if (last && prev.moduleId === item.moduleId && prev.side === item.side
+        && prev.entry.text === item.entry.text && Number.isFinite(item.strip) && item.strip === prev.strip + 1) {
+        last.items.push(item);
+      } else {
+        runs.push({ items: [item] });
+      }
+    }
+    for (const run of runs) {
+      const first = run.items[0].entry;
+      const count = run.items.length;
+      const element = document.createElement('div');
+      element.className = `scene-panel-label is-${first.group}`;
+      element.dataset.surfaceId = first.surfaceId;
+      element.dataset.surfaceIds = run.items.map((item) => item.entry.surfaceId).join(' ');
+      element.dataset.panelGroup = first.group;
+      element.dataset.panelCount = String(count);
+      element.textContent = count > 1 ? `${first.text} · ${count}` : first.text;
+      element.style.cssText = [
+        'position:fixed', 'z-index:29', 'pointer-events:none', 'transform:translate(-50%,-50%)',
+        'padding:1px 5px', 'border-radius:4px', 'font:600 10px/1.3 system-ui,sans-serif',
+        'white-space:nowrap', 'box-shadow:0 1px 3px rgba(15,23,42,.25)', 'visibility:hidden',
+        panelLabelStyle(first.group, first.color),
+      ].join(';');
+      document.body.appendChild(element);
+      panelLabels.push({
+        element,
+        surfaceIds: run.items.map((item) => item.entry.surfaceId),
+        count,
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        occluded: false,
+      });
+      element.style.display = 'none';
+      element.style.visibility = '';
+    }
+    panelLabelOcclusionAt = 0;
+    schedulePanelLabelOcclusion();
+    requestEditorRender();
+    return panelLabels.length;
+  }
+
+  const PANEL_LABEL_OCCLUDER_TYPES = new Set(['flat-panel', 'door', 'separator', 'showcase-2', 'showcase-3']);
+  const PANEL_LABEL_BLOCKING_UI = [
+    '#viewport-toolbar',
+    '.selection-property-panel',
+    '.view-cube',
+    '#panel-assignment-summary',
+    '#stand-summary-chip',
+    '#production-bom-panel',
+  ].join(',');
+
+  function moduleGroupOfObject(object) {
+    for (let node = object; node; node = node.parent) {
+      if (node.userData?.kind === 'module') return node;
+    }
+    return null;
+  }
+
+  function moduleTypeOfObject(object) {
+    for (let node = object; node; node = node.parent) {
+      if (node.userData?.kind === 'module') return node.userData.type ?? null;
+    }
+    return null;
+  }
+
+  function isVisibleInScene(object) {
+    for (let node = object; node; node = node.parent) {
+      if (!node.visible) return false;
+    }
+    const material = Array.isArray(object.material) ? object.material[0] : object.material;
+    if (material && (material.opacity ?? 1) < 0.9) return false;
+    return true;
+  }
+
+  // Kameradan noktaya giden ışını görünür ve opak başka bir parça kesiyorsa nokta arkada kalır.
+  function panelLabelOccluded(point, meshes) {
+    panelLabelRayDirection.copy(point).sub(camera.position);
+    const distance = panelLabelRayDirection.length();
+    if (!(distance > 0)) return false;
+    panelLabelRaycaster.set(camera.position, panelLabelRayDirection.normalize());
+    // Hedefe 25 cm'den yakın çarpma (komşu çerçeve, dikme) örtme sayılmaz.
+    panelLabelRaycaster.far = distance - 0.25;
+    if (!(panelLabelRaycaster.far > 0)) return false;
+    const ownModules = new Set(meshes.map(moduleGroupOfObject).filter(Boolean));
+    for (const hit of panelLabelRaycaster.intersectObject(wallRoot, true)) {
+      if (!hit.object.isMesh || meshes.includes(hit.object)) continue;
+      // Etiketin kendi duvarının çerçevesi ve öbür bantları örtmez (dik açıda ışın onlara değer).
+      if (ownModules.has(moduleGroupOfObject(hit.object))) continue;
+      if (meshes.some((mesh) => mesh.userData.backing === hit.object || hit.object.parent === mesh)) continue;
+      if (!isVisibleInScene(hit.object)) continue;
+      // Yalnız duvar benzeri parça örter; önündeki sandalye / masa etiketi gizlemez.
+      if (!PANEL_LABEL_OCCLUDER_TYPES.has(moduleTypeOfObject(hit.object))) continue;
+      return true;
+    }
+    return false;
+  }
+
+  function positionPanelLabels() {
+    if (!panelLabels.length) return;
+    const rect = renderer.domElement.getBoundingClientRect();
+    const now = performance.now();
+    const cameraMoved = !camera.position.equals(panelLabelCameraPosition)
+      || !camera.quaternion.equals(panelLabelCameraQuaternion);
+    const measureOcclusion = !cameraMoved && panelLabelOcclusionPending
+      && now - panelLabelOcclusionAt >= PANEL_LABEL_OCCLUSION_INTERVAL_MS;
+    if (cameraMoved) {
+      panelLabelCameraPosition.copy(camera.position);
+      panelLabelCameraQuaternion.copy(camera.quaternion);
+      // Kamera durunca görünürlük ayrı bir karede ölçülür.
+      schedulePanelLabelOcclusion();
+    }
+    if (measureOcclusion) {
+      panelLabelOcclusionAt = now;
+      panelLabelOcclusionPending = false;
+    }
+
+    const candidates = [];
+    for (const label of panelLabels) {
+      const meshes = label.surfaceIds.map(findPanelSurfaceMesh).filter(Boolean);
+      let visible = meshes.length === label.surfaceIds.length
+        && meshes.every((mesh) => mesh.visible)
+        && rect.width > 0;
+      if (visible) {
+        panelLabelWorld.set(0, 0, 0);
+        for (const mesh of meshes) panelLabelWorld.add(mesh.getWorldPosition(panelLabelPoint));
+        panelLabelWorld.multiplyScalar(1 / meshes.length);
+        meshes[0].getWorldQuaternion(panelLabelQuaternion);
+        panelLabelNormal.set(0, 0, 1).applyQuaternion(panelLabelQuaternion);
+        // Kameraya arkasını dönen yüzün (ör. duvarın öbür yüzü) etiketi gizlenir.
+        visible = panelLabelNormal.dot(camera.position.clone().sub(panelLabelWorld)) > 0;
+      }
+      if (visible && measureOcclusion) {
+        // Etiket noktası ve 15 cm üstü / altı: üç ışından en az ikisi örtülüyse etiket arkada kalır
+        // (tek ışın önündeki duvarın panel aralığından geçebilir).
+        const samples = [0, 0.15, -0.15].map((dy) => panelLabelWorld.clone().add(new THREE.Vector3(0, dy, 0)));
+        label.occluded = samples.filter((point) => panelLabelOccluded(point, meshes)).length >= 2;
+      }
+      if (visible && label.occluded) visible = false;
+      const depth = visible ? panelLabelWorld.distanceTo(camera.position) : 0;
+      if (visible) {
+        panelLabelWorld.project(camera);
+        visible = panelLabelWorld.z > -1 && panelLabelWorld.z < 1;
+      }
+      if (!visible) {
+        label.element.style.display = 'none';
+        continue;
+      }
+      candidates.push({
+        label,
+        x: rect.left + ((panelLabelWorld.x + 1) / 2) * rect.width,
+        y: rect.top + ((1 - panelLabelWorld.y) / 2) * rect.height,
+        depth,
+      });
+    }
+    layoutSceneLabels(candidates);
+  }
+
+  // Çakışma: çok parçalı ve yakın olan önce yerleşir; üstüne binen etiket gizlenir. Araç çubuğu,
+  // Özellikler paneli, görünüm küpü ve alt özetler dolu sayılır (etiket onların üstüne binmez).
+  function layoutSceneLabels(candidates) {
+    candidates.sort((a, b) => b.label.count - a.label.count || a.depth - b.depth);
+    const shown = [];
+    document.querySelectorAll(PANEL_LABEL_BLOCKING_UI).forEach((element) => {
+      if (element.hidden || element.offsetParent === null) return;
+      const box = element.getBoundingClientRect();
+      if (box.width > 0 && box.height > 0) shown.push(box);
+    });
+    const gap = 2;
+    for (const { label, x, y } of candidates) {
+      const halfW = (label.width || 80) / 2 + gap;
+      const halfH = (label.height || 14) / 2 + gap;
+      const box = { left: x - halfW, right: x + halfW, top: y - halfH, bottom: y + halfH };
+      const overlaps = shown.some((other) => box.left < other.right && box.right > other.left
+        && box.top < other.bottom && box.bottom > other.top);
+      if (overlaps) {
+        label.element.style.display = 'none';
+        continue;
+      }
+      shown.push(box);
+      label.element.style.display = '';
+      label.element.style.left = `${x}px`;
+      label.element.style.top = `${y}px`;
+    }
+  }
+
+  // ---- İskelet görünümü (kullanıcı kararı 2026-11-16) ----
+  // Düğmeyle sahnede yalnız dikme ve profiller (duvar, kapı, separatör, vitrin, baza ve banko
+  // çerçevesi; bağımsız dikme ve profil; kısa panel rayları) kalır; her parçanın üstünde katalogdaki
+  // gerçek boyu yazar (ör. dikme 346,5, ray 190). Yalnız görüntü; tasarım ve liste değişmez.
+  const SKELETON_MODULE_TYPES = new Set([
+    'flat-panel', 'door', 'separator', 'showcase-2', 'showcase-3', 'upright', 'profile', 'base', 'counter',
+  ]);
+  let skeletonMode = false;
+  let skeletonLabels = [];
+  const skeletonLabelPoint = new THREE.Vector3();
+  const skeletonLabelCamera = new THREE.Vector3();
+
+  function isSkeletonPiece(object) {
+    return Boolean(object?.isMesh && object.geometry?.userData?.slottedProfile)
+      && SKELETON_MODULE_TYPES.has(moduleTypeOfObject(object));
+  }
+
+  // Her çizilen karede uygulanır: sonradan kurulan / yeniden çizilen modül de iskelete uyar.
+  function applySkeletonVisibility() {
+    wallRoot.traverse((object) => {
+      if (!(object.isMesh || object.isLine || object.isPoints || object.isSprite)) return;
+      const keep = isSkeletonPiece(object) || (object.isLine && isSkeletonPiece(object.parent));
+      if (skeletonMode && !keep) {
+        if (object.visible) {
+          object.visible = false;
+          object.userData.skeletonHidden = true;
+        }
+      } else if (object.userData.skeletonHidden) {
+        object.visible = true;
+        delete object.userData.skeletonHidden;
+      }
+    });
+  }
+
+  // Çizilen parça boyu → katalogdaki en yakın dikme / profil Item'ının gerçek boyu.
+  function skeletonCatalogLengthCm(drawnCm, vertical) {
+    const type = vertical ? 'upright' : 'profile';
+    let best = null;
+    for (const item of listRegisteredItems()) {
+      if (item?.type !== type) continue;
+      const realCm = Number(vertical ? item.dimensions?.heightCm : item.dimensions?.widthCm);
+      if (!(realCm > 10)) continue;
+      const scene = Number(vertical ? item.sceneDimensions?.heightCm : item.sceneDimensions?.widthCm);
+      const diff = Math.min(Math.abs(realCm - drawnCm), Number.isFinite(scene) ? Math.abs(scene - drawnCm) : Infinity);
+      if (!best || diff < best.diff) best = { realCm, diff };
+    }
+    return best && best.diff <= 12 ? best.realCm : Math.round(drawnCm * 10) / 10;
+  }
+
+  function clearSkeletonLabels() {
+    skeletonLabels.forEach(({ element }) => element.remove());
+    skeletonLabels = [];
+  }
+
+  function rebuildSkeletonLabels() {
+    clearSkeletonLabels();
+    if (!skeletonMode) return;
+    const format = (value) => new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(value);
+    wallRoot.traverse((object) => {
+      if (!isSkeletonPiece(object)) return;
+      const { lengthM, vertical } = object.geometry.userData.slottedProfile;
+      const drawnCm = lengthM * 100 * (vertical ? Math.abs(object.scale?.y || 1) : 1);
+      if (!(drawnCm >= 20)) return;
+      const element = document.createElement('div');
+      element.className = `scene-skeleton-label is-${vertical ? 'upright' : 'profile'}`;
+      element.dataset.skeletonKind = vertical ? 'upright' : 'profile';
+      // Ray açıklığında etiket listedeki profil parçalarıdır (ör. 487 ya da 346,5 + 140,5).
+      const pieces = object.userData.bomPieces;
+      element.textContent = Array.isArray(pieces) && pieces.length
+        ? pieces.map((key) => format(Number(getItem(key)?.dimensions?.widthCm) || 0)).join(' + ')
+        : format(skeletonCatalogLengthCm(drawnCm, vertical));
+      element.style.cssText = [
+        'position:fixed', 'z-index:29', 'pointer-events:none', 'transform:translate(-50%,-50%)',
+        'padding:1px 5px', 'border-radius:4px', 'font:600 10px/1.3 system-ui,sans-serif',
+        'white-space:nowrap', 'box-shadow:0 1px 3px rgba(15,23,42,.25)', 'visibility:hidden',
+        vertical ? 'background:rgba(30,58,95,.92);color:#fff' : 'background:rgba(255,255,255,.95);color:#334155;border:1px solid #94a3b8',
+      ].join(';');
+      document.body.appendChild(element);
+      skeletonLabels.push({ element, mesh: object, count: vertical ? 2 : 1, width: element.offsetWidth, height: element.offsetHeight });
+      element.style.display = 'none';
+      element.style.visibility = '';
+    });
+  }
+
+  function positionSkeletonLabels() {
+    if (!skeletonLabels.length) return;
+    const rect = renderer.domElement.getBoundingClientRect();
+    const candidates = [];
+    for (const label of skeletonLabels) {
+      const mesh = label.mesh;
+      let visible = Boolean(mesh?.parent) && rect.width > 0;
+      if (visible) {
+        for (let node = mesh; node; node = node.parent) {
+          if (!node.visible) { visible = false; break; }
+        }
+      }
+      if (visible) {
+        mesh.getWorldPosition(skeletonLabelPoint);
+        skeletonLabelCamera.copy(skeletonLabelPoint);
+        skeletonLabelPoint.project(camera);
+        visible = skeletonLabelPoint.z > -1 && skeletonLabelPoint.z < 1;
+      }
+      if (!visible) {
+        label.element.style.display = 'none';
+        continue;
+      }
+      candidates.push({
+        label,
+        x: rect.left + ((skeletonLabelPoint.x + 1) / 2) * rect.width,
+        y: rect.top + ((1 - skeletonLabelPoint.y) / 2) * rect.height,
+        depth: skeletonLabelCamera.distanceTo(camera.position),
+      });
+    }
+    layoutSceneLabels(candidates);
+  }
+
+  /** İskelet görünümünü açar / kapar; etiket sayısını döner. */
+  function setSkeletonMode(enabled) {
+    skeletonMode = Boolean(enabled);
+    applySkeletonVisibility();
+    rebuildSkeletonLabels();
+    requestEditorRender();
+    return skeletonLabels.length;
+  }
+
+  function refreshSkeletonLabels() {
+    if (!skeletonMode) return 0;
+    applySkeletonVisibility();
+    rebuildSkeletonLabels();
+    requestEditorRender();
+    return skeletonLabels.length;
+  }
 
   function setMeasurementsVisible(visible) {
     measurementsVisible = Boolean(visible);
@@ -5100,6 +5525,13 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
           Object.assign(moduleGroup.userData, replacement.group.userData);
           surfaceMeshes.push(...replacement.surfaces);
         }
+        // Kısa panel bırakılınca alttaki kısa panel / duvarın tepesine ±25 cm'den oturur.
+        if (isWallShortFamilyDescriptor(moduleState)) {
+          placement.zCm = seatWallShortZCm({
+            moduleState: { ...moduleState, placement },
+            modules: getRenderedModuleStates().filter((other) => !plannedPlacements.has(other?.id)),
+          });
+        }
         moduleState.placement = { ...placement };
         scheduleCornerJointRefresh();
         moduleGroup.userData.placement = { ...placement };
@@ -7470,7 +7902,14 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
           .sort((a, b) => b.score - a.score)[0];
         if (bestArrowMove?.kind === 'vertical' && Number.isFinite(bestArrowMove.score)) {
           const currentZCm = Number(moduleState.placement.zCm || 0);
-          const nextZCm = stepWallShortFloorZCm(currentZCm, bestArrowMove.deltaCm, moduleState.heightCm);
+          // Kısa panel 50 cm bant ızgarasında ve alttakinin tepesine oturarak iner / çıkar.
+          const nextZCm = isWallShortFamilyDescriptor(moduleState)
+            ? stepWallShortStackZCm({
+              moduleState,
+              modules: getRenderedModuleStates(),
+              direction: bestArrowMove.deltaCm > 0 ? 'up' : 'down',
+            })
+            : stepWallShortFloorZCm(currentZCm, bestArrowMove.deltaCm, moduleState.heightCm);
           if (nextZCm === currentZCm) {
             showPlacementFeedback('Panel bu yönde stand sınırına ulaştı.', { durationMs: 900 });
             return;
@@ -7902,6 +8341,9 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       lastCubePosition.copy(camera.position);
       lastCubeQuaternion.copy(camera.quaternion);
     }
+    if (skeletonMode) applySkeletonVisibility();
+    positionPanelLabels();
+    positionSkeletonLabels();
     syncMeasureOverlay();
     if (groupSelectionFrame.visible) syncGroupSelectionBounds();
     const renderStartedAt = performance.now();
@@ -8215,6 +8657,9 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     captureCurrentViewPng,
     setStageLightPreview,
     setMeasurementsVisible,
+    setPanelLabels,
+    setSkeletonMode,
+    refreshSkeletonLabels,
     requestRender: requestEditorRender,
     appendModule,
     removeModule,
@@ -8295,6 +8740,8 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       renderer.domElement.remove();
       dragBadge?.remove?.();
       measureLabels.forEach(({ element }) => element.remove());
+      panelLabels.forEach(({ element }) => element.remove());
+      skeletonLabels.forEach(({ element }) => element.remove());
     },
   };
 }
@@ -11222,7 +11669,19 @@ function createFrameProfileMesh(geometry, frameMaterial, edgeMaterial) {
 function addPanelModuleFrame(
   group,
   moduleState,
-  { widthM, frameBottomY, frameTopY, uprightTopY = frameTopY, uprightGap = null, frameMaterial, cornerEnds: frameEnds = [] },
+  {
+    widthM,
+    frameBottomY,
+    frameTopY,
+    uprightTopY = frameTopY,
+    uprightGap = null,
+    frameMaterial,
+    cornerEnds: frameEnds = [],
+    skipBottomRail = false,
+    skipTopRail = false,
+    skipUprights = false,
+    railRuns = [],
+  },
 ) {
   const { frameWidth, frameDepth } = getProceduralFrameCrossSectionM(moduleState);
   const frameHeight = Math.max(frameTopY - frameBottomY, 0.02);
@@ -11252,13 +11711,14 @@ function addPanelModuleFrame(
     const profile = createFrameProfileMesh(geometry, frameMaterial, edgeMaterial);
     profile.position.set(x, y, 0);
     group.add(profile);
+    return profile;
   };
 
   // uprightGap: dikmenin çizilmediği aralık (vitrin gövdesi orada kendi yan tahtasıyla kenar olur).
   const uprightSegments = uprightGap
     ? [[frameBottomY, uprightGap.bottomY], [uprightGap.topY, frameBottomY + uprightHeight]]
     : [[frameBottomY, frameBottomY + uprightHeight]];
-  for (const [segmentBottom, segmentTop] of uprightSegments) {
+  for (const [segmentBottom, segmentTop] of skipUprights ? [] : uprightSegments) {
     if (segmentTop - segmentBottom <= 0) continue;
     const uprightGeometry = createSlottedProfileGeometry(frameWidth, segmentTop - segmentBottom, frameDepth);
     for (const side of [-1, 1]) {
@@ -11269,7 +11729,7 @@ function addPanelModuleFrame(
   // Ortak köşe dikmesi: kesit duvar kalınlığında kare, merkezi duvar çizgisinin ucunda (iki çizginin
   // kesişimi). Eklemin sahibi çizer; komşu yalnız kendi dikmesini bırakır.
   for (const end of cornerEnds) {
-    if (!end.ownsPost) continue;
+    if (!end.ownsPost || skipUprights) continue;
     for (const [segmentBottom, segmentTop] of uprightSegments) {
       if (segmentTop - segmentBottom <= 0) continue;
       const postGeometry = createSlottedProfileGeometry(frameDepth, segmentTop - segmentBottom, frameDepth);
@@ -11277,8 +11737,23 @@ function addPanelModuleFrame(
     }
   }
   const railGeometry = createSlottedProfileGeometry(railLength, railHeight, frameDepth);
-  addProfile(railGeometry.clone(), railCenterX, frameBottomY + railHeight / 2);
-  addProfile(railGeometry.clone(), railCenterX, frameTopY - railHeight / 2);
+  // Ray açıklığı: listenin tek profil saydığı açıklıkta rayı ilk modül açıklık boyunca çizer.
+  const drawRail = (rail, y, skip) => {
+    if (skip) return;
+    const run = railRuns.find((entry) => entry.rail === rail);
+    if (run && !run.owner) return;
+    if (!run) {
+      addProfile(railGeometry.clone(), railCenterX, y);
+      return;
+    }
+    const fromM = run.fromCm / 100 + frameWidth;
+    const toM = run.toCm / 100 - frameWidth;
+    const lengthM = Math.max(toM - fromM, 0.02);
+    const mesh = addProfile(createSlottedProfileGeometry(lengthM, railHeight, frameDepth), (fromM + toM) / 2, y);
+    mesh.userData.bomPieces = run.pieces;
+  };
+  drawRail('bottom', frameBottomY + railHeight / 2, skipBottomRail);
+  drawRail('top', frameTopY - railHeight / 2, skipTopRail);
 }
 
 // Panel yüzü çerçevenin dış kenarından alt ve üstte 4 cm, sağ ve solda 2 cm içeride biter.
@@ -11334,12 +11809,19 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
 
   // Ara yatay profiller yok; panel grubunda yalnız en alt ve en üst profil kalır.
   const cornerEnds = cornerEndsForModule(moduleState, moduleIndex);
+  // Üst üste kısa panel: birleşen kenarda ray yok, dikmeler kolon boyunca alttaki üyede.
+  const stack = shortStackForModule(moduleState, moduleIndex);
   addPanelModuleFrame(group, moduleState, {
     widthM,
     frameBottomY,
     frameTopY: frameBottomY + frameHeight,
+    uprightTopY: stack?.uprightTopCm ? frameBottomY + stack.uprightTopCm / 100 : frameBottomY + frameHeight,
     frameMaterial,
     cornerEnds,
+    skipBottomRail: Boolean(stack?.below),
+    skipTopRail: Boolean(stack?.above),
+    skipUprights: Boolean(stack?.below),
+    railRuns: railRunsForModule(moduleState, moduleIndex),
   });
 
   const railHeight = STAND_DIMENSIONS.panelRailHeight;
@@ -11348,6 +11830,9 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
   const bandPanelHeight = stripHeight - railHeight - PANEL_VERTICAL_CLEARANCE_M;
   const { panelDepth, backingZ } = resolvePanelSlab(moduleState, depth);
   const panelOpening = panelFrameOpening(frameBottomY, frameBottomY + frameHeight);
+  // Birleşen kenarda ray yok: panel açıklığı kenara kadar uzar, bant aralığı duvarın içindeki gibi kalır.
+  if (stack?.below) panelOpening.bottomY = frameBottomY;
+  if (stack?.above) panelOpening.topY = frameBottomY + frameHeight;
 
   // Ön yüz `strips`, arka yüz `backStrips` (isteğe bağlı): arka paneller ön yüzün aynasıdır,
   // profilin arka yüzünün PANEL_FACE_OFFSET_M gerisinde durur ve dışa (−Z) bakar.

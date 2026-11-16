@@ -155,14 +155,34 @@ function stampRenderParts(surfaces, parentItem, partTypes) {
   });
 }
 
-/** Saved strips keep the image. A missing panel identity comes from the parent recipe. */
+const PANEL_IDENTITY_TYPES = new Set(['panel', 'separator-panel']);
+
+/**
+ * Saved strips keep the image and color. The panel identity comes from the parent recipe:
+ * a missing one is filled, a stale one is repaired. A wall narrowed or reflowed by a size change
+ * (200 → 100) used to keep `panel_197` on its bands; the scene drew 100 cm but the production
+ * list and print sizes read 197 (bug fix 2026-11-16).
+ */
 function ensureMissingRenderPartMeasure(surfaces, parentItem, partTypes) {
   if (!Array.isArray(surfaces) || !parentItem) return;
   const parts = embeddedRenderParts(parentItem, partTypes);
   surfaces.forEach((surface, index) => {
     const part = parts[index];
-    if (!part || !surface || typeof surface !== 'object' || surface.itemKey) return;
+    if (!part || !surface || typeof surface !== 'object') return;
     const scene = resolveSceneDimensions(part);
+    const current = surface.itemKey ? getItem(surface.itemKey) : null;
+    const stale = Boolean(surface.itemKey)
+      && surface.itemKey !== part.itemKey
+      && PANEL_IDENTITY_TYPES.has(current?.type)
+      && PANEL_IDENTITY_TYPES.has(part.type);
+    if (stale) {
+      surface.itemKey = part.itemKey;
+      surface.widthCm = scene.widthCm ?? null;
+      surface.heightCm = scene.heightCm ?? null;
+      surface.depthCm = scene.depthCm ?? null;
+      return;
+    }
+    if (surface.itemKey) return;
     surface.itemKey = part.itemKey;
     if (!(Number(surface.widthCm) > 0)) surface.widthCm = scene.widthCm ?? null;
     if (!(Number(surface.heightCm) > 0)) surface.heightCm = scene.heightCm ?? null;

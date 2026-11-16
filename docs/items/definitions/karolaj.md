@@ -39,6 +39,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 ## Testler
 
+- `backend/tests/modules/fair_stand/test_karolaj_parts_migration.py`
 - `e2e/floor-area.spec.mjs`
 - `e2e/floor-items-contract.spec.mjs`
 - `e2e/project-import-export-roundtrip.spec.mjs`
@@ -46,5 +47,6 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/boothTypes.test.js`
 - `test/floorArea.test.js`
 - `test/floorItemsContract.test.js`
+- `test/profileFinish.test.js`
 - `test/projectBom.test.js`
 - `test/projectImportValidation.test.js`

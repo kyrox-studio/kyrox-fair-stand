@@ -94,6 +94,8 @@ HIDDEN_MAXIMA_ITEM_KEYS = (
     "showcase_horizontal_87_4_30",
     "showcase_side_143_5_30",
     "showcase_side_94_6_30",
+    "upright_148_5",
+    "upright_198",
     "upright_247_5",
     "upright_297",
     "upright_396",

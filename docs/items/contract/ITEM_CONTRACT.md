@@ -122,7 +122,7 @@ Zemin yeni bir Item ailesi değildir. Kaplama `type = floor` olan mevcut Item’
 
 İsteğe bağlı tek dikdörtgen `stand.floorArea` nesnesidir: `xCm`, `yCm`, `widthCm`, `depthCm`, `itemKey`, `color`. Dizi, çokgen veya delik değildir. Alan yoksa standın tamamı baz Item ile kaplıdır. Ölçüler 50 cm ve katlarıdır ve standın içinde kalır. `itemKey` mevcut bir floor Item olmalıdır. Boyanabilir override rengi `floorArea.color` alanındadır; parke rengi saklanmaz.
 
-BOM, alan yokken veya override Item baz ile aynıyken tam stand formülünü kullanır. Override farklı bir floor Item ise baz kalan alan ve override ayrı satırdır. m² kaplanan alandır. Karolaj adedi 50 × 50 hücrelerin 100 × 100 karo havuzundan gelir. Aynı `itemKey` tek satırda toplanır. Render görüntüsü BOM kaynağı değildir.
+BOM, alan yokken veya override Item baz ile aynıyken tam stand formülünü kullanır. Override farklı bir floor Item ise baz kalan alan ve override ayrı satırdır. m² kaplanan alandır. Karolaj stand köşesinden 100 × 100 dizilir; kenarda kalan 50 × 100 ve köşedeki 50 × 50 parça ayrı `karolaj_yarim` satırıdır. Altındaki demir karo kenarlarından sayılır (ortak kenar bir kez): `profile_karolaj_100` (1 m) ve `profile_karolaj_50` (50 cm). Aynı `itemKey` tek satırda toplanır. Render görüntüsü BOM kaynağı değildir.
 
 Sahip: `src/floorArea.js`. Proje sürümü bu alan için artmaz.
 
@@ -244,7 +244,7 @@ Miktar çıplak sayı olarak yorumlanmaz; birim tahmin edilmez.
 - Profil: `37.5 mt`
 - Halı: alan + rulo enine göre gereken lineer metre
 - Parke: alan + ürün geometrisine göre adet/paket
-- Karolaj: köşe + kenar + orta eleman + sunta adetleri
+- Karolaj: tam karo + yarım karo + 1 m / 50 cm demir adetleri
 
 ---
 

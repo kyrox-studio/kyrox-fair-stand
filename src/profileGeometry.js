@@ -23,7 +23,15 @@ function createProfileSectionShape(sizeU, sizeV) {
 
 // BoxGeometry(sizeX, sizeY, sizeZ) yerine: en uzun eksen profil boyudur, diğer ikisi kesittir.
 // Kesit uzun eksen boyunca uzatılır; geometri kutu gibi merkezlidir.
+// İskelet görünümü (2026-11-16): profil parçası boyu ve yönüyle işaretlenir; kopyalar işareti taşır.
 export function createSlottedProfileGeometry(sizeX, sizeY, sizeZ) {
+  const geometry = buildSlottedProfileGeometry(sizeX, sizeY, sizeZ);
+  const longest = Math.max(sizeX, sizeY, sizeZ);
+  geometry.userData.slottedProfile = Object.freeze({ lengthM: longest, vertical: longest === sizeY });
+  return geometry;
+}
+
+function buildSlottedProfileGeometry(sizeX, sizeY, sizeZ) {
   const longest = Math.max(sizeX, sizeY, sizeZ);
   if (longest === sizeY) {
     const geometry = new THREE.ExtrudeGeometry(createProfileSectionShape(sizeX, sizeZ), { depth: sizeY, bevelEnabled: false });

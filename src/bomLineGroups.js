@@ -14,7 +14,7 @@ const BOM_LINE_GROUPS = Object.freeze([
   Object.freeze({ id: 'shelf', label: 'Raflar', types: Object.freeze(['shelf', 'shelf-accessory']) }),
   Object.freeze({ id: 'showcase', label: 'Vitrin', types: Object.freeze(['showcase-board', 'showcase-accessory']) }),
   Object.freeze({ id: 'tops', label: 'Üst tablalar', types: Object.freeze(['counter-top', 'base-top']) }),
-  Object.freeze({ id: 'floor', label: 'Zemin', types: Object.freeze(['floor']) }),
+  Object.freeze({ id: 'floor', label: 'Zemin', types: Object.freeze(['floor', 'floor-piece']) }),
   Object.freeze({ id: 'production', label: 'Üretim', types: Object.freeze(['production', 'illuminated-foam', 'tulle-fabric']) }),
   Object.freeze({ id: 'lamp', label: 'Lamba', types: Object.freeze(['led-floodlight']) }),
   Object.freeze({ id: 'tv', label: 'TV', types: Object.freeze(['tv']) }),

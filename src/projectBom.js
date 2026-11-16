@@ -24,13 +24,14 @@ import {
 } from './relationshipBom.js';
 import { applyBaseRunBom, isBaseRunItemKey } from './baseRunBom.js';
 import { collectPrintAreas } from './printAreaBom.js';
+import { summarizePanelAssignments } from './panelAssignmentBom.js';
 import {
   applyBackFaceConnectors,
   applyRemovedFrontPanels,
   isRemovedPanelSurface,
   removedPanelCornerCharges,
 } from './panelRemovalBom.js';
-import { resolveSplitFloorBomLines } from './floorArea.js';
+import { floorTilePieceLines, resolveSplitFloorBomLines } from './floorArea.js';
 
 const DEFAULT_PROJECT_ITEM_KEY = 'elektrik_panosu';
 
@@ -74,6 +75,56 @@ function mergeBomLines(lines, extra) {
     else next.push({ ...line });
   }
   return next;
+}
+
+// Depo içi (kullanıcı kararı 2026-11-16): deponun içine bakan duvar yüzü 7 bant yerine alttaki
+// 4 bantla sayılır; bu paneller "Depo içi" grubunda görünür, toplama dahildir. Üst bantlar listeye
+// girmez. Sahne ve aparatlar değişmez.
+export const DEPOT_INNER_BAND_LIMIT = 4;
+
+/** Deponun içine bakan yüz: stand duvarının depo kısmında ön yüz, depo duvarında arka yüz. */
+function depotInnerFace(moduleState) {
+  if (moduleState?.depotBack || moduleState?.depotSide) return 'front';
+  if (moduleState?.autoDepot && (moduleState.type === 'flat-panel' || moduleState.type === 'door')) return 'back';
+  return null;
+}
+
+function bandOf(surface, fallback) {
+  return Number.isInteger(surface?.stripIndex) ? surface.stripIndex : fallback;
+}
+
+/** Depo içi yüzün bantlarını işaretler; sınırın üstündekiler ayrılır. */
+function splitDepotInnerSurfaces(surfaces, faceStrips) {
+  const ids = new Set((faceStrips ?? []).map((strip) => strip?.id).filter(Boolean));
+  const kept = [];
+  const dropped = [];
+  surfaces.forEach((surface, position) => {
+    if (!surface?.id || !ids.has(surface.id)) {
+      kept.push(surface);
+      return;
+    }
+    if (bandOf(surface, position) >= DEPOT_INNER_BAND_LIMIT) dropped.push(surface);
+    else kept.push({ ...surface, depotInner: true });
+  });
+  return { kept, dropped };
+}
+
+/** Listeye girmeyen depo içi bantların panel adedini düşer (aparat değişmez). */
+function subtractPanelSurfaces(lines, surfaces) {
+  if (!surfaces.length) return lines;
+  const counts = new Map();
+  for (const surface of surfaces) {
+    if (surface?.itemKey) counts.set(surface.itemKey, (counts.get(surface.itemKey) ?? 0) + 1);
+  }
+  return lines
+    .map((line) => {
+      const minus = counts.get(line.itemKey);
+      if (!minus) return line;
+      const taken = Math.min(minus, Number(line.quantity) || 0);
+      counts.set(line.itemKey, minus - taken);
+      return { ...line, quantity: line.quantity - taken };
+    })
+    .filter((line) => Number(line.quantity) > 0);
 }
 
 function resolveModuleEntry(moduleState, index, {
@@ -139,6 +190,12 @@ function resolveModuleEntry(moduleState, index, {
       lines = applyRemovedFrontPanels(lines, recipeLines, removedFront);
       surfaces = surfaces.filter((surface) => !isRemovedPanelSurface(surface));
     }
+    const depotFace = depotInnerFace(moduleState);
+    if (depotFace === 'front') {
+      const depot = splitDepotInnerSurfaces(surfaces, moduleState.strips);
+      lines = subtractPanelSurfaces(lines, depot.dropped);
+      surfaces = depot.kept;
+    }
     // Arka yüz panelleri: bant başına bir panel; arka yüz köşede ise köşe paneline döner.
     // Arka yüz aparatı ön yüzle aynı reçeteden (2026-11-12); kaldırılan arka panel sayılmaz.
     const allBack = collectBackPanelSurfaces(moduleState);
@@ -149,12 +206,13 @@ function resolveModuleEntry(moduleState, index, {
       let backSurfaces = backCollected;
       if (swapBackPanels) backSurfaces = applyCornerPanelSwapToSurfaces(backCollected);
       else if (swapBackBands?.length) backSurfaces = applyCornerPanelBandSwap([], backCollected, swapBackBands).surfaces;
+      if (depotFace === 'back') backSurfaces = splitDepotInnerSurfaces(backSurfaces, moduleState.backStrips).kept;
       lines = mergeBomLines(lines, panelLinesFromSurfaces(backSurfaces));
       surfaces = [...surfaces, ...backSurfaces];
     }
     const glassSplit = applyGlassPanelSplit(lines, surfaces);
     const split = applyMetalSeparatorSplit(glassSplit.lines, surfaces);
-    return Object.freeze({
+    const entry = {
       moduleId,
       index,
       itemKey,
@@ -166,7 +224,14 @@ function resolveModuleEntry(moduleState, index, {
       removedFrontPanels: removedFront.length,
       removedBackPanels: removedBack.length,
       message: null,
+    };
+    // Birleşim / köşe kuralı uygulanmış panel yüzeyleri (atama dökümü ve sahne etiketleri). Yüzey
+    // kimliği taşıdığı için listenin içeriği sayılmaz: JSON'a girmez (enumerable değil).
+    Object.defineProperty(entry, 'panelSurfaces', {
+      value: Object.freeze(surfaces.map((surface) => Object.freeze({ ...surface }))),
+      enumerable: false,
     });
+    return Object.freeze(entry);
   } catch (error) {
     return Object.freeze({
       moduleId,
@@ -385,11 +450,15 @@ export function resolveProjectBom(modules = [], stand = null, assetNames = null)
   );
   const splitFloorLines = stand?.floorArea ? resolveSplitFloorBomLines(stand) : null;
   const floorLine = splitFloorLines ? null : resolveFloorBomLine(stand);
+  const floorPieceLines = splitFloorLines || !stand
+    ? null
+    : floorTilePieceLines(stand, getFloorItem(resolveStandFloorItemKey(stand)));
   const printAreas = collectPrintAreas(list, assetNames);
+  const panelAssignments = summarizePanelAssignments(moduleEntries, assetNames);
   const lines = aggregateLines([
     wallShortLines,
     baza.lines,
-    splitFloorLines ?? (floorLine ? [floorLine] : []),
+    splitFloorLines ?? floorPieceLines ?? (floorLine ? [floorLine] : []),
     resolvePrintProductionLines(printAreas),
     defaultProjectLines(),
   ]);
@@ -409,5 +478,6 @@ export function resolveProjectBom(modules = [], stand = null, assetNames = null)
     appliedTeeCount: adjusted.appliedTeeCount,
     lines: Object.freeze(lines.map(freezeLine)),
     printAreas,
+    panelAssignments,
   });
 }

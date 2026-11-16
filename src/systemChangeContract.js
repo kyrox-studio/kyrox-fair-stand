@@ -169,6 +169,7 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/projectBom.js': frozenDomains('architecture', 'bom'),
   'src/relationshipBom.js': frozenDomains('architecture', 'bom'),
   'src/printAreaBom.js': frozenDomains('bom'),
+  'src/panelAssignmentBom.js': frozenDomains('bom', 'ui'),
   'src/productionBomPanel.js': frozenDomains('bom', 'ui'),
   'src/productionBomPanel.css': frozenDomains('ui'),
   'src/projectActionSaveGuard.js': frozenDomains('ui', 'persistence', 'storage', 'importExport'),

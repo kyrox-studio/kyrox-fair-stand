@@ -24,11 +24,16 @@ function recipePanelParts(moduleState) {
   ));
 }
 
+const PANEL_IDENTITY_TYPES = new Set(['panel', 'separator-panel']);
+
+// Üretim listesinde panel kimliği duvarın reçetesidir; banttaki eksik ya da eskimiş
+// (ör. daraltılmış duvarda kalan panel_197) kimlik reçeteden alınır.
 function withRecipePanelKeys(surfaces, parts) {
   return surfaces.map((surface, index) => {
-    if (!surface || typeof surface !== 'object' || surface.itemKey) return surface;
+    if (!surface || typeof surface !== 'object') return surface;
     const itemKey = parts[index]?.itemKey;
-    if (!itemKey) return surface;
+    if (!itemKey || surface.itemKey === itemKey) return surface;
+    if (surface.itemKey && !PANEL_IDENTITY_TYPES.has(getItem(surface.itemKey)?.type)) return surface;
     return { ...surface, itemKey };
   });
 }

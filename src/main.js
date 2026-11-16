@@ -62,6 +62,8 @@ import {
   getWallUsedCm,
   inferStandEdgeWallId,
   planFreeSideInsertion,
+  seatWallShortStacks,
+  seatWallShortZCm,
   validatePlacementAgainstModules,
   withStandEdgeWallIds,
 } from './modulePlacement.js';
@@ -173,7 +175,7 @@ import {
 } from './profileLength.js';
 import { alignProfileBodyAnchor, findProfileAnchorAt, listProfileAnchorPoints, resolveFreeEndProfile, resolveTwoPointProfile, resolveTwoPointProfileZCm } from './twoPointProfile.js';
 import { describeModuleVariants, resolveModuleVariantItemKey } from './catalogWidthFamily.js';
-import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, listFloorItems, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
+import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, isWallShortFamilyDescriptor, listFloorItems, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
 import {
@@ -191,6 +193,8 @@ import { getFairStandHostDocument, getFairStandHostWindow } from './hostDocument
 import { bootstrapFairStandCatalog } from './catalogBootstrap.js';
 import { bindProjectActionSaveGuard } from './projectActionSaveGuard.js';
 import { createProductionBomPanel } from './productionBomPanel.js';
+import { resolveProjectBom } from './projectBom.js';
+import { formatPanelSceneLabel } from './panelAssignmentBom.js';
 import { waitForNextRender, waitForSceneAssets } from './sceneAssetLoading.js';
 import { PROFILE_FINISH_DEFAULT, normalizeProfileFinish } from './profileFinish.js';
 import { requestConfirmation, requestTextInput } from './inAppDialogs.js';
@@ -487,13 +491,108 @@ let groupTemplates = [];
 const productionBomPanel = createProductionBomPanel();
 productionBomPanel.setModulesSource(() => currentModules);
 productionBomPanel.setStandSource(() => currentStand);
-productionBomPanel.setAssetNamesSource(() => {
+function currentAssetNames() {
   const names = new Map();
   imageAssets.forEach((asset, id) => {
     if (asset?.name) names.set(id, asset.name);
   });
   return names;
-});
+}
+productionBomPanel.setAssetNamesSource(currentAssetNames);
+
+// Panel Ölçüleri: sahnede her panelin üstünde Üretim Listesi'ndeki gerçek ölçü ve ataması,
+// sol altta üç grubun toplamı. Sayım Üretim Listesi ile aynıdır (resolveProjectBom.panelAssignments).
+const togglePanelLabelsButton = document.querySelector('#toggle-panel-labels');
+const panelAssignmentSummary = document.querySelector('#panel-assignment-summary');
+let panelLabelsVisible = false;
+const toggleSkeletonButton = document.querySelector('#toggle-skeleton');
+let skeletonVisible = false;
+
+function hidePanelAssignmentSummary() {
+  if (!panelAssignmentSummary) return;
+  panelAssignmentSummary.hidden = true;
+  panelAssignmentSummary.textContent = '';
+}
+
+function refreshPanelLabels() {
+  if (!panelLabelsVisible || !currentStand || isFairStandDemo()) {
+    if (panelLabelsVisible || panelAssignmentSummary?.hidden === false) scene3d.setPanelLabels(null);
+    // Alt özet kutusunu İskelet kullanıyorsa ona dokunulmaz.
+    if (!skeletonVisible) hidePanelAssignmentSummary();
+    return;
+  }
+  const { panelAssignments } = resolveProjectBom(currentModules, currentStand, currentAssetNames());
+  scene3d.setPanelLabels(panelAssignments.panels.map((panel) => ({
+    surfaceId: panel.surfaceId,
+    text: formatPanelSceneLabel(panel),
+    group: panel.group,
+    color: panel.color,
+  })));
+  if (!panelAssignmentSummary) return;
+  const parts = panelAssignments.groups
+    .filter((group) => group.total > 0)
+    .map((group) => `${group.label}: ${group.total}`);
+  panelAssignmentSummary.textContent = parts.length
+    ? `${parts.join(' · ')} · Toplam ${panelAssignments.total} panel`
+    : 'Sayılan panel yok';
+  panelAssignmentSummary.hidden = false;
+}
+
+function setPanelLabelsVisible(visible) {
+  const wasVisible = panelLabelsVisible;
+  // Panel Ölçüleri ile İskelet aynı anda açık olmaz.
+  if (visible && skeletonVisible) setSkeletonVisible(false);
+  panelLabelsVisible = Boolean(visible);
+  togglePanelLabelsButton?.setAttribute('aria-pressed', String(panelLabelsVisible));
+  togglePanelLabelsButton?.classList.toggle('is-active', panelLabelsVisible);
+  if (wasVisible && !panelLabelsVisible) scene3d.setPanelLabels(null);
+  refreshPanelLabels();
+}
+
+togglePanelLabelsButton?.addEventListener('click', () => setPanelLabelsVisible(!panelLabelsVisible));
+
+// İskelet (kullanıcı kararı 2026-11-16): sahnede yalnız dikme ve profiller, üstlerinde katalog boyu;
+// alt özet Üretim Listesi'ndeki dikme ve profil satırlarıdır (aynı sayım). Yalnız görüntü.
+
+function skeletonSummaryText() {
+  const { lines } = resolveProjectBom(currentModules, currentStand, currentAssetNames());
+  const rows = lines
+    .map((line) => ({ line, item: getItem(line.itemKey) }))
+    .filter(({ item }) => item?.type === 'upright' || item?.type === 'profile')
+    .sort((a, b) => (a.item.type === b.item.type ? 0 : a.item.type === 'upright' ? -1 : 1)
+      || Number(b.item.dimensions?.heightCm ?? b.item.dimensions?.widthCm ?? 0)
+        - Number(a.item.dimensions?.heightCm ?? a.item.dimensions?.widthCm ?? 0));
+  if (!rows.length) return 'Dikme ve profil yok';
+  return rows.map(({ line }) => `${line.name}: ${line.quantity}`).join(' · ');
+}
+
+function refreshSkeleton() {
+  if (!skeletonVisible || !currentStand || isFairStandDemo()) return;
+  scene3d.refreshSkeletonLabels();
+  if (!panelAssignmentSummary) return;
+  panelAssignmentSummary.textContent = skeletonSummaryText();
+  panelAssignmentSummary.hidden = false;
+}
+
+function setSkeletonVisible(visible) {
+  const next = Boolean(visible) && Boolean(currentStand) && !isFairStandDemo();
+  if (next && panelLabelsVisible) setPanelLabelsVisible(false);
+  skeletonVisible = next;
+  toggleSkeletonButton?.setAttribute('aria-pressed', String(skeletonVisible));
+  toggleSkeletonButton?.classList.toggle('is-active', skeletonVisible);
+  scene3d.setSkeletonMode(skeletonVisible);
+  if (skeletonVisible) refreshSkeleton();
+  else if (!panelLabelsVisible) hidePanelAssignmentSummary();
+}
+
+toggleSkeletonButton?.addEventListener('click', () => setSkeletonVisible(!skeletonVisible));
+
+// Üretim Listesi ve Panel Ölçüleri birlikte yenilenir.
+function refreshProductionOutputs() {
+  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshPanelLabels();
+  refreshSkeleton();
+}
 
 function syncProductionBomToggleButton() {
   if (!toggleProductionBomButton) return;
@@ -698,7 +797,11 @@ function renderStageResult(message, isError = false) {
 function setStandEditingEnabled(enabled) {
   if (toggleProductionBomButton) toggleProductionBomButton.disabled = !enabled;
   if (twoPointProfileButton) twoPointProfileButton.disabled = !enabled;
+  if (togglePanelLabelsButton) togglePanelLabelsButton.disabled = !enabled;
+  if (toggleSkeletonButton) toggleSkeletonButton.disabled = !enabled;
   if (!enabled) setTwoPointProfileArmed(false);
+  if (!enabled && panelLabelsVisible) setPanelLabelsVisible(false);
+  if (!enabled && skeletonVisible) setSkeletonVisible(false);
   clearWallButton.disabled = !enabled;
   moduleDragSidebar?.setEnabled(Boolean(enabled && currentStand));
   if (!enabled) {
@@ -809,7 +912,7 @@ function rebuildWall({ resetView = true } = {}) {
   timeSceneRefresh(performance.now() - buildStartedAt);
   renderModuleGroupPanel();
   renderCurrentWallResult();
-  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshProductionOutputs();
   schedulePropertyPanelRefresh();
 }
 
@@ -1102,7 +1205,7 @@ function commitModuleAddition(mutate) {
   }
   renderModuleGroupPanel();
   renderCurrentWallResult();
-  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshProductionOutputs();
 }
 
 // Silme: grup temizliği kalan modüllerden birini değiştirirse tam kurulum; değiştirmezse yalnız
@@ -1123,7 +1226,7 @@ function commitModuleRemoval(index) {
   timeSceneRefresh(performance.now() - buildStartedAt);
   renderModuleGroupPanel();
   renderCurrentWallResult();
-  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshProductionOutputs();
 }
 
 // Bırakılan tek modül sahneye tek başına eklenir; diğer modüllere dokunulmaz. Sahne bunu
@@ -1138,7 +1241,7 @@ function appendModuleToScene(moduleState) {
   timeSceneRefresh(performance.now() - buildStartedAt);
   renderModuleGroupPanel();
   renderCurrentWallResult();
-  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshProductionOutputs();
 }
 
 function commitDroppedCatalogModule(moduleState, dropResult, catalogKey = null) {
@@ -1182,6 +1285,10 @@ function commitDroppedCatalogModule(moduleState, dropResult, catalogKey = null) 
       syncSceneAfterModuleChange(capturedContent);
     } else {
       canonical.placement = { ...dropResult.placement };
+      // Katalogdan bırakılan kısa panel alttaki kısa panel / duvarın tepesine ±25 cm'den oturur.
+      if (isWallShortFamilyDescriptor(canonical)) {
+        canonical.placement.zCm = seatWallShortZCm({ moduleState: canonical, modules: currentModules });
+      }
       currentModules.push(canonical);
       appendModuleToScene(canonical);
     }
@@ -1536,7 +1643,7 @@ async function removeContextPanels() {
   scene3d.clearSelection();
   syncSceneAfterModuleChange(capturedContent);
   selectionInfo.textContent = removed > 1 ? `${removed} panel kaldırıldı.` : 'Panel kaldırıldı.';
-  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshProductionOutputs();
 }
 
 function restoreContextPanels(context) {
@@ -1553,7 +1660,7 @@ function restoreContextPanels(context) {
   if (!restored) return;
   syncSceneAfterModuleChange(capturedContent);
   selectionInfo.textContent = restored > 1 ? `${restored} panel geri eklendi.` : 'Panel geri eklendi.';
-  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshProductionOutputs();
 }
 
 function changeContextFabricMode(context, enabled) {
@@ -1621,6 +1728,7 @@ function changeContextMetalSeparatorMode(context, enabled) {
     return;
   }
   productionBomPanel.refresh();
+  refreshPanelLabels();
   selectionInfo.textContent = result.enabled
     ? `${result.panelCount} panel tek parça metal separatöre çevrildi.`
     : `${result.panelCount} panel normal panele çevrildi.`;
@@ -1636,6 +1744,7 @@ function changeContextPanelGlassMode(context, isGlass) {
 
   scene3d.applyGlassMode(selectedPanels, isGlass);
   productionBomPanel.refresh();
+  refreshPanelLabels();
   const panelCount = selectedPanels.length;
   selectionInfo.textContent = isGlass
     ? `${panelCount} panel cam panele çevrildi.`
@@ -3190,7 +3299,7 @@ floorTypeSelect.addEventListener('change', () => {
   scene3d.setFloorType(floorTypeSelect.value);
   const defaultColor = floorDefaultColorHex(currentStand.itemKey);
   if (getFloorItem(currentStand.itemKey)?.paintable && defaultColor) scene3d.setFloorColor(defaultColor);
-  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshProductionOutputs();
 });
 
 function renderCurrentStandSummaryChip() {
@@ -3541,7 +3650,7 @@ function commitFloorArea(nextArea) {
   scene3d.setFloorAreaDrawArmed(false);
   if (floorAreaDrawButton) floorAreaDrawButton.setAttribute('aria-pressed', 'false');
   syncFloorAreaControls();
-  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshProductionOutputs();
   return checked;
 }
 
@@ -3602,7 +3711,7 @@ floorAreaDeleteButton?.addEventListener('click', () => {
   scene3d.setFloorAreaDrawArmed(false);
   floorAreaDrawButton?.setAttribute('aria-pressed', 'false');
   syncFloorAreaControls();
-  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshProductionOutputs();
 });
 
 function onFloorAreaFieldChange() {
@@ -3977,7 +4086,7 @@ function syncSceneToModules({ rebuiltIds = null } = {}) {
   timeSceneRefresh(performance.now() - buildStartedAt);
   renderModuleGroupPanel();
   renderCurrentWallResult();
-  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshProductionOutputs();
   schedulePropertyPanelRefresh();
 }
 
@@ -4004,6 +4113,9 @@ function syncSceneAfterModuleChange(capturedContent) {
 function syncDesignHistoryButtons({ canUndo, canRedo }) {
   if (designUndoButton) designUndoButton.disabled = !canUndo;
   if (designRedoButton) designRedoButton.disabled = !canRedo;
+  // Renk / görsel değişimi sahneyi yeniden kurmaz; etiketler tasarım adımında tazelenir.
+  refreshPanelLabels();
+  refreshSkeleton();
 }
 
 const designHistory = createDesignHistory({
@@ -4100,7 +4212,7 @@ async function persistActiveProject({ quiet = false, reason = 'design' } = {}) {
   await refreshProjectList(stored.id);
   syncHostProjectUrl(stored.id);
   if (!quiet) projectStatus.textContent = 'Kaydedildi: ' + stored.name;
-  if (productionBomPanel.isOpen()) productionBomPanel.refresh();
+  refreshProductionOutputs();
   return { enableAutosave: revisionSession.mode === 'live', stored };
 }
 
@@ -4130,6 +4242,8 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
   activeProjectCreatedAt = Number(project.createdAt) || Date.now();
   setProjectName(project.name || 'Adsız Proje');
   currentModules = (cloneProjectState(project.modules) || []).map(normalizeModuleItemState);
+  // Açılış onarımı: binen ya da arada az boşluk kalan kısa paneller alttakinin tepesine oturur.
+  seatWallShortStacks(currentModules);
   currentStand = cloneProjectState(project.stand);
   syncBoothTypeHeading();
   setActiveWallLineHeightCm(activeWallHeightCm());

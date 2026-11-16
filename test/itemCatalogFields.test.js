@@ -128,7 +128,7 @@ test('mevcut katalog Item listesi ve grup sırası değişmemiştir', () => {
 
 test('106 Item katalog metadata alanlarını taşır ve canlı katalog üyeliğiyle birebir örtüşür', () => {
   const items = listRegisteredItems();
-  assert.equal(items.length, 133);
+  assert.equal(items.length, 138);
 
   let visibleCount = 0;
   let missingVisible = 0;

@@ -22,7 +22,7 @@ const COLOR_TYPES = new Set([
 
 function expectedFlags(item) {
   // profile_8: yalnız uzun parça bölünüşünün parçası (0079), sahnede çizilmez.
-  if (item.type === 'floor' || item.type === 'panel-glass' || item.itemKey === 'shelf_leg' || item.itemKey === 'profile_8'
+  if (item.type === 'floor' || item.type === 'floor-piece' || item.type === 'panel-glass' || item.itemKey === 'shelf_leg' || item.itemKey === 'profile_8'
     || ['shelf_100_self', 'shelf_150_self', 'shelf_200_self'].includes(item.itemKey)) {
     return { isRender: false, color: false, image: false, lightbox: false, glass: false, mesh: false };
   }
@@ -57,7 +57,7 @@ function expectedFlags(item) {
 
 test('every catalog item surface flag matches the scene audit', () => {
   const items = listRegisteredItems();
-  assert.equal(items.length, 133);
+  assert.equal(items.length, 138);
   for (const item of items) {
     const expected = expectedFlags(item);
     assert.deepEqual({
