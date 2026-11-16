@@ -5718,8 +5718,11 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
         return;
       }
 
+      // Sahip modül sırası kayıttaki sahip yüzey sırasından gelir: modül yeniden kurulunca sahnedeki
+      // çizim sırası değişse de kayıt değişmez (2026-11-16, yan yana birleşimde komşu yeniden kurulur).
+      const moduleBySurfaceId = new Map(ownedSurfaces.map((surface) => [surface.userData?.surfaceId, surface.userData?.moduleId]));
       const ownerModuleIds = [...new Set(
-        ownedSurfaces.map((surface) => surface.userData?.moduleId).filter(Boolean),
+        ownerSurfaceIds.map((surfaceId) => moduleBySurfaceId.get(surfaceId)).filter(Boolean),
       )];
       ownedSurfaces.forEach((surface) => {
         writePersistentSurface(surface, (state) => {
