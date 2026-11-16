@@ -16,6 +16,7 @@ import {
   detectShortRunInfills,
 } from './relationshipBom.js';
 import { getItem, isWallShortFamilyDescriptor } from './items.js';
+import { resolveBoxRunEnds } from './boxRunJoints.js';
 import {
   getModuleFootprintBoundsCm,
   isProfileFlushOnFrameEnd,
@@ -161,7 +162,21 @@ export function resolveWallCornerEnds(modules = []) {
   addShortStackEnds(list, result);
   addShortRailRuns(list, result);
   addRunInfills(list, result);
+  addBoxRunEnds(list, result);
   return result;
+}
+
+/** Yan yana baza / banko birleşimi (`boxRunJoints.js`): `{ boxRun: true, localXSign, ownsPost }`. */
+function addBoxRunEnds(list, result) {
+  let ends;
+  try {
+    ends = resolveBoxRunEnds(list);
+  } catch {
+    return;
+  }
+  for (const [moduleId, entries] of ends) {
+    result.set(moduleId, [...(result.get(moduleId) ?? []), ...entries]);
+  }
 }
 
 /**

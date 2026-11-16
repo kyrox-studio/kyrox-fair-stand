@@ -63,9 +63,10 @@ const RECIPE = Object.freeze({
   wall_100_short_2: { profile_91: 2, upright_99: 2, panel_98: 2, connector_start: 2, connector_single: 3 },
   wall_150_short_2: { profile_140_5: 2, upright_99: 2, panel_147_5: 2, connector_start: 2, connector_single: 3 },
   wall_200_short_2: { profile_190: 2, upright_99: 2, panel_197: 2, connector_start: 2, connector_single: 3 },
-  base_100: { profile_91: 4, profile_41_5: 4, upright_49_5: 4, panel_98: 2, panel_48_5: 2, connector_start: 8, connector_single: 8, base_top_107_50: 1 },
-  base_150: { profile_140_5: 4, profile_41_5: 4, upright_49_5: 4, panel_147_5: 2, panel_48_5: 2, connector_start: 8, connector_single: 8, base_top_157_50: 1 },
-  base_200: { profile_190: 4, profile_41_5: 4, upright_49_5: 4, panel_197: 2, panel_48_5: 2, connector_start: 8, connector_single: 8, base_top_206_50: 1 },
+  // Baza: arka yüz panelsiz (kullanıcı kararı 2026-11-16), uzun panel 1 ve başlangıç 6; katalog reçetesi 2 yazar.
+  base_100: { profile_91: 4, profile_41_5: 4, upright_49_5: 4, panel_98: 1, panel_48_5: 2, connector_start: 6, connector_single: 8, base_top_107_50: 1 },
+  base_150: { profile_140_5: 4, profile_41_5: 4, upright_49_5: 4, panel_147_5: 1, panel_48_5: 2, connector_start: 6, connector_single: 8, base_top_157_50: 1 },
+  base_200: { profile_190: 4, profile_41_5: 4, upright_49_5: 4, panel_197: 1, panel_48_5: 2, connector_start: 6, connector_single: 8, base_top_206_50: 1 },
   desk_banko_100: { profile_91: 3, profile_41_5: 4, upright_99: 4, panel_98: 2, panel_48_5: 4, connector_start: 6, connector_single: 12, counter_top_110_60: 1 },
   desk_banko_150: { profile_140_5: 3, profile_41_5: 4, upright_99: 4, panel_147_5: 2, panel_48_5: 4, connector_start: 6, connector_single: 12, counter_top_160_60: 1 },
   desk_banko_200: { profile_190: 3, profile_41_5: 4, upright_99: 4, panel_197: 2, panel_48_5: 4, connector_start: 6, connector_single: 12, counter_top_210_60: 1 },

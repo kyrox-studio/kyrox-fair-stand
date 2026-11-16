@@ -35,6 +35,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 - `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/baseRunBom.js`
+- `src/boxRunJoints.js`
 - `src/panelRemovalBom.js`
 - `src/relationshipBom.js`
 

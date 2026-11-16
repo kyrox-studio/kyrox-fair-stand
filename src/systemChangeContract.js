@@ -91,6 +91,7 @@ export const SOURCE_FILE_REQUIRED_DOMAINS = Object.freeze({
   'src/autosaveController.js': frozenDomains('persistence'),
   'src/autosaveSettings.js': frozenDomains('persistence', 'ui'),
   'src/baseRunBom.js': frozenDomains('bom'),
+  'src/boxRunJoints.js': frozenDomains('bom', 'renderer', 'placement'),
   'src/catalog.js': frozenDomains('catalog'),
   'src/catalogBootstrap.js': frozenDomains('catalog', 'architecture'),
   'src/catalogPreviewRenderer.js': frozenDomains('catalog', 'ui', 'architecture'),

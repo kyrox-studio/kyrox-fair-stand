@@ -39,8 +39,10 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `desk_banko_100`, `desk_
 ## Testler
 
 - `backend/tests/modules/fair_stand/test_item_unit_fk_migration.py`
+- `e2e/desk-banko-items-contract.spec.mjs`
 - `e2e/flat-panel-back-strips.spec.mjs`
 - `e2e/panel-removal.spec.mjs`
+- `test/baseFacePanelIdentity.test.js`
 - `test/baseItemsContract.test.js`
 - `test/baseRecipes.test.js`
 - `test/baseRunBom.test.js`

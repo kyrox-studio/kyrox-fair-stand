@@ -1,9 +1,11 @@
 {
   "schemaVersion": 2,
-  "id": "ara-profil-iskelet-parca-bolunusu",
+  "id": "ara-profil-iskelet-baza-banko-birlesimi",
   "kind": "feature",
-  "summary": "Kısa panel ray açıklığının içindeki birleşimde taşıyıcı olmayan dikme, dikmeden 8 cm kısa ara profil sayılır ve çizilir (49,5 → 41,5, 99 → 91, 148,5 → 140,5, 198 → 190); İskelet etiketi ve alt özeti uzun parçayı bölünüşüyle yazar (388 (346,5 + 41,5)).",
+  "summary": "Kısa panel açıklığı içindeki taşıyıcısız ortak uçta dikme yerine 8 cm kısa ara profil (49,5 → 41,5, 99 → 91); İskelet uzun parçayı bölünüşüyle yazar (388 (346,5 + 41,5)); yan yana baza ve düz bankoda ortak uçtaki dikme ve 41,5 listede ve sahnede tek, aradaki yan paneller ve aparatları düşer; baza / banko yüzlerinin listedeki panel kimliği yeniden yüz rolünden gelir (#385 gerilemesi); bazanın arka yüzü panelsiz: serbest bazada uzun panel 1, başlangıç 2 eksik.",
   "owners": [
+    "src/boxRunJoints.js",
+    "src/projectBom.js",
     "src/relationshipBom.js",
     "src/wallCornerJoints.js",
     "src/scene3d.js",
@@ -12,6 +14,8 @@
     "src/productionBomPanel.js"
   ],
   "sourceOfTruth": [
+    "src/boxRunJoints.js",
+    "src/baseRunBom.js",
     "src/relationshipBom.js",
     "src/wallCornerJoints.js",
     "src/items.js"
@@ -41,6 +45,7 @@
       "backend/app/modules/fair_stand/infrastructure/variant_family_seed.py",
       "backend/scripts/verify_live_item_type_placement_motor.mjs",
       "backend/tests/modules/fair_stand/test_admin_catalog_api.py",
+      "backend/tests/modules/fair_stand/test_live_share.py",
       "index.html",
       "scripts/archive/add-tv-sizes.py",
       "scripts/archive/add-video-wall-2x2.py",
@@ -54,12 +59,14 @@
       "src/automaticWall.js",
       "src/baseRunBom.js",
       "src/bomLineGroups.js",
+      "src/boxRunJoints.js",
       "src/catalog.js",
       "src/catalogBootstrap.js",
       "src/catalogPreviewRenderer.js",
       "src/catalogWidthFamily.js",
       "src/configuratorStyles.js",
       "src/designState.js",
+      "src/featureContracts.js",
       "src/floorArea.js",
       "src/groundLayout.js",
       "src/groupTemplates.js",
@@ -102,7 +109,7 @@
       "src/standStandardsCopy.js",
       "src/stripOccupancy.js",
       "src/style.css",
-      "src/systemChangeContract.js",
+      "src/surfaceStateBinding.js",
       "src/twoPointProfile.js",
       "src/uprightHeight.js",
       "src/viewCube.js",
@@ -117,10 +124,12 @@
       "e2e/base-edge-under-fascia.spec.mjs",
       "e2e/box-block-corners.spec.mjs",
       "e2e/box-block-face-image-restore.spec.mjs",
+      "e2e/box-run-shared-post.spec.mjs",
       "e2e/camera-pointer-lifecycle.spec.mjs",
       "e2e/catalog-drop-append.spec.mjs",
       "e2e/demo-host.html",
       "e2e/design-undo.spec.mjs",
+      "e2e/desk-banko-items-contract.spec.mjs",
       "e2e/double-click-select.spec.mjs",
       "e2e/duplicate-metal-separator.spec.mjs",
       "e2e/f010-module-construction.spec.mjs",
@@ -197,6 +206,7 @@
       "test/bomLineGroups.test.js",
       "test/boothTypes.test.js",
       "test/boxBlockModule.test.js",
+      "test/boxRunJoints.test.js",
       "test/bundleLoadingContract.test.js",
       "test/canonicalDimensionDedup.test.js",
       "test/catalogCategories.test.js",
@@ -462,10 +472,13 @@
       "ROADMAP.md",
       "ROADMAP_PHASE_4.md",
       "SYSTEM_AUDIT_CHECKLIST.md",
+      "SYSTEM_CHANGE_GATE.md",
       "SYSTEM_DEVELOPMENT_CONTRACT.md",
       "SYSTEM_MODULE_CATALOG.md",
       "audit/FINDINGS.md",
+      "audit/FULL_SWEEP_STATE.md",
       "audit/SISTEM_MUTABAKAT_RAPORU.md",
+      "audit/evidence/A01_DOCS_SOURCE_OF_TRUTH.md",
       "audit/evidence/A02_CHANGE_GATE.md",
       "audit/evidence/A03_ARCHITECTURE.md",
       "audit/evidence/A04_CATALOG_MODULE_CONTRACTS.md",
@@ -477,12 +490,15 @@
       "audit/evidence/A13_STORAGE_ASSETS_REFERENCES.md",
       "audit/evidence/A17_PERFORMANCE_BUNDLE_RENDER_LIFECYCLE.md",
       "audit/evidence/A22_FILE_BY_FILE_SWEEP.md",
+      "audit/remediation/A02_CLOSURE.md",
       "audit/remediation/A02_F005_CLOSURE.md",
+      "audit/remediation/A02_F006_CLOSURE.md",
       "audit/remediation/A03_CLOSURE.md",
       "audit/remediation/A03_F010_CLOSURE.md",
       "audit/remediation/A03_F011_CLOSURE.md",
       "audit/remediation/A03_F012_CLOSURE.md",
       "audit/remediation/A04_F013_CLOSURE.md",
+      "audit/remediation/A07_F017_CLOSURE.md",
       "audit/remediation/A11_F029_CLOSURE.md",
       "docs/AUTOSAVE_INTEGRATION_NOTES.md",
       "docs/items/contract/ITEM_CONTRACT.md",
@@ -656,7 +672,7 @@
         "F-033"
       ]
     },
-    "notes": "Üretim Listesi: kısa panel açıklığı içindeki taşıyıcısız ortak uçta dikme yerine ara profil (applyRunInfillProfiles); aparat değişmez. Sahne: aynı nokta profil olarak çizilir ve İskelet etiketi profil alır (detectShortRunInfills → addRunInfills). Etiket: withItemLengthParts Üretim Listesi, İskelet etiketi ve özetinde ortak. Şema, API, migration yok."
+    "notes": "Üretim Listesi: kısa panel açıklığı içindeki taşıyıcısız ortak uçta dikme yerine ara profil (applyRunInfillProfiles); aparat değişmez. Sahne: aynı nokta profil olarak çizilir ve İskelet etiketi profil alır (detectShortRunInfills → addRunInfills). Etiket: withItemLengthParts Üretim Listesi, İskelet etiketi ve özetinde ortak. Baza / banko birleşimi: boxRunJoints.js (detectBoxRunJoints, applyBoxRunEntries, resolveBoxRunEnds) → projectBom ve scene3d boxRunFrameParts. Şema, API, migration yok."
   },
   "tests": {
     "targeted": [
@@ -672,14 +688,17 @@
       "required": true,
       "targeted": [
         "e2e/skeleton-view.spec.mjs",
-        "e2e/short-joint-structural-upright.spec.mjs"
+        "e2e/short-joint-structural-upright.spec.mjs",
+        "e2e/box-run-shared-post.spec.mjs",
+        "e2e/base-corner-upright-bom.spec.mjs",
+        "e2e/desk-banko-items-contract.spec.mjs"
       ],
       "reason": "İskelet etiketi / özeti ve kısa panel ortak ucu tarayıcıda kontrol edilir."
     }
   },
   "risk": {
     "level": "medium",
-    "notes": "Üretim Listesi adedi değişir: yan yana kısa panellerin açıklık içindeki ortak ucunda dikme 1 azalır, ara profil 1 artar. Kayıtlı proje verisi değişmez."
+    "notes": "Üretim Listesi adedi değişir: kısa panel açıklığında ortak uçta dikme 1 azalır, ara profil 1 artar; yan yana bankoda birleşim başına dikme 2, 41,5 2, yan panel 4, başlangıç 4, tekli 8 azalır. Kayıtlı proje verisi değişmez."
   },
   "migration": {
     "required": false,

@@ -128,7 +128,40 @@ let renderCornerEndsByModule = new Map();
 // Sahne dışı çizim (sürükleme silüeti, moduleIndex < 0) tek başına çizilir: köşe kuralı yok.
 function cornerEndsForModule(moduleState, moduleIndex) {
   if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
-  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => !end.stack && !end.railRun && !end.infill);
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => !end.stack && !end.railRun && !end.infill && !end.boxRun);
+}
+
+// Yan yana baza / banko birleşim uçları (`boxRunJoints.js`); yalnız sahnedeki modül.
+function boxRunEndsForModule(moduleState, moduleIndex) {
+  if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => end.boxRun);
+}
+
+// Birleşimde baza / banko çerçevesi: dikmeyi çizmeyen uçta (ownsPost false) iki köşe dikmesi ve yan
+// raylar çizilmez, ön ray birleşim çizgisine kadar uzar; iki modülde de içteki yan yüzler çizilmez.
+function boxRunFrameParts({ widthM, depthM, profileM, frameDepthM }, ends) {
+  const skipSides = new Set(ends.filter((end) => !end.ownsPost).map((end) => end.localXSign));
+  const innerSides = new Set(ends.map((end) => end.localXSign));
+  const posts = [-1, 1]
+    .filter((xSide) => !skipSides.has(xSide))
+    .flatMap((xSide) => [-1, 1].map((zSide) => [
+      xSide * (widthM / 2 - profileM / 2),
+      zSide * (depthM / 2 - profileM / 2),
+    ]));
+  const extendLeft = skipSides.has(-1) ? profileM : 0;
+  const extendRight = skipSides.has(1) ? profileM : 0;
+  const rails = [
+    {
+      axis: 'x',
+      length: Math.max(widthM - profileM * 2, 0.02) + extendLeft + extendRight,
+      x: (extendRight - extendLeft) / 2,
+      z: depthM / 2 - frameDepthM / 2,
+    },
+    ...[-1, 1]
+      .filter((xSide) => !skipSides.has(xSide))
+      .map((xSide) => ({ axis: 'z', length: Math.max(depthM - profileM * 2, 0.02), x: xSide * (widthM / 2 - frameDepthM / 2), z: 0 })),
+  ];
+  return { posts, rails, innerSides };
 }
 
 // Açıklık içi ara profil uçları (`wallCornerJoints.js` addRunInfills).
@@ -11012,8 +11045,6 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
   // Panel yüzü çerçevenin dış kenarından sağ/solda PANEL_FRAME_SIDE_INSET_M, alt/üstte PANEL_FRAME_INSET_M içeride biter.
   const frontPanelWidthM = Math.max(widthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
   const sidePanelWidthM = Math.max(depthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
-  const railSpanXM = Math.max(widthM - profileM * 2, 0.02);
-  const railSpanZM = Math.max(depthM - profileM * 2, 0.02);
   const group = new THREE.Group();
   group.userData = {
     kind: 'module',
@@ -11032,16 +11063,11 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
   });
   // Baza dış ölçüsü korunur; ara yatay profil yok (her yüz tek panel).
   const railYs = [0, frameHeightM];
+  // Yan yana bazada ortak uç tek çizilir (`boxRunJoints.js`, 2026-11-16).
+  const boxRun = boxRunFrameParts({ widthM, depthM, profileM, frameDepthM }, boxRunEndsForModule(moduleState, moduleIndex));
   addBoxModuleFrame(group, frameMaterial, {
-    posts: [-1, 1].flatMap((xSide) => [-1, 1].map((zSide) => [
-      xSide * (widthM / 2 - profileM / 2),
-      zSide * (depthM / 2 - profileM / 2),
-    ])),
-    rails: [
-      { axis: 'x', length: railSpanXM, x: 0, z: depthM / 2 - frameDepthM / 2 },
-      { axis: 'z', length: railSpanZM, x: -(widthM / 2 - frameDepthM / 2), z: 0 },
-      { axis: 'z', length: railSpanZM, x: widthM / 2 - frameDepthM / 2, z: 0 },
-    ],
+    posts: boxRun.posts,
+    rails: boxRun.rails,
     railYs,
     frameHeightM,
     profileM,
@@ -11117,8 +11143,8 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
   };
 
   addPanelFace('front', moduleState.faces?.front, frontPanelWidthM, new THREE.Vector3(0, panelCenterY, depthM / 2), new THREE.Vector3(0, 0, 1));
-  addPanelFace('left', moduleState.faces?.left, sidePanelWidthM, new THREE.Vector3(-widthM / 2, panelCenterY, 0), new THREE.Vector3(-1, 0, 0), -Math.PI / 2);
-  addPanelFace('right', moduleState.faces?.right, sidePanelWidthM, new THREE.Vector3(widthM / 2, panelCenterY, 0), new THREE.Vector3(1, 0, 0), Math.PI / 2);
+  if (!boxRun.innerSides.has(-1)) addPanelFace('left', moduleState.faces?.left, sidePanelWidthM, new THREE.Vector3(-widthM / 2, panelCenterY, 0), new THREE.Vector3(-1, 0, 0), -Math.PI / 2);
+  if (!boxRun.innerSides.has(1)) addPanelFace('right', moduleState.faces?.right, sidePanelWidthM, new THREE.Vector3(widthM / 2, panelCenterY, 0), new THREE.Vector3(1, 0, 0), Math.PI / 2);
   mountRecipeTopSurface(top, moduleState.renderParts?.tops?.[0], moduleState, 'base', moduleIndex, surfaces, onSurfaceReady);
 
   return { group, surfaces };
@@ -11146,8 +11172,6 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   // Panel yüzü çerçevenin dış kenarından sağ/solda PANEL_FRAME_SIDE_INSET_M, alt/üstte PANEL_FRAME_INSET_M içeride biter.
   const frontPanelWidthM = Math.max(widthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
   const sidePanelWidthM = Math.max(depthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
-  const railSpanXM = Math.max(widthM - profileM * 2, 0.02);
-  const railSpanZM = Math.max(depthM - profileM * 2, 0.02);
   const group = new THREE.Group();
   group.userData = {
     kind: 'module',
@@ -11167,16 +11191,11 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   // 4 köşe dikmesi; ara yatay profil kaldırıldı, yalnız en alt ve en üst profil kalır.
   const railYs = [0, frameHeightM];
   const frameDepthM = getProceduralFrameCrossSectionM(moduleState).frameDepth;
+  // Yan yana bankoda ortak uç tek çizilir (`boxRunJoints.js`, 2026-11-16).
+  const boxRun = boxRunFrameParts({ widthM, depthM, profileM, frameDepthM }, boxRunEndsForModule(moduleState, moduleIndex));
   addBoxModuleFrame(group, frameMaterial, {
-    posts: [-1, 1].flatMap((xSide) => [-1, 1].map((zSide) => [
-      xSide * (widthM / 2 - profileM / 2),
-      zSide * (depthM / 2 - profileM / 2),
-    ])),
-    rails: [
-      { axis: 'x', length: railSpanXM, x: 0, z: depthM / 2 - frameDepthM / 2 },
-      { axis: 'z', length: railSpanZM, x: -(widthM / 2 - frameDepthM / 2), z: 0 },
-      { axis: 'z', length: railSpanZM, x: widthM / 2 - frameDepthM / 2, z: 0 },
-    ],
+    posts: boxRun.posts,
+    rails: boxRun.rails,
     railYs,
     frameHeightM,
     profileM,
@@ -11266,10 +11285,14 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
 
   addFace('front', 'lower', moduleState.faces?.frontLower, frontPanelWidthM, new THREE.Vector3(0, lowerY, depthM / 2), front);
   addFace('front', 'upper', moduleState.faces?.frontUpper, frontPanelWidthM, new THREE.Vector3(0, upperY, depthM / 2), front);
-  addFace('left', 'lower', moduleState.faces?.leftLower, sidePanelWidthM, new THREE.Vector3(-widthM / 2, lowerY, 0), left, -Math.PI / 2);
-  addFace('left', 'upper', moduleState.faces?.leftUpper, sidePanelWidthM, new THREE.Vector3(-widthM / 2, upperY, 0), left, -Math.PI / 2);
-  addFace('right', 'lower', moduleState.faces?.rightLower, sidePanelWidthM, new THREE.Vector3(widthM / 2, lowerY, 0), right, Math.PI / 2);
-  addFace('right', 'upper', moduleState.faces?.rightUpper, sidePanelWidthM, new THREE.Vector3(widthM / 2, upperY, 0), right, Math.PI / 2);
+  if (!boxRun.innerSides.has(-1)) {
+    addFace('left', 'lower', moduleState.faces?.leftLower, sidePanelWidthM, new THREE.Vector3(-widthM / 2, lowerY, 0), left, -Math.PI / 2);
+    addFace('left', 'upper', moduleState.faces?.leftUpper, sidePanelWidthM, new THREE.Vector3(-widthM / 2, upperY, 0), left, -Math.PI / 2);
+  }
+  if (!boxRun.innerSides.has(1)) {
+    addFace('right', 'lower', moduleState.faces?.rightLower, sidePanelWidthM, new THREE.Vector3(widthM / 2, lowerY, 0), right, Math.PI / 2);
+    addFace('right', 'upper', moduleState.faces?.rightUpper, sidePanelWidthM, new THREE.Vector3(widthM / 2, upperY, 0), right, Math.PI / 2);
+  }
   mountRecipeTopSurface(top, moduleState.renderParts?.tops?.[0], moduleState, 'counter', moduleIndex, surfaces, onSurfaceReady);
 
   return { group, surfaces };

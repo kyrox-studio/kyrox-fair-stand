@@ -535,6 +535,16 @@ export function applyCounterFacePanelIdentity(faces, parentItem, mode) {
   }
 }
 
+/**
+ * Baza / banko yüzünün reçetedeki panel kimliği yüzün rolünden gelir (sıradan değil): ön geniş,
+ * yanlar dar; L bankoda ön ve sağ geniş. Üretim Listesi ve panel dökümü de bunu kullanır.
+ */
+export function resolveBoxFacePanelItemKey(faceKey, parentItem) {
+  if (!parentItem || typeof faceKey !== 'string') return null;
+  const parts = embeddedRenderParts(parentItem, ['panel', 'separator-panel']);
+  return selectCounterPanel(parts, counterFaceUsesWidePanel(faceKey, parentItem))?.itemKey ?? null;
+}
+
 function resolveCounterItemKey(widthCmOrDescriptor, options = {}) {
   if (widthCmOrDescriptor && typeof widthCmOrDescriptor === 'object' && !Array.isArray(widthCmOrDescriptor)) {
     const explicitKey = widthCmOrDescriptor.itemKey ?? null;

@@ -15,6 +15,16 @@ Bu dosya Item mimarisine geçişin değişiklik günlüğüdür (2026-09-16 … 
 
 ---
 
+## 2026-11-16 — Yan yana baza ve bankoda ortak dikme tek
+
+**Ürün kararı:** Yan yana bazada liste ortak uçtaki dikmeyi zaten tek sayıyordu (`baseRunBom.js`), sahne iki dikme çiziyordu; sahne listeye uyar. Bankoda da aynı kural: uç uca iki düz banko birleşince ortak uçtaki iki dikme ve iki 41,5 tek sayılır ve tek çizilir, aradaki yan paneller ve aparatları düşer.
+
+**Kod:** `src/boxRunJoints.js` birleşimi tek yerde bulur (aynı aile, aynı hat, derinlik, kot ve yükseklik; uçlar ±0,5 cm). `applyBoxRunEntries` (`projectBom.js`) bankonun satırlarından ortak ucu ve içteki yan panelleri düşer, iki ailede içteki yüzleri panel dökümünden çıkarır. `resolveBoxRunEnds` → `wallCornerJoints.js` `addBoxRunEnds` → `scene3d.js` `boxRunFrameParts`: sonraki modül o uçta dikme ve yan ray çizmez, ön rayı birleşime kadar uzar; içteki yan yüzler çizilmez.
+
+**Baza arka paneli (aynı gün kullanıcı kararı):** bazanın arka yüzü panelsizdir; liste her bazada 1 uzun panel sayar (n baza: n + 2 panel), modül satırı da (`baseRunBom.js` `withoutBaseBackPanel`). Panel dökümü ve sahne ile aynı.
+
+**Gerileme düzeltmesi (aynı gün):** #385'te `collectPanelSurfaces` yüzlere reçete sırasıyla panel kimliği yazınca 2026-11-13 kararı (ön geniş, yanlar dar; proje 452d4cc1) liste tarafında bozuldu: bazada sol yanak, L bankoda sol / sağ yüzler yanlış panel sayılıyordu (panel dökümü, cam ikizi). Baza / banko yüzü artık rolünden kimlik alır (`designState.js` `resolveBoxFacePanelItemKey`, `panelGlassBom.js`); duvar bantları sıradan onarılmaya devam eder. Testler liste katmanını da kapsar (`test/baseFacePanelIdentity.test.js`, `e2e/desk-banko-items-contract.spec.mjs` ölçü değişiminden sonra yüz kimliği).
+
 ## 2026-11-13 — Profil gerçek boyundaki aralığa oturur; H / U köşe; uç dikmesi
 
 Kullanıcı projesi 452d4cc1 üzerinde, 5176 önizlemesinde kullanıcıyla birlikte denendi.

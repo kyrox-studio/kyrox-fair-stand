@@ -1,4 +1,5 @@
 import { getItem, listEmbeddedRenderParts } from './items.js';
+import { resolveBoxFacePanelItemKey } from './designState.js';
 
 const STRAIGHT_PANEL_RE = /^panel_(48_5|98|147_5|197)$/;
 const CORNER_PANEL_RE = /^panel_corner_(42_5|92|142_5|192)$/;
@@ -28,15 +29,18 @@ const PANEL_IDENTITY_TYPES = new Set(['panel', 'separator-panel']);
 
 // Üretim listesinde panel kimliği duvarın reçetesidir; banttaki eksik ya da eskimiş
 // (ör. daraltılmış duvarda kalan panel_197) kimlik reçeteden alınır.
-function withRecipePanelKeys(surfaces, parts) {
-  return surfaces.map((surface, index) => {
-    if (!surface || typeof surface !== 'object') return surface;
-    const itemKey = parts[index]?.itemKey;
-    if (!itemKey || surface.itemKey === itemKey) return surface;
-    if (surface.itemKey && !PANEL_IDENTITY_TYPES.has(getItem(surface.itemKey)?.type)) return surface;
-    return { ...surface, itemKey };
-  });
+function withPanelKey(surface, itemKey) {
+  if (!surface || typeof surface !== 'object') return surface;
+  if (!itemKey || surface.itemKey === itemKey) return surface;
+  if (surface.itemKey && !PANEL_IDENTITY_TYPES.has(getItem(surface.itemKey)?.type)) return surface;
+  return { ...surface, itemKey };
 }
+
+function withRecipePanelKeys(surfaces, parts) {
+  return surfaces.map((surface, index) => withPanelKey(surface, parts[index]?.itemKey));
+}
+
+const BOX_FACE_TYPES = new Set(['base', 'counter']);
 
 /** Arka yüz paneli (`backStrips`): panel kimliği ön yüzle aynı duvar reçetesinden gelir. */
 export function collectBackPanelSurfaces(moduleState) {
@@ -66,7 +70,15 @@ export function collectPanelSurfaces(moduleState) {
     surfaces.push(...withRecipePanelKeys(moduleState.strips, parts));
   }
   if (moduleState?.faces && typeof moduleState.faces === 'object') {
-    surfaces.push(...withRecipePanelKeys(Object.values(moduleState.faces), parts));
+    const parent = moduleState?.itemKey ? getItem(moduleState.itemKey) : null;
+    if (BOX_FACE_TYPES.has(parent?.type)) {
+      // Baza / banko yüzü sıradan değil rolünden kimlik alır (ön geniş, yanlar dar; L'de sağ da geniş).
+      surfaces.push(...Object.entries(moduleState.faces).map(([faceKey, surface]) => (
+        withPanelKey(surface, resolveBoxFacePanelItemKey(faceKey, parent))
+      )));
+    } else {
+      surfaces.push(...withRecipePanelKeys(Object.values(moduleState.faces), parts));
+    }
   }
   if (moduleState?.surface && typeof moduleState.surface === 'object') {
     surfaces.push(moduleState.surface);

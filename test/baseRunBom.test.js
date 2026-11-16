@@ -35,14 +35,15 @@ function host(id, itemKey, widthCm, { xCm = 0, yCm = 0, rotationZDeg = 0 } = {})
   };
 }
 
+// Bazanın arka yüzü panelsizdir (kullanıcı kararı 2026-11-16): serbest bazada uzun panel 1, başlangıç 6.
 test('one baza keeps its solo recipe', () => {
   const bom = resolveProjectBom([baza('a', 'base_200', 200, { xCm: 0 })]);
   assert.equal(qty(bom, 'profile_190'), 4);
-  assert.equal(qty(bom, 'panel_197'), 2);
+  assert.equal(qty(bom, 'panel_197'), 1);
   assert.equal(qty(bom, 'upright_49_5'), 4);
   assert.equal(qty(bom, 'profile_41_5'), 4);
   assert.equal(qty(bom, 'panel_48_5'), 2);
-  assert.equal(qty(bom, 'connector_start'), 8);
+  assert.equal(qty(bom, 'connector_start'), 6);
   assert.equal(qty(bom, 'connector_single'), 8);
   assert.equal(qty(bom, 'base_top_206_50'), 1);
 });
@@ -55,9 +56,9 @@ test('two, three and four free baza 200 rows follow the run formula', () => {
   assert.equal(qty(two, 'profile_190'), 8);
   assert.equal(qty(two, 'profile_41_5'), 6);
   assert.equal(qty(two, 'upright_49_5'), 6);
-  assert.equal(qty(two, 'panel_197'), 4);
+  assert.equal(qty(two, 'panel_197'), 2);
   assert.equal(qty(two, 'panel_48_5'), 2);
-  assert.equal(qty(two, 'connector_start'), 12);
+  assert.equal(qty(two, 'connector_start'), 8);
   assert.equal(qty(two, 'connector_single'), 10);
   assert.equal(qty(two, 'base_top_206_50'), 2);
 
@@ -68,9 +69,9 @@ test('two, three and four free baza 200 rows follow the run formula', () => {
   ]);
   assert.equal(qty(three, 'profile_190'), 12);
   assert.equal(qty(three, 'upright_49_5'), 8);
-  assert.equal(qty(three, 'panel_197'), 6);
+  assert.equal(qty(three, 'panel_197'), 3);
   assert.equal(qty(three, 'panel_48_5'), 2);
-  assert.equal(qty(three, 'connector_start'), 16);
+  assert.equal(qty(three, 'connector_start'), 10);
   assert.equal(qty(three, 'connector_single'), 12);
 
   const four = resolveProjectBom([
@@ -82,8 +83,8 @@ test('two, three and four free baza 200 rows follow the run formula', () => {
   assert.equal(qty(four, 'profile_190'), 16);
   assert.equal(qty(four, 'profile_41_5'), 10);
   assert.equal(qty(four, 'upright_49_5'), 10);
-  assert.equal(qty(four, 'panel_197'), 8);
-  assert.equal(qty(four, 'connector_start'), 20);
+  assert.equal(qty(four, 'panel_197'), 4);
+  assert.equal(qty(four, 'connector_start'), 12);
   assert.equal(qty(four, 'connector_single'), 14);
   assert.equal(qty(four, 'base_top_206_50'), 4);
 });
@@ -95,10 +96,10 @@ test('mixed widths share the short end and keep their own long parts', () => {
   ]);
   assert.equal(qty(bom, 'profile_190'), 4);
   assert.equal(qty(bom, 'profile_140_5'), 4);
-  assert.equal(qty(bom, 'panel_197'), 2);
-  assert.equal(qty(bom, 'panel_147_5'), 2);
+  assert.equal(qty(bom, 'panel_197'), 1);
+  assert.equal(qty(bom, 'panel_147_5'), 1);
   assert.equal(qty(bom, 'upright_49_5'), 6);
-  assert.equal(qty(bom, 'connector_start'), 12);
+  assert.equal(qty(bom, 'connector_start'), 8);
   assert.equal(qty(bom, 'connector_single'), 10);
   assert.equal(qty(bom, 'base_top_206_50'), 1);
   assert.equal(qty(bom, 'base_top_157_50'), 1);
@@ -127,7 +128,7 @@ test('a narrower wall does not host a wider baza', () => {
   ]);
   assert.equal(qty(bom, 'profile_190'), 4);
   assert.equal(qty(bom, 'upright_49_5'), 4);
-  assert.equal(qty(bom, 'panel_197'), 2);
+  assert.equal(qty(bom, 'panel_197'), 1);
 });
 
 test('showcase hosts only the matching baza in a row', () => {
@@ -137,11 +138,11 @@ test('showcase hosts only the matching baza in a row', () => {
     baza('right', 'base_100', 100, { xCm: 100 }),
   ]);
   assert.equal(qty(bom, 'profile_91'), 10);
-  assert.equal(qty(bom, 'panel_98'), 8);
+  assert.equal(qty(bom, 'panel_98'), 7);
   assert.equal(qty(bom, 'upright_49_5'), 4);
   assert.equal(qty(bom, 'profile_41_5'), 6);
   assert.equal(qty(bom, 'panel_48_5'), 2);
-  assert.equal(qty(bom, 'connector_start'), 14);
+  assert.equal(qty(bom, 'connector_start'), 12);
   assert.equal(qty(bom, 'connector_single'), 19);
   assert.equal(qty(bom, 'base_top_107_50'), 2);
 });
@@ -180,7 +181,7 @@ test('a baza whose back sits on the wall centerline is not flush', () => {
   ]);
   assert.equal(qty(bom, 'upright_49_5'), 4);
   assert.equal(qty(bom, 'profile_190'), 6);
-  assert.equal(qty(bom, 'panel_197'), 9);
+  assert.equal(qty(bom, 'panel_197'), 8);
 });
 
 test('a door on the same line does not reduce the baza', () => {
@@ -190,8 +191,8 @@ test('a door on the same line does not reduce the baza', () => {
   ]);
   assert.equal(qty(bom, 'upright_49_5'), 4);
   assert.equal(qty(bom, 'profile_91'), 5);
-  assert.equal(qty(bom, 'panel_98'), 5);
-  assert.equal(qty(bom, 'connector_start'), 10);
+  assert.equal(qty(bom, 'panel_98'), 4);
+  assert.equal(qty(bom, 'connector_start'), 8);
 });
 
 function upright(id, { xCm, yCm, rotationZDeg = 90 }) {

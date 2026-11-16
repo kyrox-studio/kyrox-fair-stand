@@ -53,9 +53,11 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 - `backend/tests/modules/fair_stand/test_item_length_parts_migration.py`
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
 - `e2e/base-corner-upright-bom.spec.mjs`
+- `e2e/box-run-shared-post.spec.mjs`
 - `e2e/short-joint-structural-upright.spec.mjs`
 - `test/baseRecipes.test.js`
 - `test/baseRunBom.test.js`
+- `test/boxRunJoints.test.js`
 - `test/mapCatalogSeed.mjs`
 - `test/placementBomProtected.test.js`
 - `test/recipeCompositionItemsContract.test.js`

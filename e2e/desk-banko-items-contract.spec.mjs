@@ -79,6 +79,13 @@ for (const itemKey of keys) {
     expect(item.faces?.frontUpper).toBeTruthy();
     expect(item.faces.frontLower.color).toBeTruthy();
     expect(item.placement?.wallId).toBe('free');
+    // Kart 100 bırakılır, ölçü Özellikler'den değişir: yüz kimliği yeni ölçünün rolündeki paneldir
+    // (ön geniş, sol ve dönüş dar; L'de sağ da geniş). Proje 452d4cc1, #385 gerilemesi.
+    const widePanel = { 100: 'panel_98', 150: 'panel_147_5', 200: 'panel_197' }[itemKey.match(/desk_banko_(\d+)/)[1]];
+    for (const [faceKey, face] of Object.entries(item.faces)) {
+      const wide = faceKey.startsWith('front') || (itemKey.endsWith('_l') && faceKey.startsWith('right'));
+      expect(face.itemKey, faceKey).toBe(wide ? widePanel : 'panel_48_5');
+    }
     if (itemKey.endsWith('_l')) {
       expect(item.shape).toBe('L');
       expect(item.faces?.returnLower).toBeTruthy();

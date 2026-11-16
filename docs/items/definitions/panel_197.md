@@ -42,6 +42,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_200`, `desk_banko_200`, `desk_
 - `backend/tests/modules/fair_stand/test_item_default_z.py`
 - `backend/tests/modules/fair_stand/test_item_snap.py`
 - `backend/tests/modules/fair_stand/test_item_surface_flags.py`
+- `e2e/desk-banko-items-contract.spec.mjs`
 - `test/baseFacePanelIdentity.test.js`
 - `test/baseItemsContract.test.js`
 - `test/baseRecipes.test.js`
