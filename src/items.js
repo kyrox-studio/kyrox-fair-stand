@@ -325,6 +325,26 @@ export function getFloorItem(itemKey) {
   return item?.type === 'floor' ? item : null;
 }
 
+// Zemin karosunun kenar parçası (ör. karolaj → 50 × 100). Sahnede yerleşmez, yalnız listede sayılır.
+const FLOOR_HALF_PIECE_ITEM_KEYS = Object.freeze({ karolaj: 'karolaj_yarim' });
+
+export function getFloorHalfPieceItem(floorItem) {
+  const key = FLOOR_HALF_PIECE_ITEM_KEYS[floorItem?.itemKey];
+  const item = key ? requireRegistry()[key] : null;
+  return item?.type === 'floor-piece' ? item : null;
+}
+
+// Karo altındaki demir boyları (uzun → kısa). Kenar boyu Item genişliğidir.
+const FLOOR_FRAME_BAR_ITEM_KEYS = Object.freeze({
+  karolaj: Object.freeze(['profile_karolaj_100', 'profile_karolaj_50']),
+});
+
+export function getFloorFrameBarItems(floorItem) {
+  return (FLOOR_FRAME_BAR_ITEM_KEYS[floorItem?.itemKey] ?? [])
+    .map((key) => requireRegistry()[key])
+    .filter((item) => item?.type === 'floor-piece' && Number(item.dimensions?.widthCm) > 0);
+}
+
 export function getFloorSelectLabel(item) {
   if (!item) return '';
   const widthCm = Number(item.dimensions?.widthCm);

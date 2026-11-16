@@ -44,7 +44,7 @@ Item bootstrap alanları mapper’dan: `snapRequiresRuleId` + denorm `snapRequir
 
 ### 1.2 Tablo envanteri (ürün şeması)
 
-`models.py` + Alembic head **`0093_hidden_items_maxima`** (29 tablo). `0067_group_templates` organizasyon grup şablonlarını (`fair_stand_group_templates`) ekler. `0043` / `0044` kolon eklemez; cam panel SKU satırıdır. `0065_metal_separator` gizli `metal_separator` kalemini ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve maliyet bayrağını açar. Katalogda görünmez. Junction’lar ayrı tablo sayılır.
+`models.py` + Alembic head: tek kaynak [`DATABASE.md`](DATABASE.md) (29 tablo). `0067_group_templates` organizasyon grup şablonlarını (`fair_stand_group_templates`) ekler. `0043` / `0044` kolon eklemez; cam panel SKU satırıdır. `0065_metal_separator` gizli `metal_separator` kalemini ekler. `0066_metal_separator_area` birimini `metre_kare` yapar ve maliyet bayrağını açar. Katalogda görünmez. Junction’lar ayrı tablo sayılır.
 
 | Tablo | Rol |
 |---|---|
@@ -1996,7 +1996,7 @@ Kaynak: `fair_stand_projects.payload` (sunucu); tarayıcı IndexedDB önbellek.
 
 | Kontrol | Komut / dosya |
 |---|---|
-| Alembic head | `backend/alembic/versions/0067_group_templates.py`. `0067` organizasyon grup şablonlarını ekler. `0065_metal_separator` gizli kalemi ekler; `0066` birimini `metre_kare` yapar. `0043` / `0044` cam panel SKU satırıdır, yeni kolon değildir |
+| Alembic head | Güncel head [`DATABASE.md`](DATABASE.md) içindedir. `0067` organizasyon grup şablonlarını ekler. `0065_metal_separator` gizli kalemi ekler; `0066` birimini `metre_kare` yapar. `0043` / `0044` cam panel SKU satırıdır, yeni kolon değildir |
 | Tip seed parity | `pytest backend/tests/modules/fair_stand/test_item_type_behavior.py` |
 | Stand zarf + panel ray | `test/standDimensions.test.js`; CRM Temel Ayarlar |
 | Bootstrap şekli | `get_catalog_bootstrap.py`, `routes.py` `/catalog/bootstrap` |

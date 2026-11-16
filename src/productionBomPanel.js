@@ -1,6 +1,12 @@
 import { groupBomLines } from './bomLineGroups.js';
 import { resolveProjectBom } from './projectBom.js';
 import { formatItemLengthParts, getItem } from './items.js';
+import {
+  formatPanelAssignmentRow,
+  formatPanelSizeHeading,
+  formatPanelSubjectRow,
+  groupPanelRowsBySize,
+} from './panelAssignmentBom.js';
 import { getFairStandHostDocument } from './hostDocument.js';
 import { isFairStandDemo } from './demoMode.js';
 import { buildDemoProductionBomHtml } from './demoProductionBom.js';
@@ -24,6 +30,11 @@ const POPUP_STYLE = `
   .production-bom-group { margin: 0 0 10px; }
   .production-bom-group__title { margin: 0 0 4px; font-size: 12px; font-weight: 650; color: #1e293b; }
   .production-bom-group__total { margin: 4px 0 0; font-size: 12px; font-weight: 650; color: #334155; }
+  .production-bom-assignment { margin: 8px 0 0 10px; }
+  .production-bom-assignment__title { margin: 0 0 3px; font-size: 12px; font-weight: 650; color: #475569; }
+  .production-bom-size__title { font-weight: 650; color: #334155; }
+  .production-bom-size > .production-bom-module__list { margin-top: 2px; }
+  .production-bom-swatch { display: inline-block; width: 10px; height: 10px; margin-right: 5px; border: 1px solid #94a3b8; border-radius: 2px; vertical-align: -1px; }
   .production-bom-module__list { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
   .production-bom-module--unresolved { border-color: #fca5a5; background: #fff1f2; }
   .production-bom-module__error, .production-bom-panel__empty { margin: 0; color: #64748b; }
@@ -209,7 +220,43 @@ function renderPrintAreaGroups(printAreas) {
   )).join('');
 }
 
-function renderTotalsHtml(lines, printAreas, { open = false } = {}) {
+// Paneller bölümünün altında atama türüne göre döküm (ROADMAP: Panellerin atamaya göre dökümü).
+function panelAssignmentGroups(panelAssignments) {
+  return (panelAssignments?.groups ?? []).filter((group) => group.total > 0);
+}
+
+function panelSubjectRowHtml(row) {
+  const swatch = row.color
+    ? `<span class="production-bom-swatch" style="background:${escapeHtml(row.color)}" aria-hidden="true"></span>`
+    : '';
+  return `<li>${swatch}${escapeHtml(formatPanelSubjectRow(row))}</li>`;
+}
+
+// Görsel ve renk grubu ölçü başlığı altında toplanır; Varsayılan Panel zaten ölçü başına tek satırdır.
+function panelAssignmentListHtml(group) {
+  if (group.id === 'default' || group.id === 'depot') {
+    return `<ul class="production-bom-module__list">${group.rows.map((row) => (
+      `<li>${escapeHtml(formatPanelAssignmentRow(row))}</li>`
+    )).join('')}</ul>`;
+  }
+  return `<ul class="production-bom-module__list">${groupPanelRowsBySize(group.rows).map((size) => (
+    `<li class="production-bom-size" data-panel-size="${escapeHtml(`${size.widthCm}x${size.heightCm}`)}">
+      <span class="production-bom-size__title">${escapeHtml(formatPanelSizeHeading(size))}</span>
+      <ul class="production-bom-module__list">${size.rows.map(panelSubjectRowHtml).join('')}</ul>
+    </li>`
+  )).join('')}</ul>`;
+}
+
+function renderPanelAssignmentsHtml(panelAssignments) {
+  return panelAssignmentGroups(panelAssignments).map((group) => (
+    `<div class="production-bom-assignment" data-panel-assignment="${escapeHtml(group.id)}">
+      <h5 class="production-bom-assignment__title">${escapeHtml(group.label)} · ${group.total} panel</h5>
+      ${panelAssignmentListHtml(group)}
+    </div>`
+  )).join('');
+}
+
+function renderTotalsHtml(lines, printAreas, { open = false, panelAssignments = null } = {}) {
   const openAttr = open ? ' open' : '';
   const groups = groupsForCombinedList(lines, printAreas);
   const printHtml = renderPrintAreaGroups(printAreas);
@@ -221,9 +268,11 @@ function renderTotalsHtml(lines, printAreas, { open = false } = {}) {
         ...view.sizes.map((line) => `<li>${escapeHtml(metalSizeLabel(line))}</li>`),
       ];
       if (!rows.length) return '';
+      const assignments = group.id === 'panel' ? renderPanelAssignmentsHtml(panelAssignments) : '';
       return `<section class="production-bom-group">
         <h4 class="production-bom-group__title">${escapeHtml(group.label)}</h4>
         <ul class="production-bom-module__list">${rows.join('')}</ul>
+        ${assignments}
       </section>`;
     }).join('')
     : (printHtml ? '' : '<p class="production-bom-panel__empty">Parça yok.</p>');
@@ -272,6 +321,18 @@ export function formatProductionBomText(bom) {
     blocks.push('', group.label);
     for (const line of view.hardware) blocks.push(lineLabel(line));
     for (const line of view.sizes) blocks.push(metalSizeLabel(line));
+    if (group.id !== 'panel') continue;
+    for (const assignment of panelAssignmentGroups(bom?.panelAssignments)) {
+      blocks.push(`  ${assignment.label} · ${assignment.total} panel`);
+      if (assignment.id === 'default' || assignment.id === 'depot') {
+        for (const row of assignment.rows) blocks.push(`    ${formatPanelAssignmentRow(row)}`);
+        continue;
+      }
+      for (const size of groupPanelRowsBySize(assignment.rows)) {
+        blocks.push(`    ${formatPanelSizeHeading(size)}`);
+        for (const row of size.rows) blocks.push(`      ${formatPanelSubjectRow(row)}`);
+      }
+    }
   }
   for (const section of (bom?.printAreas || []).filter((entry) => entry.id !== 'metal')) {
     blocks.push('', section.label);
@@ -320,7 +381,10 @@ export function buildProductionBomHtml(bom, openCollapseKeys = new Set()) {
         </summary>
         <div class="panel-card-content">${moduleHtml}</div>
       </details>
-      ${renderTotalsHtml(bom.lines, bom.printAreas, { open: openCollapseKeys.has('__totals__') })}
+      ${renderTotalsHtml(bom.lines, bom.printAreas, {
+        open: openCollapseKeys.has('__totals__'),
+        panelAssignments: bom.panelAssignments,
+      })}
     `;
 }
 

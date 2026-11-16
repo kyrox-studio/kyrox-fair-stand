@@ -98,9 +98,17 @@ test('floor unit drives the stand line: m2 area or adet tiles', () => {
   const karolaj = resolveProjectBom([], { ...stand, itemKey: 'karolaj' });
   assert.deepEqual(
     karolaj.lines.map((line) => [line.itemKey, line.quantity, line.unit]),
-    [['karolaj', 20, 'adet']],
+    [['karolaj', 20, 'adet'], ['profile_karolaj_100', 49, 'adet']],
   );
 
   const partial = resolveProjectBom([], { xCm: 550, yCm: 400, itemKey: 'karolaj' });
-  assert.equal(partial.lines[0].quantity, 24);
+  assert.deepEqual(
+    partial.lines.map((line) => [line.itemKey, line.quantity, line.unit]),
+    [
+      ['karolaj', 20, 'adet'],
+      ['karolaj_yarim', 4, 'adet'],
+      ['profile_karolaj_100', 53, 'adet'],
+      ['profile_karolaj_50', 5, 'adet'],
+    ],
+  );
 });

@@ -500,6 +500,8 @@ function transferFasciaSurfaces(oldPanels, newPanels, removedSurfaceIds, content
     }
     best.strips = structuredClone(oldPanel.strips);
     if (Array.isArray(oldPanel.backStrips)) best.backStrips = structuredClone(oldPanel.backStrips);
+    // Kopyalanan bantların panel kimliği yeni panelin reçetesine göre onarılır (ölçü farklı olabilir).
+    normalizeModuleItemState(best);
     filled.add(best);
   }
 }
@@ -1502,6 +1504,8 @@ function transferWallSurfaces(oldPanels, newPanels, removedSurfaceIds) {
     }
     best.strips = structuredClone(oldPanel.strips);
     if (Array.isArray(oldPanel.backStrips)) best.backStrips = structuredClone(oldPanel.backStrips);
+    // Kopyalanan bantların panel kimliği yeni panelin reçetesine göre onarılır (ölçü farklı olabilir).
+    normalizeModuleItemState(best);
     filled.add(best);
   }
 }

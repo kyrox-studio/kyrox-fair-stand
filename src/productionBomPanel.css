@@ -141,6 +141,37 @@
   color: #334155;
 }
 
+/* Paneller bölümünde atama türüne göre döküm (görsel / renk / varsayılan). */
+.production-bom-assignment {
+  margin: 8px 0 0 10px;
+}
+
+.production-bom-assignment__title {
+  margin: 0 0 3px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #475569;
+}
+
+.production-bom-size__title {
+  font-weight: 650;
+  color: #334155;
+}
+
+.production-bom-size > .production-bom-module__list {
+  margin-top: 2px;
+}
+
+.production-bom-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border: 1px solid #94a3b8;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+
 .production-bom-module__list {
   margin: 0;
   padding-left: 18px;

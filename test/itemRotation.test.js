@@ -31,8 +31,8 @@ test('placeable Items expose rotation from Item; leaf rows omit the trio', () =>
       assert.throws(() => getModuleRotationStepDeg(item), TypeError);
     }
   }
-  assert.equal(filled, 89);
-  assert.equal(empty, 44);
+  assert.equal(filled, 91);
+  assert.equal(empty, 47);
 });
 
 test('rotation getters require itemKey and do not fall back to type tables', () => {

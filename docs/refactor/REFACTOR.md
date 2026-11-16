@@ -370,7 +370,7 @@ Boyanabilir override rengi `floorArea.color` alanındadır. Parke boyanamaz; ren
 
 BOM: `floorArea` yoksa veya override `itemKey` baz ile aynıysa eski tam-stand formülü (`resolveFloorBomLine`). m² = x × y / 10000. Karolaj adet = `ceil(x / karoW) × ceil(y / karoD)`. Örnek: 550 × 400 karolaj, alan yok = 24 adet.
 
-Override farklı Item ise `resolveSplitFloorBomLines`. m² baz = (stand alanı − override alanı) / 10000. Karolaj, 50 × 50 hücre havuzundan 100 × 100 karo sayar (`ceil(hücre / 4)`). Örnek: 500 × 500 halı + 200 × 300 karolaj = 19 m² halı + 6 adet karolaj.
+Override farklı Item ise `resolveSplitFloorBomLines`. m² baz = (stand alanı − override alanı) / 10000. Karolaj stand köşesinden 100 × 100 dizilir (`floorTilePieceCounts`): karo yuvasının yarısından fazlası kaplıysa tam karo (`karolaj`), yarısı ya da azı (50 × 100 kenar, 50 × 50 köşe) yarım parça (`karolaj_yarim`) sayılır. Bölgesel zeminde aynı sayım baz ve alan için ayrı yapılır. Karo altındaki demir karo kenarlarıdır (`floorFrameBarCounts`): ortak kenar bir kez sayılır (1 kare 4, yan yana 2 kare 7, 3 kare 10); 1 m kenar `profile_karolaj_100`, 50 cm kenar `profile_karolaj_50`. Örnek: 500 × 500 halı + 200 × 300 karolaj = 19 m² halı + 6 adet karolaj; 350 × 350 karolaj = 9 karolaj + 7 yarım; 600 × 350 karolaj = 18 karolaj + 6 yarım + 51 Profil 1 m + 7 Profil 0.5 m.
 
 Sahne: `activeFloor` tüm stand platformudur. `getGroundPoint` yalnız onu ışınlar. Override ince bir mesh’tir. Sahneyi Sıfırla kurulumu yeniden kurar; `floorArea` düşer.
 

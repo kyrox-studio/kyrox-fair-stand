@@ -275,6 +275,122 @@ export function stepWallShortFloorZCm(
   return clampFloorRelativeBottomZCm(base + shift, heightCm, standHeightCm);
 }
 
+function wallLineSpanCm(moduleState) {
+  const placement = moduleState?.placement;
+  const widthCm = Number(moduleState?.widthCm);
+  const x = Number(placement?.xCm);
+  const y = Number(placement?.yCm);
+  if (![widthCm, x, y].every(Number.isFinite) || widthCm <= 0) return null;
+  return isVerticalModuleRotation(placement.rotationZDeg ?? 0)
+    ? { axis: 'y', fixedCm: x, startCm: y, endCm: y + widthCm }
+    : { axis: 'x', fixedCm: y, startCm: x, endCm: x + widthCm };
+}
+
+function isStackObstacle(moduleState) {
+  if (isWallShortFamilyDescriptor(moduleState)) return true;
+  return ['flat-panel', 'door', 'separator', 'showcase-2', 'showcase-3'].includes(moduleState?.type);
+}
+
+/**
+ * Kısa panel (Tek / Çift Sıra) ↑/↓ (kullanıcı kararı 2026-11-16): 50 cm bant ızgarasında hareket eder ve
+ * aynı duvar hattında yatayda örtüşen kısa panel ya da duvara binmez; alttakinin tepesine oturur.
+ * Böylece 2 + 2, 1 + 1 ve 2 + 1 tam üst üste gelir. Izgara dışındaki eski konum ilk adımda ızgaraya oturur.
+ * Gidilecek yer yoksa mevcut Z döner.
+ */
+export function stepWallShortStackZCm({
+  moduleState,
+  modules = [],
+  direction,
+  standHeightCm = getStandDimensions().heightCm,
+} = {}) {
+  const heightCm = Number(moduleState?.heightCm);
+  const currentZCm = Number(moduleState?.placement?.zCm ?? 0);
+  if (!Number.isFinite(heightCm) || heightCm <= 0) return currentZCm;
+  const { minZCm, maxZCm } = getWallShortFloorZBoundsCm(heightCm, standHeightCm);
+  const pitch = WALL_PANEL_BAND_PITCH_CM;
+  const own = wallLineSpanCm(moduleState);
+  const blockers = own ? modules
+    .filter((other) => other && other.id !== moduleState.id && isStackObstacle(other))
+    .map((other) => {
+      const span = wallLineSpanCm(other);
+      if (!span || span.axis !== own.axis || Math.abs(span.fixedCm - own.fixedCm) > EPSILON_CM) return null;
+      const overlap = Math.min(span.endCm, own.endCm) - Math.max(span.startCm, own.startCm);
+      if (overlap <= EPSILON_CM) return null;
+      const bottom = Number(other.placement?.zCm ?? 0);
+      const top = bottom + Number(other.heightCm ?? 0);
+      return Number.isFinite(bottom) && Number.isFinite(top) ? { bottom, top } : null;
+    })
+    .filter(Boolean) : [];
+  const free = (zCm) => blockers.every((range) => zCm + heightCm <= range.bottom + EPSILON_CM || zCm >= range.top - EPSILON_CM);
+  const up = direction === 'up' || Number(direction) > 0;
+  let next = up
+    ? Math.floor((currentZCm + EPSILON_CM) / pitch) * pitch + pitch
+    : Math.ceil((currentZCm - EPSILON_CM) / pitch) * pitch - pitch;
+  while (next >= minZCm - EPSILON_CM && next <= maxZCm + EPSILON_CM) {
+    if (free(next)) return Math.round(next * 10) / 10;
+    next += up ? pitch : -pitch;
+  }
+  return currentZCm;
+}
+
+// Bırakınca / açılışta oturma penceresi (kullanıcı kararı 2026-11-16).
+export const WALL_SHORT_SEAT_WINDOW_CM = 25;
+
+/**
+ * Kısa panel bırakılınca ya da proje açılınca: tabanı aynı hattaki kısa panel / duvarın tepesine
+ * ±25 cm yakınsa ya da ona biniyorsa tam o tepeye oturur (üst üste 2 + 2, 1 + 1, 2 + 1).
+ * Oturacağı yer başka parçaya biniyorsa ya da yakın tepe yoksa mevcut Z döner.
+ */
+export function seatWallShortZCm({
+  moduleState,
+  modules = [],
+  windowCm = WALL_SHORT_SEAT_WINDOW_CM,
+  standHeightCm = getStandDimensions().heightCm,
+} = {}) {
+  const heightCm = Number(moduleState?.heightCm);
+  const currentZCm = Number(moduleState?.placement?.zCm ?? 0);
+  if (!isWallShortFamilyDescriptor(moduleState) || !Number.isFinite(heightCm) || heightCm <= 0) return currentZCm;
+  const own = wallLineSpanCm(moduleState);
+  if (!own) return currentZCm;
+  const ranges = modules
+    .filter((other) => other && other.id !== moduleState.id && isStackObstacle(other))
+    .map((other) => {
+      const span = wallLineSpanCm(other);
+      if (!span || span.axis !== own.axis || Math.abs(span.fixedCm - own.fixedCm) > EPSILON_CM) return null;
+      const overlap = Math.min(span.endCm, own.endCm) - Math.max(span.startCm, own.startCm);
+      if (overlap <= EPSILON_CM) return null;
+      const bottom = Number(other.placement?.zCm ?? 0);
+      const top = bottom + Number(other.heightCm ?? 0);
+      return Number.isFinite(bottom) && Number.isFinite(top) ? { bottom, top } : null;
+    })
+    .filter(Boolean);
+  if (!ranges.length) return currentZCm;
+  const free = (zCm) => ranges.every((range) => zCm + heightCm <= range.bottom + EPSILON_CM || zCm >= range.top - EPSILON_CM);
+  if (ranges.some((range) => Math.abs(range.top - currentZCm) <= EPSILON_CM) && free(currentZCm)) return currentZCm;
+  const { maxZCm } = getWallShortFloorZBoundsCm(heightCm, standHeightCm);
+  const candidates = ranges
+    .map((range) => range.top)
+    .filter((top) => Math.abs(top - currentZCm) <= windowCm + EPSILON_CM && top <= maxZCm + EPSILON_CM && free(top))
+    .sort((a, b) => Math.abs(a - currentZCm) - Math.abs(b - currentZCm));
+  return candidates.length ? Math.round(candidates[0] * 10) / 10 : currentZCm;
+}
+
+/** Açılış onarımı: kısa panelleri alttan üste sırayla oturtur; değişen modül sayısını döner. */
+export function seatWallShortStacks(modules = []) {
+  const shorts = modules
+    .filter((moduleState) => isWallShortFamilyDescriptor(moduleState) && moduleState?.placement)
+    .sort((a, b) => Number(a.placement.zCm ?? 0) - Number(b.placement.zCm ?? 0));
+  let changed = 0;
+  for (const moduleState of shorts) {
+    const next = seatWallShortZCm({ moduleState, modules });
+    if (next !== Number(moduleState.placement.zCm ?? 0)) {
+      moduleState.placement = { ...moduleState.placement, zCm: next };
+      changed += 1;
+    }
+  }
+  return changed;
+}
+
 export function getPanelSeamSnapWindowCm() {
   return WALL_PANEL_BAND_PITCH_CM / 4;
 }

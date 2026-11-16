@@ -1,6 +1,8 @@
 import { snapCm } from './modulePlacement.js';
 import { STAND_DIMENSION_STEP_CM } from './standSetup.js';
 import {
+  getFloorFrameBarItems,
+  getFloorHalfPieceItem,
   getFloorItem,
   listFloorItems,
   resolveStandFloorItemKey,
@@ -54,8 +56,113 @@ function tilesPerFloorItem(item) {
   return (tileW / STAND_DIMENSION_STEP_CM) * (tileD / STAND_DIMENSION_STEP_CM);
 }
 
+/**
+ * Karolar stand köşesinden (0,0) dizilir; son sıra kalan ölçüde kesilir (sahne ile aynı).
+ * Her karo yuvasında örtülen 50 cm hücreler sayılır: yarıdan fazlası tam karo,
+ * yarısı ya da azı (50 × 100 kenar, 50 × 50 köşe) yarım parça. Yuvanın karosu,
+ * örtülen hücrelerin çerçevesidir (hücre birimiyle x0..x1, y0..y1).
+ * covers(cellX, cellY) → hücre bu kaplamaya ait mi.
+ */
+function floorTileSlots(stand, item, covers) {
+  const standX = finiteCm(stand?.xCm);
+  const standY = finiteCm(stand?.yCm);
+  if (!isFloorGridCm(standX) || !isFloorGridCm(standY)) return null;
+  const perTile = tilesPerFloorItem(item);
+  if (!perTile) return null;
+  const stepsW = Number(item.dimensions.widthCm) / STAND_DIMENSION_STEP_CM;
+  const stepsD = Number(item.dimensions.depthCm) / STAND_DIMENSION_STEP_CM;
+  const cellsX = standX / STAND_DIMENSION_STEP_CM;
+  const cellsY = standY / STAND_DIMENSION_STEP_CM;
+  const slots = [];
+  for (let blockX = 0; blockX < cellsX; blockX += stepsW) {
+    for (let blockY = 0; blockY < cellsY; blockY += stepsD) {
+      let covered = 0;
+      let x0 = Infinity;
+      let y0 = Infinity;
+      let x1 = -Infinity;
+      let y1 = -Infinity;
+      for (let i = 0; i < stepsW; i += 1) {
+        for (let j = 0; j < stepsD; j += 1) {
+          const cellX = blockX + i;
+          const cellY = blockY + j;
+          if (cellX >= cellsX || cellY >= cellsY || !covers(cellX, cellY)) continue;
+          covered += 1;
+          x0 = Math.min(x0, cellX);
+          y0 = Math.min(y0, cellY);
+          x1 = Math.max(x1, cellX + 1);
+          y1 = Math.max(y1, cellY + 1);
+        }
+      }
+      if (!covered) continue;
+      slots.push({ half: covered * 2 <= perTile, x0, y0, x1, y1 });
+    }
+  }
+  return slots;
+}
 
-/** Explicit rectangles share one 100×100 tile pool. 50×50 is not a BOM unit. */
+export function floorTilePieceCounts(stand, item, covers = () => true) {
+  const slots = floorTileSlots(stand, item, covers);
+  if (!slots) return null;
+  const half = slots.filter((slot) => slot.half).length;
+  return { full: slots.length - half, half };
+}
+
+/**
+ * Karo altındaki demir = karo kenarları; iki karonun ortak kenarı bir kez sayılır
+ * (1 kare 4, yan yana 2 kare 7, 3 kare 10). Daha uzun bir kenarın içinde kalan kısa kenar
+ * ayrıca sayılmaz. Sonuç: kenar boyu (cm) → adet.
+ */
+export function floorFrameBarCounts(stand, item, covers = () => true) {
+  const slots = floorTileSlots(stand, item, covers);
+  if (!slots) return null;
+  const edges = new Map();
+  const addEdge = (axis, line, from, to) => {
+    edges.set(`${axis}:${line}:${from}:${to}`, { axis, line, from, to });
+  };
+  for (const slot of slots) {
+    addEdge('h', slot.y0, slot.x0, slot.x1);
+    addEdge('h', slot.y1, slot.x0, slot.x1);
+    addEdge('v', slot.x0, slot.y0, slot.y1);
+    addEdge('v', slot.x1, slot.y0, slot.y1);
+  }
+  const all = [...edges.values()];
+  const counts = new Map();
+  for (const edge of all) {
+    const inside = all.some((other) => other !== edge
+      && other.axis === edge.axis
+      && other.line === edge.line
+      && other.from <= edge.from
+      && other.to >= edge.to
+      && other.to - other.from > edge.to - edge.from);
+    if (inside) continue;
+    const lengthCm = (edge.to - edge.from) * STAND_DIMENSION_STEP_CM;
+    counts.set(lengthCm, (counts.get(lengthCm) ?? 0) + 1);
+  }
+  return counts;
+}
+
+/** Yarım parçası olan karo: tam, yarım ve demir satırları. Yoksa null (eski hesap geçerli). */
+export function floorTilePieceLines(stand, item, covers) {
+  const halfItem = getFloorHalfPieceItem(item);
+  if (!halfItem || canonicalFloorUnit(item?.unit) !== 'adet') return null;
+  const counts = floorTilePieceCounts(stand, item, covers);
+  if (!counts) return null;
+  const bars = floorFrameBarCounts(stand, item, covers) ?? new Map();
+  const barLines = getFloorFrameBarItems(item).map((barItem) => (
+    floorLine(barItem, bars.get(Number(barItem.dimensions?.widthCm)) ?? 0)
+  ));
+  return [floorLine(item, counts.full), floorLine(halfItem, counts.half), ...barLines].filter(Boolean);
+}
+
+function insideRect(area) {
+  const x0 = area.xCm / STAND_DIMENSION_STEP_CM;
+  const y0 = area.yCm / STAND_DIMENSION_STEP_CM;
+  const x1 = x0 + area.widthCm / STAND_DIMENSION_STEP_CM;
+  const y1 = y0 + area.depthCm / STAND_DIMENSION_STEP_CM;
+  return (cellX, cellY) => cellX >= x0 && cellX < x1 && cellY >= y0 && cellY < y1;
+}
+
+/** Karosu yarım parçasız zeminlerde açık dikdörtgenler tek 100×100 havuzu paylaşır. */
 
 export function defaultOverrideItemKey(baseKey) {
   const preferred = baseKey === 'parke-acik' ? 'hali' : 'parke-acik';
@@ -204,5 +311,10 @@ export function resolveSplitFloorBomLines(stand) {
     ? ((baseM2Width * baseM2Depth) - (area.widthCm * area.depthCm)) / 10000
     : baseQuantity;
   const areaQuantity = quantityForCoverage(areaItem, area.widthCm, area.depthCm);
-  return [floorLine(baseItem, baseLineQuantity), floorLine(areaItem, areaQuantity)].filter(Boolean);
+  const inArea = insideRect(area);
+  const baseLines = floorTilePieceLines(stand, baseItem, (x, y) => !inArea(x, y))
+    ?? [floorLine(baseItem, baseLineQuantity)];
+  const areaLines = floorTilePieceLines(stand, areaItem, inArea)
+    ?? [floorLine(areaItem, areaQuantity)];
+  return [...baseLines, ...areaLines].filter(Boolean);
 }

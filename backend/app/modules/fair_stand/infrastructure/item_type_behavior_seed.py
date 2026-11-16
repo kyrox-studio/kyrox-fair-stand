@@ -36,7 +36,7 @@ DEFAULT_GHOST_RENDERER = "module-silhouette"
 DEFAULT_GHOST_OPACITY = Decimal("0.38")
 
 # Classification-only types. Seed must not attach the wall behavior fallback.
-NON_SCENE_ITEM_TYPE_KEYS = frozenset({"production"})
+NON_SCENE_ITEM_TYPE_KEYS = frozenset({"production", "floor-piece"})
 
 # key → (placement, collision, move_snap_cm)
 TYPE_BEHAVIOR_SLICE1: dict[str, tuple[str, str, int]] = {

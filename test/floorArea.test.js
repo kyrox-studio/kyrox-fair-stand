@@ -3,10 +3,13 @@ import assert from 'node:assert/strict';
 
 import {
   defaultFloorAreaRect,
+  floorFrameBarCounts,
+  floorTilePieceCounts,
   rectangleFromCorners,
   resolveSplitFloorBomLines,
   validateFloorArea,
 } from '../src/floorArea.js';
+import { getFloorItem } from '../src/items.js';
 import { resolveProjectBom } from '../src/projectBom.js';
 import { PROJECT_ARCHIVE_VERSION } from '../src/projectImportValidation.js';
 
@@ -14,7 +17,7 @@ const stand = { standType: 'island', xCm: 500, yCm: 500, itemKey: 'hali' };
 
 function quantities(bom) {
   return bom.lines
-    .filter((line) => ['hali', 'karolaj', 'parke-acik', 'parke-sari', 'parke-beton'].includes(line.itemKey))
+    .filter((line) => ['hali', 'karolaj', 'karolaj_yarim', 'parke-acik', 'parke-sari', 'parke-beton'].includes(line.itemKey))
     .map((line) => [line.itemKey, line.quantity, line.unit]);
 }
 
@@ -39,8 +42,85 @@ test('a stand without floorArea keeps the legacy single-floor bill', () => {
   assert.deepEqual(quantities(even), [['karolaj', 20, 'adet']]);
 
   const partial = resolveProjectBom([], { xCm: 550, yCm: 400, itemKey: 'karolaj' });
-  assert.equal(partial.lines[0].quantity, 24);
+  assert.deepEqual(quantities(partial), [['karolaj', 20, 'adet'], ['karolaj_yarim', 4, 'adet']]);
   assert.equal(resolveSplitFloorBomLines({ xCm: 550, yCm: 400, itemKey: 'karolaj' }), null);
+});
+
+test('karolaj edge pieces are listed as half tiles; the 50x50 corner counts as half', () => {
+  assert.deepEqual(
+    quantities(resolveProjectBom([], { xCm: 350, yCm: 350, itemKey: 'karolaj' })),
+    [['karolaj', 9, 'adet'], ['karolaj_yarim', 7, 'adet']],
+  );
+  assert.deepEqual(
+    quantities(resolveProjectBom([], { xCm: 50, yCm: 50, itemKey: 'karolaj' })),
+    [['karolaj_yarim', 1, 'adet']],
+  );
+  assert.deepEqual(
+    floorTilePieceCounts({ xCm: 450, yCm: 300 }, getFloorItem('karolaj')),
+    { full: 12, half: 3 },
+  );
+});
+
+test('karolaj frame bars share tile edges: 1 tile 4, 2 tiles 7, 3 tiles 10', () => {
+  const bars = (stand) => resolveProjectBom([], { ...stand, itemKey: 'karolaj' }).lines
+    .filter((line) => line.itemKey.startsWith('profile_karolaj_'))
+    .map((line) => [line.itemKey, line.quantity, line.unit]);
+  assert.deepEqual(bars({ xCm: 100, yCm: 100 }), [['profile_karolaj_100', 4, 'adet']]);
+  assert.deepEqual(bars({ xCm: 200, yCm: 100 }), [['profile_karolaj_100', 7, 'adet']]);
+  assert.deepEqual(bars({ xCm: 300, yCm: 100 }), [['profile_karolaj_100', 10, 'adet']]);
+  // Kullanıcı örneği: 6 × 3,5 m → 51 adet 1 m + 7 adet 50 cm.
+  assert.deepEqual(bars({ xCm: 600, yCm: 350 }), [
+    ['profile_karolaj_100', 51, 'adet'],
+    ['profile_karolaj_50', 7, 'adet'],
+  ]);
+  // Genişlik de yarım: son sütunun yatay kenarları 50 cm.
+  assert.deepEqual(bars({ xCm: 650, yCm: 350 }), [
+    ['profile_karolaj_100', 54, 'adet'],
+    ['profile_karolaj_50', 13, 'adet'],
+  ]);
+  const counts = floorFrameBarCounts({ xCm: 50, yCm: 50 }, getFloorItem('karolaj'));
+  assert.deepEqual([...counts], [[50, 4]]);
+});
+
+test('split floor counts frame bars only under the karolaj area', () => {
+  const bom = resolveProjectBom([], {
+    xCm: 500,
+    yCm: 500,
+    itemKey: 'hali',
+    floorArea: { xCm: 100, yCm: 100, widthCm: 150, depthCm: 100, itemKey: 'karolaj', color: null },
+  });
+  assert.deepEqual(
+    bom.lines
+      .filter((line) => line.itemKey.startsWith('profile_karolaj_'))
+      .map((line) => [line.itemKey, line.quantity]),
+    [['profile_karolaj_100', 5], ['profile_karolaj_50', 2]],
+  );
+});
+
+test('split floor counts karolaj pieces on the tile grid from the stand corner', () => {
+  const area = resolveProjectBom([], {
+    xCm: 500,
+    yCm: 500,
+    itemKey: 'hali',
+    floorArea: { xCm: 100, yCm: 100, widthCm: 150, depthCm: 100, itemKey: 'karolaj', color: null },
+  });
+  assert.deepEqual(quantities(area), [
+    ['hali', 23.5, 'm2'],
+    ['karolaj', 1, 'adet'],
+    ['karolaj_yarim', 1, 'adet'],
+  ]);
+
+  const base = resolveProjectBom([], {
+    xCm: 500,
+    yCm: 500,
+    itemKey: 'karolaj',
+    floorArea: { xCm: 100, yCm: 100, widthCm: 50, depthCm: 100, itemKey: 'hali', color: null },
+  });
+  assert.deepEqual(quantities(base), [
+    ['karolaj', 24, 'adet'],
+    ['karolaj_yarim', 1, 'adet'],
+    ['hali', 0.5, 'm2'],
+  ]);
 });
 
 test('an override with the same Item does not split the legacy bill', () => {
