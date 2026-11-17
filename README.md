@@ -128,7 +128,7 @@ Canonical CI şu sırayı çalıştırır:
 checkout (full git history)
 → npm run contract:verify
 → npm ci
-→ npm run audit:deps (npm audit --audit-level=high)
+→ npm run audit:deps (`scripts/audit-deps.mjs`: npm audit, high/critical durdurur; 2026-11-17'den geçici tek istisna picomatch ReDoS GHSA-fc5q-39xc-vjpf, yama çıkınca silinir)
 → npm run syntax:check
 → npm test
 → python -m pytest (backend/)
