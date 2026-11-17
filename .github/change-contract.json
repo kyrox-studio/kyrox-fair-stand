@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "ara-profil-iskelet-baza-banko-birlesimi",
   "kind": "feature",
-  "summary": "Kısa panel açıklığı içindeki taşıyıcısız ortak uçta dikme yerine 8 cm kısa ara profil (49,5 → 41,5, 99 → 91); İskelet uzun parçayı bölünüşüyle yazar (388 (346,5 + 41,5)); yan yana baza ve düz bankoda ortak uçtaki dikme ve 41,5 listede ve sahnede tek, aradaki yan paneller ve aparatları düşer; baza / banko yüzlerinin listedeki panel kimliği yeniden yüz rolünden gelir (#385 gerilemesi); bazanın arka yüzü panelsiz: serbest bazada uzun panel 1, başlangıç 2 eksik; sahnede serbest bazada ön + arka uzun ray (4), duvar sırtında 2; düz bankoda ön alt + ön üst + arka üst ray (listedeki 3); L bankoda orta kot rayı yok, iç kenarda üstte uzun + kısa ray.",
+  "summary": "Kısa panel açıklığı içindeki taşıyıcısız ortak uçta dikme yerine 8 cm kısa ara profil (49,5 → 41,5, 99 → 91); İskelet uzun parçayı bölünüşüyle yazar (388 (346,5 + 41,5)); yan yana baza ve düz bankoda ortak uçtaki dikme ve 41,5 listede ve sahnede tek, aradaki yan paneller ve aparatları düşer; baza / banko yüzlerinin listedeki panel kimliği yeniden yüz rolünden gelir (#385 gerilemesi); bazanın arka yüzü panelsiz: serbest bazada uzun panel 1, başlangıç 2 eksik; sahnede serbest bazada ön + arka uzun ray (4), duvar sırtında 2; düz bankoda ön alt + ön üst + arka üst ray (listedeki 3); L bankoda orta kot rayı yok, iç kenarda üstte uzun + kısa ray. npm audit kapısında picomatch ReDoS (GHSA-fc5q-39xc-vjpf) için gerekçeli geçici istisna (scripts/audit-deps.mjs).",
   "owners": [
     "src/boxRunJoints.js",
     "src/projectBom.js",
@@ -122,7 +122,6 @@
     "affectedTests": [
       "e2e/base-corner-upright-bom.spec.mjs",
       "e2e/base-edge-under-fascia.spec.mjs",
-      "e2e/box-block-corners.spec.mjs",
       "e2e/box-block-face-image-restore.spec.mjs",
       "e2e/box-run-shared-post.spec.mjs",
       "e2e/camera-pointer-lifecycle.spec.mjs",
@@ -272,6 +271,7 @@
       "test/homeViewDirection.test.js",
       "test/horizontalPanelRails.test.js",
       "test/hostProjectUrl.test.js",
+      "test/hygieneGates.test.js",
       "test/illuminatedFoamInteraction.test.js",
       "test/illuminatedFoamModule.test.js",
       "test/imageAssetDeletion.test.js",
@@ -371,6 +371,7 @@
       "test/projectRevisionSession.test.js",
       "test/projectUiMainIntegration.test.js",
       "test/propertyPanelPlacement.test.js",
+      "test/pythonPatchArchive.test.js",
       "test/raisedPlatform.test.js",
       "test/rawBomSelectionParser.test.js",
       "test/recipeCompositionItemsContract.test.js",
@@ -385,6 +386,7 @@
       "test/rightWallOrientation.test.js",
       "test/roadmapProductionSourceOfTruth.test.js",
       "test/runtimeSettings.test.js",
+      "test/runtimeVersionPins.test.js",
       "test/scene3dPublicContract.test.js",
       "test/sceneAssetLoading.test.js",
       "test/sceneBomAcceptance.test.js",
@@ -425,6 +427,7 @@
       "test/stripOccupancy.test.js",
       "test/surfaceStateBinding.test.js",
       "test/systemChangeGate.test.js",
+      "test/systemChangeGateCiContract.test.js",
       "test/systemChangeGateLocalDiff.test.js",
       "test/systemChangeSecurityControls.test.js",
       "test/systemDevelopmentContract.test.js",
@@ -479,6 +482,7 @@
       "audit/FINDINGS.md",
       "audit/FULL_SWEEP_STATE.md",
       "audit/SISTEM_MUTABAKAT_RAPORU.md",
+      "audit/evidence/A00_BASELINE.md",
       "audit/evidence/A01_DOCS_SOURCE_OF_TRUTH.md",
       "audit/evidence/A02_CHANGE_GATE.md",
       "audit/evidence/A03_ARCHITECTURE.md",
@@ -490,6 +494,8 @@
       "audit/evidence/A11_FEATURE_COMPOSITION.md",
       "audit/evidence/A13_STORAGE_ASSETS_REFERENCES.md",
       "audit/evidence/A17_PERFORMANCE_BUNDLE_RENDER_LIFECYCLE.md",
+      "audit/evidence/A18_TEST_REGRESSION_ARCHITECTURE.md",
+      "audit/evidence/A21_REPOSITORY_HYGIENE_GOVERNANCE.md",
       "audit/evidence/A22_FILE_BY_FILE_SWEEP.md",
       "audit/remediation/A02_CLOSURE.md",
       "audit/remediation/A02_F005_CLOSURE.md",
@@ -501,6 +507,8 @@
       "audit/remediation/A04_F013_CLOSURE.md",
       "audit/remediation/A07_F017_CLOSURE.md",
       "audit/remediation/A11_F029_CLOSURE.md",
+      "audit/remediation/A21_F043_CLOSURE.md",
+      "audit/remediation/A21_F045_CLOSURE.md",
       "docs/AUTOSAVE_INTEGRATION_NOTES.md",
       "docs/items/contract/ITEM_CONTRACT.md",
       "docs/items/contract/ITEM_CONTRACT_CHECKLIST.md",
@@ -651,7 +659,8 @@
       "docs/refactor/REFACTOR.md",
       "docs/refactor/SCENE_POSE.md",
       "docs/refactor/STAND_FRAME_REMOVAL.md",
-      "public/textures/floor/SOURCES.md"
+      "public/textures/floor/SOURCES.md",
+      "scripts/archive/README.md"
     ],
     "relatedFindings": {
       "affected": [],
@@ -670,7 +679,11 @@
         "F-019",
         "F-025",
         "F-029",
-        "F-033"
+        "F-033",
+        "F-040",
+        "F-043",
+        "F-045",
+        "F-046"
       ]
     },
     "notes": "Üretim Listesi: kısa panel açıklığı içindeki taşıyıcısız ortak uçta dikme yerine ara profil (applyRunInfillProfiles); aparat değişmez. Sahne: aynı nokta profil olarak çizilir ve İskelet etiketi profil alır (detectShortRunInfills → addRunInfills). Etiket: withItemLengthParts Üretim Listesi, İskelet etiketi ve özetinde ortak. Baza / banko birleşimi: boxRunJoints.js (detectBoxRunJoints, applyBoxRunEntries, resolveBoxRunEnds) → projectBom ve scene3d boxRunFrameParts. Şema, API, migration yok."
