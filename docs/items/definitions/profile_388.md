@@ -48,13 +48,17 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 - `backend/tests/modules/fair_stand/test_item_length_parts_migration.py`
 - `backend/tests/modules/fair_stand/test_profile_lengths_migration.py`
+- `backend/tests/modules/fair_stand/test_variant_families.py`
 - `e2e/new-project-wizard.spec.mjs`
 - `e2e/variant-families-admin.spec.mjs`
 - `e2e/vertical-move-upright-height.spec.mjs`
+- `test/baseModule.test.js`
+- `test/itemLengthParts.test.js`
 - `test/mapCatalogSeed.mjs`
 - `test/modulePlacement.test.js`
 - `test/profileFieldPlacement.test.js`
 - `test/profileLength.test.js`
+- `test/profileRealLengthFit.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/standResizeWallHeight.test.js`
 - `test/wallShortProfileSnapCollision.test.js`

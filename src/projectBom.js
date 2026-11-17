@@ -22,7 +22,8 @@ import {
   detectRelationshipJoints,
   planWallShortRelationshipBom,
 } from './relationshipBom.js';
-import { applyBaseRunBom, isBaseRunItemKey } from './baseRunBom.js';
+import { applyBaseRunBom, isBaseRunItemKey, withoutBaseBackPanel } from './baseRunBom.js';
+import { applyBoxRunEntries } from './boxRunJoints.js';
 import { collectPrintAreas } from './printAreaBom.js';
 import { summarizePanelAssignments } from './panelAssignmentBom.js';
 import {
@@ -210,6 +211,8 @@ function resolveModuleEntry(moduleState, index, {
       lines = mergeBomLines(lines, panelLinesFromSurfaces(backSurfaces));
       surfaces = [...surfaces, ...backSurfaces];
     }
+    // Bazanın arka yüzü panelsiz (2026-11-16): modül satırı dizi toplamıyla aynı.
+    if (isBaseRunItemKey(itemKey)) lines = withoutBaseBackPanel(lines, itemKey);
     const glassSplit = applyGlassPanelSplit(lines, surfaces);
     const split = applyMetalSeparatorSplit(glassSplit.lines, surfaces);
     const entry = {
@@ -431,6 +434,8 @@ export function resolveProjectBom(modules = [], stand = null, assetNames = null)
     });
   }
 
+  // Yan yana baza / banko birleşimi (2026-11-16): içteki yan paneller ve bankoda ortak uç düşer.
+  moduleEntries = applyBoxRunEntries(moduleEntries, list, (key) => resolveItemBom(key, 1));
   const adjusted = applyRelationshipBomAdjustments(
     aggregateLines(wallLinesOf()),
     joints,

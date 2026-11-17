@@ -1,9 +1,10 @@
 /**
  * Baza runs on the production list.
- * A free row of n bazas keeps 2n+2 panels, 2 starts per panel, 2n+6 singles,
+ * A free row of n bazas keeps n+2 panels (front only; the back has no panel, user decision
+ * 2026-11-16), 2 starts per panel, 2n+6 singles,
  * 2n+2 uprights and 2n+2 short profiles, and two outer 48.5 cheeks.
  * A same-width wall, separator, or showcase on a baza's back drops that baza's
- * long profile from 4 to 2 and one long panel. Uprights on the host face drop; a shared one on the same face line drops once.
+ * long profile from 4 to 2. Uprights on the host face drop; a shared one on the same face line drops once.
  * A standalone upright (346,5 …) standing on a baza corner replaces that corner's
  * 49,5 upright (user decision 2026-11-11).
  * Short-up is not a host.
@@ -61,6 +62,24 @@ function baseSpec(itemKey) {
 
 export function isBaseRunItemKey(itemKey) {
   return Boolean(baseSpec(itemKey));
+}
+
+/**
+ * Bazanın arka yüzü panelsizdir (kullanıcı kararı 2026-11-16): katalog reçetesi 2 uzun panel
+ * yazsa da modül satırında 1 uzun panel ve onun 2 başlangıç aparatı kalır (dizi toplamıyla aynı).
+ */
+export function withoutBaseBackPanel(lines, itemKey) {
+  const spec = baseSpec(itemKey);
+  if (!spec) return lines;
+  const minus = new Map([[spec.panel, 1], ['connector_start', 2]]);
+  return lines
+    .map((line) => {
+      const take = Math.min(minus.get(line.itemKey) ?? 0, Number(line.quantity) || 0);
+      if (!take) return line;
+      minus.set(line.itemKey, 0);
+      return { ...line, quantity: line.quantity - take };
+    })
+    .filter((line) => Number(line.quantity) > 0);
 }
 
 function hostWidthCm(itemKey) {
@@ -234,13 +253,14 @@ function runTotals(run, hosts, uprights = []) {
     });
   });
 
+  // Bazanın arka yüzü panelsizdir (kullanıcı kararı 2026-11-16): her bazada yalnız ön uzun panel.
   let longPanels = 0;
   run.forEach((frame, index) => {
     const onHost = hosted[index];
     addQuantity(totals, frame.spec.profile, onHost ? 2 : 4);
-    addQuantity(totals, frame.spec.panel, onHost ? 1 : 2);
+    addQuantity(totals, frame.spec.panel, 1);
     addQuantity(totals, frame.spec.top, 1);
-    longPanels += onHost ? 1 : 2;
+    longPanels += 1;
   });
 
   const panelCount = longPanels + 2;
@@ -250,6 +270,25 @@ function runTotals(run, hosts, uprights = []) {
   addQuantity(totals, 'connector_start', panelCount * 2);
   addQuantity(totals, 'connector_single', 2 * run.length + 6);
   return { totals, hostedCount, joints: Math.max(0, run.length - 1) };
+}
+
+/**
+ * Duvar sırtına dayalı bazalar (`hostCovers`): baza kimliği → duvarın plan tarafı (bazanın merkezinden
+ * dik eksende -1 / +1). Sahne o yüzün uzun rayını çizmez; listede o bazanın uzun profili 2'dir.
+ */
+export function resolveBaseHostSides(modules = []) {
+  const list = Array.isArray(modules) ? modules : [];
+  const hosts = list.map(hostFrame).filter(Boolean);
+  const result = new Map();
+  for (const module of list) {
+    const frame = bazaFrame(module);
+    if (!frame?.moduleId) continue;
+    const host = hosts.find((entry) => hostCovers(frame, entry));
+    if (!host) continue;
+    const side = Math.sign(host.fixedCm - frame.centerFixed);
+    if (side) result.set(frame.moduleId, side);
+  }
+  return result;
 }
 
 function linesFromTotals(totals) {
@@ -306,12 +345,12 @@ export function applyBaseRunBom(modules = []) {
   for (const module of unplaced) {
     const spec = baseSpec(module.itemKey);
     addQuantity(totals, spec.profile, 4);
-    addQuantity(totals, spec.panel, 2);
+    addQuantity(totals, spec.panel, 1);
     addQuantity(totals, spec.top, 1);
     addQuantity(totals, 'upright_49_5', 4);
     addQuantity(totals, 'profile_41_5', 4);
     addQuantity(totals, 'panel_48_5', 2);
-    addQuantity(totals, 'connector_start', 8);
+    addQuantity(totals, 'connector_start', 6);
     addQuantity(totals, 'connector_single', 8);
   }
 

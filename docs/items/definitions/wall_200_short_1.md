@@ -62,8 +62,10 @@
 - `test/flatPanelBackStrips.test.js`
 - `test/itemDefaultZCm.test.js`
 - `test/mapCatalogSeed.mjs`
+- `test/profileShortEndPostSnap.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/shortJointStructuralUpright.test.js`
+- `test/shortStackColumn.test.js`
 - `test/uprightFieldPlacement.test.js`
 - `test/wallShortCanonicalRename.test.js`
 - `test/wallShortProfileSnapCollision.test.js`

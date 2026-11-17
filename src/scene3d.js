@@ -29,6 +29,7 @@ import {
   isParquetFloorItem,
   listFloorItems,
   listRegisteredItems,
+  withItemLengthParts,
   applyItemPlacementZCm,
   isWallShortFamilyDescriptor,
   itemMovesVertically,
@@ -127,7 +128,55 @@ let renderCornerEndsByModule = new Map();
 // Sahne dışı çizim (sürükleme silüeti, moduleIndex < 0) tek başına çizilir: köşe kuralı yok.
 function cornerEndsForModule(moduleState, moduleIndex) {
   if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
-  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => !end.stack && !end.railRun);
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => !end.stack && !end.railRun && !end.infill && !end.boxRun && !end.baseHost);
+}
+
+// Yan yana baza / banko birleşim uçları (`boxRunJoints.js`); yalnız sahnedeki modül.
+function boxRunEndsForModule(moduleState, moduleIndex) {
+  if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => end.boxRun);
+}
+
+// Birleşimde baza / banko çerçevesi: dikmeyi çizmeyen uçta (ownsPost false) iki köşe dikmesi ve yan
+// raylar çizilmez, ön ray birleşim çizgisine kadar uzar; iki modülde de içteki yan yüzler çizilmez.
+// Bazada duvar sırtı (`wallCornerJoints.js` addBaseHostEnds): duvar tarafının yerel z işareti.
+function baseHostZSigns(moduleState, moduleIndex) {
+  if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? [])
+    .filter((end) => end.baseHost)
+    .map((end) => end.localZSign);
+}
+
+function boxRunFrameParts({ widthM, depthM, profileM, frameDepthM, longRailZSides = [1], longRailYsBySide = {} }, ends) {
+  const skipSides = new Set(ends.filter((end) => !end.ownsPost).map((end) => end.localXSign));
+  const innerSides = new Set(ends.map((end) => end.localXSign));
+  const posts = [-1, 1]
+    .filter((xSide) => !skipSides.has(xSide))
+    .flatMap((xSide) => [-1, 1].map((zSide) => [
+      xSide * (widthM / 2 - profileM / 2),
+      zSide * (depthM / 2 - profileM / 2),
+    ]));
+  const extendLeft = skipSides.has(-1) ? profileM : 0;
+  const extendRight = skipSides.has(1) ? profileM : 0;
+  const rails = [
+    ...longRailZSides.map((zSide) => ({
+      axis: 'x',
+      length: Math.max(widthM - profileM * 2, 0.02) + extendLeft + extendRight,
+      x: (extendRight - extendLeft) / 2,
+      z: zSide * (depthM / 2 - frameDepthM / 2),
+      ys: longRailYsBySide[zSide],
+    })),
+    ...[-1, 1]
+      .filter((xSide) => !skipSides.has(xSide))
+      .map((xSide) => ({ axis: 'z', length: Math.max(depthM - profileM * 2, 0.02), x: xSide * (widthM / 2 - frameDepthM / 2), z: 0 })),
+  ];
+  return { posts, rails, innerSides };
+}
+
+// Açıklık içi ara profil uçları (`wallCornerJoints.js` addRunInfills).
+function infillEndsForModule(moduleState, moduleIndex) {
+  if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => end.infill);
 }
 
 // Kısa panel ray açıklıkları (`wallCornerJoints.js` addShortRailRuns); yalnız sahnedeki modül.
@@ -1968,8 +2017,8 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     });
   }
 
-  // Çizilen parça boyu → katalogdaki en yakın dikme / profil Item'ının gerçek boyu.
-  function skeletonCatalogLengthCm(drawnCm, vertical) {
+  // Çizilen parça boyu → katalogdaki en yakın dikme / profil Item'ı ve gerçek boyu.
+  function skeletonCatalogLength(drawnCm, vertical) {
     const type = vertical ? 'upright' : 'profile';
     let best = null;
     for (const item of listRegisteredItems()) {
@@ -1978,9 +2027,11 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       if (!(realCm > 10)) continue;
       const scene = Number(vertical ? item.sceneDimensions?.heightCm : item.sceneDimensions?.widthCm);
       const diff = Math.min(Math.abs(realCm - drawnCm), Number.isFinite(scene) ? Math.abs(scene - drawnCm) : Infinity);
-      if (!best || diff < best.diff) best = { realCm, diff };
+      if (!best || diff < best.diff) best = { realCm, diff, item };
     }
-    return best && best.diff <= 12 ? best.realCm : Math.round(drawnCm * 10) / 10;
+    return best && best.diff <= 12
+      ? { lengthCm: best.realCm, item: best.item }
+      : { lengthCm: Math.round(drawnCm * 10) / 10, item: null };
   }
 
   function clearSkeletonLabels() {
@@ -1998,21 +2049,31 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       const drawnCm = lengthM * 100 * (vertical ? Math.abs(object.scale?.y || 1) : 1);
       if (!(drawnCm >= 20)) return;
       const element = document.createElement('div');
-      element.className = `scene-skeleton-label is-${vertical ? 'upright' : 'profile'}`;
-      element.dataset.skeletonKind = vertical ? 'upright' : 'profile';
+      const listedPieces = object.userData.bomPieces;
+      const asProfile = Array.isArray(listedPieces) && listedPieces.length
+        ? getItem(listedPieces[0])?.type === 'profile'
+        : !vertical;
+      element.className = `scene-skeleton-label is-${asProfile ? 'profile' : 'upright'}`;
+      element.dataset.skeletonKind = asProfile ? 'profile' : 'upright';
       // Ray açıklığında etiket listedeki profil parçalarıdır (ör. 487 ya da 346,5 + 140,5).
+      // Bölünüşü olan uzun parça bileşenleriyle yazılır: "388 (346,5 + 41,5)".
       const pieces = object.userData.bomPieces;
-      element.textContent = Array.isArray(pieces) && pieces.length
-        ? pieces.map((key) => format(Number(getItem(key)?.dimensions?.widthCm) || 0)).join(' + ')
-        : format(skeletonCatalogLengthCm(drawnCm, vertical));
+      if (Array.isArray(pieces) && pieces.length) {
+        element.textContent = pieces
+          .map((key) => withItemLengthParts(format(Number(getItem(key)?.dimensions?.widthCm) || 0), key))
+          .join(' + ');
+      } else {
+        const { lengthCm, item } = skeletonCatalogLength(drawnCm, vertical);
+        element.textContent = withItemLengthParts(format(lengthCm), item);
+      }
       element.style.cssText = [
         'position:fixed', 'z-index:29', 'pointer-events:none', 'transform:translate(-50%,-50%)',
         'padding:1px 5px', 'border-radius:4px', 'font:600 10px/1.3 system-ui,sans-serif',
         'white-space:nowrap', 'box-shadow:0 1px 3px rgba(15,23,42,.25)', 'visibility:hidden',
-        vertical ? 'background:rgba(30,58,95,.92);color:#fff' : 'background:rgba(255,255,255,.95);color:#334155;border:1px solid #94a3b8',
+        asProfile ? 'background:rgba(255,255,255,.95);color:#334155;border:1px solid #94a3b8' : 'background:rgba(30,58,95,.92);color:#fff',
       ].join(';');
       document.body.appendChild(element);
-      skeletonLabels.push({ element, mesh: object, count: vertical ? 2 : 1, width: element.offsetWidth, height: element.offsetHeight });
+      skeletonLabels.push({ element, mesh: object, count: asProfile ? 1 : 2, width: element.offsetWidth, height: element.offsetHeight });
       element.style.display = 'none';
       element.style.visibility = '';
     });
@@ -3348,7 +3409,8 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     };
 
     const wall = createFlatPanelModule(wallState, moduleIndex, applyStoredImage);
-    const base = createBaseModule(baseState, moduleIndex, applyStoredImage);
+    // Panel bazalı duvarda duvar bazanın sırtındadır: yalnız ön uzun ray (değişmedi).
+    const base = createBaseModule(baseState, moduleIndex, applyStoredImage, { wallBacked: true });
     const group = new THREE.Group();
     group.userData.kind = 'module';
     group.userData.moduleId = moduleState.id;
@@ -10952,11 +11014,12 @@ function addBoxModuleFrame(group, frameMaterial, { posts, rails, railYs, frameHe
   const postGeometry = createSlottedProfileGeometry(profileM, frameHeightM, profileM);
   posts.forEach(([x, z]) => addProfile(postGeometry.clone(), x, frameHeightM / 2, z));
   const railCenterY = (y) => Math.min(Math.max(y, profileM / 2), frameHeightM - profileM / 2);
-  rails.forEach(({ axis, length, x, z }) => {
+  // Rayın kendi kotları (`ys`) yoksa bütün kotlarda çizilir.
+  rails.forEach(({ axis, length, x, z, ys }) => {
     const geometry = axis === 'x'
       ? createSlottedProfileGeometry(length, profileM, profileM)
       : createSlottedProfileGeometry(profileM, profileM, length);
-    railYs.forEach((y) => addProfile(geometry.clone(), x, railCenterY(y), z));
+    (ys ?? railYs).forEach((y) => addProfile(geometry.clone(), x, railCenterY(y), z));
   });
 }
 
@@ -10973,7 +11036,7 @@ function placeBoxPanelFace(backing, surface, anchor, outward, backingDepth) {
   backing.position.copy(anchor).addScaledVector(outward, PANEL_FACE_OFFSET_M - 0.003 - backingDepth / 2);
 }
 
-function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
+function createBaseModule(moduleState, moduleIndex, onSurfaceReady, { wallBacked = false } = {}) {
   const widthCm = Number(moduleState.widthCm);
   const depthCm = Number(moduleState.depthCm) || 50;
   const heightCm = Number(moduleState.heightCm) || 50;
@@ -10993,8 +11056,6 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
   // Panel yüzü çerçevenin dış kenarından sağ/solda PANEL_FRAME_SIDE_INSET_M, alt/üstte PANEL_FRAME_INSET_M içeride biter.
   const frontPanelWidthM = Math.max(widthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
   const sidePanelWidthM = Math.max(depthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
-  const railSpanXM = Math.max(widthM - profileM * 2, 0.02);
-  const railSpanZM = Math.max(depthM - profileM * 2, 0.02);
   const group = new THREE.Group();
   group.userData = {
     kind: 'module',
@@ -11013,16 +11074,17 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
   });
   // Baza dış ölçüsü korunur; ara yatay profil yok (her yüz tek panel).
   const railYs = [0, frameHeightM];
+  // Yan yana bazada ortak uç tek çizilir (`boxRunJoints.js`, 2026-11-16). Uzun raylar ön ve arkada
+  // (listede 4 profil); duvar sırtındaki bazada duvar tarafı çizilmez (2 profil).
+  const hostZSigns = baseHostZSigns(moduleState, moduleIndex);
+  const longRailZSides = wallBacked ? [1] : [1, -1].filter((zSide) => !hostZSigns.includes(zSide));
+  const boxRun = boxRunFrameParts(
+    { widthM, depthM, profileM, frameDepthM, longRailZSides },
+    boxRunEndsForModule(moduleState, moduleIndex),
+  );
   addBoxModuleFrame(group, frameMaterial, {
-    posts: [-1, 1].flatMap((xSide) => [-1, 1].map((zSide) => [
-      xSide * (widthM / 2 - profileM / 2),
-      zSide * (depthM / 2 - profileM / 2),
-    ])),
-    rails: [
-      { axis: 'x', length: railSpanXM, x: 0, z: depthM / 2 - frameDepthM / 2 },
-      { axis: 'z', length: railSpanZM, x: -(widthM / 2 - frameDepthM / 2), z: 0 },
-      { axis: 'z', length: railSpanZM, x: widthM / 2 - frameDepthM / 2, z: 0 },
-    ],
+    posts: boxRun.posts,
+    rails: boxRun.rails,
     railYs,
     frameHeightM,
     profileM,
@@ -11098,8 +11160,8 @@ function createBaseModule(moduleState, moduleIndex, onSurfaceReady) {
   };
 
   addPanelFace('front', moduleState.faces?.front, frontPanelWidthM, new THREE.Vector3(0, panelCenterY, depthM / 2), new THREE.Vector3(0, 0, 1));
-  addPanelFace('left', moduleState.faces?.left, sidePanelWidthM, new THREE.Vector3(-widthM / 2, panelCenterY, 0), new THREE.Vector3(-1, 0, 0), -Math.PI / 2);
-  addPanelFace('right', moduleState.faces?.right, sidePanelWidthM, new THREE.Vector3(widthM / 2, panelCenterY, 0), new THREE.Vector3(1, 0, 0), Math.PI / 2);
+  if (!boxRun.innerSides.has(-1)) addPanelFace('left', moduleState.faces?.left, sidePanelWidthM, new THREE.Vector3(-widthM / 2, panelCenterY, 0), new THREE.Vector3(-1, 0, 0), -Math.PI / 2);
+  if (!boxRun.innerSides.has(1)) addPanelFace('right', moduleState.faces?.right, sidePanelWidthM, new THREE.Vector3(widthM / 2, panelCenterY, 0), new THREE.Vector3(1, 0, 0), Math.PI / 2);
   mountRecipeTopSurface(top, moduleState.renderParts?.tops?.[0], moduleState, 'base', moduleIndex, surfaces, onSurfaceReady);
 
   return { group, surfaces };
@@ -11127,8 +11189,6 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   // Panel yüzü çerçevenin dış kenarından sağ/solda PANEL_FRAME_SIDE_INSET_M, alt/üstte PANEL_FRAME_INSET_M içeride biter.
   const frontPanelWidthM = Math.max(widthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
   const sidePanelWidthM = Math.max(depthM - PANEL_FRAME_SIDE_INSET_M * 2, 0.05);
-  const railSpanXM = Math.max(widthM - profileM * 2, 0.02);
-  const railSpanZM = Math.max(depthM - profileM * 2, 0.02);
   const group = new THREE.Group();
   group.userData = {
     kind: 'module',
@@ -11148,16 +11208,15 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   // 4 köşe dikmesi; ara yatay profil kaldırıldı, yalnız en alt ve en üst profil kalır.
   const railYs = [0, frameHeightM];
   const frameDepthM = getProceduralFrameCrossSectionM(moduleState).frameDepth;
+  // Yan yana bankoda ortak uç tek çizilir (`boxRunJoints.js`, 2026-11-16). Uzun profil 3 (listeyle aynı):
+  // ön alt, ön üst ve tablanın altında arka üst (kullanıcı kararı 2026-11-16); arkada alt ray yok.
+  const boxRun = boxRunFrameParts(
+    { widthM, depthM, profileM, frameDepthM, longRailZSides: [1, -1], longRailYsBySide: { '-1': [frameHeightM] } },
+    boxRunEndsForModule(moduleState, moduleIndex),
+  );
   addBoxModuleFrame(group, frameMaterial, {
-    posts: [-1, 1].flatMap((xSide) => [-1, 1].map((zSide) => [
-      xSide * (widthM / 2 - profileM / 2),
-      zSide * (depthM / 2 - profileM / 2),
-    ])),
-    rails: [
-      { axis: 'x', length: railSpanXM, x: 0, z: depthM / 2 - frameDepthM / 2 },
-      { axis: 'z', length: railSpanZM, x: -(widthM / 2 - frameDepthM / 2), z: 0 },
-      { axis: 'z', length: railSpanZM, x: widthM / 2 - frameDepthM / 2, z: 0 },
-    ],
+    posts: boxRun.posts,
+    rails: boxRun.rails,
     railYs,
     frameHeightM,
     profileM,
@@ -11247,10 +11306,14 @@ function createCounterModule(moduleState, moduleIndex, onSurfaceReady) {
 
   addFace('front', 'lower', moduleState.faces?.frontLower, frontPanelWidthM, new THREE.Vector3(0, lowerY, depthM / 2), front);
   addFace('front', 'upper', moduleState.faces?.frontUpper, frontPanelWidthM, new THREE.Vector3(0, upperY, depthM / 2), front);
-  addFace('left', 'lower', moduleState.faces?.leftLower, sidePanelWidthM, new THREE.Vector3(-widthM / 2, lowerY, 0), left, -Math.PI / 2);
-  addFace('left', 'upper', moduleState.faces?.leftUpper, sidePanelWidthM, new THREE.Vector3(-widthM / 2, upperY, 0), left, -Math.PI / 2);
-  addFace('right', 'lower', moduleState.faces?.rightLower, sidePanelWidthM, new THREE.Vector3(widthM / 2, lowerY, 0), right, Math.PI / 2);
-  addFace('right', 'upper', moduleState.faces?.rightUpper, sidePanelWidthM, new THREE.Vector3(widthM / 2, upperY, 0), right, Math.PI / 2);
+  if (!boxRun.innerSides.has(-1)) {
+    addFace('left', 'lower', moduleState.faces?.leftLower, sidePanelWidthM, new THREE.Vector3(-widthM / 2, lowerY, 0), left, -Math.PI / 2);
+    addFace('left', 'upper', moduleState.faces?.leftUpper, sidePanelWidthM, new THREE.Vector3(-widthM / 2, upperY, 0), left, -Math.PI / 2);
+  }
+  if (!boxRun.innerSides.has(1)) {
+    addFace('right', 'lower', moduleState.faces?.rightLower, sidePanelWidthM, new THREE.Vector3(widthM / 2, lowerY, 0), right, Math.PI / 2);
+    addFace('right', 'upper', moduleState.faces?.rightUpper, sidePanelWidthM, new THREE.Vector3(widthM / 2, upperY, 0), right, Math.PI / 2);
+  }
   mountRecipeTopSurface(top, moduleState.renderParts?.tops?.[0], moduleState, 'counter', moduleIndex, surfaces, onSurfaceReady);
 
   return { group, surfaces };
@@ -11277,7 +11340,8 @@ function createLCounterModule(moduleState, moduleIndex, onSurfaceReady) {
   const group = new THREE.Group();
   group.userData = { kind:'module', moduleIndex, moduleId:moduleState.id, type:'counter', widthCm, depthCm, heightCm:100, counterShape:'L' };
   const frameMaterial = new THREE.MeshStandardMaterial({ color:frameColorForModule(moduleState), metalness:0.68, roughness:0.28 });
-  const railYs=[0,stripHeightM,frameHeightM];
+  // Orta kot rayı yok (kullanıcı kararı 2026-11-16): yalnız alt ve üst raylar.
+  const railYs = [0, frameHeightM];
   addBoxModuleFrame(group, frameMaterial, {
     posts: [
       [-widthM / 2 + profileM / 2, -depthM / 2 + profileM / 2],
@@ -11291,6 +11355,23 @@ function createLCounterModule(moduleState, moduleIndex, onSurfaceReady) {
       { axis: 'z', length: Math.max(depthM - profileM * 2, 0.02), x: widthM / 2 - frameDepthM / 2, z: 0 },
       { axis: 'z', length: Math.max(armM - profileM * 2, 0.02), x: -widthM / 2 + frameDepthM / 2, z: -depthM / 2 + armM / 2 },
       { axis: 'x', length: Math.max(armM - profileM * 2, 0.02), x: widthM / 2 - armM / 2, z: depthM / 2 - frameDepthM / 2 },
+      // Tablanın altında iç kenar rayları, yalnız üstte (kullanıcı kararı 2026-11-16, 1 m örneği):
+      // iç kol dikmesinden karşı uzun raya giden uzun ray (100'de 91) ve öbür iç dikmeden ona giden
+      // kısa ray (100'de 41,5). 150 / 200 aynı düzende kendi ölçüsünde.
+      {
+        axis: 'z',
+        length: Math.max(depthM - profileM * 2, 0.02),
+        x: widthM / 2 - armM + profileM / 2,
+        z: 0,
+        ys: [frameHeightM],
+      },
+      {
+        axis: 'x',
+        length: Math.max(widthM - armM - profileM, 0.02),
+        x: (profileM - armM) / 2,
+        z: -depthM / 2 + armM - profileM / 2,
+        ys: [frameHeightM],
+      },
     ],
     railYs,
     frameHeightM,
@@ -11684,6 +11765,7 @@ function addPanelModuleFrame(
     skipTopRail = false,
     skipUprights = false,
     railRuns = [],
+    infillEnds = [],
   },
 ) {
   const { frameWidth, frameDepth } = getProceduralFrameCrossSectionM(moduleState);
@@ -11726,7 +11808,10 @@ function addPanelModuleFrame(
     const uprightGeometry = createSlottedProfileGeometry(frameWidth, segmentTop - segmentBottom, frameDepth);
     for (const side of [-1, 1]) {
       if (ownPostSides.has(side)) continue;
-      addProfile(uprightGeometry.clone(), side * (widthM / 2 - frameWidth / 2), (segmentBottom + segmentTop) / 2);
+      const upright = addProfile(uprightGeometry.clone(), side * (widthM / 2 - frameWidth / 2), (segmentBottom + segmentTop) / 2);
+      // Açıklık içinde bu parça dikme değil ara profildir (listede de profil sayılır).
+      const infill = infillEnds.find((end) => end.localXSign === side);
+      if (infill) upright.userData.bomPieces = infill.pieces;
     }
   }
   // Ortak köşe dikmesi: kesit duvar kalınlığında kare, merkezi duvar çizgisinin ucunda (iki çizginin
@@ -11825,6 +11910,7 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
     skipTopRail: Boolean(stack?.above),
     skipUprights: Boolean(stack?.below),
     railRuns: railRunsForModule(moduleState, moduleIndex),
+    infillEnds: infillEndsForModule(moduleState, moduleIndex),
   });
 
   const railHeight = STAND_DIMENSIONS.panelRailHeight;

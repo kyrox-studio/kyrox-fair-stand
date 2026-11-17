@@ -41,6 +41,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/flatPanelBackStrips.test.js`
 - `test/mapCatalogSeed.mjs`
 - `test/panel197ItemContract.test.js`
+- `test/panelAssignmentBom.test.js`
 - `test/panelCamFamily.test.js`
 - `test/panelCorner192ItemContract.test.js`
 - `test/relationshipBomJoints.test.js`

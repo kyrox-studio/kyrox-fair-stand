@@ -59,12 +59,16 @@
 
 - `backend/tests/modules/fair_stand/test_banko_base_cards_migration.py`
 - `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
+- `e2e/base-edge-under-fascia.spec.mjs`
 - `e2e/base-items-contract.spec.mjs`
+- `e2e/box-run-shared-post.spec.mjs`
 - `e2e/helpers/catalogWidth.mjs`
 - `e2e/selection-stale-clear.spec.mjs`
+- `test/baseFacePanelIdentity.test.js`
 - `test/baseItemsContract.test.js`
 - `test/baseModule.test.js`
 - `test/baseRunBom.test.js`
+- `test/boxRunJoints.test.js`
 - `test/catalogCategories.test.js`
 - `test/itemCatalogFields.test.js`
 - `test/sceneBomAcceptance.test.js`

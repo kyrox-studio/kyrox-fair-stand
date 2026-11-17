@@ -39,6 +39,7 @@ Alt kalem olarak kullanıldığı Item'lar: `wall_separator_100_350`, `wall_sepa
 ## Testler
 
 - `test/mapCatalogSeed.mjs`
+- `test/panelAssignmentBom.test.js`
 - `test/panelGlassBom.test.js`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/relationshipBomJoints.test.js`

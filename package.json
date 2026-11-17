@@ -12,7 +12,7 @@
     "e2e:deps": "npm install --no-save --no-package-lock @playwright/test@1.62.1",
     "e2e:install": "playwright install chromium",
     "e2e": "playwright test",
-    "audit:deps": "npm audit --audit-level=high",
+    "audit:deps": "node scripts/audit-deps.mjs",
     "syntax:check": "node scripts/check-src-syntax.mjs",
     "compress:models": "node scripts/compress-models.mjs"
   },

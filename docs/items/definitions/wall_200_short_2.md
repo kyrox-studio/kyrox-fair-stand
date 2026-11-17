@@ -65,11 +65,15 @@
 - `test/itemScenePose.test.js`
 - `test/itemSnapAnchor.test.js`
 - `test/mapCatalogSeed.mjs`
+- `test/placementBomProtected.test.js`
+- `test/profileShortEndPostSnap.test.js`
 - `test/recipeWallPanelSlots.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/shortJointStructuralUpright.test.js`
+- `test/shortUprightSnap.test.js`
 - `test/stripOccupancy.test.js`
 - `test/uprightFieldPlacement.test.js`
+- `test/wallCornerJoints.test.js`
 - `test/wallFlatPanelItemsContract.test.js`
 - `test/wallShortCanonicalRename.test.js`
 - `test/wallShortProfileSnapCollision.test.js`

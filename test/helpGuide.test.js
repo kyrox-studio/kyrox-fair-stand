@@ -31,7 +31,7 @@ test('help guide exposes a fixed question-mark launcher and collapsible sections
   assert.match(guideSource, /editörden çıkarken “Kaydedilmemiş değişiklikler var” uyarısı çıkar/);
   assert.match(guideSource, /Dışarı Aktar projenin son kaydını aktarır/);
   assert.match(guideSource, /Bir görselin dosyası bulunamazsa proje yine açılır/);
-  assert.match(guideSource, /Her proje bir müşteriye bağlıdır/);
+  assert.match(guideSource, /Müşteri isteğe bağlıdır: paket müşteri bilgisi taşıyorsa ya da editör bir müşteriden açıldıysa/);
   assert.match(guideSource, /title: 'Gruplar'/);
   assert.match(guideSource, /Tek kısıt: hiçbir parça stand alanının dışına çıkamaz/);
   assert.match(guideSource, /Grubun bütün parçalarını onay sormadan siler; Geri al ile döner\./);

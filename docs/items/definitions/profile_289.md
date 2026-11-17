@@ -59,6 +59,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/itemSceneDimensions.test.js`
 - `test/profileFieldPlacement.test.js`
 - `test/profileLength.test.js`
+- `test/profileWallRailTee.test.js`
 - `test/uprightFieldPlacement.test.js`
 - `test/variantFamilies.test.js`
 - `test/wallShortRelationshipBom.test.js`

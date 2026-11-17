@@ -1257,6 +1257,7 @@ function applyShortOnlyStackedUprights(book, shorts) {
         book.dropShortUpright(entry.frame, entry.point);
       }
       book.add(combinedKey, 1);
+      book.mergedShortUprights.set(pointKey(members[0].point), { key: combinedKey, frames: members.map((entry) => entry.frame) });
       book.noteJoint();
     }
   }
@@ -1426,6 +1427,88 @@ function applyShortRunProfiles(book, shorts, partners, uprights) {
         pieces: Object.freeze([...pieces]),
       }));
       book.noteProfileRun();
+    }
+  }
+}
+
+function profileKeyByLength(lengthCm) {
+  for (const item of listRegisteredItems()) {
+    if (item?.type !== 'profile') continue;
+    if (nearlyEqual(Number(item.dimensions?.widthCm), lengthCm)) return item.itemKey;
+  }
+  return null;
+}
+
+// Ray kalınlığı: açıklık içindeki ara profil dikmeden bu kadar kısadır (alt + üst ray).
+const RUN_INFILL_SHORTEN_CM = 8;
+
+/**
+ * Açıklık içi ara profil (kullanıcı kararı 2026-11-16): listenin tek profil saydığı ray açıklığının
+ * içindeki birleşim noktalarında kalan kısa panel dikmesi taşıyıcı değildir; iki rayın arasına giren
+ * profildir ve dikmeden 8 cm kısadır (99 → 91, 49,5 → 41,5, 148,5 → 140,5, 198 → 190). Açıklığın
+ * uçları (taşıyıcılar) dikme kalır. Aparat değişmez.
+ */
+function applyRunInfillProfiles(book, shorts) {
+  const handled = new Set();
+  const byId = new Map(shorts.map((frame) => [frame.moduleId, frame]));
+  // Birleşim noktası hem alt hem üst rayın kesintisiz açıklığının içindeyse dikey parça ara profildir;
+  // yalnız bir ray kesintisizse (ör. farklı yükseklikte iki short) o nokta rayı taşır, dikme kalır.
+  const interiorPoints = (rail) => {
+    const keys = new Set();
+    for (const run of book.profileRuns) {
+      if (run.rail !== rail) continue;
+      const members = run.moduleIds.map((id) => byId.get(id)).filter(Boolean)
+        .sort((a, b) => a.startCm - b.startCm);
+      for (const frame of members.slice(1)) {
+        keys.add(pointKey(run.axis === 'x'
+          ? { xCm: frame.startCm, yCm: run.fixedCm }
+          : { xCm: run.fixedCm, yCm: frame.startCm }));
+      }
+    }
+    return keys;
+  };
+  const bottomInterior = interiorPoints('bottom');
+  const topInterior = interiorPoints('top');
+  for (const run of book.profileRuns) {
+    const members = run.moduleIds.map((id) => byId.get(id)).filter(Boolean)
+      .sort((a, b) => a.startCm - b.startCm);
+    for (const frame of members.slice(1)) {
+      const point = run.axis === 'x'
+        ? { xCm: frame.startCm, yCm: run.fixedCm }
+        : { xCm: run.fixedCm, yCm: frame.startCm };
+      const key = pointKey(point);
+      if (handled.has(key)) continue;
+      handled.add(key);
+      if (!bottomInterior.has(key) || !topInterior.has(key)) continue;
+      const merged = book.mergedShortUprights.get(key);
+      if (merged) {
+        const profileKey = profileKeyByLength(uprightLengthCm(merged.key) - RUN_INFILL_SHORTEN_CM);
+        if (!profileKey) continue;
+        book.add(merged.key, -1);
+        book.add(profileKey, 1);
+        book.runInfills.push(Object.freeze({
+          point: Object.freeze(point),
+          profileKey,
+          moduleIds: Object.freeze(merged.frames.map((entry) => entry.moduleId)),
+        }));
+        continue;
+      }
+      for (const piece of shorts) {
+        if (!piece.uprightKey) continue;
+        const ends = segmentEndpoints(piece);
+        const atPoint = pointKey(ends.start) === key || pointKey(ends.end) === key;
+        if (!atPoint || book.droppedShortUprights.has(`${piece.moduleId}|${key}`)) continue;
+        const profileKey = profileKeyByLength(uprightLengthCm(piece.uprightKey) - RUN_INFILL_SHORTEN_CM);
+        if (!profileKey) continue;
+        book.add(piece.uprightKey, -1);
+        book.add(profileKey, 1);
+        book.dropShortUpright(piece, point);
+        book.runInfills.push(Object.freeze({
+          point: Object.freeze(point),
+          profileKey,
+          moduleIds: Object.freeze([piece.moduleId]),
+        }));
+      }
     }
   }
 }
@@ -1784,6 +1867,9 @@ function createDeltaBook() {
   const droppedShortUprights = new Set();
   // Kısa panel ray açıklıkları (sahne tek profil çizer; `detectShortProfileRuns`).
   const profileRuns = [];
+  // Kolon birleşik dikmeleri (nokta → { key, frames }) ve açıklık içi ara profiller.
+  const mergedShortUprights = new Map();
+  const runInfills = [];
   const moduleCharges = new Map();
   let jointCount = 0;
   let railCount = 0;
@@ -1822,6 +1908,8 @@ function createDeltaBook() {
     sharedJointUprights,
     droppedShortUprights,
     profileRuns,
+    mergedShortUprights,
+    runInfills,
     dropShortUpright(frame, point) {
       if (frame?.kind === 'short' && point) droppedShortUprights.add(`${frame.moduleId}|${pointKey(point)}`);
     },
@@ -2132,6 +2220,7 @@ export function planWallShortRelationshipBom(modules = []) {
   applySameWidthShortColumns(book, structural);
   applyShortOnlyStackedUprights(book, shorts);
   applyShortRunProfiles(book, shorts, partners, uprights);
+  applyRunInfillProfiles(book, shorts);
 
   const notes = [];
   if (book.jointCount) {
@@ -2154,6 +2243,7 @@ export function planWallShortRelationshipBom(modules = []) {
     jointCount: book.jointCount,
     railCount: book.railCount,
     profileRuns: Object.freeze([...book.profileRuns]),
+    runInfills: Object.freeze([...book.runInfills]),
     notes: Object.freeze(notes),
   });
 }
@@ -2164,6 +2254,11 @@ export function planWallShortRelationshipBom(modules = []) {
  */
 export function detectShortProfileRuns(modules = []) {
   return planWallShortRelationshipBom(modules).profileRuns ?? Object.freeze([]);
+}
+
+/** Açıklık içi ara profiller (sahne: o noktadaki dikey parça profil olarak çizilir / etiketlenir). */
+export function detectShortRunInfills(modules = []) {
+  return planWallShortRelationshipBom(modules).runInfills ?? Object.freeze([]);
 }
 
 function mergePanelSwaps(entries) {

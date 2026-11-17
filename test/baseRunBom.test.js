@@ -35,14 +35,15 @@ function host(id, itemKey, widthCm, { xCm = 0, yCm = 0, rotationZDeg = 0 } = {})
   };
 }
 
+// Bazanın arka yüzü panelsizdir (kullanıcı kararı 2026-11-16): serbest bazada uzun panel 1, başlangıç 6.
 test('one baza keeps its solo recipe', () => {
   const bom = resolveProjectBom([baza('a', 'base_200', 200, { xCm: 0 })]);
   assert.equal(qty(bom, 'profile_190'), 4);
-  assert.equal(qty(bom, 'panel_197'), 2);
+  assert.equal(qty(bom, 'panel_197'), 1);
   assert.equal(qty(bom, 'upright_49_5'), 4);
   assert.equal(qty(bom, 'profile_41_5'), 4);
   assert.equal(qty(bom, 'panel_48_5'), 2);
-  assert.equal(qty(bom, 'connector_start'), 8);
+  assert.equal(qty(bom, 'connector_start'), 6);
   assert.equal(qty(bom, 'connector_single'), 8);
   assert.equal(qty(bom, 'base_top_206_50'), 1);
 });
@@ -55,9 +56,9 @@ test('two, three and four free baza 200 rows follow the run formula', () => {
   assert.equal(qty(two, 'profile_190'), 8);
   assert.equal(qty(two, 'profile_41_5'), 6);
   assert.equal(qty(two, 'upright_49_5'), 6);
-  assert.equal(qty(two, 'panel_197'), 4);
+  assert.equal(qty(two, 'panel_197'), 2);
   assert.equal(qty(two, 'panel_48_5'), 2);
-  assert.equal(qty(two, 'connector_start'), 12);
+  assert.equal(qty(two, 'connector_start'), 8);
   assert.equal(qty(two, 'connector_single'), 10);
   assert.equal(qty(two, 'base_top_206_50'), 2);
 
@@ -68,9 +69,9 @@ test('two, three and four free baza 200 rows follow the run formula', () => {
   ]);
   assert.equal(qty(three, 'profile_190'), 12);
   assert.equal(qty(three, 'upright_49_5'), 8);
-  assert.equal(qty(three, 'panel_197'), 6);
+  assert.equal(qty(three, 'panel_197'), 3);
   assert.equal(qty(three, 'panel_48_5'), 2);
-  assert.equal(qty(three, 'connector_start'), 16);
+  assert.equal(qty(three, 'connector_start'), 10);
   assert.equal(qty(three, 'connector_single'), 12);
 
   const four = resolveProjectBom([
@@ -82,8 +83,8 @@ test('two, three and four free baza 200 rows follow the run formula', () => {
   assert.equal(qty(four, 'profile_190'), 16);
   assert.equal(qty(four, 'profile_41_5'), 10);
   assert.equal(qty(four, 'upright_49_5'), 10);
-  assert.equal(qty(four, 'panel_197'), 8);
-  assert.equal(qty(four, 'connector_start'), 20);
+  assert.equal(qty(four, 'panel_197'), 4);
+  assert.equal(qty(four, 'connector_start'), 12);
   assert.equal(qty(four, 'connector_single'), 14);
   assert.equal(qty(four, 'base_top_206_50'), 4);
 });
@@ -95,10 +96,10 @@ test('mixed widths share the short end and keep their own long parts', () => {
   ]);
   assert.equal(qty(bom, 'profile_190'), 4);
   assert.equal(qty(bom, 'profile_140_5'), 4);
-  assert.equal(qty(bom, 'panel_197'), 2);
-  assert.equal(qty(bom, 'panel_147_5'), 2);
+  assert.equal(qty(bom, 'panel_197'), 1);
+  assert.equal(qty(bom, 'panel_147_5'), 1);
   assert.equal(qty(bom, 'upright_49_5'), 6);
-  assert.equal(qty(bom, 'connector_start'), 12);
+  assert.equal(qty(bom, 'connector_start'), 8);
   assert.equal(qty(bom, 'connector_single'), 10);
   assert.equal(qty(bom, 'base_top_206_50'), 1);
   assert.equal(qty(bom, 'base_top_157_50'), 1);
@@ -127,7 +128,7 @@ test('a narrower wall does not host a wider baza', () => {
   ]);
   assert.equal(qty(bom, 'profile_190'), 4);
   assert.equal(qty(bom, 'upright_49_5'), 4);
-  assert.equal(qty(bom, 'panel_197'), 2);
+  assert.equal(qty(bom, 'panel_197'), 1);
 });
 
 test('showcase hosts only the matching baza in a row', () => {
@@ -137,11 +138,11 @@ test('showcase hosts only the matching baza in a row', () => {
     baza('right', 'base_100', 100, { xCm: 100 }),
   ]);
   assert.equal(qty(bom, 'profile_91'), 10);
-  assert.equal(qty(bom, 'panel_98'), 8);
+  assert.equal(qty(bom, 'panel_98'), 7);
   assert.equal(qty(bom, 'upright_49_5'), 4);
   assert.equal(qty(bom, 'profile_41_5'), 6);
   assert.equal(qty(bom, 'panel_48_5'), 2);
-  assert.equal(qty(bom, 'connector_start'), 14);
+  assert.equal(qty(bom, 'connector_start'), 12);
   assert.equal(qty(bom, 'connector_single'), 19);
   assert.equal(qty(bom, 'base_top_107_50'), 2);
 });
@@ -180,7 +181,7 @@ test('a baza whose back sits on the wall centerline is not flush', () => {
   ]);
   assert.equal(qty(bom, 'upright_49_5'), 4);
   assert.equal(qty(bom, 'profile_190'), 6);
-  assert.equal(qty(bom, 'panel_197'), 9);
+  assert.equal(qty(bom, 'panel_197'), 8);
 });
 
 test('a door on the same line does not reduce the baza', () => {
@@ -190,8 +191,8 @@ test('a door on the same line does not reduce the baza', () => {
   ]);
   assert.equal(qty(bom, 'upright_49_5'), 4);
   assert.equal(qty(bom, 'profile_91'), 5);
-  assert.equal(qty(bom, 'panel_98'), 5);
-  assert.equal(qty(bom, 'connector_start'), 10);
+  assert.equal(qty(bom, 'panel_98'), 4);
+  assert.equal(qty(bom, 'connector_start'), 8);
 });
 
 function upright(id, { xCm, yCm, rotationZDeg = 90 }) {
@@ -256,3 +257,26 @@ test('köşenin içinde, iki dış yüzle hizalı dikme 49,5 köşe dikmesinin y
   const beside = [placed('upright_346_5', 195, 180, 0, upright), placed('upright_346_5', 195, 370, 0, upright)];
   assert.equal(count([base, ...beside], 'upright_49_5'), 4);
 });
+
+// Sahne (kullanıcı kararı 2026-11-16): serbest bazada ön ve arka uzun raylar çizilir (listede 4);
+// duvar sırtındaki bazada duvar tarafındaki ray çizilmez (listede 2). 100 / 150 / 200 aynı.
+test('sahne: duvar sırtındaki bazanın duvar tarafı işaretlenir, serbest bazada işaret yok', async () => {
+  const { resolveWallCornerEnds } = await import('../src/wallCornerJoints.js');
+  for (const [itemKey, widthCm, wallKey] of [
+    ['base_100', 100, 'wall_100_350'], ['base_150', 150, 'wall_150_350'], ['base_200', 200, 'wall_200_350'],
+  ]) {
+    const hosted = resolveWallCornerEnds([host('wall', wallKey, widthCm), baza('base', itemKey, widthCm, { xCm: 0 })]);
+    const ends = (hosted.get('base') ?? []).filter((end) => end.baseHost);
+    assert.equal(ends.length, 1, itemKey);
+    // Duvar bazanın arkasında: yerel z'de ön (+1) değil arka (-1) yüz.
+    assert.equal(ends[0].localZSign, -1, itemKey);
+    const bom = resolveProjectBom([host('wall', wallKey, widthCm), baza('base', itemKey, widthCm, { xCm: 0 })]);
+    assert.equal(qty(bom, getProfileKey(itemKey)), 4, itemKey);
+    const free = resolveWallCornerEnds([baza('base', itemKey, widthCm, { xCm: 0, yCm: 300 })]);
+    assert.equal((free.get('base') ?? []).filter((end) => end.baseHost).length, 0, itemKey);
+  }
+});
+
+function getProfileKey(itemKey) {
+  return { base_100: 'profile_91', base_150: 'profile_140_5', base_200: 'profile_190' }[itemKey];
+}

@@ -15,6 +15,20 @@ Bu dosya Item mimarisine geçişin değişiklik günlüğüdür (2026-09-16 … 
 
 ---
 
+## 2026-11-16 — Yan yana baza ve bankoda ortak dikme tek
+
+**Ürün kararı:** Yan yana bazada liste ortak uçtaki dikmeyi zaten tek sayıyordu (`baseRunBom.js`), sahne iki dikme çiziyordu; sahne listeye uyar. Bankoda da aynı kural: uç uca iki düz banko birleşince ortak uçtaki iki dikme ve iki 41,5 tek sayılır ve tek çizilir, aradaki yan paneller ve aparatları düşer.
+
+**Kod:** `src/boxRunJoints.js` birleşimi tek yerde bulur (aynı aile, aynı hat, derinlik, kot ve yükseklik; uçlar ±0,5 cm). `applyBoxRunEntries` (`projectBom.js`) bankonun satırlarından ortak ucu ve içteki yan panelleri düşer, iki ailede içteki yüzleri panel dökümünden çıkarır. `resolveBoxRunEnds` → `wallCornerJoints.js` `addBoxRunEnds` → `scene3d.js` `boxRunFrameParts`: sonraki modül o uçta dikme ve yan ray çizmez, ön rayı birleşime kadar uzar; içteki yan yüzler çizilmez.
+
+**Baza arka paneli (aynı gün kullanıcı kararı):** bazanın arka yüzü panelsizdir; liste her bazada 1 uzun panel sayar (n baza: n + 2 panel), modül satırı da (`baseRunBom.js` `withoutBaseBackPanel`). Panel dökümü ve sahne ile aynı.
+
+**Baza uzun rayları (aynı gün kullanıcı kararı):** sahne serbest bazada ön ve arka uzun rayları çizer (listede 4 profil); duvar sırtındaki bazada duvar tarafı çizilmez (listede 2). 100 / 150 / 200 aynı (`baseRunBom.js` `resolveBaseHostSides`, `wallCornerJoints.js` `addBaseHostEnds`).
+
+**Banko arka üst rayı (aynı gün kullanıcı kararı):** düz bankoda listedeki 3 uzun profil sahnede ön alt, ön üst ve arka üsttür (tablanın altı); arkada alt ray yok. `addBoxModuleFrame` rayın kendi kotlarını (`ys`) kabul eder. L bankoda orta kot rayları kaldırıldı; tablanın altında iç kenara üstte uzun ve kısa ray eklendi, sahne listedeki profil sayısıyla aynı (100 / 150 / 200).
+
+**Gerileme düzeltmesi (aynı gün):** #385'te `collectPanelSurfaces` yüzlere reçete sırasıyla panel kimliği yazınca 2026-11-13 kararı (ön geniş, yanlar dar; proje 452d4cc1) liste tarafında bozuldu: bazada sol yanak, L bankoda sol / sağ yüzler yanlış panel sayılıyordu (panel dökümü, cam ikizi). Baza / banko yüzü artık rolünden kimlik alır (`designState.js` `resolveBoxFacePanelItemKey`, `panelGlassBom.js`); duvar bantları sıradan onarılmaya devam eder. Testler liste katmanını da kapsar (`test/baseFacePanelIdentity.test.js`, `e2e/desk-banko-items-contract.spec.mjs` ölçü değişiminden sonra yüz kimliği).
+
 ## 2026-11-13 — Profil gerçek boyundaki aralığa oturur; H / U köşe; uç dikmesi
 
 Kullanıcı projesi 452d4cc1 üzerinde, 5176 önizlemesinde kullanıcıyla birlikte denendi.
@@ -80,7 +94,8 @@ Kullanıcı istekleri: seçilen noktalar belli olsun, araya çizgi çekilsin; di
 
 **DB:** `0080_item_length_parts` — `fair_stand_item_length_parts` (sıralı), yeni `profile_8` (8 cm, gizli, sahnede çizilmez). Alt Item yapısı seçilmedi: sıra kolonu yok ve `itemSnap.js` alt Item'ları snap hattı sayar (uzun dikme kısa panele profil hattı gibi davranırdı).
 
-**Kod:** Katalog verisinde `lengthParts` (item_mapper; admin kopyalama da taşır). `items.js > formatItemLengthParts` parça boylarını (en uzun ölçü) "346,5 + 8 + 140,5" olarak yazar; `productionBomPanel.js > lineLabel` ekranda ve "Metin indir"de adın yanına ekler.
+**Kod:** Katalog verisinde `lengthParts` (item_mapper; admin kopyalama da taşır). `items.js > formatItemLengthParts` parça boylarını (en uzun ölçü) "346,5 + 8 + 140,5" olarak yazar; `items.js > withItemLengthParts` etiketin yanına parantezle ekler. Kullanan yerler: `productionBomPanel.js > lineDisplayLabel` (ekran ve "Metin indir"), İskelet alt özeti (`main.js > skeletonSummaryText`, "Profil 388 (346,5 + 41,5): 2") ve İskelet sahne etiketi (`scene3d.js > rebuildSkeletonLabels`, "388 (346,5 + 41,5)"; 2026-11-16).
+
 ## 2026-10-22 — Kısa panel kartı ve genişlik seçimi (migration 0079)
 
 **Ürün kararı:** Kısa panel profil gibi katalogda tek kartla gelir: Tek Sıra (`wall_100_short_1`, "Panel Tek Sıra 100") ve Çift Sıra (`wall_100_short_2`, "Panel Çift Sıra 100"). Ad sahnedeki öğenin ölçüsünü yazar: kısa panel "Panel Tek Sıra 50 … 200" / "Panel Çift Sıra 50 … 200", profil ve dikme gerçek boyla ("Profil 41,5" … "Profil 487", "Dikme 49,5" … "Dikme 495"); kart da kendi Item adını gösterir. Sağ tık başlığı katalogda gizli Item için Item adını yazar (`getModuleCatalogLabel`). Bırakırken genişlik sorulur: 50 / 100 / 150 / 200. Sağ tık menüsü eklenmez; "Bir daha sorma" tercihi yoktur. **0086 ile değişti:** kart 100 cm bırakılır, pencere açılmaz; genişlik Özellikler panelindeki varyant düğmelerinden seçilir.
@@ -222,7 +237,7 @@ yeni DB alanı, Alembic migration veya BOM değişikliği yoktur.
 
 **Çerçeve (`addPanelModuleFrame`):** Düz panel, bazalı duvar, kapı ve vitrinde iki dikme ile alt/üst profil aynı kesitte; üst/alt profil artık 0,4 cm ray değil, dikmeyle aynı kalınlıkta. Profil kenarlarında koyu ton kenar çizgisi (`EdgesGeometry`, raycast yok). Panel yüzü profillerin önünde durur ve çerçevenin dış kenarından alt ve üstte 4 cm (`PANEL_FRAME_INSET_M`), sağ ve solda 2 cm (`PANEL_FRAME_SIDE_INSET_M`) içeride biter; en alt ve en üst bant `fitPanelToFrameOpening` (`wallPanelBand.js`) ile kırpılır, aradaki bantlar değişmez. Panel yüzü duvar/profil ön yüzünün 15 mm önündedir (`PANEL_FACE_OFFSET_M`, eskiden 1,5 mm); panel gövdesi reçetedeki `panel` Item kalınlığında (`dimensions.depthCm`, örn. 0,8 cm) yüzün hemen arkasındadır (`resolveRecipePanelThicknessCm`; reçetede panel yoksa eski iç dolgu kutusu). Duvara asılan TV, raf ve strafor (`wallFrontM`) aynı yüze oturur. Çerçeve panelin çevresinde alt/üstte 4 cm, sağ/solda 2 cm şerit olarak görünür. Vitrinde dikme vitrin gövdesinin yüksekliğinde çizilmez (`uprightGap`); orada gövdenin yan tahtaları kenar olur.
 
-**Baza ve banko (düz + L):** Köşe dikmeleri ile alt/üst (L'de orta) raylar aynı kare profil kesitinde (`addBoxModuleFrame`, kenar çizgili); raylar artık 0,2 cm değil. Yüz panelleri profil dış yüzünün 15 mm önünde (`placeBoxPanelFace`) ve çerçevenin dış kenarından alt/üstte 4 cm, sağ/solda 2 cm içeride; gövde reçetedeki panel Item kalınlığında (`resolveBoxPanelBackingDepth`, reçetede panel yoksa 12 mm). Tabla, ölçüler ve BOM değişmez.
+**Baza ve banko (düz + L):** Köşe dikmeleri ile alt/üst raylar aynı kare profil kesitinde (`addBoxModuleFrame`, kenar çizgili); raylar artık 0,2 cm değil. Yüz panelleri profil dış yüzünün 15 mm önünde (`placeBoxPanelFace`) ve çerçevenin dış kenarından alt/üstte 4 cm, sağ/solda 2 cm içeride; gövde reçetedeki panel Item kalınlığında (`resolveBoxPanelBackingDepth`, reçetede panel yoksa 12 mm). Tabla, ölçüler ve BOM değişmez.
 
 **Kanallı profil (`src/profileGeometry.js`):** Bütün prosedürel profil ve dikmeler (duvar/kapı/vitrin/ayırıcı çerçevesi, baza ve banko, tek başına `profile` ve `upright` modülleri) düz kutu yerine kesitten uzatılmış geometri: dört uzun yüzün ortasında 2 cm ağızlı, 1,5 cm derin boyuna kanal (`PROFILE_SLOT_WIDTH_M`, `PROFILE_SLOT_DEPTH_M`; ince kesitte ağız en fazla %40, derinlik %30). Dış ölçü kutuyla aynı. Profil başına çizim çağrısı değişmez (1 mesh + 1 kenar çizgisi); üçgen sayısı ~12'den ~100'e çıkar. Görsel alanı panel yüzünün ölçüsüdür. `panelRailHeight`, strip state, BOM ve kayıt biçimi değişmez.
 

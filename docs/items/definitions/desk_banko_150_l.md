@@ -63,6 +63,7 @@
 
 - `backend/tests/modules/fair_stand/test_banko_base_cards_migration.py`
 - `e2e/desk-banko-items-contract.spec.mjs`
+- `test/baseFacePanelIdentity.test.js`
 - `test/deskBankoItemsContract.test.js`
 - `test/lCounter150Contract.test.js`
 - `test/mapCatalogSeed.mjs`

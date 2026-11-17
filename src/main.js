@@ -175,7 +175,7 @@ import {
 } from './profileLength.js';
 import { alignProfileBodyAnchor, findProfileAnchorAt, listProfileAnchorPoints, resolveFreeEndProfile, resolveTwoPointProfile, resolveTwoPointProfileZCm } from './twoPointProfile.js';
 import { describeModuleVariants, resolveModuleVariantItemKey } from './catalogWidthFamily.js';
-import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, isWallShortFamilyDescriptor, listFloorItems, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight } from './items.js';
+import { CATALOG_WALL_LINE_HEIGHT_CM, WALL_LINE_HEIGHTS_CM, getActiveWallLineHeightCm, getFloorItem, setActiveWallLineHeightCm, getFloorSelectLabel, getItem, getTopLightItemForType, isWallShortFamilyDescriptor, listFloorItems, resolveItemKey, resolveStandFloorItemKey, resolveWallItemKeyForHeight, withItemLengthParts } from './items.js';
 import { snapPlacementToItemAnchor } from './itemSnap.js';
 import { renderStandStandardsList } from './standStandardsCopy.js';
 import {
@@ -403,7 +403,6 @@ const projectNameInput = document.querySelector('#project-name');
 const projectNameDisplay = document.querySelector('#project-name-display');
 const projectCustomerDisplay = document.querySelector('#project-customer-display');
 const TEMPORARY_CUSTOMER_LABEL = 'Geçici bağ';
-const IMPORT_REQUIRES_CUSTOMER_MESSAGE = 'İçe aktarmak için proje bir müşteriye bağlı olmalı: Müşteriler → müşteri → Yeni Proje ile editörü açıp orada İçe Aktar düğmesini kullanın.';
 const renameProjectButton = document.querySelector('#rename-project');
 const projectSelect = document.querySelector('#project-select');
 const saveProjectButton = document.querySelector('#save-project');
@@ -563,7 +562,7 @@ function skeletonSummaryText() {
       || Number(b.item.dimensions?.heightCm ?? b.item.dimensions?.widthCm ?? 0)
         - Number(a.item.dimensions?.heightCm ?? a.item.dimensions?.widthCm ?? 0));
   if (!rows.length) return 'Dikme ve profil yok';
-  return rows.map(({ line }) => `${line.name}: ${line.quantity}`).join(' · ');
+  return rows.map(({ line }) => `${withItemLengthParts(line.name, line.itemKey)}: ${line.quantity}`).join(' · ');
 }
 
 function refreshSkeleton() {
@@ -5233,12 +5232,6 @@ importProjectFileInput.addEventListener('change', async () => {
     const manifestCheck = validateProjectArchiveManifest(manifest);
     if (!manifestCheck.ok) throw new Error(manifestCheck.message);
 
-    // Sunucu her projeyi bir müşteriye bağlar. Paket ve açık editör müşterisizse ham API hatası yerine yol gösterilir.
-    if (isProjectRemoteEnabled() && !(manifest.project.customerId || activeCustomerId)) {
-      projectStatus.textContent = IMPORT_REQUIRES_CUSTOMER_MESSAGE;
-      return;
-    }
-
     const manifestAssets = manifest.assets || [];
     importedProjectId = createProjectId();
 
@@ -5271,7 +5264,8 @@ importProjectFileInput.addEventListener('change', async () => {
       name: manifest.project.name || 'İçe Aktarılan Proje',
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      customerId: manifest.project.customerId || activeCustomerId,
+      // Müşteri isteğe bağlı (#384): paket ya da açık editör müşterisizse proje müşterisiz kaydedilir.
+      customerId: manifest.project.customerId || activeCustomerId || null,
     }, idMap);
 
     // Asset'ler önce IndexedDB'ye yazılır; saveProject (remote) loadImageAssets ile

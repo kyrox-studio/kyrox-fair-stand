@@ -52,6 +52,7 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/mapCatalogSeed.mjs`
 - `test/shortJointStructuralUpright.test.js`
 - `test/standResizeWallHeight.test.js`
+- `test/standaloneUprightWallEnd.test.js`
 - `test/verticalMoveUprightHeight.test.js`
 - `test/wallHeightProjectBom.test.js`
 - `test/wallHeightRecipe.test.js`

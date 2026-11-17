@@ -62,7 +62,10 @@
 - `test/catalogPreviewConfig.test.js`
 - `test/flatPanelBackStrips.test.js`
 - `test/itemCatalogFields.test.js`
+- `test/panelRemoval.test.js`
 - `test/sceneBomAcceptance.test.js`
+- `test/shortStackColumn.test.js`
+- `test/standaloneUprightWallEnd.test.js`
 - `test/uprightFieldPlacement.test.js`
 - `test/verticalMoveUprightHeight.test.js`
 - `test/wallShortCanonicalRename.test.js`

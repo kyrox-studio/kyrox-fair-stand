@@ -38,6 +38,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_150`, `desk_banko_150`, `desk_
 
 ## Testler
 
+- `e2e/desk-banko-items-contract.spec.mjs`
 - `test/baseItemsContract.test.js`
 - `test/baseRecipes.test.js`
 - `test/baseRunBom.test.js`

@@ -46,6 +46,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 - `backend/app/modules/fair_stand/infrastructure/booth_type_seed.py`
 - `backend/app/modules/fair_stand/infrastructure/catalog_seed_data.py`
 - `src/baseRunBom.js`
+- `src/boxRunJoints.js`
 
 ## Testler
 
@@ -54,6 +55,7 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
 - `e2e/vertical-move-upright-height.spec.mjs`
 - `test/baseRunBom.test.js`
+- `test/boxRunJoints.test.js`
 - `test/counterRecipes.test.js`
 - `test/itemAdminAssemblyLock.test.js`
 - `test/itemLengthParts.test.js`
@@ -69,6 +71,8 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `base_150`, `base_200`, 
 - `test/relationshipBomJoints.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/separatorRecipes.test.js`
+- `test/shortJointStructuralUpright.test.js`
+- `test/shortStackColumn.test.js`
 - `test/wallHeightProjectBom.test.js`
 - `test/wallHeightRecipe.test.js`
 - `test/wallShortCanonicalRename.test.js`
