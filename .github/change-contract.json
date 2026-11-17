@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "ara-profil-iskelet-baza-banko-birlesimi",
   "kind": "feature",
-  "summary": "Kısa panel açıklığı içindeki taşıyıcısız ortak uçta dikme yerine 8 cm kısa ara profil (49,5 → 41,5, 99 → 91); İskelet uzun parçayı bölünüşüyle yazar (388 (346,5 + 41,5)); yan yana baza ve düz bankoda ortak uçtaki dikme ve 41,5 listede ve sahnede tek, aradaki yan paneller ve aparatları düşer; baza / banko yüzlerinin listedeki panel kimliği yeniden yüz rolünden gelir (#385 gerilemesi); bazanın arka yüzü panelsiz: serbest bazada uzun panel 1, başlangıç 2 eksik; sahnede serbest bazada ön + arka uzun ray (4), duvar sırtında 2; düz bankoda ön alt + ön üst + arka üst ray (listedeki 3); L bankoda orta kot rayı yok, iç kenarda üstte uzun + kısa ray. npm audit kapısında picomatch ReDoS (GHSA-fc5q-39xc-vjpf) için gerekçeli geçici istisna (scripts/audit-deps.mjs).",
+  "summary": "Kısa panel açıklığı içindeki taşıyıcısız ortak uçta dikme yerine 8 cm kısa ara profil (49,5 → 41,5, 99 → 91); İskelet uzun parçayı bölünüşüyle yazar (388 (346,5 + 41,5)); yan yana baza ve düz bankoda ortak uçtaki dikme ve 41,5 listede ve sahnede tek, aradaki yan paneller ve aparatları düşer; baza / banko yüzlerinin listedeki panel kimliği yeniden yüz rolünden gelir (#385 gerilemesi); bazanın arka yüzü panelsiz: serbest bazada uzun panel 1, başlangıç 2 eksik; sahnede serbest bazada ön + arka uzun ray (4), duvar sırtında 2; düz bankoda ön alt + ön üst + arka üst ray (listedeki 3); L bankoda orta kot rayı yok, iç kenarda üstte uzun + kısa ray. npm audit kapısında picomatch ReDoS (GHSA-fc5q-39xc-vjpf) için gerekçeli geçici istisna (scripts/audit-deps.mjs). İçe aktarmada müşteri zorunluluğu kalktı (#384 ile sunucu müşterisiz projeyi kabul eder).",
   "owners": [
     "src/boxRunJoints.js",
     "src/projectBom.js",
@@ -706,7 +706,8 @@
         "e2e/box-run-shared-post.spec.mjs",
         "e2e/base-corner-upright-bom.spec.mjs",
         "e2e/desk-banko-items-contract.spec.mjs",
-        "e2e/l-counter-frame.spec.mjs"
+        "e2e/l-counter-frame.spec.mjs",
+        "e2e/project-import-export-roundtrip.spec.mjs"
       ],
       "reason": "İskelet etiketi / özeti ve kısa panel ortak ucu tarayıcıda kontrol edilir."
     }

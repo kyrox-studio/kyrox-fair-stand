@@ -383,7 +383,7 @@ function listGuideSections() {
         <li><strong>Yükleme ekranı:</strong> Proje, revizyon veya içe aktarılan dosya açılırken yükleme ekranı sahnenin bütün görselleri ve 3D modelleri gelene kadar kalır; alt satırda kaçının geldiği yazar (ör. 45 / 73). Yarım sahne gösterilmez. Yüklenemeyen parça yerine kendi rengiyle çizilir; 30 saniyede bitmeyen yükleme olursa ekran yine kapanır ve durum satırında yazar.</li>
         <li><strong>Hızlı açılış:</strong> Proje görselleri tarayıcıda saklanır; sunucudaki görsel değişmediyse sonraki açılışta yeniden indirilmez. 3D modeller proje verisi gelir gelmez yüklenmeye başlar; yükleme ekranı aşamayı yazar (proje verisi, görseller, sahne).</li>
         <li><strong>Dışarı Aktar:</strong> Proje ve görselleri ZIP dosyasına paketler.</li>
-        <li><strong>İçe Aktar:</strong> Uyumlu proje ZIP paketini sisteme alır. Her proje bir müşteriye bağlıdır: paket müşteri bilgisi taşımıyorsa ve editör müşterisiz açıldıysa içe aktarma yapılmaz; Müşteriler → müşteri → Yeni Proje ile açılan editörde İçe Aktar kullanılır.</li>
+        <li><strong>İçe Aktar:</strong> Uyumlu proje ZIP paketini sisteme alır. Müşteri isteğe bağlıdır: paket müşteri bilgisi taşıyorsa ya da editör bir müşteriden açıldıysa proje o müşteriye bağlanır, yoksa müşterisiz kaydedilir; müşteri sonra atanabilir.</li>
         <li><strong>Sil:</strong> Projeyi ve projeye ait görselleri onay sonrası kaldırır. Silinen proje açıksa sayfa yenilenmez; sahne ilk açılıştaki boş duruma döner.</li>
       </ul>
     `,

@@ -40,16 +40,13 @@ test('project import remaps every persisted image-reference field before saving'
   assert.doesNotMatch(source, /key === 'imageAssetId'/);
 });
 
-test('import without any customer shows guidance instead of a raw API error', () => {
+test('import works without a customer: no customer guard, project saved unassigned (#384)', () => {
   const handlerStart = source.indexOf("importProjectFileInput.addEventListener('change'");
   const handlerEnd = source.indexOf("openProjectButton.addEventListener('click'", handlerStart);
   const handler = source.slice(handlerStart, handlerEnd);
-  assert.match(source, /const IMPORT_REQUIRES_CUSTOMER_MESSAGE = 'İçe aktarmak için proje bir müşteriye bağlı olmalı: Müşteriler → müşteri → Yeni Proje/);
-  assert.match(handler, /if \(isProjectRemoteEnabled\(\) && !\(manifest\.project\.customerId \|\| activeCustomerId\)\) \{/);
-  assert.match(handler, /projectStatus\.textContent = IMPORT_REQUIRES_CUSTOMER_MESSAGE;/);
-  // Kontrol depolamaya dokunmadan önce yapılır; geri alınacak bir şey kalmaz.
-  assert.ok(handler.indexOf('IMPORT_REQUIRES_CUSTOMER_MESSAGE') < handler.indexOf('importStorageTouched = true'));
-  assert.ok(handler.indexOf('IMPORT_REQUIRES_CUSTOMER_MESSAGE') < handler.indexOf('await saveProject(importedProject,'));
+  assert.doesNotMatch(source, /IMPORT_REQUIRES_CUSTOMER_MESSAGE/);
+  assert.doesNotMatch(handler, /!\(manifest\.project\.customerId \|\| activeCustomerId\)/);
+  assert.match(handler, /customerId: manifest\.project\.customerId \|\| activeCustomerId \|\| null,/);
 });
 
 test('restored project reports images whose files could not be loaded', () => {
