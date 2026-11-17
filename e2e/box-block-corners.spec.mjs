@@ -38,9 +38,21 @@ async function faceScreenPoint(page, slot) {
   }, slot);
 }
 
+// Görünüm tuşu kamerayı animasyonla döndürür (viewCube VIEW_ANIMATION_MS); yavaş makinede sabit
+// bekleme yetmez. Tıklama noktası kamera durduktan sonra hesaplanır.
+async function waitForCameraSettled(page) {
+  await expect.poll(() => page.evaluate(() => new Promise((resolve) => {
+    const camera = window.__sceneCamera;
+    const before = camera.position.clone();
+    const quaternion = camera.quaternion.clone();
+    setTimeout(() => resolve(camera.position.distanceTo(before) < 1e-6 && camera.quaternion.angleTo(quaternion) < 1e-6), 150);
+  }))).toBe(true);
+}
+
 async function applyLightboxToFace(page, slot, viewKey) {
   await page.locator('body').press(viewKey);
   await page.waitForTimeout(400);
+  await waitForCameraSettled(page);
   const point = await faceScreenPoint(page, slot);
   await page.mouse.click(point.x, point.y);
   await expect.poll(() => page.evaluate((faceSlot) => window.__sceneSurfaces()
