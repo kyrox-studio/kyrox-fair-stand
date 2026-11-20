@@ -139,6 +139,7 @@ def ensure_item_types(session, keys: list[str] | set[str] | tuple[str, ...]) -> 
                 "production": "Üretim",
                 "tulle-fabric": "Tül",
                 "floor-piece": "Zemin parçası",
+                "panel-finish": "Panel tipi",
             }.get(key, known.get(key, key))
             row = FairStandItemTypeModel(
                 key=key,

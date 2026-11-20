@@ -7,6 +7,10 @@ import {
   getModuleRecipe,
 } from './recipeParentItemKey.js';
 
+// DB reçete satırlarının sıra sütunu yoktur (kayıt sırası): reçeteler sıradan bağımsız karşılaştırılır (2026-11-20).
+const byKey = (items) => [...items].sort((a, b) => String(a.itemKey ?? a[0]).localeCompare(String(b.itemKey ?? b[0])));
+const partOf = (expanded, itemKey) => expanded.items.find((entry) => entry.itemKey === itemKey).part;
+
 function counterTopDims(widthCm) {
   return { widthCm, depthCm: 60, heightCm: 1.8 };
 }
@@ -23,7 +27,7 @@ test('production catalog contains verified banko upright and tops', () => {
 
 test('banko 100 recipe matches verified production data', () => {
   const recipe = getModuleRecipe('counter', 100);
-  assert.deepEqual(recipe.items, [
+  assert.deepEqual(byKey(recipe.items), byKey([
     { itemKey: 'profile_91', quantity: 3 },
     { itemKey: 'profile_41_5', quantity: 4 },
     { itemKey: 'upright_99', quantity: 4 },
@@ -32,7 +36,7 @@ test('banko 100 recipe matches verified production data', () => {
     { itemKey: 'connector_start', quantity: 6 },
     { itemKey: 'connector_single', quantity: 12 },
     { itemKey: 'counter_top_110_60', quantity: 1 },
-  ]);
+  ]));
 });
 
 test('banko 150 recipe matches verified production data', () => {
@@ -61,6 +65,6 @@ test('banko 200 recipe matches verified production data', () => {
 
 test('expanded banko recipe resolves top and upright production parts', () => {
   const expanded = getExpandedModuleRecipe('counter', 100);
-  assert.equal(expanded.items[2].part.name, 'Dikme 99');
-  assert.equal(expanded.items.at(-1).part.name, 'Banko Üstü 110 × 60 cm');
+  assert.equal(partOf(expanded, 'upright_99').name, 'Dikme 99');
+  assert.equal(partOf(expanded, 'counter_top_110_60').name, 'Banko Üstü 110 × 60 cm');
 });

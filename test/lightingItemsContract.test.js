@@ -43,7 +43,7 @@ test('led_floodlight: canonical identity, catalog and hydrate', () => {
   assert.equal(state.heightCm, 35);
   assert.equal(Object.hasOwn(state, 'mountHeightCm'), false);
   assert.equal(state.surface.color, '#17191c');
-  assert.equal(Object.hasOwn(item, 'unit'), false);
+  assert.equal(item.unit, 'adet'); // DB'de birim adet: listede kendi satırıyla sayılır (2026-11-20)
 
   const fromCatalog = createModuleStateFromDescriptor(catalog);
   assert.equal(fromCatalog.itemKey, 'led_floodlight');

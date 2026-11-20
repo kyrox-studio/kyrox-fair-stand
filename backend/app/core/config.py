@@ -35,6 +35,11 @@ class Settings(BaseSettings):
         default=_BACKEND_ROOT / "var" / "project-assets",
         validation_alias=AliasChoices("FAIR_STAND_PROJECT_ASSET_ROOT", "PROJECT_ASSET_ROOT"),
     )
+    # Admin'den yüklenen katalog dokuları (2026-11-18): depo dışında kalıcı klasör, Stand API sunar.
+    catalog_texture_root: Path = Field(
+        default=_BACKEND_ROOT / "var" / "catalog-textures",
+        validation_alias=AliasChoices("FAIR_STAND_CATALOG_TEXTURE_ROOT", "CATALOG_TEXTURE_ROOT"),
+    )
     live_share_stun_urls: str = Field(
         default="stun:stun.l.google.com:19302",
         validation_alias="FAIR_STAND_LIVE_SHARE_STUN_URLS",

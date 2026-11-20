@@ -80,7 +80,7 @@
           <summary class="panel-summary"><span>Proje</span><span class="panel-chevron" aria-hidden="true"></span></summary>
           <div class="panel-card-content">
           <strong>Müşteri adı</strong>
-          <strong id="project-customer-display" style="display:block;font-size:16px;color:#1f2937;overflow-wrap:anywhere">Geçici bağ</strong>
+          <strong id="project-customer-display" style="display:block;font-size:16px;color:#1f2937;overflow-wrap:anywhere">Müşteri Yok</strong>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
             <strong>Proje adı</strong>
             <button id="rename-project" type="button" class="ghost" style="min-width:0;padding:7px 10px">Değiştir</button>
@@ -126,6 +126,7 @@
           <label class="stand-size-field" for="wall-height"><span>Duvar yüksekliği</span><select id="wall-height"><option value="250">2,5 m</option><option value="300">3 m</option><option value="350" selected>3,5 m</option><option value="400">4 m</option><option value="450">4,5 m</option><option value="500">5 m</option></select></label>
           <label class="stand-size-field" for="floor-type"><span>Zemin kaplaması</span><select id="floor-type"><option value="karolaj">Karolaj (1 × 1 m modüler zemin)</option><option value="hali">Halı</option><option value="parke-acik">Parke · Beyaz meşe</option><option value="parke-sari">Parke · Sarı meşe</option><option value="parke-beton">Parke · Beton görünümü</option></select></label>
           <label class="stand-size-field" id="profile-finish-field" for="profile-finish"><span>Profil rengi</span><select id="profile-finish"><option value="default" selected>Varsayılan (alüminyum)</option><option value="black">Siyah</option></select></label>
+          <label class="stand-size-field" id="panel-finish-field" for="panel-finish"><span>Panel tipi</span><select id="panel-finish"><option value="panel_finish_default" selected>Varsayılan</option></select></label>
           <div id="floor-area-controls" hidden>
             <div class="stand-size-grid">
               <label class="stand-size-field" for="floor-area-x"><span>Alan X</span><input id="floor-area-x" type="number" min="0" max="5000" step="50" disabled /></label>
@@ -171,7 +172,7 @@
 
         <div id="surface-controls-home" hidden>
           <p id="selection-info" class="status selection-status">Bir panel seç; Ctrl/Cmd + tık ile panelleri çoklu seç.</p>
-          <p id="surface-controls-moved" class="muted" hidden>Renk ve görsel ayarları açık Özellikler panelinde.</p><div id="surface-edit-controls"><div id="surface-color-controls"><label for="surface-color">Aktif renk</label>
+          <p id="surface-controls-moved" class="muted" hidden>Renk ve görsel ayarları açık Özellikler panelinde.</p><div id="surface-edit-controls"><div id="surface-finish-controls"><label id="surface-finish-label" for="surface-finish-options">Panel tipi</label><select id="surface-finish-options" class="panel-finish-select" aria-labelledby="surface-finish-label"><option value="" selected>Tip seç…</option></select><div class="section-divider"></div></div><div id="surface-color-controls"><label for="surface-color">Aktif renk</label>
           <div class="row"><input id="surface-color" type="color" value="#ffffff" /><button id="apply-color">Rengi uygula</button></div>
           <div class="color-editor" aria-label="Renk değerleri">
             <div class="color-editor-row hex"><label class="color-editor-field" for="color-hex"><span>HEX</span><input id="color-hex" type="text" value="#FFFFFF" maxlength="7" spellcheck="false" autocomplete="off" /></label></div>

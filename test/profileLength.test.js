@@ -19,6 +19,7 @@ import {
 // Gerçek boy (BOM) → sahne boyu.
 const PROFILE_LENGTHS = Object.freeze([
   ['profile_41_5', 41.5, 50],
+  ['profile_49_5', 49.5, 50], // DB (2026-11-20)
   ['profile_91', 91, 100],
   ['profile_140_5', 140.5, 150],
   ['profile_190', 190, 200],
@@ -26,10 +27,11 @@ const PROFILE_LENGTHS = Object.freeze([
   ['profile_289', 289, 300],
   ['profile_346_5', 346.5, 350],
   ['profile_388', 388, 400],
+  ['profile_437_5', 437.5, 450], // DB (2026-11-20)
   ['profile_487', 487, 500],
 ]);
 
-test('profil boy penceresi 9 çizilebilir profili sahne boyuna göre sıralar', () => {
+test('profil boy penceresi çizilebilir profilleri sahne boyuna göre sıralar', () => {
   const items = listProfileLengthItems();
   assert.deepEqual(items.map((item) => item.itemKey), PROFILE_LENGTHS.map(([itemKey]) => itemKey));
   for (const [itemKey, realCm, sceneCm] of PROFILE_LENGTHS) {

@@ -7,6 +7,7 @@ import {
   listCatalogGroups,
 } from '../src/catalog.js';
 import { getItem, listRegisteredItems } from '../src/items.js';
+import { CATALOG_ITEM_COUNT } from './catalogFacts.mjs';
 
 const CATALOG_CATEGORY_IDS_BY_LABEL = Object.freeze({
   'Panel & Duvar': 1,
@@ -89,12 +90,6 @@ const EXPECTED_CATALOG_GROUPS = Object.freeze([
 const EXPECTED_CATALOG_KEYS = Object.freeze(EXPECTED_CATALOG_GROUPS.flatMap((group) => group.keys));
 
 function expectedFieldsForItemKey(itemKey) {
-  const shelfIndexes = { shelf_100: 3, shelf_150: 4, shelf_200: 5 };
-  if (shelfIndexes[itemKey]) return { catalogVisible: false, categoryId: 3, catalogItemIndex: shelfIndexes[itemKey] };
-  if (/^shelf_(?:row_[23]_(?:100|150|200)|(?:100|150|200)_self)$/.test(itemKey)) {
-    const width = itemKey.match(/(?:100|150|200)/)[0];
-    return { catalogVisible: false, categoryId: 3, catalogItemIndex: shelfIndexes[`shelf_${width}`] };
-  }
   for (const group of EXPECTED_CATALOG_GROUPS) {
     const index = group.keys.indexOf(itemKey);
     if (index === -1) continue;
@@ -128,7 +123,7 @@ test('mevcut katalog Item listesi ve grup sırası değişmemiştir', () => {
 
 test('106 Item katalog metadata alanlarını taşır ve canlı katalog üyeliğiyle birebir örtüşür', () => {
   const items = listRegisteredItems();
-  assert.equal(items.length, 138);
+  assert.equal(items.length, CATALOG_ITEM_COUNT);
 
   let visibleCount = 0;
   let missingVisible = 0;
@@ -170,8 +165,9 @@ test('106 Item katalog metadata alanlarını taşır ve canlı katalog üyeliği
   assert.equal(visibleCount, EXPECTED_CATALOG_KEYS.length);
   assert.equal(visibleNullCategory, 0);
   assert.equal(visibleNullIndex, 0);
-  assert.equal(hiddenNonNullCategory, 12);
-  assert.equal(hiddenNonNullIndex, 12);
+  // 0086 / 0101: gizli Item'ın katalog alanları boştur.
+  assert.equal(hiddenNonNullCategory, 0);
+  assert.equal(hiddenNonNullIndex, 0);
 
   let duplicateIndex = 0;
   let gapIndex = 0;

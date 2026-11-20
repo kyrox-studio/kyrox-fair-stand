@@ -14,19 +14,21 @@ import {
   listFloorItems,
   resolveStandFloorItemKey,
 } from '../src/items.js';
+import { CATALOG_VISIBLE_COUNT } from './catalogFacts.mjs';
 
+// Zemin adları ve seçim sırası DB'deki Item kaydından (2026-11-20).
 const EXPECTED_SELECT = [
+  ['hali', 'RIP Halı'],
   ['karolaj', 'Karolaj · 100 × 100 cm'],
-  ['hali', 'Halı'],
-  ['parke-acik', 'Beyaz Meşe'],
-  ['parke-sari', 'Sarı Meşe'],
-  ['parke-beton', 'Beton Parke'],
+  ['parke-acik', 'Parke - Beyaz Meşe'],
+  ['parke-beton', 'Parke - Beton'],
+  ['parke-sari', 'Parke - Sarı Meşe'],
 ];
 
 test('floor Items use existing floorType keys and stay off the module catalog', () => {
   const items = listFloorItems();
   assert.deepEqual(items.map((item) => item.itemKey), EXPECTED_SELECT.map(([key]) => key));
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 35);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, CATALOG_VISIBLE_COUNT);
 
   for (const [itemKey, selectLabel] of EXPECTED_SELECT) {
     const item = getFloorItem(itemKey);

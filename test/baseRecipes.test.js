@@ -7,6 +7,10 @@ import {
   getModuleRecipe,
 } from './recipeParentItemKey.js';
 
+// DB reçete satırlarının sıra sütunu yoktur (kayıt sırası): reçeteler sıradan bağımsız karşılaştırılır (2026-11-20).
+const byKey = (items) => [...items].sort((a, b) => String(a.itemKey ?? a[0]).localeCompare(String(b.itemKey ?? b[0])));
+const partOf = (expanded, itemKey) => expanded.items.find((entry) => entry.itemKey === itemKey).part;
+
 function baseTopDims(widthCm) {
   return { widthCm, depthCm: 50, heightCm: 1.8 };
 }
@@ -55,5 +59,5 @@ for (const [width, expected] of Object.entries(expectedRecipes)) {
 test('expanded baza recipe resolves top and upright production parts', () => {
   const expanded = getExpandedModuleRecipe('base', 150);
   assert.equal(expanded.items.find((item) => item.itemKey === 'upright_49_5').part.name, 'Dikme 49,5');
-  assert.equal(expanded.items.at(-1).part.name, 'Baza Üstü 157 × 50 cm');
+  assert.equal(partOf(expanded, 'base_top_157_50').name, 'Baza Üstü 157 × 50 cm');
 });

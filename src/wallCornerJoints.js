@@ -14,8 +14,11 @@ import {
   detectShortEndToEndJoints,
   detectShortProfileRuns,
   detectShortRunInfills,
+  detectCornerStackedPosts,
+  detectMergedShortPosts,
+  detectMergedUprightIds,
 } from './relationshipBom.js';
-import { getItem, isWallShortFamilyDescriptor } from './items.js';
+import { getItem, isWallShortFamilyDescriptor, resolveProceduralFrameCrossSectionCm } from './items.js';
 import { resolveBoxRunEnds } from './boxRunJoints.js';
 import { resolveBaseHostSides } from './baseRunBom.js';
 import {
@@ -163,6 +166,8 @@ export function resolveWallCornerEnds(modules = []) {
   addShortStackEnds(list, result);
   addShortRailRuns(list, result);
   addRunInfills(list, result);
+  addCornerStackPosts(list, result);
+  addMergedUprights(list, result);
   addBoxRunEnds(list, result);
   addBaseHostEnds(list, result);
   return result;
@@ -208,6 +213,45 @@ function addBoxRunEnds(list, result) {
   }
 }
 
+/** Aynı yerde uzun bir dikmeyle birleşen dikme (2026-11-20): sahnede çizilmez, listede sayılmaz. */
+function addMergedUprights(list, result) {
+  let ids = [];
+  try {
+    ids = detectMergedUprightIds(list);
+  } catch {
+    return;
+  }
+  for (const id of ids) result.set(id, [...(result.get(id) ?? []), Object.freeze({ mergedUpright: true })]);
+}
+
+/**
+ * Köşede binen kısa panel (`detectCornerStackedPosts`, 2026-11-18): o noktadaki tam boy duvar dikmesi
+ * kısa panelin tepesine kadar uzar (listede 346,5 + 49,5 → 396). `{ stackPost: true, localXSign, topCm }`.
+ */
+function addCornerStackPosts(list, result) {
+  let posts = [];
+  try {
+    // Kısa panel kolonunun birleşik dikmesi (farklı genişlikte üst üste kısa paneller, listede 99 /
+    // 148,5 ...) da alttaki üyenin dikmesi kolon tepesine uzayarak çizilir.
+    posts = [
+      ...detectCornerStackedPosts(list),
+      ...detectMergedShortPosts(list).map((post) => ({ ...post, hostId: post.bottomId })),
+    ];
+  } catch {
+    return;
+  }
+  const byId = new Map(list.filter((module) => module?.id).map((module) => [module.id, module]));
+  for (const post of posts) {
+    const module = byId.get(post.hostId);
+    const bounds = module ? getModuleFootprintBoundsCm(module) : null;
+    if (!bounds) continue;
+    const localXSign = localXSignOfPoint(module, bounds, post.point);
+    if (!localXSign) continue;
+    const entry = Object.freeze({ stackPost: true, localXSign, topCm: post.topCm, pieces: Object.freeze([post.combinedKey]) });
+    result.set(post.hostId, [...(result.get(post.hostId) ?? []), entry]);
+  }
+}
+
 /**
  * Açıklık içi ara profil (`detectShortRunInfills`): o noktadaki dikey parça dikme değil profildir;
  * çizen modülün o ucuna `{ infill: true, localXSign, pieces }` yazılır (İskelet etiketi profil).
@@ -247,7 +291,32 @@ function addShortRailRuns(list, result) {
     return;
   }
   const byId = new Map(list.filter((module) => module?.id).map((module) => [module.id, module]));
+  // Açıklığın ucundaki modülün o uçtaki dikme durumu: kendi dikmesi varsa ray dikme kesiti kadar içeride,
+  // komşu / bağımsız dikme kullanılıyorsa (postWidthCm) o kadar, köşe dikmesinde yarım kesit biter
+  // (2026-11-18: sabit kesit varsayımı yan duvarın dikmesiyle ray arasında boşluk bırakıyordu).
+  const endInsetCm = (point) => {
+    for (const moduleId of new Set(runs.flatMap((run) => run.moduleIds))) {
+      const module = byId.get(moduleId);
+      const bounds = module ? getModuleFootprintBoundsCm(module) : null;
+      if (!bounds) continue;
+      const sign = localXSignOfPoint(module, bounds, point);
+      const along = point.xCm >= bounds.minXCm - 0.5 && point.xCm <= bounds.maxXCm + 0.5
+        && point.yCm >= bounds.minYCm - 0.5 && point.yCm <= bounds.maxYCm + 0.5;
+      if (!sign || !along) continue;
+      const ends = (result.get(moduleId) ?? []).filter((end) => end.localXSign === sign && !end.railRun && !end.infill);
+      const post = ends.find((end) => end.postWidthCm != null);
+      if (post) return post.postWidthCm;
+      if (ends.some((end) => end.ownsPost != null)) return frameSectionCm(module) / 2;
+    }
+    return null;
+  };
   for (const run of runs) {
+    const across = run.fixedCm ?? null;
+    const pointAt = (alongCm) => (run.axis === 'x'
+      ? { xCm: alongCm, yCm: across ?? 0 }
+      : { xCm: across ?? 0, yCm: alongCm });
+    const startInset = across == null ? null : endInsetCm(pointAt(run.startCm));
+    const endInset = across == null ? null : endInsetCm(pointAt(run.endCm));
     run.moduleIds.forEach((moduleId, index) => {
       const module = byId.get(moduleId);
       const bounds = module ? getModuleFootprintBoundsCm(module) : null;
@@ -265,6 +334,9 @@ function addShortRailRuns(list, result) {
         owner: index === 0,
         fromCm: roundCm(Math.min(a, b)),
         toCm: roundCm(Math.max(a, b)),
+        // Uçtaki iç boşluk (cm); null: modülün kendi dikmesi (kesit kadar).
+        fromInsetCm: a <= b ? startInset : endInset,
+        toInsetCm: a <= b ? endInset : startInset,
         pieces: run.pieces,
       });
       result.set(moduleId, [...(result.get(moduleId) ?? []), entry]);
@@ -273,6 +345,15 @@ function addShortRailRuns(list, result) {
 }
 
 const STACK_EPSILON_CM = 0.5;
+// Profil / dikme kesiti modülün sahne ölçüsündendir (reçetedeki profilin sahne kesiti; kullanıcı kararı
+// 2026-11-20: dikmeler sahne ölçüsüne göre hareket eder). Köşe dikmesinde ray yarım kesit içeride biter.
+function frameSectionCm(module) {
+  try {
+    return Number(resolveProceduralFrameCrossSectionCm(module).frameWidthCm) || 0;
+  } catch {
+    return 0;
+  }
+}
 
 /**
  * Üst üste kısa paneller (kullanıcı kararı 2026-11-16, yalnız çizim): aynı izdüşümde ve Z'de bitişik
@@ -317,6 +398,20 @@ function addShortStackEnds(list, result) {
           bandOffset += Array.isArray(module.strips) && module.strips.length ? module.strips.length : 1;
           result.set(module.id, [...(result.get(module.id) ?? []), Object.freeze(entry)]);
         });
+        // Kolonun dikmelerini alttaki üye (ya da onun komşusu / köşesi) çizer: üstteki üyelerin rayı
+        // alttakinin uç durumuyla biter (komşu dikmesinde 0, köşe dikmesinde yarım kesit; 2026-11-18,
+        // Winset: üst şortun rayı 8 cm kısa kalıyordu).
+        const bottom = chain[0];
+        const bottomEnds = result.get(bottom.id) ?? [];
+        for (const side of [-1, 1]) {
+          const shared = bottomEnds.find((end) => end.localXSign === side && end.postWidthCm != null);
+          const corner = bottomEnds.find((end) => end.localXSign === side && end.ownsPost === false);
+          if (!shared && !corner) continue;
+          const postWidthCm = shared ? shared.postWidthCm : frameSectionCm(bottom) / 2;
+          chain.slice(1).forEach((module) => {
+            result.set(module.id, [...(result.get(module.id) ?? []), Object.freeze({ localXSign: side, postWidthCm })]);
+          });
+        }
       }
     };
     for (const module of sorted) {
@@ -333,6 +428,9 @@ function addShortStackEnds(list, result) {
 }
 
 const EPSILON_CM = 0.01;
+// Bağımsız dikme kısa panelin uç dikmesiyle aynı parçadır (kullanıcı kararı 2026-11-19): ucuna bu kadar
+// yakın duran dikme o ucun dikmesi sayılır (eski projelerde snap 2 cm kayık bırakıyordu).
+export const SHORT_END_POST_TOLERANCE_CM = 3;
 const FULL_WALL_TYPES = new Set(['flat-panel', 'door', 'separator', 'showcase-2', 'showcase-3']);
 
 function itemLengthCm(itemKey) {
@@ -360,8 +458,9 @@ function endPointInsidePost(bounds, alongX, post) {
   const ends = alongX
     ? [{ xCm: bounds.minXCm, yCm: centerY }, { xCm: bounds.maxXCm, yCm: centerY }]
     : [{ xCm: centerX, yCm: bounds.minYCm }, { xCm: centerX, yCm: bounds.maxYCm }];
-  return ends.find((point) => point.xCm >= post.minXCm - 0.5 && point.xCm <= post.maxXCm + 0.5
-    && point.yCm >= post.minYCm - 0.5 && point.yCm <= post.maxYCm + 0.5) ?? null;
+  const t = SHORT_END_POST_TOLERANCE_CM;
+  return ends.find((point) => point.xCm >= post.minXCm - t && point.xCm <= post.maxXCm + t
+    && point.yCm >= post.minYCm - t && point.yCm <= post.maxYCm + t) ?? null;
 }
 
 function addFullWallStandalonePostEnds(list, uprights, result) {
@@ -429,6 +528,15 @@ function zRangeCm(module) {
   return { bottom, top: bottom + (Number(module?.heightCm) || 0) };
 }
 
+// Bağımsız dikme o uçtaki dikmedir (2026-11-19): köşe kaydı varsa (ortak köşe dikmesi) onun yerini alır;
+// köşe dikmesi ayrıca çizilmez, ray bağımsız dikmenin iç yüzünde biter.
+function replaceCornerEnd(result, moduleId, end) {
+  const existing = (result.get(moduleId) ?? []).filter((entry) => !(entry.localXSign === end.localXSign
+    && entry.ownsPost != null && entry.postWidthCm == null));
+  result.set(moduleId, existing);
+  pushEnd(result, moduleId, end);
+}
+
 function pushEnd(result, moduleId, end) {
   const existing = result.get(moduleId) ?? [];
   if (existing.some((entry) => entry.localXSign === end.localXSign)) return;
@@ -491,18 +599,21 @@ function addFramePostEnds(list, result) {
         const insideCm = alongX
           ? (endPoint.xCm <= centerX ? post.maxXCm - bounds.minXCm : bounds.maxXCm - post.minXCm)
           : (endPoint.yCm <= centerY ? post.maxYCm - bounds.minYCm : bounds.maxYCm - post.minYCm);
-        pushEnd(result, wall.id, { localXSign: sign, postWidthCm: roundCm(Math.max(insideCm, 0.5)) });
+        replaceCornerEnd(result, wall.id, { localXSign: sign, postWidthCm: roundCm(Math.max(insideCm, 0.5)) });
         continue;
       }
-      const atEnd = alongX
-        ? Math.abs(post.minXCm - bounds.minXCm) < EPSILON_CM || Math.abs(post.maxXCm - bounds.maxXCm) < EPSILON_CM
-        : Math.abs(post.minYCm - bounds.minYCm) < EPSILON_CM || Math.abs(post.maxYCm - bounds.maxYCm) < EPSILON_CM;
-      if (!atEnd) continue;
+      // Uca SHORT_END_POST_TOLERANCE_CM içinde duran dikme o ucun dikmesidir; ray dikmenin iç yüzünde biter.
+      const fromStart = alongX ? post.minXCm - bounds.minXCm : post.minYCm - bounds.minYCm;
+      const fromEnd = alongX ? bounds.maxXCm - post.maxXCm : bounds.maxYCm - post.maxYCm;
+      const atStart = fromStart < SHORT_END_POST_TOLERANCE_CM;
+      if (!atStart && !(fromEnd < SHORT_END_POST_TOLERANCE_CM)) continue;
       const point = { xCm: (post.minXCm + post.maxXCm) / 2, yCm: (post.minYCm + post.maxYCm) / 2 };
       const localXSign = localXSignOfPoint(wall, bounds, point);
       if (!localXSign) continue;
-      const postWidthCm = roundCm(alongX ? post.maxXCm - post.minXCm : post.maxYCm - post.minYCm);
-      pushEnd(result, wall.id, { localXSign, postWidthCm });
+      const postWidthCm = roundCm(atStart
+        ? (alongX ? post.maxXCm - bounds.minXCm : post.maxYCm - bounds.minYCm)
+        : (alongX ? bounds.maxXCm - post.minXCm : bounds.maxYCm - post.minYCm));
+      replaceCornerEnd(result, wall.id, { localXSign, postWidthCm });
     }
     for (const profile of profiles) {
       if (isProfileFlushOnFrameEnd(profile, wall)) pushProfileTrim(result, profile, wall);

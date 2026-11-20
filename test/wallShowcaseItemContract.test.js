@@ -53,9 +53,14 @@ test('recursive wall showcase BASE BOM expands verified physical children', () =
     assert.equal(bom.get('panel_98'), expected.panelQuantity);
     assert.equal(bom.get('connector_start'), 4);
     assert.equal(bom.get('connector_single'), expected.singleQuantity);
-    assert.equal(bom.get(expected.sideItemKey), 2);
-    assert.equal(bom.get('showcase_horizontal_87_4_30'), 2);
-    assert.equal(bom.get('glass_shelf'), expected.glassQuantity);
+    if (expected.type === 'showcase-2') {
+      // DB (2026-11-20): 2 gözlü vitrinin gövdesi tek kalem `showcase_2_body` (yan, yatay, cam raf içinde).
+      assert.equal(bom.get('showcase_2_body'), 1);
+    } else {
+      assert.equal(bom.get(expected.sideItemKey), 2);
+      assert.equal(bom.get('showcase_horizontal_87_4_30'), 2);
+      assert.equal(bom.get('glass_shelf'), expected.glassQuantity);
+    }
     assert.equal(bom.has('showcase_2_100'), false);
     assert.equal(bom.has('showcase_3_100'), false);
   }

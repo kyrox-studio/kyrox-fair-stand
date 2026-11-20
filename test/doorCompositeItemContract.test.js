@@ -22,6 +22,10 @@ import {
 } from './recipeParentItemKey.js';
 import { loadCanonicalItemCatalog } from './registerCanonicalItemCatalog.mjs';
 
+// DB reçete satırlarının sıra sütunu yoktur (kayıt sırası): reçeteler sıradan bağımsız karşılaştırılır (2026-11-20).
+const byKey = (items) => [...items].sort((a, b) => String(a.itemKey ?? a[0]).localeCompare(String(b.itemKey ?? b[0])));
+const partOf = (expanded, itemKey) => expanded.items.find((entry) => entry.itemKey === itemKey).part;
+
 const EXPECTED_CHILDREN = [
   ['profile_91', 1],
   ['upright_346_5', 2],
@@ -42,8 +46,8 @@ test('door_100 is the single canonical composite Item identity', () => {
   assert.equal(item.composition.mode, 'recipe');
   assert.equal(item.composition.moduleType, undefined);
   assert.deepEqual(
-    item.composition.items.map((entry) => [entry.itemKey, entry.quantity]),
-    EXPECTED_CHILDREN,
+    byKey(item.composition.items.map((entry) => [entry.itemKey, entry.quantity])),
+    byKey(EXPECTED_CHILDREN),
   );
   assert.equal(getItem('wall_door_100_350').itemKey, 'wall_door_100_350');
   assert.equal(getItem('wall_door_100_350').composition.mode, 'recipe');
@@ -66,16 +70,16 @@ test('door_100 composition delegates quantities to the existing canonical recipe
   const recipe = getModuleRecipe('door', 100);
   assert.ok(recipe);
   assert.deepEqual(
-    recipe.items.map((entry) => [getRecipeItemKey(entry), entry.quantity]),
-    EXPECTED_CHILDREN,
+    byKey(recipe.items.map((entry) => [getRecipeItemKey(entry), entry.quantity])),
+    byKey(EXPECTED_CHILDREN),
   );
 });
 
 test('door_100 recursive BOM resolves to canonical leaf Items with quantities and units', () => {
   const bom = resolveItemBom('wall_door_100_350');
   assert.deepEqual(
-    bom.map((line) => [line.itemKey, line.quantity, line.unit]),
-    EXPECTED_CHILDREN.map(([itemKey, quantity]) => [itemKey, quantity, 'adet']),
+    byKey(bom.map((line) => [line.itemKey, line.quantity, line.unit])),
+    byKey(EXPECTED_CHILDREN.map(([itemKey, quantity]) => [itemKey, quantity, 'adet'])),
   );
   bom.forEach((line) => {
     assert.equal(line.item.itemKey ?? line.item.partId, line.itemKey);

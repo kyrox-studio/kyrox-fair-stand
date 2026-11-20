@@ -59,6 +59,7 @@
 - `e2e/wall-short-width.spec.mjs`
 - `test/mapCatalogSeed.mjs`
 - `test/sceneBomAcceptance.test.js`
+- `test/shortStackColumn.test.js`
 - `test/uprightFieldPlacement.test.js`
 - `test/wallShortCanonicalRename.test.js`
 - `test/wallShortRelationshipBom.test.js`

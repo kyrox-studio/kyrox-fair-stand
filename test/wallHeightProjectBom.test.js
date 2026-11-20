@@ -53,6 +53,7 @@ for (const [heightText, uprightKey] of Object.entries(UPRIGHT_BY_HEIGHT)) {
     assert.equal(qty('profile_91'), 9);
     assert.equal(qty('profile_41_5'), 4);
     assert.equal(qty('door_leaf_100'), 1);
-    assert.equal(qty('glass_shelf'), 1);
+    // DB (2026-11-20): 2 gözlü vitrinin gövdesi tek kalem `showcase_2_body` (yan, yatay, cam raf içinde).
+    assert.equal(qty('showcase_2_body'), 1);
   });
 }

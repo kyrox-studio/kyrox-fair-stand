@@ -187,7 +187,9 @@ def test_frontend_fixture_mirrors_seed_rows():
 
     fixture = Path(__file__).resolve().parents[4] / "test/fixtures/itemCatalogSeed.json"
     seed = json.loads(fixture.read_text(encoding="utf-8"))
-    assert seed["variant_families"] == [dict(row) for row in VARIANT_FAMILY_ROWS]
+    # Test kataloğu DB'den üretilir (scripts/export-test-catalog.py); DB satır sırası yoktur: aynı aileler.
+    by_key = lambda rows: sorted(rows, key=lambda row: row["family_key"])  # noqa: E731
+    assert by_key(seed["variant_families"]) == by_key([dict(row) for row in VARIANT_FAMILY_ROWS])
     for item in seed["items"]:
         if item["item_type"] in ("profile", "upright"):
             assert item["variant"] == item["item_type"], item["item_key"]

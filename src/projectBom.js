@@ -30,6 +30,7 @@ import {
   applyBackFaceConnectors,
   applyRemovedFrontPanels,
   isRemovedPanelSurface,
+  subtractRemovedSurfaces,
   removedPanelCornerCharges,
 } from './panelRemovalBom.js';
 import { floorTilePieceLines, resolveSplitFloorBomLines } from './floorArea.js';
@@ -232,6 +233,11 @@ function resolveModuleEntry(moduleState, index, {
     // kimliği taşıdığı için listenin içeriği sayılmaz: JSON'a girmez (enumerable değil).
     Object.defineProperty(entry, 'panelSurfaces', {
       value: Object.freeze(surfaces.map((surface) => Object.freeze({ ...surface }))),
+      enumerable: false,
+    });
+    // Kaldırılan / kumaşla kaplanan ön yüzler: baza satırları dizi formülünden geldiği için orada düşülür.
+    Object.defineProperty(entry, 'removedSurfaces', {
+      value: Object.freeze(removedFront.map((surface) => Object.freeze({ ...surface }))),
       enumerable: false,
     });
     return Object.freeze(entry);
@@ -447,7 +453,17 @@ export function resolveProjectBom(modules = [], stand = null, assetNames = null)
     (acc, charge) => applyModuleConnectorCharge(acc, charge),
     applyWallShortBomDeltas(adjusted.lines, wallShort),
   );
-  const baza = applyBaseRunBom(list);
+  const baseRun = applyBaseRunBom(list);
+  // Bazada kaldırılan / kumaşla kaplanan yüz (iç yüzler hariç) dizi toplamından aynı kuralla düşer.
+  const baza = {
+    ...baseRun,
+    lines: subtractRemovedSurfaces(
+      baseRun.lines,
+      moduleEntries
+        .filter((entry) => entry.status === 'ok' && isBaseRunItemKey(entry.itemKey))
+        .flatMap((entry) => entry.removedSurfaces ?? []),
+    ),
+  };
   const glassNotes = summarizeGlassMoves(
     moduleEntries
       .filter((entry) => entry.status === 'ok' && !isBaseRunItemKey(entry.itemKey))
@@ -459,7 +475,7 @@ export function resolveProjectBom(modules = [], stand = null, assetNames = null)
     ? null
     : floorTilePieceLines(stand, getFloorItem(resolveStandFloorItemKey(stand)));
   const printAreas = collectPrintAreas(list, assetNames);
-  const panelAssignments = summarizePanelAssignments(moduleEntries, assetNames);
+  const panelAssignments = summarizePanelAssignments(moduleEntries, assetNames, stand);
   const lines = aggregateLines([
     wallShortLines,
     baza.lines,

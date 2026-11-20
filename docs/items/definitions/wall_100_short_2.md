@@ -55,6 +55,7 @@
 
 - `backend/tests/modules/fair_stand/test_vertical_move_migration.py`
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
+- `e2e/panel-labels-all-modules.spec.mjs`
 - `e2e/wall-height-matrix.spec.mjs`
 - `e2e/wall-short-width.spec.mjs`
 - `test/catalogCategories.test.js`

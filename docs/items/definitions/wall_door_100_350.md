@@ -61,9 +61,12 @@
 - `backend/tests/modules/fair_stand/test_panel_separator_cards_migration.py`
 - `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
 - `e2e/f010-module-construction.spec.mjs`
+- `e2e/panel-labels-all-modules.spec.mjs`
 - `e2e/shelf-width-variant.spec.mjs`
+- `e2e/upright-corner-drag.spec.mjs`
 - `e2e/wall-height-matrix.spec.mjs`
 - `e2e/wall-height.spec.mjs`
+- `e2e/zz-aska-gap.spec.mjs`
 - `test/baseRunBom.test.js`
 - `test/canonicalDimensionDedup.test.js`
 - `test/catalogCategories.test.js`

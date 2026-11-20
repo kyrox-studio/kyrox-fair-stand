@@ -12,6 +12,7 @@ test('wall_200 combined leaves group into upright, profile, panel, connector', (
     'Profiller',
     'Paneller',
     'Aparatlar',
+    'Üretim', // her projeye eklenen elektrik panosu (DB)
   ]);
   const panels = groups.find((group) => group.id === 'panel');
   assert.equal(panels.lines.some((line) => line.itemKey === 'panel_197'), true);

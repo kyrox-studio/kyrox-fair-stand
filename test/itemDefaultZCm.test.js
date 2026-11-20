@@ -22,7 +22,7 @@ test('drop Z comes from item.defaultZCm for every Item, not stand ceiling or typ
   assert.equal(getItem('kettle').defaultZCm, 66);
   assert.equal(resolveItemDefaultZCm('kettle'), 66);
   assert.equal(createModulePlacement({ xCm: 10, itemKey: 'kettle' }).zCm, 66);
-  assert.equal(resolveItemDefaultZCm('profile_190'), 342);
+  assert.equal(resolveItemDefaultZCm('profile_190'), 340); // DB: tavan 350 − sahne kesiti 10
   assert.equal(resolveItemDefaultZCm('wall_200_short_2'), 250);
   assert.equal(resolveItemDefaultZCm('wall_200_short_1'), 300);
   assert.equal(resolveItemDefaultZCm({ defaultZCm: 30 }), 30);

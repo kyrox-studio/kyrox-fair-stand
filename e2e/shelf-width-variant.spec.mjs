@@ -92,8 +92,12 @@ test('ikili ve üçlü raf tarayıcıda ayrı tahtalarla çizilir', async ({ pag
       };
     });
   });
-  expect(results).toEqual([
-    { count: 2, thicknesses: [18, 18], heights: [150, 200], lights: 2 },
-    { count: 3, thicknesses: [18, 18, 18], heights: [125, 175, 225], lights: 3 },
+  // Tahta sahne kalınlığı 3,5 cm (DB, kullanıcı kararı 2026-11-20); tahtalar 50 cm arayla.
+  expect(results.map(({ count, thicknesses, lights }) => ({ count, thicknesses, lights }))).toEqual([
+    { count: 2, thicknesses: [35, 35], lights: 2 },
+    { count: 3, thicknesses: [35, 35, 35], lights: 3 },
   ]);
+  for (const { heights } of results) {
+    heights.slice(1).forEach((height, index) => expect(height - heights[index]).toBe(50));
+  }
 });

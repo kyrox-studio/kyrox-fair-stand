@@ -316,7 +316,7 @@ test('WS showcase joints do not copy the full-height showcase doubles', () => {
   ]);
   assert.equal(qty(tee, 'panel_98'), 5);
   assert.equal(qty(tee, 'panel_corner_92'), 1);
-  assert.equal(qty(tee, 'glass_shelf'), 1);
+  assert.equal(qty(tee, 'showcase_2_body'), 1); // DB: 2 gözlü vitrin gövdesi tek kalem
   assert.equal(qty(tee, 'connector_corner'), 1);
   assert.equal(qty(tee, 'connector_double'), 0);
 });
@@ -882,8 +882,12 @@ test('save and load rebuild the same wall short relationship BOM from placement'
   }
 });
 
+// Konum 8 cm kesitli dikmenin yerleşim noktasıyla yazılmıştır; dikme aynı merkeze kendi sahne kesitiyle
+// (DB: 10 cm, 2026-11-20) konur.
 function post(id, xCm, yCm) {
-  return frame(id, 'upright_346_5', { xCm, yCm, widthCm: 8, heightCm: 346.5 });
+  const width = getItem('upright_346_5').sceneDimensions.widthCm;
+  const shift = (8 - width) / 2;
+  return frame(id, 'upright_346_5', { xCm: xCm + shift, yCm, widthCm: width, heightCm: 346.5 });
 }
 
 test('short run profiles span from support to support: L stand front scene', () => {
@@ -904,9 +908,11 @@ test('short run profiles span from support to support: L stand front scene', () 
   ]);
   // 950 hattı: 0–400 ve 400–800 → 388; 800 hattı: 0–500 → 487, 500–950 → 388 + 41,5. İki ray.
   // Açıklık içi birleşimler (y 200 / 600, x 200 / 400 / 550 / 750) ara profil 41,5 olur (2026-11-16).
-  assert.equal(qty(bom, 'profile_388'), 6);
+  // DB'de 437,5 profil var (2026-11-20): 500–950 açıklığı (450) tek parça 437,5 ile kapanır, 388 + 41,5 gerekmez.
+  assert.equal(qty(bom, 'profile_388'), 4);
+  assert.equal(qty(bom, 'profile_437_5'), 2);
   assert.equal(qty(bom, 'profile_487'), 2);
-  assert.equal(qty(bom, 'profile_41_5'), 2 + 6);
+  assert.equal(qty(bom, 'profile_41_5'), 6);
   assert.equal(qty(bom, 'profile_190'), 0);
   assert.equal(qty(bom, 'profile_91'), 0);
   assert.ok(bom.relationshipNotes.includes('Kısa panel profil birleşimi: 8 açıklık.'));

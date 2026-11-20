@@ -14,6 +14,7 @@ from app.modules.fair_stand.api.group_template_routes import router as fair_stan
 from app.modules.fair_stand.api.live_share_routes import router as fair_stand_live_share_router
 from app.modules.fair_stand.api.project_routes import router as fair_stand_project_router
 from app.modules.fair_stand.api.routes import router as fair_stand_router
+from app.modules.fair_stand.api.texture_routes import router as fair_stand_texture_router
 
 setup_logging()
 
@@ -36,6 +37,7 @@ app.include_router(fair_stand_cost_item_router, prefix="/api/v1")
 app.include_router(fair_stand_group_template_router, prefix="/api/v1")
 app.include_router(fair_stand_live_share_router, prefix="/api/v1")
 app.include_router(fair_stand_demo_router, prefix="/api/v1")
+app.include_router(fair_stand_texture_router, prefix="/api/v1")
 
 
 # Core yetki sorgusunun hataları: katalog erişim kontrolüyle aynı karşılık (401 / 503), 500 değil.

@@ -10,6 +10,7 @@ import {
   resolveSideInsertRotationDeg,
 } from '../src/moduleBehavior.js';
 import { rotationFieldsForItem } from './itemRotationSeed.mjs';
+import { CATALOG_ITEM_COUNT } from './catalogFacts.mjs';
 
 test('placeable Items expose rotation from Item; leaf rows omit the trio', () => {
   let filled = 0;
@@ -31,8 +32,9 @@ test('placeable Items expose rotation from Item; leaf rows omit the trio', () =>
       assert.throws(() => getModuleRotationStepDeg(item), TypeError);
     }
   }
-  assert.equal(filled, 91);
-  assert.equal(empty, 47);
+  // Sayılar DB kataloğundan: toplam Item = dönüşlü + dönüşsüz (sahnede yerleşmeyen kalemler).
+  assert.equal(filled + empty, CATALOG_ITEM_COUNT);
+  assert.ok(filled >= 91, String(filled));
 });
 
 test('rotation getters require itemKey and do not fall back to type tables', () => {

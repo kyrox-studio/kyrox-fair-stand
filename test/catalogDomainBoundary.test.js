@@ -9,6 +9,7 @@ import {
 import { planAutomaticDepot } from '../src/autoDepot.js';
 import { getItem, listRegisteredItems, resolveItemKey } from '../src/items.js';
 import { resolveModuleContract } from '../src/moduleContracts.js';
+import { CATALOG_ITEM_COUNT, CATALOG_VISIBLE_COUNT } from './catalogFacts.mjs';
 
 const SRC_DIR = new URL('../src/', import.meta.url);
 const AUTO_DEPOT_SOURCE = readFileSync(new URL('../src/autoDepot.js', import.meta.url), 'utf8');
@@ -98,8 +99,8 @@ test('public Item registry tek bootstrapped catalog’dur; kova export yoktur', 
   }
   assert.doesNotMatch(itemsSource, /export function listLeafItems/);
   assert.doesNotMatch(itemsSource, /export function listCompositeItems/);
-  assert.equal(listRegisteredItems().length, 138);
-  assert.equal(new Set(listRegisteredItems().map((item) => item.itemKey)).size, 138);
+  assert.equal(listRegisteredItems().length, CATALOG_ITEM_COUNT);
+  assert.equal(new Set(listRegisteredItems().map((item) => item.itemKey)).size, CATALOG_ITEM_COUNT);
 });
 
 test('STAND_DIMENSIONS runtime kaydı ve MODULE_WIDTHS_CM sahibi src/standDimensions.js; Catalog re-export yok', () => {
@@ -202,10 +203,10 @@ test('catalogVisible=false Item runtime’da yok demek değildir', () => {
     assert.equal(resolveItemKey({ itemKey }), itemKey, itemKey);
   }
 
-  assert.equal(listRegisteredItems().length, 138);
-  assert.equal(listRegisteredItems().filter((item) => item.catalogVisible === true).length, 35);
-  assert.equal(listCatalogItems().length, 35);
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 35);
+  assert.equal(listRegisteredItems().length, CATALOG_ITEM_COUNT);
+  assert.equal(listRegisteredItems().filter((item) => item.catalogVisible === true).length, CATALOG_VISIBLE_COUNT);
+  assert.equal(listCatalogItems().length, CATALOG_VISIBLE_COUNT);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, CATALOG_VISIBLE_COUNT);
 
   const hiddenItem = getItem('panel_197');
   assert.ok(hiddenItem);

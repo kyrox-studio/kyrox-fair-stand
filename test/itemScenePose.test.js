@@ -12,22 +12,24 @@ import { getModuleCollisionHeightRangeCm } from '../src/moduleBehavior.js';
 
 test('profile rail scene height is thickness; drop Z puts top at catalog ceiling', () => {
   const item = getItem('profile_190');
-  assert.equal(resolveSceneDimensions(item).heightCm, 8);
-  assert.equal(item.defaultZCm, 342);
+  // DB sahne kesiti 10 (2026-11-20): tepe yine katalog tavanında (350).
+  assert.equal(resolveSceneDimensions(item).heightCm, 10);
+  assert.equal(item.defaultZCm, 340);
   const state = createProfileModuleState({ itemKey: 'profile_190' });
-  assert.equal(state.heightCm, 8);
+  assert.equal(state.heightCm, 10);
   assert.equal(resolveItemDefaultZCm('profile_190') + state.heightCm, 350);
 });
 
 test('upright mesh factory uses item scene height, not stand 350', () => {
   const tall = createUprightModuleState({ itemKey: 'upright_346_5' });
   assert.equal(tall.itemKey, 'upright_346_5');
-  assert.equal(tall.heightCm, 346.5);
-  assert.equal(tall.widthCm, 8);
+  // Dikme sahne ölçüsü DB'den (10 × 10; 346,5 → 350, 99 → 100).
+  assert.equal(tall.heightCm, getItem('upright_346_5').sceneDimensions.heightCm);
+  assert.equal(tall.widthCm, 10);
   const shortPost = createUprightModuleState({ itemKey: 'upright_99' });
   assert.equal(shortPost.itemKey, 'upright_99');
-  assert.equal(shortPost.heightCm, 99);
-  assert.equal(shortPost.widthCm, 8);
+  assert.equal(shortPost.heightCm, getItem('upright_99').sceneDimensions.heightCm);
+  assert.equal(shortPost.widthCm, 10);
 });
 
 test('short-up collision band is item height + placement Z, not occupancy × stand', () => {

@@ -17,6 +17,6 @@ test('all production profiles keep canonical aluminum material and default color
     assert.equal(item.itemKey, itemKey);
     assert.equal(item.type, 'profile');
     assert.equal(item.material, 'alüminyum', itemKey);
-    assert.equal(item.defaultColor, 0xd0d3d4, itemKey);
+    assert.equal(item.defaultColor, 0xcdd1d5, itemKey); // DB ortak alüminyum rengi (2026-11-20)
   }
 });

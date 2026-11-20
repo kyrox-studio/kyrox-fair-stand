@@ -118,6 +118,8 @@ import { getModuleBehavior, getModuleDefaultRotationDeg, getModuleGhostBehavior,
 import { createModuleCatalogPreview } from './moduleDragSidebar.js';
 import { noteSceneRender, trackSceneModel, trackSceneTextureLoader } from './sceneAssetLoading.js';
 import { normalizeProfileFinish, profileFinishColorCss } from './profileFinish.js';
+import { normalizePanelFinish, panelFinishAppearance } from './panelFinish.js';
+import { classifyPanelSurface } from './panelAssignmentBom.js';
 import { resolveWallCornerEnds } from './wallCornerJoints.js';
 
 // Proje profil rengi (stand.profileFinish). Varsayılanda null: çerçeve katalog rengini kullanır.
@@ -128,7 +130,7 @@ let renderCornerEndsByModule = new Map();
 // Sahne dışı çizim (sürükleme silüeti, moduleIndex < 0) tek başına çizilir: köşe kuralı yok.
 function cornerEndsForModule(moduleState, moduleIndex) {
   if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
-  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => !end.stack && !end.railRun && !end.infill && !end.boxRun && !end.baseHost);
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => !end.stack && !end.railRun && !end.infill && !end.boxRun && !end.baseHost && !end.stackPost && !end.mergedUpright);
 }
 
 // Yan yana baza / banko birleşim uçları (`boxRunJoints.js`); yalnız sahnedeki modül.
@@ -174,6 +176,12 @@ function boxRunFrameParts({ widthM, depthM, profileM, frameDepthM, longRailZSide
 }
 
 // Açıklık içi ara profil uçları (`wallCornerJoints.js` addRunInfills).
+// Köşede binen kısa panel için uzayan dikme uçları (`wallCornerJoints.js` addCornerStackPosts).
+function stackPostEndsForModule(moduleState, moduleIndex) {
+  if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
+  return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => end.stackPost);
+}
+
 function infillEndsForModule(moduleState, moduleIndex) {
   if (!Number.isInteger(moduleIndex) || moduleIndex < 0) return [];
   return (renderCornerEndsByModule.get(moduleState?.id) ?? []).filter((end) => end.infill);
@@ -1548,6 +1556,153 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     return true;
   }
 
+  // Panel tipi (kullanıcı kararı 2026-11-18): stand geneli tip; panele atanan tip (surfaceState.panelFinish)
+  // önündedir. "Varsayılan Panel" grubundaki (görsel / renk / kumaş atanmamış, cam, metal, kaldırılmış
+  // olmayan) her panel yüzü etkin tipiyle çizilir. Ayrım panel dökümüyle aynı fonksiyondan gelir
+  // (classifyPanelSurface), panel olan her modülde kendiliğinden geçerlidir.
+  let activePanelFinish = normalizePanelFinish(null);
+  const panelFinishTextures = new Map();
+
+  function panelFinishBaseTexture(url) {
+    if (!panelFinishTextures.has(url)) {
+      // Doku yüklenince yüzeyler yeniden boyanır (yüklenene kadar tipin yedek rengi görünür).
+      const texture = new THREE.TextureLoader().load(url, () => refreshPanelFinishes());
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      panelFinishTextures.set(url, texture);
+    }
+    return panelFinishTextures.get(url);
+  }
+
+  function clearPanelFinish(mesh) {
+    const material = mesh.material;
+    if (!mesh.userData.panelFinishKey) return;
+    if (material?.map?.userData?.panelFinish) {
+      material.map.dispose();
+      material.map = null;
+    }
+    delete mesh.userData.panelFinishKey;
+    material.needsUpdate = true;
+  }
+
+  // Doku dünya koordinatında döşenir: yan yana ve üst üste paneller tek yüzey gibi devam eder.
+  function panelFinishTexture(mesh, appearance) {
+    const base = panelFinishBaseTexture(appearance.textureUrl);
+    if (!base.image) return null;
+    const texture = base.clone();
+    texture.userData = { panelFinish: true, panelFinishUrl: appearance.textureUrl };
+    const widthM = Number(mesh.geometry?.parameters?.width) || 1;
+    const heightM = Number(mesh.geometry?.parameters?.height) || 1;
+    const tileW = appearance.tileWidthCm / 100;
+    const tileH = appearance.tileHeightCm / 100;
+    mesh.updateWorldMatrix(true, false);
+    const center = mesh.getWorldPosition(new THREE.Vector3());
+    const right = new THREE.Vector3(1, 0, 0).transformDirection(mesh.matrixWorld);
+    const along = center.x * right.x + center.z * right.z;
+    texture.repeat.set(widthM / tileW, heightM / tileH);
+    texture.offset.set((along - widthM / 2) / tileW, (center.y - heightM / 2) / tileH);
+    texture.needsUpdate = true;
+    return texture;
+  }
+
+  function applyPanelFinishToSurface(mesh) {
+    const material = mesh?.material;
+    const state = mesh?.userData?.surfaceState;
+    if (!material?.color || !state) return;
+    const panel = classifyPanelSurface(state, null, { panelFinish: activePanelFinish });
+    const appearance = panel && (panel.group === 'finish' || panel.group === 'default')
+      ? panelFinishAppearance(panel.group === 'finish' ? panel.finishKey : null, import.meta.env.BASE_URL)
+      : null;
+    if (!appearance || appearance.isDefault) {
+      // Tip kalktıysa ya da panel başka gruba geçtiyse (görsel, renk, cam ...) yüzey kendi durumuna döner.
+      if (mesh.userData.panelFinishKey) {
+        clearPanelFinish(mesh);
+        if (panel?.group === 'default') material.color.set(state.color ?? '#ffffff');
+      }
+      return;
+    }
+    // Dokuda yüzeyin dünya konumu da anahtardadır: modül taşınınca doku yeniden hizalanır.
+    let tileKey = appearance.itemKey;
+    if (appearance.textureUrl) {
+      mesh.updateWorldMatrix(true, false);
+      const at = mesh.getWorldPosition(new THREE.Vector3());
+      tileKey += `:${at.x.toFixed(3)}:${at.y.toFixed(3)}:${at.z.toFixed(3)}`;
+    }
+    // Başka akış (görsel kaldırma, renk) malzemeyi değiştirdiyse tip yeniden uygulanır.
+    const intact = appearance.textureUrl
+      ? Boolean(material.map?.userData?.panelFinish)
+      : `#${material.color.getHexString()}` === appearance.colorCss && !material.map;
+    if (mesh.userData.panelFinishKey === tileKey && intact) return;
+    clearPanelFinish(mesh);
+    const texture = appearance.textureUrl ? panelFinishTexture(mesh, appearance) : null;
+    if (texture) {
+      material.map = texture;
+      material.color.set(0xffffff);
+    } else {
+      material.color.set(appearance.colorCss ?? state.color ?? '#ffffff');
+    }
+    // Doku yüklenmediyse anahtar "bekliyor" işaretlenir: yükleme bitince yeniden uygulanır, tip
+    // kalkarsa yedek renk yine geri alınır.
+    mesh.userData.panelFinishKey = texture || !appearance.textureUrl ? tileKey : `${tileKey}:pending`;
+    material.needsUpdate = true;
+  }
+
+  /**
+   * Seçili panellere tip atar (görsel atar gibi). Panel olmayan, cam, metal, kumaşlı ya da kaldırılmış
+   * yüze atanmaz. Atama görseli kaldırır ve rengi panelin katalog rengine döndürür; Varsayılan seçilirse
+   * panelin kendi tipi kalkar ve panel stand tipini alır. Atanan yüz sayısını döndürür.
+   */
+  function applyPanelFinishToSelection(meshOrMeshes, finish) {
+    const key = normalizePanelFinish(finish);
+    let applied = 0;
+    for (const mesh of normalizeMeshes(meshOrMeshes)) {
+      const state = mesh?.userData?.surfaceState;
+      const item = state?.itemKey ? getItem(state.itemKey) : null;
+      if (!state || item?.type !== 'panel' || state.removed === true || state.isGlass || state.isMetalSeparator
+        || state.fabricGroupId) continue;
+      const itemColor = Number.isInteger(item.defaultColor) ? `#${item.defaultColor.toString(16).padStart(6, '0')}` : state.color;
+      writePersistentSurface(mesh, (surfaceState) => {
+        // Seçili panelde Varsayılan da panelin kendi tipidir: stand tipi ne olursa olsun panel beyaz kalır
+        // (kullanıcı kararı 2026-11-20; eskiden tip silinip stand tipine dönülüyordu).
+        surfaceState.panelFinish = key;
+        if ('imageAssetId' in surfaceState) {
+          surfaceState.imageAssetId = null;
+          surfaceState.imageTransform = createDefaultImageTransform();
+        }
+        if (itemColor) surfaceState.color = itemColor;
+      });
+      // Eski tip (meşe dokusu dahil) önce temizlenir; eskiden yalnız işaret siliniyor, doku panelde
+      // kalıyordu: Varsayılan'a dönen panel meşe görünüyordu (2026-11-20).
+      clearPanelFinish(mesh);
+      if (mesh.material?.map) {
+        mesh.material.map.dispose?.();
+        mesh.material.map = null;
+      }
+      mesh.material?.color?.set(mesh.userData.surfaceState?.color ?? '#ffffff');
+      if (mesh.material) mesh.material.needsUpdate = true;
+      applyPanelFinishToSurface(mesh);
+      applied += 1;
+    }
+    requestEditorRender();
+    return applied;
+  }
+
+  /** Bütün panel yüzlerine etkin tipi uygular (tasarım adımından sonra; sahne kurulduktan sonra). */
+  function refreshPanelFinishes() {
+    for (const mesh of surfaceMeshes) applyPanelFinishToSurface(mesh);
+    requestEditorRender();
+  }
+
+  /** Stand geneli panel tipini ayarlar; değiştiyse true ve yüzeyler yeniden boyanır. */
+  function setPanelFinish(finish) {
+    const next = normalizePanelFinish(finish);
+    if (next === activePanelFinish) return false;
+    activePanelFinish = next;
+    refreshPanelFinishes();
+    return true;
+  }
+
   // Doku yüklenince ortalama renk değişir; açık zeminler yeni çarpanla yeniden kurulur.
   function refreshTexturedFloors() {
     requestEditorRender();
@@ -1745,7 +1900,10 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     panelLabelMeshes.clear();
     scene.traverse((object) => {
       const id = object.userData?.surfaceId;
-      if (object.isMesh && id && object.userData.selectionMode === 'panel') panelLabelMeshes.set(id, object);
+      // Baza / banko yüzleri tıklayınca modülü seçer (selectionMode 'module') ama listede paneldir; etiket
+      // de alır (2026-11-20). Aynı kimlikte panel seçimli yüzey varsa o önceliklidir.
+      if (!object.isMesh || !id || object.userData.kind !== 'surface') return;
+      if (object.userData.selectionMode === 'panel' || !panelLabelMeshes.has(id)) panelLabelMeshes.set(id, object);
     });
   }
 
@@ -1760,6 +1918,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     if (group === 'image') return 'background:rgba(30,58,95,.9);color:#fff';
     if (group === 'color') return `background:rgba(255,255,255,.94);color:#0f172a;border-left:8px solid ${color}`;
     if (group === 'depot') return 'background:rgba(254,243,199,.95);color:#92400e';
+    if (group === 'finish') return 'background:rgba(255,255,255,.94);color:#0f172a;border-left:8px solid #a16207';
     return 'background:rgba(255,255,255,.92);color:#475569';
   }
 
@@ -3129,6 +3288,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     applyPlacementToGroup(module.group, moduleState.placement, widthCm);
     wallRoot.add(module.group);
     surfaceMeshes.push(...module.surfaces);
+    module.surfaces.forEach(applyPanelFinishToSurface);
     return module.group;
   }
 
@@ -3597,6 +3757,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       
       surfaceMeshes.push(...module.surfaces);
     });
+    surfaceMeshes.forEach(applyPanelFinishToSurface);
 
     surfaceMeshes.forEach((surface) => {
       if (selectedSurfaceIds.has(surface.userData.surfaceId)) {
@@ -6993,6 +7154,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     entries.forEach((entry) => {
       writeSurface(entry.mesh, (surfaceState) => {
         surfaceState.imageAssetId = assetId;
+        delete surfaceState.panelFinish;
         surfaceState.imageTransform = {
           ...createDefaultImageTransform(),
           fit: 'size',
@@ -7029,6 +7191,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
       if (!mesh?.material || mesh.userData.acceptsImage === false) return;
       writePersistentSurface(mesh, (surfaceState) => {
         surfaceState.imageAssetId = assetId;
+        delete surfaceState.panelFinish;
         surfaceState.imageTransform = createDefaultImageTransform();
         if (fit === 'cover' || fit === 'contain') {
           surfaceState.imageTransform.fit = fit;
@@ -7066,6 +7229,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     layout.entries.forEach((entry) => {
       writePersistentSurface(entry.mesh, (surfaceState) => {
         surfaceState.imageAssetId = assetId;
+        delete surfaceState.panelFinish;
         surfaceState.imageTransform = {
           mode: 'horizontal-group',
           blockId,
@@ -7143,6 +7307,7 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     layout.entries.forEach((entry) => {
       writePersistentSurface(entry.mesh, (surfaceState) => {
         surfaceState.imageAssetId = assetId;
+        delete surfaceState.panelFinish;
         surfaceState.imageTransform = {
           mode: 'rect-group',
           blockId,
@@ -8735,6 +8900,9 @@ vec4 floorPlankSample( sampler2D tex, vec2 uv ) {
     createStage,
     setFloorType,
     setProfileFinish,
+    setPanelFinish,
+    refreshPanelFinishes,
+    applyPanelFinishToSelection,
     setFloorColor,
     setFloorArea,
     setFloorAreaColor,
@@ -9823,7 +9991,13 @@ function createPerforatedTexture() {
 }
 
 function createUprightModule(moduleState, moduleIndex) {
-  const { widthCm: sectionWidthCm, depthCm, heightCm } = requireModuleSceneBoxCm(moduleState);
+  // Dikme boyuyla tanımlı parçadır: tavanla (duvar yüksekliği) kesilmez; 396 seçildiyse 396 çizilir
+  // (kullanıcı kararı 2026-11-20; tavanın üstüne çıkan kısa panelleri taşır).
+  const { widthCm: sectionWidthCm, depthCm, heightCm } = requireModuleSceneBoxCm(
+    moduleState,
+    undefined,
+    { clampToStandCeiling: false },
+  );
   const thicknessM = sectionWidthCm / 100;
   const depthM = (Number.isFinite(depthCm) && depthCm > 0 ? depthCm : sectionWidthCm) / 100;
   const heightM = heightCm / 100;
@@ -9862,6 +10036,18 @@ function createUprightModule(moduleState, moduleIndex) {
     depthCm: Number.isFinite(depthCm) ? depthCm : sectionWidthCm,
     heightCm,
   };
+  // Aynı yerde uzun bir dikmeyle birleşen dikme (2026-11-20): seçilebilir kalır ama çizilmez; uzun olan
+  // görünür (listede de tek dikme sayılır).
+  const merged = Number.isInteger(moduleIndex) && moduleIndex >= 0
+    && (renderCornerEndsByModule.get(moduleState?.id) ?? []).some((end) => end.mergedUpright);
+  if (merged) {
+    mesh.userData.mergedUpright = true;
+    mesh.castShadow = false;
+    mesh.material.transparent = true;
+    mesh.material.opacity = 0;
+    mesh.material.depthWrite = false;
+    mesh.children.forEach((child) => { child.visible = false; });
+  }
   group.add(mesh);
   return { group, surfaces: [mesh] };
 }
@@ -11741,7 +11927,13 @@ function createFrameEdgeMaterial(frameMaterial) {
 
 // Prosedürel profil: kesit kutusu + koyu ton kenar çizgisi (çizgi seçimi yakalamaz).
 function createFrameProfileMesh(geometry, frameMaterial, edgeMaterial) {
-  const profile = new THREE.Mesh(geometry, frameMaterial.clone());
+  const material = frameMaterial.clone();
+  // Kenar çizgisi yüzeyle aynı derinliktedir; yüzey az geriye itilmezse çizgi kesik kesik görünür
+  // (z-fighting; İskelet'te paneller kalkınca belirgin, 2026-11-18). Yalnız derinlik; ölçü değişmez.
+  material.polygonOffset = true;
+  material.polygonOffsetFactor = 1;
+  material.polygonOffsetUnits = 1;
+  const profile = new THREE.Mesh(geometry, material);
   profile.castShadow = true;
   profile.receiveShadow = true;
   const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), edgeMaterial);
@@ -11766,6 +11958,8 @@ function addPanelModuleFrame(
     skipUprights = false,
     railRuns = [],
     infillEnds = [],
+    stackPostEnds = [],
+    baseZCm = 0,
   },
 ) {
   const { frameWidth, frameDepth } = getProceduralFrameCrossSectionM(moduleState);
@@ -11803,22 +11997,43 @@ function addPanelModuleFrame(
   const uprightSegments = uprightGap
     ? [[frameBottomY, uprightGap.bottomY], [uprightGap.topY, frameBottomY + uprightHeight]]
     : [[frameBottomY, frameBottomY + uprightHeight]];
+  // Köşede binen kısa panel: o uçtaki dikme kısa panelin tepesine kadar uzar (listede 396 / 445,5).
+  const stackPostTop = (side, segmentTop) => {
+    const end = stackPostEnds.find((entry) => entry.localXSign === side);
+    if (!end || segmentTop < frameBottomY + uprightHeight - 1e-6) return segmentTop;
+    return Math.max(segmentTop, (end.topCm - baseZCm) / 100);
+  };
   for (const [segmentBottom, segmentTop] of skipUprights ? [] : uprightSegments) {
     if (segmentTop - segmentBottom <= 0) continue;
     const uprightGeometry = createSlottedProfileGeometry(frameWidth, segmentTop - segmentBottom, frameDepth);
     for (const side of [-1, 1]) {
       if (ownPostSides.has(side)) continue;
-      const upright = addProfile(uprightGeometry.clone(), side * (widthM / 2 - frameWidth / 2), (segmentBottom + segmentTop) / 2);
-      // Açıklık içinde bu parça dikme değil ara profildir (listede de profil sayılır).
+      // Ray açıklığı bu uçta kesintisiz geçiyorsa (`railRuns`) dikey parça rayın içine girmez, rayın
+      // üstünden / altından başlar; tam boy çizilirse raylarla üst üste biner ve birleşim kesik kesik
+      // görünür (z-fighting, 2026-11-18). İki ray da geçiyorsa parça ara profildir (listede de profil).
+      const xCm = side * (widthM / 2 - frameWidth / 2) * 100;
+      const railPasses = (rail) => railRuns.some((run) => run.rail === rail
+        && xCm > run.fromCm + frameWidth * 100 - 0.5 && xCm < run.toCm - frameWidth * 100 + 0.5);
+      const bottom = railPasses('bottom') ? Math.max(segmentBottom, frameBottomY + railHeight) : segmentBottom;
+      const top = railPasses('top') ? Math.min(segmentTop, frameTopY - railHeight) : stackPostTop(side, segmentTop);
+      if (top - bottom <= 0) continue;
+      const piece = bottom === segmentBottom && top === segmentTop
+        ? addProfile(uprightGeometry.clone(), side * (widthM / 2 - frameWidth / 2), (segmentBottom + segmentTop) / 2)
+        : addProfile(
+          createSlottedProfileGeometry(frameWidth, top - bottom, frameDepth),
+          side * (widthM / 2 - frameWidth / 2),
+          (bottom + top) / 2,
+        );
       const infill = infillEnds.find((end) => end.localXSign === side);
-      if (infill) upright.userData.bomPieces = infill.pieces;
+      if (infill) piece.userData.bomPieces = infill.pieces;
     }
   }
   // Ortak köşe dikmesi: kesit duvar kalınlığında kare, merkezi duvar çizgisinin ucunda (iki çizginin
   // kesişimi). Eklemin sahibi çizer; komşu yalnız kendi dikmesini bırakır.
   for (const end of cornerEnds) {
     if (!end.ownsPost || skipUprights) continue;
-    for (const [segmentBottom, segmentTop] of uprightSegments) {
+    for (const [segmentBottom, rawTop] of uprightSegments) {
+      const segmentTop = stackPostTop(end.localXSign, rawTop);
       if (segmentTop - segmentBottom <= 0) continue;
       const postGeometry = createSlottedProfileGeometry(frameDepth, segmentTop - segmentBottom, frameDepth);
       addProfile(postGeometry, end.localXSign * (widthM / 2), (segmentBottom + segmentTop) / 2);
@@ -11834,8 +12049,8 @@ function addPanelModuleFrame(
       addProfile(railGeometry.clone(), railCenterX, y);
       return;
     }
-    const fromM = run.fromCm / 100 + frameWidth;
-    const toM = run.toCm / 100 - frameWidth;
+    const fromM = run.fromCm / 100 + (run.fromInsetCm != null ? run.fromInsetCm / 100 : frameWidth);
+    const toM = run.toCm / 100 - (run.toInsetCm != null ? run.toInsetCm / 100 : frameWidth);
     const lengthM = Math.max(toM - fromM, 0.02);
     const mesh = addProfile(createSlottedProfileGeometry(lengthM, railHeight, frameDepth), (fromM + toM) / 2, y);
     mesh.userData.bomPieces = run.pieces;
@@ -11911,6 +12126,8 @@ function createFlatPanelModule(moduleState, moduleIndex, onSurfaceReady) {
     skipUprights: Boolean(stack?.below),
     railRuns: railRunsForModule(moduleState, moduleIndex),
     infillEnds: infillEndsForModule(moduleState, moduleIndex),
+    stackPostEnds: stackPostEndsForModule(moduleState, moduleIndex),
+    baseZCm: Number(moduleState?.placement?.zCm) || 0,
   });
 
   const railHeight = STAND_DIMENSIONS.panelRailHeight;

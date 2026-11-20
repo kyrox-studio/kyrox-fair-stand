@@ -7,9 +7,10 @@ import {
 } from '../src/catalog.js';
 import { createModuleStateFromDescriptor } from '../src/designState.js';
 import { getItem } from '../src/items.js';
+import { CATALOG_VISIBLE_COUNT } from './catalogFacts.mjs';
 
 test('canonical state construction registry instantiates every catalog entry', () => {
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 35);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, CATALOG_VISIBLE_COUNT);
 
   for (const itemKey of listCatalogItems().map((item) => item.itemKey)) {
     const descriptor = getCatalogItem(itemKey);

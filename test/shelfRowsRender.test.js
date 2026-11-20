@@ -4,6 +4,7 @@ import { Box3 } from 'three';
 import { createShelfModule } from '../src/scene3d.js';
 import { createModuleStateFromDescriptor } from '../src/designState.js';
 import { initializeItemRegistry, listRegisteredItems } from '../src/items.js';
+import { getItem } from '../src/items.js';
 
 test('raf çizimi alan bazında sceneDimensions önceliğini ve dimensions yedeğini kullanır', () => {
   const snapshot = listRegisteredItems().map((item) => structuredClone(item));
@@ -34,7 +35,7 @@ test('raf çizimi alan bazında sceneDimensions önceliğini ve dimensions yede�
   }
 });
 
-test('tekli, ikili ve üçlü raf ayrı 1,8 cm tahtalar ve her sırada aydınlatma üretir', () => {
+test('tekli, ikili ve üçlü raf ayrı tahtalar (sahne kalınlığı DB) ve her sırada aydınlatma üretir', () => {
   for (const rows of [1, 2, 3]) {
     for (const width of [100, 150, 200]) {
       for (const lighting of [false, true]) {
@@ -49,7 +50,9 @@ test('tekli, ikili ve üçlü raf ayrı 1,8 cm tahtalar ve her sırada aydınlat
         for (const light of [...strips, ...spots]) assert.equal(light.visible, lighting);
         const bounds = new Box3();
         for (const [index, shelf] of surfaces.entries()) {
-          assert.ok(Math.abs(shelf.geometry.parameters.height - 0.018) < 1e-9);
+          // Tahta sahne kalınlığı DB'deki sahne tahtasından (`shelf_W_self`; kullanıcı kararı 2026-11-20: 3,5 cm).
+          const board = getItem(`shelf_${width}_self`).sceneDimensions.heightCm / 100;
+          assert.ok(Math.abs(shelf.geometry.parameters.height - board) < 1e-9, String(shelf.geometry.parameters.height));
           assert.equal(shelf.geometry.parameters.width, width / 100);
           assert.equal(shelf.geometry.parameters.depth, 0.38);
           assert.equal(shelf.userData.moduleId, state.id);

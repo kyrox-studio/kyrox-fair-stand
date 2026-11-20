@@ -121,8 +121,8 @@ test('250 cm showcase-2 tee into a wall: 2 corner connectors, 3 corner panels, s
   assert.equal(qty(bom, 'connector_corner'), 2);
   assert.equal(qty(bom, 'connector_single'), 9 + 3);
   assert.equal(qty(bom, 'panel_corner_92'), 3);
-  assert.equal(qty(bom, 'glass_shelf'), 1);
-  assert.equal(qty(bom, 'showcase_side_94_6_30'), 2);
+  // DB (2026-11-20): 2 gözlü vitrinin gövdesi tek kalem `showcase_2_body` (yan, yatay, cam raf içinde).
+  assert.equal(qty(bom, 'showcase_2_body'), 1);
 });
 
 test('350 cm door and showcase joints keep the locked counts', () => {

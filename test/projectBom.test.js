@@ -7,11 +7,15 @@ import { resolveProjectBom } from '../src/projectBom.js';
 import { getItem, initializeItemRegistry, listRegisteredItems } from '../src/items.js';
 import { loadCanonicalItemCatalog } from './registerCanonicalItemCatalog.mjs';
 
+// Her projeye eklenen üretim kalemi (DB: elektrik panosu; `DEFAULT_PROJECT_ITEM_KEY`). Donanım satırları onsuz okunur.
+const projectLine = (line) => line.itemKey === 'elektrik_panosu';
+const hardware = (bom) => bom.lines.filter((line) => !projectLine(line));
+
 test('empty modules → empty project BOM', () => {
   const bom = resolveProjectBom([]);
   assert.deepEqual(bom.modules, []);
   assert.deepEqual(bom.unresolved, []);
-  assert.deepEqual(bom.lines, []);
+  assert.deepEqual(hardware(bom), []);
 });
 
 test('two same walls aggregate leaf quantities ×2', () => {
@@ -41,7 +45,7 @@ test('missing itemKey is unresolved', () => {
   assert.equal(bom.modules[0].status, 'unresolved');
   assert.equal(bom.unresolved.length, 1);
   assert.match(bom.unresolved[0].message, /itemKey/);
-  assert.deepEqual(bom.lines, []);
+  assert.deepEqual(hardware(bom), []);
 });
 
 test('unknown itemKey is unresolved', () => {
@@ -58,7 +62,7 @@ test('metre_kare floor unit bills the same area as m2', () => {
   try {
     const hali = resolveProjectBom([], { xCm: 500, yCm: 400, itemKey: 'hali' });
     assert.deepEqual(
-      hali.lines.map((line) => [line.itemKey, line.quantity, line.unit]),
+      hardware(hali).map((line) => [line.itemKey, line.quantity, line.unit]),
       [['hali', 20, 'metre_kare']],
     );
     const split = resolveSplitFloorBomLines({
@@ -76,34 +80,36 @@ test('metre_kare floor unit bills the same area as m2', () => {
   }
 });
 
-test('decision-required furniture cluster is unresolved', () => {
+// DB'de koltuk takımının birimi var (adet): listede kendi kalemiyle çözülür (2026-11-20).
+test('furniture cluster resolves as its own DB line', () => {
   const itemKey = 'furniture_sofa_set_classic';
-  if (!getItem(itemKey)) return;
   const bom = resolveProjectBom([{ id: 'sofa', itemKey }]);
-  assert.equal(bom.modules[0].status, 'unresolved');
-  assert.equal(bom.unresolved.length, 1);
-  assert.equal(bom.lines.length, 0);
+  assert.equal(bom.modules[0].status, 'ok');
+  assert.equal(bom.unresolved.length, 0);
+  // Takım listede tek kalem olarak sayılır (DB birimi adet).
+  assert.deepEqual(hardware(bom).map((line) => [line.itemKey, line.quantity, line.unit]), [[itemKey, 1, 'adet']]);
 });
 
 test('floor unit drives the stand line: m2 area or adet tiles', () => {
   const stand = { xCm: 500, yCm: 400 };
+  // Zemin adı ve birimi DB'den (hali, parke: metre_kare; karolaj: adet).
   const hali = resolveProjectBom([], { ...stand, itemKey: 'hali' });
-  assert.deepEqual(hali.lines.map((line) => [line.itemKey, line.quantity, line.unit]), [['hali', 20, 'm2']]);
+  assert.deepEqual(hardware(hali).map((line) => [line.itemKey, line.quantity, line.unit]), [['hali', 20, getItem('hali').unit]]);
 
   const sari = resolveProjectBom([], { ...stand, itemKey: 'parke-sari' });
-  assert.equal(sari.lines[0].name, 'Sarı Meşe');
-  assert.equal(sari.lines[0].quantity, 20);
-  assert.equal(sari.lines[0].unit, 'm2');
+  assert.equal(hardware(sari)[0].name, getItem('parke-sari').name);
+  assert.equal(hardware(sari)[0].quantity, 20);
+  assert.equal(hardware(sari)[0].unit, getItem('parke-sari').unit);
 
   const karolaj = resolveProjectBom([], { ...stand, itemKey: 'karolaj' });
   assert.deepEqual(
-    karolaj.lines.map((line) => [line.itemKey, line.quantity, line.unit]),
+    hardware(karolaj).map((line) => [line.itemKey, line.quantity, line.unit]),
     [['karolaj', 20, 'adet'], ['profile_karolaj_100', 49, 'adet']],
   );
 
   const partial = resolveProjectBom([], { xCm: 550, yCm: 400, itemKey: 'karolaj' });
   assert.deepEqual(
-    partial.lines.map((line) => [line.itemKey, line.quantity, line.unit]),
+    hardware(partial).map((line) => [line.itemKey, line.quantity, line.unit]),
     [
       ['karolaj', 20, 'adet'],
       ['karolaj_yarim', 4, 'adet'],

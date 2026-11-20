@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { listRegisteredItems } from '../src/items.js';
+import { CATALOG_ITEM_COUNT } from './catalogFacts.mjs';
 
 const COVER_TYPES = new Set(['panel', 'flat-panel', 'door', 'showcase-2', 'showcase-3']);
 const COLOR_IMAGE_TYPES = new Set(['base', 'counter', 'door-leaf']);
@@ -22,7 +23,8 @@ const COLOR_TYPES = new Set([
 
 function expectedFlags(item) {
   // profile_8: yalnız uzun parça bölünüşünün parçası (0079), sahnede çizilmez.
-  if (item.type === 'floor' || item.type === 'floor-piece' || item.type === 'panel-glass' || item.itemKey === 'shelf_leg' || item.itemKey === 'profile_8'
+  // Aparatlar, sarmaşık ve 2 gözlü vitrin gövdesi kalemi DB'de sahnede çizilmez (2026-11-20).
+  if (item.type === 'floor' || item.type === 'floor-piece' || item.type === 'panel-finish' || item.type === 'production' || item.type === 'panel-glass' || item.type === 'connector' || item.type === 'sarmasik' || item.type === 'showcase-2-body' || item.itemKey === 'shelf_leg' || item.itemKey === 'profile_8'
     || ['shelf_100_self', 'shelf_150_self', 'shelf_200_self'].includes(item.itemKey)) {
     return { isRender: false, color: false, image: false, lightbox: false, glass: false, mesh: false };
   }
@@ -57,7 +59,7 @@ function expectedFlags(item) {
 
 test('every catalog item surface flag matches the scene audit', () => {
   const items = listRegisteredItems();
-  assert.equal(items.length, 138);
+  assert.equal(items.length, CATALOG_ITEM_COUNT);
   for (const item of items) {
     const expected = expectedFlags(item);
     assert.deepEqual({

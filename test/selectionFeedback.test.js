@@ -83,7 +83,7 @@ test('floor feedback preserves paintable and non-paintable labels', () => {
   assert.equal(describeFloorSelection({ selected: false, floorType: 'hali', paintable: true }), null);
   assert.equal(
     describeFloorSelection({ selected: true, floorType: 'hali', paintable: true }),
-    'Halı zemini seçili · mevcut Aktif renk ile boyanabilir.',
+    'RIP Halı zemini seçili · mevcut Aktif renk ile boyanabilir.', // DB zemin adı
   );
   assert.equal(
     describeFloorSelection({ selected: true, floorType: 'parke', paintable: false }),
@@ -91,10 +91,10 @@ test('floor feedback preserves paintable and non-paintable labels', () => {
   );
   assert.equal(
     describeFloorAreaSelection({ selected: true, floorType: 'hali', paintable: true }),
-    'Halı zemin alanı seçili · mevcut Aktif renk ile boyanabilir.',
+    'RIP Halı zemin alanı seçili · mevcut Aktif renk ile boyanabilir.', // DB zemin adı
   );
   assert.equal(
     describeFloorAreaSelection({ selected: true, floorType: 'parke-acik', paintable: false }),
-    'Beyaz Meşe zemin alanı seçili · bu zemin tipi boyanamaz.',
+    'Parke - Beyaz Meşe zemin alanı seçili · bu zemin tipi boyanamaz.', // DB zemin adı
   );
 });

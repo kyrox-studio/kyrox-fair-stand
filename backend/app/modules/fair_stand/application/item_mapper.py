@@ -160,6 +160,13 @@ def map_item(row) -> ItemAggregate:
     )
     if default_screen:
         payload["defaultScreenFile"] = default_screen
+    # Panel tipi dokusu (0100_panel_finishes): public altındaki yol, döşeme ölçüsü dimensions'tan.
+    texture_file = next(
+        (asset.relative_path for asset in row.assets if asset.asset_role == "texture" and asset.is_active),
+        None,
+    )
+    if texture_file:
+        payload["textureFile"] = texture_file
 
     components = sorted(row.components, key=lambda component: component.child_item_key)
     if components or row.composition_mode:

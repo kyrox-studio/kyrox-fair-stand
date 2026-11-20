@@ -2,12 +2,8 @@
 // her istisna gerekçe ve kaldırma koşuluyla yazılır, yama çıkınca silinir.
 import { spawnSync } from 'node:child_process';
 
-const TEMPORARY_EXCEPTIONS = Object.freeze({
-  // Kullanıcı kararı 2026-11-17: picomatch ReDoS. Yalnız vite (build aracı) üzerinden gelir, tarayıcı
-  // paketine girmez; yayın günü düzeltilmiş sürüm yoktu (son 4.0.7 etkileniyordu). picomatch yaması
-  // çıkınca lockfile güncellenir ve bu satır silinir.
-  'GHSA-fc5q-39xc-vjpf': 'picomatch ReDoS (vite build zinciri)',
-});
+// 2026-11-20: picomatch ReDoS (GHSA-fc5q-39xc-vjpf) istisnası kaldırıldı; npm audit artık bildirmiyor.
+const TEMPORARY_EXCEPTIONS = Object.freeze({});
 
 const BLOCKING = new Set(['high', 'critical']);
 

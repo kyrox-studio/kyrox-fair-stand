@@ -59,7 +59,9 @@ Alt kalem olarak kullanıldığı Item'lar: `base_100`, `desk_banko_100`, `desk_
 - `test/moduleRecipes.test.js`
 - `test/panelAssignmentBom.test.js`
 - `test/panelCamFamily.test.js`
+- `test/panelFinish.test.js`
 - `test/panelIdentityRepair.test.js`
+- `test/panelLabelsAllModules.test.js`
 - `test/printAreaBom.test.js`
 - `test/recipeCompositionItemsContract.test.js`
 - `test/relationshipBomEndToEnd.test.js`

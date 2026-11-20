@@ -72,10 +72,13 @@ test('profile is a profile everywhere: a profile end is not an upright, L corner
   const bottom = drop(modules, 'profile_190', 300, 498, 0);
   modules.push(bottom.state);
   const left = drop(modules, 'profile_190', 198, 400, 90);
-  for (const step of [right, bottom, left]) {
+  for (const step of [right, bottom]) {
     assert.equal(step.snapKind, 'profile-flush-corner');
-    assert.notEqual(step.snapKind, 'upright-face');
   }
+  // Çerçeveyi kapatan son profil: 10 cm sahne kesitiyle (DB, 2026-11-20) iki profil ucu arası boşluk profilin
+  // sahne boyuna birebir eşittir; aynı konuma `post-gap` adayı da oturur. Konum aşağıda dış hatla doğrulanır.
+  assert.ok(['profile-flush-corner', 'post-gap'].includes(left.snapKind), left.snapKind);
+  for (const step of [right, bottom, left]) assert.notEqual(step.snapKind, 'upright-face');
   // Çerçeve kapanır, hiçbir profil dış hattan taşmaz.
   assert.equal(right.bounds.maxXCm, firstBounds.maxXCm);
   assert.equal(right.bounds.minYCm, firstBounds.minYCm);

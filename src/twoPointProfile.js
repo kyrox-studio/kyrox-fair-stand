@@ -4,7 +4,6 @@
 // dikme olan duvar ailesi (duvar / kısa duvar, separatör, kapı, vitrin) uçları. "Bir ucu boşta"
 // sonraki adım. Profil iki noktanın ortasına, aynı hatta konur; yerleşim katalog bırakma
 // kuralından geçer.
-import { UPRIGHT_REAL_HEIGHT_RATIO } from './catalogWidthFamily.js';
 import { getModuleFootprintBoundsCm, getModuleGroundSegments } from './modulePlacement.js';
 
 // Uçlarında dikme olan duvar ailesi tipleri.
@@ -159,13 +158,13 @@ export function findNearestProfileAnchor(points, xCm, yCm, radiusCm = TWO_POINT_
   return best;
 }
 
-// Tepe: dikmede karşılık gelen duvar hattı (346,5 → 350, 99 → 100; boy penceresiyle aynı),
-// böylece profil duvar tepesindeki varsayılan profille aynı Z'ye oturur.
+// Tepe: modülün sahne yüksekliği. Dikmede sahne yüksekliği DB'de zaten duvar hattıdır (upright_346_5 → 350,
+// upright_99 → 100; 2026-11-20 dikmeler sahne ölçüsüne göre), böylece profil duvar tepesindeki varsayılan
+// profille aynı Z'ye oturur.
 function topOfModuleCm(module) {
   const zCm = Number(module?.placement?.zCm ?? 0);
-  let heightCm = Number(module?.heightCm);
+  const heightCm = Number(module?.heightCm);
   if (!Number.isFinite(zCm) || !Number.isFinite(heightCm)) return null;
-  if (isUprightModule(module)) heightCm = Math.round(heightCm / UPRIGHT_REAL_HEIGHT_RATIO);
   return zCm + heightCm;
 }
 

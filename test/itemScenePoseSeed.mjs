@@ -4,14 +4,17 @@ const WALL_SHORT_HEIGHT_CM = Object.freeze({
   'wall-short-2': 100,
 });
 
-export function applyItemScenePose(item) {
+// Eski göçlerin sahne pozu yalnız DB'de boş kalan alanı doldurur: test kataloğu DB'den gelir
+// (`scripts/export-test-catalog.py`) ve backend sahne ölçüsünü olduğu gibi verir (2026-11-20).
+export function applyItemScenePose(item, { hasDefaultZ = false } = {}) {
   if (item.type === 'profile') {
-    const crossSection = item.dimensions?.heightCm
+    const crossSection = item.sceneDimensions?.heightCm
+      ?? item.dimensions?.heightCm
       ?? item.dimensions?.depthCm
       ?? item.sceneDimensions?.depthCm
       ?? 8;
     item.sceneDimensions = { ...(item.sceneDimensions ?? {}), heightCm: crossSection };
-    item.defaultZCm = CATALOG_CEILING_CM - crossSection;
+    if (!hasDefaultZ) item.defaultZCm = CATALOG_CEILING_CM - crossSection;
   }
   if (item.type === 'upright') {
     const crossSection = item.dimensions?.widthCm
@@ -27,8 +30,9 @@ export function applyItemScenePose(item) {
   }
   const wallShortHeight = WALL_SHORT_HEIGHT_CM[item.variant];
   if (wallShortHeight != null) {
-    item.sceneDimensions = { ...(item.sceneDimensions ?? {}), heightCm: wallShortHeight };
-    item.defaultZCm = CATALOG_CEILING_CM - wallShortHeight;
+    const heightCm = item.sceneDimensions?.heightCm ?? wallShortHeight;
+    item.sceneDimensions = { ...(item.sceneDimensions ?? {}), heightCm };
+    if (!hasDefaultZ) item.defaultZCm = CATALOG_CEILING_CM - heightCm;
   }
   return item;
 }

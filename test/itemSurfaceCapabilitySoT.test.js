@@ -33,7 +33,7 @@ test('itemCapabilities reads Item accepts* columns, not type maps', () => {
   assert.equal(itemSurfaceAcceptsImage(getItem('wall_100_350')), true);
   assert.equal(getItemSurfaceCapabilities(getItem('desk_banko_100')).glass, false);
   assert.equal(getItemSurfaceCapabilities(getItem('connector_start')).color, false);
-  assert.equal(getItem('connector_start').isRender, true);
+  assert.equal(getItem('connector_start').isRender, false); // DB: aparat sahnede çizilmez
   assert.equal(getItemSurfaceCapabilities(getItem('door_leaf_100')).image, true);
   assert.equal(getItemSurfaceCapabilities(getItem('door_leaf_100')).glass, false);
 });

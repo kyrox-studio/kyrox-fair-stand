@@ -130,7 +130,8 @@ for (const itemKey of ['shelf_row_1', 'shelf_row_2', 'shelf_row_3']) {
     expect([100, 150, 200]).toContain(shelf.widthCm);
     expect(shelf.itemKey).toBe(rows === 1 ? 'shelf_' + shelf.widthCm : itemKey + '_' + shelf.widthCm);
     expect(shelf.depthCm).toBe(38);
-    expect(shelf.heightCm).toBe(1.8 + (rows - 1) * 50);
+    // Raf sahne yüksekliği DB'den: tahta 3,5 cm (kullanıcı kararı 2026-11-20), sıra aralığı 50.
+    expect(shelf.heightCm).toBe(3.5 + (rows - 1) * 50);
     expect(shelf.placement.wallId).toBe('back');
     const host = project.modules.find((module) => module.type !== 'shelf'
       && module.placement?.wallId === shelf.placement.wallId

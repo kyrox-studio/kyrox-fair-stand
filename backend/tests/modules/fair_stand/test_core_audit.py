@@ -84,7 +84,7 @@ def test_every_admin_mutation_route_records_core_audit():
 def test_audit_actions_use_fair_stand_prefix_and_core_naming():
     source = "\n".join(path.read_text(encoding="utf-8") for path in API_DIR.glob("*.py"))
     actions = set(re.findall(r'"(fair_stand\.[a-z0-9_.]+)"', source))
-    assert len(actions) == 39
+    assert len(actions) == 40  # 2026-11-18: fair_stand.texture.uploaded (katalog dokusu)
     for action in actions:
         assert CORE_ACTION_PATTERN.match(action), action
         assert len(action.split(".")) == 3, action

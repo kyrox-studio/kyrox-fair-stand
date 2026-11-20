@@ -47,7 +47,7 @@ for (const item of listRegisteredItems().filter((entry) => entry.type === 'tv'))
 
     assert.equal(getModuleBehavior(state).placement, 'wall-overlay');
 
-    assert.equal(Object.hasOwn(item, 'unit'), false);
+    assert.equal(item.unit, 'adet'); // DB'de birim adet: listede kendi satırıyla sayılır (2026-11-20)
     const contract = resolveModuleContract(item.itemKey);
     assert.equal(contract.bom.mode, 'decision-required');
     assert.equal(contract.bom.source, null);

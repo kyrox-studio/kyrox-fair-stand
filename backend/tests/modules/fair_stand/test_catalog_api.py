@@ -20,11 +20,11 @@ def test_bootstrap_returns_canonical_aggregates(client, db_session, auth_headers
     shelf_unit = next(item for item in body["items"] if item["itemKey"] == "shelf_100")
     assert "unitName" not in shelf_unit
     assert len(body["categories"]) == 6
-    assert len(body["items"]) == 141  # 0099: +2 dikme 148,5 / 198; 0098: karolaj_yarim + 2 demir; 0081: profile_346_5; 0079: profile_8; 0078: profil 239,5 + 289 + 388 + 487; 0075: bar masası; 0068: 5 yükseklik dikmesi; 0072: 3 raf tahtası + 3 kart + 6 sıralı raf; 0074: vitrin + broşürlük
+    assert len(body["items"]) == 145  # 0100: +4 panel tipi; 0099: +2 dikme 148,5 / 198; 0098: karolaj_yarim + 2 demir; 0081: profile_346_5; 0079: profile_8; 0078: profil 239,5 + 289 + 388 + 487; 0075: bar masası; 0068: 5 yükseklik dikmesi; 0072: 3 raf tahtası + 3 kart + 6 sıralı raf; 0074: vitrin + broşürlük
     visible = [item for item in body["items"] if item["catalogVisible"] is True]
     hidden = [item for item in body["items"] if item["catalogVisible"] is not True]
     assert len(visible) == 35  # 0086: 8 aile üyesi gizlendi (vitrin, raf, TV, video wall, saksı); 0084: Işıklı Strafor kartı; 0083: 6 banko/baza ölçüsü gizlendi, Banko/Köşe Banko/Baza için birer kart; 0082: 3 panel + 3 separatör gizlendi, Panel/Separatör için birer kart; 0079: 6 kısa panel gizlendi, Tek/Çift Sıra için birer kart; 0078: 4 profil gizlendi, profile_289 kartı
-    assert len(hidden) == 106  # 0099: 2 dikme gizli; 0098: karolaj_yarim + 2 demir gizli; 0086: 8 aile üyesi gizli (vitrin, raf, TV, video wall, saksı); 0084: Işıklı Strafor görünür; 0083: 6 banko/baza ölçüsü gizli; 0082: 3 panel + 3 separatör gizli; 0081: profile_346_5 gizli; 0080: profile_8 gizli; 0079: 6 kısa panel genişliği gizli; 0078: 4 profil gizlendi + 239,5 / 388 / 487; 0068: 5 gizli dikme; 0072: 3 tekli raf gizlenir, 3 tahta + 6 sıralı raf gizli
+    assert len(hidden) == 110  # 0100: 4 panel tipi gizli; 0099: 2 dikme gizli; 0098: karolaj_yarim + 2 demir gizli; 0086: 8 aile üyesi gizli (vitrin, raf, TV, video wall, saksı); 0084: Işıklı Strafor görünür; 0083: 6 banko/baza ölçüsü gizli; 0082: 3 panel + 3 separatör gizli; 0081: profile_346_5 gizli; 0080: profile_8 gizli; 0079: 6 kısa panel genişliği gizli; 0078: 4 profil gizlendi + 239,5 / 388 / 487; 0068: 5 gizli dikme; 0072: 3 tekli raf gizlenir, 3 tahta + 6 sıralı raf gizli
     shelf = next(item for item in body["items"] if item["itemKey"] == "shelf_100")
     assert shelf["categoryId"] == 3
     assert "catalogCategory" not in shelf
@@ -180,3 +180,19 @@ def test_corner_panel_item_lookup(client, db_session, auth_headers):
     assert "panelRole" not in body
     assert "nominalModuleWidthCm" not in body
     assert "innerCorner" not in body.get("composition", {})
+
+
+def test_bootstrap_panel_finishes_carry_color_and_texture(client, db_session, auth_headers):
+    # 0100 panel tipi: katalogda görünmez; renk defaultColor, meşe dokusu textureFile (public altı yol).
+    seed_fair_stand_catalog(db_session)
+    db_session.flush()
+    response = client.get("/api/v1/fair-stand/catalog/bootstrap", headers=auth_headers)
+    assert response.status_code == 200
+    finishes = {item["itemKey"]: item for item in response.json()["items"] if item["type"] == "panel-finish"}
+    assert set(finishes) == {
+        "panel_finish_default", "panel_finish_antrasit", "panel_finish_siyah", "panel_finish_mese",
+    }
+    assert all(item["catalogVisible"] is False for item in finishes.values())
+    assert finishes["panel_finish_antrasit"]["defaultColor"] == 0x383E42
+    assert finishes["panel_finish_mese"]["textureFile"] == "textures/panel/mese.jpg"
+    assert "textureFile" not in finishes["panel_finish_siyah"]

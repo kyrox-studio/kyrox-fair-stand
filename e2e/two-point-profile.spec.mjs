@@ -122,8 +122,9 @@ test('upright to upright: nearest single profile sits between centers, flush wit
   const [profile] = profilesOf(project);
   expect(profile?.itemKey).toBe('profile_190');
   expect(profile.placement.rotationZDeg).toBe(0);
-  // 99 dikme 100 cm duvar hattıdır; profilin üstü o hatta.
-  expect(profile.placement.zCm).toBeCloseTo(post.placement.zCm + Math.round(post.heightCm / 0.99) - profile.heightCm, 3);
+  // 99 dikmenin sahne yüksekliği (DB) 100 cm duvar hattıdır; profilin üstü o hatta.
+  expect(post.heightCm).toBe(100);
+  expect(profile.placement.zCm).toBeCloseTo(post.placement.zCm + post.heightCm - profile.heightCm, 3);
 
   // Araç açık kalır; Esc kapatır.
   await expect(tool).toHaveAttribute('aria-pressed', 'true');

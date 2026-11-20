@@ -32,4 +32,7 @@ export const CATALOG_PREVIEW_KIND_FIXTURE = [
   { id: 29, displayName: 'Ayaklı vitrin', markup: '<div class="module-drag-floor-showcase"></div>', cssCode: '', sortIndex: 29, isActive: true },
   { id: 30, displayName: 'Broşürlük', markup: '<div class="module-drag-brochure-stand"></div>', cssCode: '', sortIndex: 30, isActive: true },
   { id: 31, displayName: 'Işıklı Strafor', markup: '<div class="module-drag-foam-logo"></div>', cssCode: '', sortIndex: 31, isActive: true },
+  // DB'deki önizlemeler (2026-11-20; `scripts/export-test-catalog.py` DB önizlemesini ada göre eşler).
+  { id: 32, displayName: 'Küp Blok', markup: '<div class="module-drag-box-block"></div>', cssCode: '', sortIndex: 1, isActive: true },
+  { id: 33, displayName: 'Tül', markup: '<div class="module-drag-tul" data-preview-width></div>', cssCode: '', sortIndex: 1, isActive: true },
 ].map((row) => ({ ...row, cssCode: CATALOG_PREVIEW_SILHOUETTE_CSS }));

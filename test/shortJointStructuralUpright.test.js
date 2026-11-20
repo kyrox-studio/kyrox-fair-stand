@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { getModuleFootprintBoundsCm } from '../src/modulePlacement.js';
 import assert from 'node:assert/strict';
 
 import { createModuleStateFromCatalogKey, normalizeModuleItemState } from '../src/designState.js';
@@ -12,10 +13,19 @@ function shortPanel(itemKey, id, xCm, yCm = 0, rotationZDeg = 180, zCm = 300) {
   return module;
 }
 
+// Konumlar 8 cm kesitli dikmenin yerleşim noktasıyla yazılmıştır; dikme aynı merkeze kendi sahne kesitiyle
+// (DB: 10 cm, 2026-11-20) konur.
 function upright(id, xCm, yCm, rotationZDeg = 180) {
   const module = createModuleStateFromCatalogKey('upright_346_5');
   module.id = id;
   module.placement = { xCm, yCm, zCm: 0, rotationZDeg, wallId: 'free' };
+  const center = (state) => {
+    const bounds = getModuleFootprintBoundsCm(state);
+    return { x: (bounds.minXCm + bounds.maxXCm) / 2, y: (bounds.minYCm + bounds.maxYCm) / 2 };
+  };
+  const target = center({ ...module, widthCm: 8, depthCm: 8 });
+  const current = center(module);
+  module.placement = { ...module.placement, xCm: xCm + target.x - current.x, yCm: yCm + target.y - current.y };
   return module;
 }
 
@@ -65,7 +75,8 @@ for (const level of [1, 2]) {
         }
         const duplicate = { ...structuredClone(post), id: 'post-2' };
         assert.equal(quantity([a, b, post, duplicate], uprightKey), 2);
-        assert.equal(quantity([a, b, post, duplicate], 'upright_346_5'), 2);
+        // Aynı yerde iki dikme tek dikmedir, uzun olan kalır (kullanıcı kararı 2026-11-20).
+        assert.equal(quantity([a, b, post, duplicate], 'upright_346_5'), 1);
       });
     }
   }
@@ -88,14 +99,16 @@ test('taşıyıcı birleşimden uzakta, gövde ortasında veya yükseklik bandı
   }
 });
 
-test('mevcut 3,5 cm üst boşluk toleransının dışındaki taşıyıcı ortak dikmeyi kaldırmaz', () => {
+// 2026-11-20 kullanıcı kararı: Z'de örtüşen bağımsız dikme o ucun dikmesidir, üst boşluk sınırı yoktur (eski
+// 3,5 cm toleransı kalktı). Zeminden 0,1 cm aşağı inen dikme de ortak ucun taşıyıcısıdır: ara profil düşer.
+test('ortak uçta Z ekseninde örtüşen bağımsız dikme taşıyıcıdır; kaydırılmış tabanda da ara profil düşer', () => {
   const pair = [shortPanel('wall_200_short_1', 'a', 0), shortPanel('wall_200_short_1', 'b', 200)];
   const post = upright('post', 196, 0);
   assert.equal(quantity([...pair, post], 'upright_49_5'), 2);
+  assert.equal(quantity([...pair, post], 'profile_41_5'), 0);
   post.placement.zCm = -0.1;
-  // Tolerans dışındaki dikme taşıyıcı değil: ortak uç açıklık içinde ara profil (2026-11-16).
   assert.equal(quantity([...pair, post], 'upright_49_5'), 2);
-  assert.equal(quantity([...pair, post], 'profile_41_5'), 1);
+  assert.equal(quantity([...pair, post], 'profile_41_5'), 0);
 });
 
 test('49,5 ve 99 aynı uçta birleşince yalnız kalan uzun kısa dikme ikame edilir', () => {

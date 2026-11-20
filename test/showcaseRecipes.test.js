@@ -7,6 +7,10 @@ import {
   getModuleRecipe,
 } from './recipeParentItemKey.js';
 
+// DB reçete satırlarının sıra sütunu yoktur (kayıt sırası): reçeteler sıradan bağımsız karşılaştırılır (2026-11-20).
+const byKey = (items) => [...items].sort((a, b) => String(a.itemKey ?? a[0]).localeCompare(String(b.itemKey ?? b[0])));
+const partOf = (expanded, itemKey) => expanded.items.find((entry) => entry.itemKey === itemKey).part;
+
 test('fake aggregate showcase production parts are removed', () => {
   assert.equal(getItem('showcase_2_100'), null);
   assert.equal(getItem('showcase_3_100'), null);
@@ -16,21 +20,20 @@ test('fake aggregate showcase production parts are removed', () => {
 
 test('2-eye wall showcase BASE recipe matches verified production data', () => {
   const recipe = getModuleRecipe('showcase-2', 100);
-  assert.deepEqual(recipe.items, [
+  assert.deepEqual(byKey(recipe.items), byKey([
     { itemKey: 'profile_91', quantity: 4 },
     { itemKey: 'upright_346_5', quantity: 2, heightMatched: true },
     { itemKey: 'panel_98', quantity: 5, perBand: 1 },
     { itemKey: 'connector_start', quantity: 4 },
     { itemKey: 'connector_single', quantity: 9, perBand: 2 },
-    { itemKey: 'showcase_side_94_6_30', quantity: 2 },
-    { itemKey: 'showcase_horizontal_87_4_30', quantity: 2 },
-    { itemKey: 'glass_shelf', quantity: 1 },
-  ]);
+    // DB (2026-11-20): 2 gözlü vitrinin gövdesi tek kalem; yan, yatay ve cam raf gövdenin içindedir.
+    { itemKey: 'showcase_2_body', quantity: 1 },
+  ]));
 });
 
 test('3-eye wall showcase BASE recipe matches verified production data', () => {
   const recipe = getModuleRecipe('showcase-3', 100);
-  assert.deepEqual(recipe.items, [
+  assert.deepEqual(byKey(recipe.items), byKey([
     { itemKey: 'profile_91', quantity: 4 },
     { itemKey: 'upright_346_5', quantity: 2, heightMatched: true },
     { itemKey: 'panel_98', quantity: 4, perBand: 1 },
@@ -39,7 +42,7 @@ test('3-eye wall showcase BASE recipe matches verified production data', () => {
     { itemKey: 'showcase_side_143_5_30', quantity: 2 },
     { itemKey: 'showcase_horizontal_87_4_30', quantity: 2 },
     { itemKey: 'glass_shelf', quantity: 2 },
-  ]);
+  ]));
 });
 
 test('wall showcase expand stays on composition.items', () => {
@@ -57,8 +60,14 @@ test('wall showcase expand stays on composition.items', () => {
 });
 
 test('expanded showcase recipes resolve only real physical child Items', () => {
+  // 2 gözlü vitrin gövdesi DB'de küme kalem (`showcase_2_body`): yan, yatay ve cam raf onun içindedir.
+  const body = getItem('showcase_2_body');
+  assert.deepEqual(
+    body.composition.items.map((entry) => entry.itemKey).sort(),
+    ['glass_shelf', 'showcase_horizontal_87_4_30', 'showcase_side_94_6_30'],
+  );
+  assert.ok(getExpandedModuleRecipe('showcase-2', 100).items.some((entry) => entry.itemKey === 'showcase_2_body'));
   for (const [type, expectedSide, glassQuantity] of [
-    ['showcase-2', 'showcase_side_94_6_30', 1],
     ['showcase-3', 'showcase_side_143_5_30', 2],
   ]) {
     const expanded = getExpandedModuleRecipe(type, 100);

@@ -6,7 +6,7 @@ import { isCatalogWidthFamilyDescriptor } from '../src/catalogWidthFamily.js';
 import { createModuleStateFromDescriptor } from '../src/designState.js';
 import { resolveItemBom } from '../src/itemBom.js';
 import { resolveProjectBom } from '../src/projectBom.js';
-import { applyItemPlacementZCm, getItem, resolveItemDefaultZCm } from '../src/items.js';
+import { applyItemPlacementZCm, getItem, resolveItemDefaultZCm, resolveSceneDimensions } from '../src/items.js';
 import { getModuleCollisionHeightRangeCm, requiresShortUpJointSnap } from '../src/moduleBehavior.js';
 import {
   getWallOverlayZBoundsCm,
@@ -368,7 +368,8 @@ function profileFamilyModule(id, { widthCm, xCm, yCm, zCm }) {
     itemKey: null,
     widthCm,
     depthCm: 10,
-    heightCm: 8,
+    // Profil kesiti sahne ölçüsünden (DB: 10 cm, 2026-11-20).
+    heightCm: resolveSceneDimensions(getItem('profile_190')).heightCm,
     placement: {
       xCm,
       yCm,
@@ -454,13 +455,15 @@ test('wall short profile snap does not change the wall short BOM', () => {
   assert.equal(snap?.snapKind, 'end-to-end');
   const after = resolveItemBom('wall_100_short_1').map((line) => [line.itemKey, line.quantity]);
   assert.deepEqual(after, before);
-  assert.deepEqual(before, [
+  // DB reçete satırlarının sırası yoktur: içerik sıradan bağımsız karşılaştırılır.
+  const sorted = (rows) => [...rows].sort((a, b) => a[0].localeCompare(b[0]));
+  assert.deepEqual(sorted(before), sorted([
     ['profile_91', 2],
     ['upright_49_5', 2],
     ['panel_98', 1],
     ['connector_start', 2],
     ['connector_single', 3],
-  ]);
+  ]));
 });
 
 test('a profile on the short connection line replaces that short rail in the BOM', () => {

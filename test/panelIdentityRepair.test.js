@@ -25,7 +25,7 @@ test('açılışta eskimiş panel kimliği reçeteye göre onarılır; görsel v
   assert.equal(module.strips[0].itemKey, 'panel_197');
   normalizeModuleItemState(module);
   assert.deepEqual([...new Set(module.strips.map((strip) => strip.itemKey))], ['panel_98']);
-  assert.equal(module.strips[0].widthCm, 98);
+  assert.equal(module.strips[0].widthCm, getItem('panel_98').sceneDimensions?.widthCm ?? 98); // sahne ölçüsü
   assert.equal(module.strips[0].imageAssetId, 'img');
   assert.equal(module.strips[1].color, '#123456');
 });
@@ -38,9 +38,9 @@ test('üretim listesi eskimiş kimliği okusa da panel ölçüsünü reçeteden 
   assert.equal(bom.lines.find((line) => line.itemKey === 'panel_197'), undefined);
 });
 
-test('onarılan duvarın tek panel baskısı 98 cm (197 değil)', () => {
+test('onarılan duvarın tek panel baskısı 100 cm’lik panelin ölçüsüdür, 200’lük değil', () => {
   const module = staleNarrowedWall();
   normalizeModuleItemState(module);
   const image = collectPrintAreas([module], null).find((section) => section.id === 'image');
-  assert.deepEqual(image.lines.map((line) => line.widthCm), [98]);
+  assert.deepEqual(image.lines.map((line) => line.widthCm), [getItem('panel_98').sceneDimensions?.widthCm ?? 98]);
 });

@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import { listCatalogPreviewIds, getCatalogItem, listCatalogItems } from '../src/catalog.js';
 import { getItem, listRegisteredItems } from '../src/items.js';
 import { createModuleCatalogPreview } from '../src/moduleDragSidebar.js';
+import { CATALOG_PREVIEW_KIND_FIXTURE } from './fixtures/catalogPreviewKinds.mjs';
+import { CATALOG_VISIBLE_COUNT, CATALOG_HIDDEN_COUNT } from './catalogFacts.mjs';
 
 const SIDEBAR_SOURCE = readFileSync(new URL('../src/moduleDragSidebar.js', import.meta.url), 'utf8');
 const CONTEXT_SOURCE = readFileSync(new URL('../src/moduleContextMenu.js', import.meta.url), 'utf8');
@@ -46,6 +48,8 @@ const ROOT_CLASS_BY_PREVIEW = Object.freeze({
   29: 'module-drag-floor-showcase',
   30: 'module-drag-brochure-stand',
   31: 'module-drag-foam-logo',
+  32: 'module-drag-box-block',
+  33: 'module-drag-tul',
 });
 
 function installDocument() {
@@ -97,8 +101,8 @@ function serializeNode(node) {
 test('35 görünür Item catalogPreview taşır; gizli Item preview taşımaz', () => {
   const visible = listRegisteredItems().filter((item) => item.catalogVisible === true);
   const hidden = listRegisteredItems().filter((item) => item.catalogVisible !== true);
-  assert.equal(visible.length, 35);
-  assert.equal(hidden.length, 103);
+  assert.equal(visible.length, CATALOG_VISIBLE_COUNT);
+  assert.equal(hidden.length, CATALOG_HIDDEN_COUNT);
 
   for (const item of visible) {
     assert.equal(typeof item.previewId, 'number', item.itemKey);
@@ -106,14 +110,10 @@ test('35 görünür Item catalogPreview taşır; gizli Item preview taşımaz', 
     assert.equal(getCatalogItem(item.itemKey).previewId, item.previewId, item.itemKey);
   }
 
+  // 0086 / 0101: katalogda görünmeyen Item önizleme taşımaz (gizli raf ve dikme varyantları dahil).
   for (const item of hidden) {
-    // Gizli raf ürünleri sahne önizlemesini taşır; gizli raf kartları (0086: 2 / 3 sıralı) taşımaz.
-    if (item.type === 'shelf' && !item.widthVariants?.length) {
-      assert.equal(item.previewId, 20, item.itemKey);
-      assert.equal(getCatalogItem(item.itemKey), null);
-      continue;
-    }
     assert.equal(Object.hasOwn(item, 'previewId'), false, item.itemKey);
+    assert.equal(getCatalogItem(item.itemKey), null, item.itemKey);
   }
 });
 
@@ -138,7 +138,7 @@ test('Catalog preview renderer yalnız catalogPreview key ile seçilir; type bra
   assert.doesNotMatch(picker, /item\.type/);
 
   const rendererKeys = listCatalogPreviewIds().sort();
-  assert.equal(rendererKeys.length, 31);
+  assert.equal(rendererKeys.length, CATALOG_PREVIEW_KIND_FIXTURE.length); // DB önizlemeleri
   assert.deepEqual(rendererKeys, [...listCatalogPreviewIds()].sort());
   assert.match(CATALOG_SOURCE, /previewId,/);
   assert.match(CATALOG_SOURCE, /is catalogVisible without previewId/);
@@ -161,7 +161,7 @@ test('35 Item catalogPreview dağılımı kilitlidir', () => {
     6: 1,
     7: 2,
     8: 1,
-    9: 5,
+    9: 3, // kutu blok ve tül DB'de kendi önizlemesinde (32, 33)
     10: 1,
     11: 2,
     12: 1,
@@ -183,13 +183,15 @@ test('35 Item catalogPreview dağılımı kilitlidir', () => {
     29: 1,
     30: 1,
     31: 1,
+    32: 1,
+    33: 1,
   });
 });
 
 test('35 Catalog preview kök sınıfı önceki CSS silüetini korur', () => {
   installDocument();
   const projected = listCatalogItems();
-  assert.equal(projected.length, 35);
+  assert.equal(projected.length, CATALOG_VISIBLE_COUNT);
 
   for (const module of projected) {
     const tree = serializeNode(createModuleCatalogPreview(module));

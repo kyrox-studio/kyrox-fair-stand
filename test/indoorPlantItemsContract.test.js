@@ -75,7 +75,7 @@ for (const itemKey of PLANT_KEYS) {
 
     assert.equal(item.itemKey, itemKey);
     assert.equal(item.type, 'indoor-plant-1');
-    assert.equal(Object.hasOwn(item, 'unit'), false);
+    assert.equal(item.unit, 'adet'); // DB'de birim adet: listede kendi satırıyla sayılır (2026-11-20)
     assert.equal(Object.hasOwn(item, 'composition'), false);
     assert.deepEqual(item.dimensions, {
       widthCm: expected.widthCm,
