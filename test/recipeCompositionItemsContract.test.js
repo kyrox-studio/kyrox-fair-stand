@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import { resolveItemBom } from '../src/itemBom.js';
 import { getItem, listRegisteredItems } from '../src/items.js';
 
+// DB reçete satırlarının sıra sütunu yoktur (kayıt sırası): reçeteler sıradan bağımsız karşılaştırılır (2026-11-20).
+const byKey = (items) => [...items].sort((a, b) => String(a.itemKey ?? a[0]).localeCompare(String(b.itemKey ?? b[0])));
+const partOf = (expanded, itemKey) => expanded.items.find((entry) => entry.itemKey === itemKey).part;
+
 function childTuples(entries) {
   return (entries ?? []).map((entry) => [entry.itemKey, entry.quantity]);
 }
@@ -42,9 +46,10 @@ const EXPECTED_RECIPE_ITEMS = Object.freeze({
   // 50’lik ayırıcı ürün kararı (2026-10-19, 0071): bant başına 1 panel, 2B − 1 tekli → 350’de 13.
   wall_separator_50_350: [['profile_41_5', 2], ['upright_346_5', 2], ['separator_panel_48_5', 7], ['connector_start', 2], ['connector_single', 13]],
   wall_separator_100_350: [['profile_91', 2], ['upright_346_5', 2], ['separator_panel_98', 7], ['connector_start', 2], ['connector_single', 13]],
-  wall_separator_50_350_sarmasik: [['profile_41_5', 2], ['upright_346_5', 2], ['separator_panel_48_5', 7], ['connector_start', 2], ['connector_single', 13]],
-  wall_separator_100_350_sarmasik: [['profile_91', 2], ['upright_346_5', 2], ['separator_panel_98', 7], ['connector_start', 2], ['connector_single', 13]],
-  wall_showcase_100_2_350: [['profile_91', 4], ['upright_346_5', 2], ['panel_98', 5], ['connector_start', 4], ['connector_single', 9], ['showcase_side_94_6_30', 2], ['showcase_horizontal_87_4_30', 2], ['glass_shelf', 1]],
+  // DB reçeteleri (2026-11-20): sarmaşıklı separatörde sarmaşık, 2 gözlü vitrinde tek gövde kalemi.
+  wall_separator_50_350_sarmasik: [['profile_41_5', 2], ['upright_346_5', 2], ['separator_panel_48_5', 7], ['connector_start', 2], ['connector_single', 13], ['sarmasik', 1]],
+  wall_separator_100_350_sarmasik: [['profile_91', 2], ['upright_346_5', 2], ['separator_panel_98', 7], ['connector_start', 2], ['connector_single', 13], ['sarmasik', 1]],
+  wall_showcase_100_2_350: [['profile_91', 4], ['upright_346_5', 2], ['panel_98', 5], ['connector_start', 4], ['connector_single', 9], ['showcase_2_body', 1]],
   wall_showcase_100_3_350: [['profile_91', 4], ['upright_346_5', 2], ['panel_98', 4], ['connector_start', 4], ['connector_single', 7], ['showcase_side_143_5_30', 2], ['showcase_horizontal_87_4_30', 2], ['glass_shelf', 2]],
 });
 
@@ -55,7 +60,7 @@ test('recipe parents keep composition.items equal to the proven former recipe co
 
   for (const item of parents) {
     assert.ok(Array.isArray(item.composition.items), `${item.itemKey} composition.items missing`);
-    assert.deepEqual(childTuples(item.composition.items), EXPECTED_RECIPE_ITEMS[item.itemKey], item.itemKey);
+    assert.deepEqual(byKey(childTuples(item.composition.items)), byKey(EXPECTED_RECIPE_ITEMS[item.itemKey]), item.itemKey);
   }
 });
 
@@ -72,17 +77,18 @@ test('cluster parents keep composition.items without recipe mode', () => {
   );
   assert.deepEqual(
     clusters.map((item) => item.itemKey).sort(),
-    ['furniture_sofa_set_classic', 'furniture_table_chair_set_eames', 'shelf_100_self', 'shelf_150_self', 'shelf_200_self'],
+    ['furniture_sofa_set_classic', 'furniture_table_chair_set_eames', 'shelf_100_self', 'shelf_150_self', 'shelf_200_self', 'showcase_2_body'],
   );
   for (const item of clusters) {
     assert.equal(item.composition.innerCorner, undefined, item.itemKey);
   }
 });
 
+// Küme kalem açılmaz: DB'de birimi olan küme (mobilya takımı, vitrin gövdesi) listede kendi satırıdır (2026-11-20).
 test('furniture clusters are not opened by resolveItemBom', () => {
-  for (const itemKey of ['furniture_sofa_set_classic', 'furniture_table_chair_set_eames']) {
+  for (const itemKey of ['furniture_sofa_set_classic', 'furniture_table_chair_set_eames', 'showcase_2_body']) {
     assert.equal(getItem(itemKey).composition.mode, undefined, itemKey);
-    assert.throws(() => resolveItemBom(itemKey), /Missing canonical unit/, itemKey);
+    assert.deepEqual(resolveItemBom(itemKey).map((line) => [line.itemKey, line.quantity]), [[itemKey, 1]], itemKey);
   }
 });
 

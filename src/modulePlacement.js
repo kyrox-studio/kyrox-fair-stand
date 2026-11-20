@@ -391,6 +391,76 @@ export function seatWallShortStacks(modules = []) {
   return changed;
 }
 
+// Bağımsız dikme kısa panelin uç dikmesiyle aynı parçadır (kullanıcı kararı 2026-11-19). Eski snap dikmeyi
+// uca birkaç cm kayık bırakıyordu: açılışta uca bu kadar yakın duran dikme uç dikmesinin yerine oturur.
+// Hedefle iç içe geçen (bir dikme kesitinden yakın) dikme bilerek konmuş olamaz: hedefe oturur. Kesit
+// dikmenin kendi sahne ölçüsüdür (kullanıcı kararı 2026-11-20).
+
+// Uç noktasında dik açıyla başka bir duvar / kısa panel bitiyorsa (köşe) dikme iki çizginin kesişim
+// karesine oturur (normal duvar köşe dikmesi gibi); yoksa kısa panelin uç dikmesinin yerine (uçtan yarım
+// dikme içeri).
+function shortEndPostCenterCm(segment, endpointCm, inward, halfCm, modules, ownId) {
+  const point = segment.axis === 'x'
+    ? { xCm: endpointCm, yCm: segment.fixedCm }
+    : { xCm: segment.fixedCm, yCm: endpointCm };
+  const isCorner = modules.some((other) => {
+    if (!other?.placement || other.id === ownId || other.type === 'upright' || other.type === 'profile') return false;
+    const seg = getGroundSegment(other);
+    if (!seg || seg.axis === segment.axis) return false;
+    const at = (cm) => (seg.axis === 'x'
+      ? Math.abs(cm - point.xCm) <= 1 && Math.abs(seg.fixedCm - point.yCm) <= 1
+      : Math.abs(cm - point.yCm) <= 1 && Math.abs(seg.fixedCm - point.xCm) <= 1);
+    return at(seg.startCm) || at(seg.endCm);
+  });
+  if (isCorner) return point;
+  return segment.axis === 'x'
+    ? { xCm: endpointCm + inward * halfCm, yCm: segment.fixedCm }
+    : { xCm: segment.fixedCm, yCm: endpointCm + inward * halfCm };
+}
+
+/**
+ * Kısa panel ucuna yakın bağımsız dikmeleri uç dikmesinin yerine (uçtan yarım dikme içeri, hat ekseninde)
+ * kaydırır. Dikmenin Z'si ve dönüşü değişmez. Değişen dikme sayısını döndürür.
+ */
+export function seatStandaloneUprightsAtShortEnds(modules = []) {
+  const shorts = modules.filter((moduleState) => isWallShortFamilyDescriptor(moduleState) && moduleState?.placement);
+  let changed = 0;
+  for (const upright of modules) {
+    if (upright?.type !== 'upright' || !upright.placement) continue;
+    const rotation = normalizeModuleRotationZDeg(upright.placement.rotationZDeg);
+    if (rotation % 90 !== 0) continue;
+    const bounds = getModuleFootprintBoundsCm(upright);
+    if (!bounds) continue;
+    const width = Number(upright.widthCm) || (bounds.maxXCm - bounds.minXCm);
+    const half = width / 2;
+    const center = { xCm: (bounds.minXCm + bounds.maxXCm) / 2, yCm: (bounds.minYCm + bounds.maxYCm) / 2 };
+    let best = null;
+    for (const short of shorts) {
+      const segment = getGroundSegment(short);
+      if (!segment || nearlyEqual(segment.startCm, segment.endCm)) continue;
+      for (const [endpointCm, inward] of [[segment.startCm, 1], [segment.endCm, -1]]) {
+        const target = shortEndPostCenterCm(segment, endpointCm, inward, half, modules, short.id);
+        const dx = Math.abs(target.xCm - center.xCm);
+        const dy = Math.abs(target.yCm - center.yCm);
+        if (dx > width + EPSILON_CM || dy > width + EPSILON_CM) continue;
+        const distance = Math.hypot(dx, dy);
+        if (!best || distance < best.distance) best = { target, distance };
+      }
+    }
+    if (!best || best.distance < EPSILON_CM) continue;
+    const next = placementFromCenterCm({
+      centerXCm: best.target.xCm,
+      centerYCm: best.target.yCm,
+      widthCm: width,
+      rotationZDeg: rotation,
+      template: upright.placement,
+    });
+    upright.placement = { ...upright.placement, xCm: next.xCm, yCm: next.yCm };
+    changed += 1;
+  }
+  return changed;
+}
+
 export function getPanelSeamSnapWindowCm() {
   return WALL_PANEL_BAND_PITCH_CM / 4;
 }
@@ -1275,6 +1345,15 @@ export function placementsOverlap(moduleA, moduleB) {
  * bazanın içinde, iki dış yüzüyle hizalı köşede duruyorsa bazayla çakışma sayılmaz; bazanın ortası
  * ya da yarım taşan dikme çakışmadır.
  */
+// Aynı yere bırakılan iki dikme birleşir, sahnede ve listede uzun olan kalır (kullanıcı kararı 2026-11-20).
+function isCoincidentUprightPair(a, b) {
+  if (a?.type !== 'upright' || b?.type !== 'upright' || !a.placement || !b.placement) return false;
+  const ca = getPlacementCenterCm(a.placement, a.widthCm);
+  const cb = getPlacementCenterCm(b.placement, b.widthCm);
+  if (!ca || !cb) return false;
+  return Math.abs(ca.xCm - cb.xCm) <= 1 && Math.abs(ca.yCm - cb.yCm) <= 1;
+}
+
 function isUprightOnBaseCorner(upright, base) {
   if (upright?.type !== 'upright' || base?.type !== 'base') return false;
   if (!upright.placement || !base.placement) return false;
@@ -1451,6 +1530,22 @@ function wallCenterLineOnStandEdge(segment, standXCm, standYCm) {
 }
 
 /**
+ * Dikme duvarın dikmesiyle aynı parçadır (kullanıcı kararı 2026-11-19/20): stand sınırı için de duvarla aynı
+ * ölçü geçerlidir. Duvarda sınır panelin kalınlığına değil eksen çizgisine bakar (kenar duvarı yarı kalınlığıyla
+ * dışarı taşar); dikmede eksen merkezidir. Merkez standın içinde ya da kenar çizgisinin üstündeyse dikme
+ * geçerlidir: kenardaki köşe karesine (iki duvar çizgisinin kesişimi) oturabilir.
+ */
+function uprightAxisInsideStand({ placement, widthCm, moduleType, standXCm, standYCm }) {
+  if (moduleType !== 'upright' || !placement) return false;
+  const center = getPlacementCenterCm(placement, widthCm);
+  const xLimit = Number(standXCm);
+  const yLimit = Number(standYCm);
+  if (!center || !Number.isFinite(xLimit) || !Number.isFinite(yLimit)) return false;
+  return center.xCm >= -EPSILON_CM && center.xCm <= xLimit + EPSILON_CM
+    && center.yCm >= -EPSILON_CM && center.yCm <= yLimit + EPSILON_CM;
+}
+
+/**
  * Stand kenarındaki duvara yaslanan baza (kullanıcı kararı 2026-11-12): sınır dikmeler içindir,
  * bazanın ahşabı sınırı geçebilir. Duvarın orta çizgisi stand sınırındaysa (yarısı dışarıda) ve
  * duvar bazanın arka şeridindeyse (`isWallInBaseBack`, iç duvardaki gibi arka yüzler hizalı),
@@ -1531,9 +1626,10 @@ export function validatePlacementAgainstModules({
     standXCm,
     standYCm,
   });
-  if (!boundary.ok && !baseOverhangsEdgeWall({
-    placement, widthCm, depthCm: effectiveDepthCm, moduleType, shape, modules, standType, standXCm, standYCm,
-  })) return boundary;
+  if (!boundary.ok && !uprightAxisInsideStand({ placement, widthCm, moduleType, standXCm, standYCm })
+    && !baseOverhangsEdgeWall({
+      placement, widthCm, depthCm: effectiveDepthCm, moduleType, shape, modules, standType, standXCm, standYCm,
+    })) return boundary;
 
   const candidate = {
     id: moduleId,
@@ -1558,6 +1654,7 @@ export function validatePlacementAgainstModules({
     if (!module || module.id === moduleId) return false;
     if (exemptIds.has(module.id)) return false;
     if (isUprightOnBaseCorner(candidate, module) || isUprightOnBaseCorner(module, candidate)) return false;
+    if (isCoincidentUprightPair(candidate, module)) return false;
     if (isProfileFlushOnFrameEnd(candidate, module) || isProfileFlushOnFrameEnd(module, candidate)) return false;
     if (isProfileEndInPost(module, candidate)) return false;
     if (isCollinearProfileNodeShare(candidate, module, modules)) return false;
@@ -1773,9 +1870,15 @@ function snapUprightToShortUpJoints({
     const yLimit = Number(standYCm);
     targetSegments.forEach((target) => {
       if (!target) return;
-      [target.startCm, target.endCm].forEach((endpointCm) => {
-      const jointXCm = target.axis === 'x' ? endpointCm : target.fixedCm;
-      const jointYCm = target.axis === 'y' ? endpointCm : target.fixedCm;
+      // Bağımsız dikme kısa panelin uç dikmesiyle aynı parçadır (kullanıcı kararı 2026-11-19): merkezi
+      // uç noktası değil, uçtan yarım dikme içeridir (kısa panelin kendi uç dikmesinin yeri). Uç noktasına
+      // oturan dikme yarı yarıya kısa panelin dışında kalıyor, uç dikmesiyle iç içe geçiyordu.
+      [[target.startCm, 1], [target.endCm, -1]].forEach(([endpointCm, inward]) => {
+      const postCenter = nearlyEqual(target.startCm, target.endCm)
+        ? (target.axis === 'x' ? { xCm: endpointCm, yCm: target.fixedCm } : { xCm: target.fixedCm, yCm: endpointCm })
+        : shortEndPostCenterCm(target, endpointCm, inward, halfUprightCm, modules, targetModule.id);
+      const jointXCm = postCenter.xCm;
+      const jointYCm = postCenter.yCm;
       const placement = placementFromCenterCm({
         centerXCm: jointXCm,
         centerYCm: jointYCm,
@@ -1783,12 +1886,14 @@ function snapUprightToShortUpJoints({
         rotationZDeg: targetRotation,
         template: { zCm: 0, wallId: 'free' },
       });
+      // Dikmenin merkezi stand içinde ya da kenar çizgisinde kalır (`uprightAxisInsideStand`, duvar ekseniyle
+      // aynı ölçü); eskiden gövde stand içine sıkıştırılıyor, kenardaki köşede dikme 4 cm içeri kayıyordu.
       const vertical = isVerticalModuleRotation(targetRotation);
       placement.xCm = vertical
         ? clamp(Number(placement.xCm), 0, xLimit)
-        : clamp(Number(placement.xCm), 0, xLimit - width);
+        : clamp(Number(placement.xCm), -width / 2, xLimit - width / 2);
       placement.yCm = vertical
-        ? clamp(Number(placement.yCm), 0, yLimit - width)
+        ? clamp(Number(placement.yCm), -width / 2, yLimit - width / 2)
         : clamp(Number(placement.yCm), 0, yLimit);
       placement.wallId = 'free';
       const distanceCm = Math.hypot(jointXCm - pointerX, jointYCm - pointerY);

@@ -6,34 +6,11 @@ import { getItem, initializeItemRegistry, listRegisteredItems } from '../src/ite
 import { resolveProjectBom } from '../src/projectBom.js';
 import { loadCanonicalItemCatalog } from './registerCanonicalItemCatalog.mjs';
 
-const PANEL = {
-  itemKey: 'elektrik_panosu',
-  name: 'Elektrik Panosu',
-  type: 'production',
-  unit: 'adet',
-  catalogVisible: false,
-  isRender: false,
-  isActive: true,
-  acceptsColor: false,
-  acceptsImage: false,
-  acceptsLightbox: false,
-  acceptsGlass: false,
-  acceptsMesh: false,
-};
-
-function withPanel(run) {
-  const snapshot = listRegisteredItems().map((item) => structuredClone(item));
-  initializeItemRegistry([...snapshot, structuredClone(PANEL)]);
-  try {
-    return run();
-  } finally {
-    initializeItemRegistry(snapshot);
-  }
-}
-
+// Elektrik panosu DB'de (test kataloğu `scripts/export-test-catalog.py` ile DB'den) her projeye bir adet eklenen
+// üretim kalemidir; kalem katalogdan kalkarsa liste boş kalır.
 test('every project bill includes one elektrik panosu', () => {
-  assert.equal(getItem('elektrik_panosu'), null);
-  withPanel(() => {
+  assert.equal(getItem('elektrik_panosu')?.type, 'production');
+  {
     const empty = resolveProjectBom([]);
     assert.deepEqual(empty.modules, []);
     assert.deepEqual(
@@ -55,7 +32,12 @@ test('every project bill includes one elektrik panosu', () => {
       const total = bom.lines.find((entry) => entry.itemKey === line.itemKey && entry.unit === line.unit);
       assert.equal(total.quantity, line.quantity * 2);
     }
-  });
-  loadCanonicalItemCatalog();
-  assert.deepEqual(resolveProjectBom([]).lines, []);
+  }
+  const snapshot = listRegisteredItems().map((item) => structuredClone(item));
+  initializeItemRegistry(snapshot.filter((item) => item.itemKey !== 'elektrik_panosu'));
+  try {
+    assert.deepEqual(resolveProjectBom([]).lines, []);
+  } finally {
+    loadCanonicalItemCatalog();
+  }
 });

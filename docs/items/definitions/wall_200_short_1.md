@@ -57,8 +57,10 @@
 - `backend/tests/modules/fair_stand/test_item_default_z.py`
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
 - `e2e/new-project-wizard.spec.mjs`
+- `e2e/upright-corner-drag.spec.mjs`
 - `e2e/wall-height-matrix.spec.mjs`
 - `e2e/wall-short-width.spec.mjs`
+- `e2e/zz-aska-gap.spec.mjs`
 - `test/flatPanelBackStrips.test.js`
 - `test/itemDefaultZCm.test.js`
 - `test/mapCatalogSeed.mjs`

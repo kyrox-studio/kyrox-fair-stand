@@ -74,12 +74,13 @@ test('classic sofa set is a cluster of one double, two singles and one coffee ta
   const item = getItem('furniture_sofa_set_classic');
   assert.equal(set.itemKey, 'furniture_sofa_set_classic');
   assert.equal(set.type, 'sofa-set-classic');
-  assert.equal(Object.hasOwn(item, 'unit'), false);
-  assert.deepEqual(item.composition.items, [
+  assert.equal(item.unit, 'adet'); // DB: takım listede kendi satırı
+  const sorted = (rows) => [...rows].sort((x, y) => x.itemKey.localeCompare(y.itemKey)); // DB'de sıra yok
+  assert.deepEqual(sorted(item.composition.items), sorted([
     { itemKey: 'furniture_sofa_double_classic', quantity: 1 },
     { itemKey: 'furniture_sofa_single_classic', quantity: 2 },
     { itemKey: 'furniture_coffee_table_classic', quantity: 1 },
-  ]);
+  ]));
 });
 
 test('classic sofa pieces reuse the shared beige sofa GLB and coffee table helper', () => {

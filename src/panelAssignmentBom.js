@@ -1,4 +1,5 @@
 import { getItem } from './items.js';
+import { effectivePanelFinish, panelFinishAppearance } from './panelFinish.js';
 
 /**
  * Paneller atama türüne göre (Üretim Listesi ve sahnedeki "Panel Ölçüleri" aynı sayımı kullanır).
@@ -6,13 +7,16 @@ import { getItem } from './items.js';
  * kurallarından sonraki BOM anahtarıdır (ör. panel_98 → panel_corner_92), ölçü o Item'dan okunur.
  * - Görsel atanan: dosya + ölçü başına adet (görsel dört paneli kaplıyorsa dört panel).
  * - Renk atanan: görselsiz, rengi Item varsayılanından farklı panel; renk + ölçü başına adet.
- * - Varsayılan Panel: görsel, renk, Mesh veya Lightbox atanmamış panel; ölçü başına adet.
+ * - Panel tipi (2026-11-18): görsel / renk atanmamış panelin etkin tipi (panele atanan, yoksa
+ *   stand tipi) Varsayılan değilse tip adı + ölçü başına adet ("Meşe · 98 × 47 cm · 6 panel").
+ * - Varsayılan Panel: görsel, renk, Mesh veya Lightbox atanmamış, tipi Varsayılan panel; ölçü başına adet.
  * Mesh / Lightbox kaplı, cam, metal separatör ve kaldırılmış paneller sayılmaz.
  */
 
 export const PANEL_ASSIGNMENT_GROUPS = Object.freeze([
   Object.freeze({ id: 'image', label: 'Görsel atanan paneller' }),
   Object.freeze({ id: 'color', label: 'Renk atanan paneller' }),
+  Object.freeze({ id: 'finish', label: 'Panel tipi' }),
   Object.freeze({ id: 'default', label: 'Varsayılan Panel' }),
   Object.freeze({ id: 'depot', label: 'Depo içi paneller' }),
 ]);
@@ -40,7 +44,7 @@ function lookupAssetName(assetNames, assetId) {
 }
 
 /** Tek panel yüzeyi → atama kaydı; sayılmayan panel null. */
-export function classifyPanelSurface(surface, assetNames = null) {
+export function classifyPanelSurface(surface, assetNames = null, stand = null) {
   if (!surface || typeof surface !== 'object' || surface.removed === true) return null;
   if (surface.isGlass || surface.isMetalSeparator || surface.fabricGroupId) return null;
   const item = surface.itemKey ? getItem(surface.itemKey) : null;
@@ -75,18 +79,23 @@ export function classifyPanelSurface(surface, assetNames = null) {
   if (color && color !== fallback) {
     return { ...base, group: 'color', assetId: null, assetName: null, color };
   }
+  const finish = panelFinishAppearance(effectivePanelFinish(surface, stand));
+  if (!finish.isDefault) {
+    return { ...base, group: 'finish', assetId: null, assetName: null, color: null, finishKey: finish.itemKey, finishName: finish.name };
+  }
   return { ...base, group: 'default', assetId: null, assetName: null, color: null };
 }
 
 function rowKey(panel) {
   if (panel.group === 'image') return `${panel.assetId}\u0000${panel.widthCm}\u0000${panel.heightCm}`;
   if (panel.group === 'color') return `${panel.color}\u0000${panel.widthCm}\u0000${panel.heightCm}`;
+  if (panel.group === 'finish') return `${panel.finishKey}\u0000${panel.widthCm}\u0000${panel.heightCm}`;
   return `${panel.widthCm}\u0000${panel.heightCm}`;
 }
 
 // Önce panel ölçüsü (büyükten küçüğe), aynı ölçüde görsel adı / renk (kullanıcı kararı 2026-11-16).
 function compareRows(a, b) {
-  const subject = (row) => row.assetName ?? row.color ?? '';
+  const subject = (row) => row.assetName ?? row.color ?? row.finishName ?? '';
   return b.widthCm - a.widthCm
     || b.heightCm - a.heightCm
     || subject(a).localeCompare(subject(b), 'tr', { numeric: true });
@@ -96,12 +105,12 @@ function compareRows(a, b) {
  * @param {Array<{ status?: string, panelSurfaces?: object[] }>} moduleEntries resolveProjectBom modül girdileri
  * @param {Map<string, string> | Record<string, string> | null} assetNames
  */
-export function summarizePanelAssignments(moduleEntries = [], assetNames = null) {
+export function summarizePanelAssignments(moduleEntries = [], assetNames = null, stand = null) {
   const panels = [];
   for (const entry of moduleEntries) {
     if (entry?.status !== 'ok') continue;
     for (const surface of entry.panelSurfaces ?? []) {
-      const panel = classifyPanelSurface(surface, assetNames);
+      const panel = classifyPanelSurface(surface, assetNames, stand);
       if (panel) panels.push(Object.freeze({ ...panel, moduleId: entry.moduleId ?? null }));
     }
   }
@@ -117,6 +126,8 @@ export function summarizePanelAssignments(moduleEntries = [], assetNames = null)
           assetId: panel.assetId,
           assetName: panel.assetName,
           color: panel.color,
+          finishKey: panel.finishKey ?? null,
+          finishName: panel.finishName ?? null,
           widthCm: panel.widthCm,
           heightCm: panel.heightCm,
           quantity: 1,
@@ -145,7 +156,7 @@ export function formatPanelSizeCm(widthCm, heightCm) {
 /** Satır metni: "3.jpeg · 197 × 47 cm · 4 panel", "#c0392b · 197 × 47 cm · 3 panel", "197 × 47 cm · 7 panel". */
 export function formatPanelAssignmentRow(row) {
   const size = formatPanelSizeCm(row.widthCm, row.heightCm);
-  const subject = row.assetName ?? row.color ?? null;
+  const subject = row.assetName ?? row.color ?? row.finishName ?? null;
   return `${subject ? `${subject} · ` : ''}${size} · ${row.quantity} panel`;
 }
 
@@ -174,7 +185,7 @@ export function formatPanelSizeHeading(size) {
 
 /** Ölçü başlığı altındaki satır: "ASKA LOGO.jpg · 3 panel", "#c0392b · 1 panel". */
 export function formatPanelSubjectRow(row) {
-  return `${row.assetName ?? row.color ?? ''} · ${row.quantity} panel`;
+  return `${row.assetName ?? row.color ?? row.finishName ?? ''} · ${row.quantity} panel`;
 }
 
 /**
@@ -186,5 +197,6 @@ export function formatPanelSceneLabel(panel) {
   if (panel.group === 'image') return `${width} · ${panel.assetName}`;
   if (panel.group === 'color') return `${width} · ${panel.color}`;
   if (panel.group === 'depot') return `${width} · Depo içi`;
+  if (panel.group === 'finish') return `${width} · ${panel.finishName}`;
   return `${width} · Varsayılan`;
 }

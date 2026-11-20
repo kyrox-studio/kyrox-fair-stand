@@ -63,6 +63,7 @@
 - `e2e/base-items-contract.spec.mjs`
 - `e2e/box-run-shared-post.spec.mjs`
 - `e2e/helpers/catalogWidth.mjs`
+- `e2e/panel-labels-all-modules.spec.mjs`
 - `e2e/selection-stale-clear.spec.mjs`
 - `test/baseFacePanelIdentity.test.js`
 - `test/baseItemsContract.test.js`

@@ -10,6 +10,10 @@ import {
 } from './recipeParentItemKey.js';
 import { getItem } from '../src/items.js';
 
+// DB reçete satırlarının sıra sütunu yoktur (kayıt sırası): reçeteler sıradan bağımsız karşılaştırılır (2026-11-20).
+const byKey = (items) => [...items].sort((a, b) => String(a.itemKey ?? a[0]).localeCompare(String(b.itemKey ?? b[0])));
+const partOf = (expanded, itemKey) => expanded.items.find((entry) => entry.itemKey === itemKey).part;
+
 test('desk_banko_150_l is a 150 x 150 catalog module', () => {
   // Köşe banko kartı tek (desk_banko_100_l, 0083); 150×150 ölçü penceresinden gelir.
   assert.equal(getCatalogItem('desk_banko_150_l'), null);
@@ -36,10 +40,10 @@ test('150 L counter renderer is 150 x 150 with a 50 cm arm and 100 cm return ext
 test('150 L counter BOM remains separate from renderer geometry', () => {
   const recipe = getModuleRecipe('counter', 150, { shape: 'L' });
   assert.equal(recipe.recipeId, 'desk_banko_150_l');
-  assert.deepEqual(recipe.items.map((item) => [item.itemKey ?? item.partId, item.quantity]), [
+  assert.deepEqual(byKey(recipe.items.map((item) => [item.itemKey ?? item.partId, item.quantity])), byKey([
     ['profile_140_5', 5], ['profile_91', 1], ['profile_41_5', 4], ['upright_99', 5],
     ['panel_147_5', 4], ['panel_48_5', 4], ['connector_start', 8], ['connector_single', 16],
     ['counter_top_160_60', 1], ['counter_top_102_60', 1],
-  ]);
+  ]));
   assert.equal(getItem('counter_top_102_60').dimensions.widthCm, 102);
 });

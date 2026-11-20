@@ -61,6 +61,11 @@ export function validateImportedStandState(stand) {
   if (stand.profileFinish != null && !isKnownProfileFinish(stand.profileFinish)) {
     return { ok: false, message: 'Proje profil rengi geçersiz.' };
   }
+  // Panel tipi admin'den yönetilir: bilinmeyen anahtar (silinmiş tip) açılışta Varsayılan'a düşer;
+  // yalnız metin olmayan değer reddedilir (0100_panel_finishes).
+  if (stand.panelFinish != null && typeof stand.panelFinish !== 'string') {
+    return { ok: false, message: 'Proje panel tipi geçersiz.' };
+  }
   const floorKey = resolveStandFloorItemKey(stand);
   if (!getFloorItem(floorKey)) {
     return { ok: false, message: 'Proje zemin öğesi geçersiz.' };

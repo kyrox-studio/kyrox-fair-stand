@@ -5,18 +5,23 @@
  * kurallarla sayılır: reçetenin tekli ve başlangıç aparatı arka yüz için de yazılır (eklem
  * kuralları `relationshipBom.js`'de arka yüze de uygulanır).
  *
- * Kaldırılan her bant (ön ya da arka) için:
+ * Kaldırılan ya da Lightbox / Mesh kaplanan her bant (ön ya da arka) için:
  * - o bandın paneli (köşe / cam dönüşümünden sonraki kimliğiyle) 1 düşer,
  * - panelin iki yanı için birer aparat düşer: yan köşe aparatı ödüyorsa köşe aparatı, değilse tekli,
- * - en alt bant (stripIndex 0) kalkarsa o yüzün 2 başlangıç aparatı düşer.
+ * - en alt bantta (stripIndex 0) kalkan her yüz için 2 başlangıç aparatı düşer.
  * Hiçbir kalem sıfırın altına inmez.
  */
 import { applyModuleConnectorCharge } from './relationshipBom.js';
 
 const SIDES_PER_PANEL = 2;
 
+/**
+ * Listede yeri boş sayılan panel: kaldırılan bant ya da Lightbox / Mesh kaplanan bant. Kumaş, kaldırılan
+ * panelin yerine konur (kullanıcı kararı 2026-11-20): panel ve iki yan aparatı düşer, en alt bant
+ * kaplanırsa başlangıçlar da; kumaş m² olarak baskı alanında sayılır (`printAreaBom.js`).
+ */
 export function isRemovedPanelSurface(surface) {
-  return surface?.removed === true;
+  return surface?.removed === true || Boolean(surface?.fabricGroupId);
 }
 
 function recipeQuantity(recipeLines, itemKey) {
@@ -39,10 +44,12 @@ function subtractPanel(lines, itemKey) {
 function faceConnectors(recipeLines, removedSurfaces) {
   const singles = recipeQuantity(recipeLines, 'connector_single');
   const starts = recipeQuantity(recipeLines, 'connector_start');
-  const bottomRemoved = removedSurfaces.some((surface) => surface?.stripIndex === 0);
+  // Alt bantta kalkan her yüz kendi 2 başlangıcını düşürür (duvar yüzünde tek alt bant: yüzün 2 başlangıcı;
+  // bankoda her alt yüz, bazada her yüz 2; 2026-11-20).
+  const bottomRemoved = removedSurfaces.filter((surface) => surface?.stripIndex === 0).length;
   return {
     single: Math.max(0, singles - SIDES_PER_PANEL * removedSurfaces.length),
-    start: bottomRemoved ? 0 : starts,
+    start: Math.max(0, starts - SIDES_PER_PANEL * bottomRemoved),
   };
 }
 
@@ -96,4 +103,20 @@ export function removedPanelCornerCharges(moduleEntries = [], charges = [], modu
     if (shift) result.push({ moduleId: entry.moduleId, single: shift, corner: -shift });
   });
   return result;
+}
+
+/**
+ * Satır listesinden kaldırılan / kumaşla kaplanan yüzleri düşer (paneli, iki yan tekli aparatı, alt bantta
+ * 2 başlangıç). Bazanın satırları modülden değil dizi formülünden geldiği için (`baseRunBom.js`) aynı kural
+ * dizi toplamına buradan uygulanır.
+ */
+export function subtractRemovedSurfaces(lines = [], removedSurfaces = []) {
+  if (!removedSurfaces.length) return lines;
+  let next = lines.map((line) => ({ ...line }));
+  for (const surface of removedSurfaces) next = subtractPanel(next, surface?.itemKey);
+  const bottom = removedSurfaces.filter((surface) => surface?.stripIndex === 0).length;
+  return applyModuleConnectorCharge(next, {
+    single: -SIDES_PER_PANEL * removedSurfaces.length,
+    start: -SIDES_PER_PANEL * bottom,
+  });
 }

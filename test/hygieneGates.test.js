@@ -16,7 +16,7 @@ test('npm audit kapısı high/critical uyarıda durur; istisna yalnız gerekçel
   const script = readFileSync(new URL('../scripts/audit-deps.mjs', import.meta.url), 'utf8');
   assert.match(script, /const BLOCKING = new Set\(\['high', 'critical'\]\);/);
   assert.match(script, /process\.exit\(1\);/);
-  // 2026-11-17 kullanıcı kararı: tek geçici istisna picomatch ReDoS; yama çıkınca silinir.
+  // 2026-11-20: picomatch ReDoS istisnası kaldırıldı (npm audit bildirmiyor); geçici istisna yok.
   const ids = [...script.matchAll(/'(GHSA-[a-z0-9-]+)':/g)].map((match) => match[1]);
-  assert.deepEqual(ids, ['GHSA-fc5q-39xc-vjpf']);
+  assert.deepEqual(ids, []);
 });

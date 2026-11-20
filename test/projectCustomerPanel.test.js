@@ -17,7 +17,11 @@ test('the open project panel shows the customer name and hides the saved-project
     assert.ok(customerAt > 0 && projectAt > customerAt);
   }
   assert.match(main, /loadCustomerDisplayName\(activeCustomerId\)/);
-  assert.match(main, /TEMPORARY_CUSTOMER_LABEL = 'Geçici bağ'/);
+  assert.match(main, /NO_CUSTOMER_LABEL = 'Müşteri Yok'/);
+  for (const source of [html, FAIR_STAND_MARKUP]) {
+    assert.match(source, /id="project-customer-display"[^>]*>Müşteri Yok<\/strong>/);
+    assert.doesNotMatch(source, /Geçici bağ/);
+  }
   for (const source of [html, FAIR_STAND_MARKUP]) {
     assert.match(source, /id="save-project"[^>]*disabled/);
     assert.match(source, /id="save-as-project"[^>]*disabled/);

@@ -24,6 +24,7 @@ import {
   countRemovedPanels,
   totalWallWidthCm,
   moduleWidths,
+  clearModuleFeatures,
 } from './designState.js';
 import { deleteImageAsset, loadImageAssets, saveImageAsset, saveImportedImageAsset } from './assetStore.js';
 import { clearImageAssetReferences, collectImageAssetReferenceIds, countImageAssetReferences, remapImageAssetReferences } from './imageAssetReferences.js';
@@ -63,6 +64,7 @@ import {
   inferStandEdgeWallId,
   planFreeSideInsertion,
   seatWallShortStacks,
+  seatStandaloneUprightsAtShortEnds,
   seatWallShortZCm,
   validatePlacementAgainstModules,
   withStandEdgeWallIds,
@@ -197,6 +199,7 @@ import { resolveProjectBom } from './projectBom.js';
 import { formatPanelSceneLabel } from './panelAssignmentBom.js';
 import { waitForNextRender, waitForSceneAssets } from './sceneAssetLoading.js';
 import { PROFILE_FINISH_DEFAULT, normalizeProfileFinish } from './profileFinish.js';
+import { PANEL_FINISH_DEFAULT, listPanelFinishes, normalizePanelFinish } from './panelFinish.js';
 import { requestConfirmation, requestTextInput } from './inAppDialogs.js';
 import { clearFabricFields } from './surfaceStateBinding.js';
 import { beginEditorBootStep, beginProjectOpenStep, discardEditorBootTiming, timeSceneRefresh, finishProjectOpenTiming, startProjectOpenTiming, timeProjectOpenStep } from './projectOpenTiming.js';
@@ -310,6 +313,8 @@ const newProjectButton = document.querySelector('#new-project');
 const wallHeightSelect = document.querySelector('#wall-height');
 const floorTypeSelect = document.querySelector('#floor-type');
 const profileFinishSelect = document.querySelector('#profile-finish');
+const panelFinishSelect = document.querySelector('#panel-finish');
+const surfaceFinishOptions = document.querySelector('#surface-finish-options');
 const floorAreaControls = document.querySelector('#floor-area-controls');
 const floorAreaAddButton = document.querySelector('#floor-area-add');
 const floorAreaDrawButton = document.querySelector('#floor-area-draw');
@@ -402,7 +407,7 @@ function applyAssetSearch() {
 const projectNameInput = document.querySelector('#project-name');
 const projectNameDisplay = document.querySelector('#project-name-display');
 const projectCustomerDisplay = document.querySelector('#project-customer-display');
-const TEMPORARY_CUSTOMER_LABEL = 'Geçici bağ';
+const NO_CUSTOMER_LABEL = 'Müşteri Yok';
 const renameProjectButton = document.querySelector('#rename-project');
 const projectSelect = document.querySelector('#project-select');
 const saveProjectButton = document.querySelector('#save-project');
@@ -638,6 +643,11 @@ const scene3d = createStandScene(
     const feedback = describeSurfaceSelection(surfaces, currentModules);
     selectedFoamModuleId = feedback.foamModuleId;
     if (foamLightControls) foamLightControls.hidden = !feedback.foamControlsVisible;
+    // Panel tipi düğmeleri yalnız seçimde panel yüzü varken görünür (zemin, mobilya vb. seçiminde gizli).
+    const surfaceFinishControls = document.querySelector('#surface-finish-controls');
+    if (surfaceFinishControls) {
+      surfaceFinishControls.hidden = !surfaces.some((mesh) => getItem(mesh?.userData?.surfaceState?.itemKey)?.type === 'panel');
+    }
     if (feedback.foamControlsVisible && foamLightColorInput) {
       foamLightColorInput.value = feedback.foamColor;
     }
@@ -3087,7 +3097,12 @@ function readSceneSetupFromControls() {
   const standSetup = readStandSetup();
   if (!standSetup.ok) return { ok: false, message: standSetup.message };
   // Profil rengi de kurulum seçimidir: Sahneyi Sıfırla açık standın rengini korur.
-  const setup = { ...standSetup, wallHeightCm: readWallHeightCm(), profileFinish: normalizeProfileFinish(profileFinishSelect?.value) };
+  const setup = {
+    ...standSetup,
+    wallHeightCm: readWallHeightCm(),
+    profileFinish: normalizeProfileFinish(profileFinishSelect?.value),
+    panelFinish: normalizePanelFinish(panelFinishSelect?.value),
+  };
 
   const depotConfig = autoDepotSizeSelect?.value ? {
     enabled: true,
@@ -3167,6 +3182,8 @@ function rebuildSceneFromSetup({ setup, depotConfig, depotPlan, fasciaConfig, fa
   // modüller aşağıda bu renkle çizilir.
   scene3d.setProfileFinish(currentStand.profileFinish);
   syncProfileFinishSelect();
+  scene3d.setPanelFinish(currentStand.panelFinish);
+  syncPanelFinishSelect();
   viewportEmpty.hidden = true;
   syncSidebarForWizard(false);
   viewportToolbar.hidden = false;
@@ -3218,6 +3235,7 @@ async function createStageFromSetup() {
   const { setup, depotConfig, depotPlan, fasciaConfig, fasciaPlan, furnitureConfig, furniturePlan } = sceneSetup;
   // Yeni proje varsayılan profil rengiyle açılır (önceki projenin rengi taşınmaz).
   setup.profileFinish = PROFILE_FINISH_DEFAULT;
+  setup.panelFinish = PANEL_FINISH_DEFAULT;
 
   if (currentStand || currentModules.length || autosaveController.isEnabled()) {
     const currentProjectName = projectNameInput.value.trim() || 'Adsız Proje';
@@ -3288,6 +3306,68 @@ profileFinishSelect?.addEventListener('change', () => {
   const profileFinish = normalizeProfileFinish(profileFinishSelect.value);
   currentStand = { ...currentStand, profileFinish };
   if (scene3d.setProfileFinish(profileFinish)) rebuildWall({ resetView: false });
+});
+
+// Panel tipi seçenekleri admin'den yönetilen `panel-finish` Item'larından gelir (0100_panel_finishes).
+function syncPanelFinishOptions() {
+  const finishes = listPanelFinishes();
+  const signature = finishes.map((item) => `${item.itemKey}:${item.name}`).join('|');
+  if (panelFinishSelect && panelFinishSelect.dataset.options !== signature) {
+    panelFinishSelect.replaceChildren(...finishes.map((item) => new Option(item.name, item.itemKey)));
+    panelFinishSelect.dataset.options = signature;
+  }
+  if (surfaceFinishOptions && surfaceFinishOptions.dataset.options !== signature) {
+    // Açılır liste: admin yeni tip ekledikçe bölüm uzamaz (2026-11-20; eskiden her tip bir düğmeydi).
+    surfaceFinishOptions.replaceChildren(
+      new Option('Tip seç…', ''),
+      ...finishes.map((item) => new Option(item.name, item.itemKey)),
+    );
+    surfaceFinishOptions.dataset.options = signature;
+  }
+}
+
+/** Stand geneli panel tipi seçicisini açık standın değerine eşitler. */
+function syncPanelFinishSelect() {
+  syncPanelFinishOptions();
+  if (panelFinishSelect) panelFinishSelect.value = normalizePanelFinish(currentStand?.panelFinish);
+}
+
+// Stand geneli panel tipi (kullanıcı kararı 2026-11-18): standa yazılır (kayıt, dışa / içe aktarım,
+// geri al); "Varsayılan Panel" grubundaki paneller bu tiple çizilir. Liste kalemi değişmez.
+panelFinishSelect?.addEventListener('change', () => {
+  if (!isEditingOpenStand()) {
+    syncPanelFinishSelect();
+    return;
+  }
+  const panelFinish = normalizePanelFinish(panelFinishSelect.value);
+  currentStand = { ...currentStand, panelFinish };
+  scene3d.setPanelFinish(panelFinish);
+  designHistory.capture();
+  refreshProductionOutputs();
+});
+
+// Katalog bu noktada yüklüdür: seçenekler stand kurulmadan da (sihirbaz) görünür.
+syncPanelFinishSelect();
+
+// Seçili panellere tip atanır (görsel atar gibi); görsel ve renk kalkar.
+surfaceFinishOptions?.addEventListener('change', () => {
+  const finish = surfaceFinishOptions.value;
+  const finishName = surfaceFinishOptions.selectedOptions[0]?.textContent ?? '';
+  // Liste her atamadan sonra "Tip seç…"e döner: aynı tip yeniden seçilebilir.
+  surfaceFinishOptions.value = '';
+  if (!finish) return;
+  const selected = scene3d.getSelectedSurfaces();
+  if (!selected.length) {
+    selectionInfo.textContent = 'Önce bir panel seç.';
+    return;
+  }
+  const applied = scene3d.applyPanelFinishToSelection(selected, finish);
+  selectionInfo.textContent = applied
+    ? `${applied} panele ${finishName} tipi atandı.`
+    : 'Seçimde tip atanabilecek panel yok (cam, metal, kumaşlı ya da kaldırılmış panel tip almaz).';
+  if (!applied) return;
+  designHistory.capture();
+  refreshProductionOutputs();
 });
 
 floorTypeSelect.addEventListener('change', () => {
@@ -3749,24 +3829,26 @@ resetModuleFeaturesButton.addEventListener('click', async () => {
   const confirmed = await requestConfirmation({
     title: 'Tüm özellikleri kaldır',
     confirmLabel: 'Kaldır',
-    message: 'Tüm modül özellikleri varsayılan ayarlarına dönecektir. Onaylıyor musunuz?\n\n'
+    message: 'Panellere yapılan atamalar kaldırılacaktır. Onaylıyor musunuz?\n\n'
       + 'Kaldırılacak özellikler:\n'
-      + '• Atanan resimler\n'
-      + '• Atanan cam özellikleri\n'
-      + '• Atanan renkler\n'
-      + '• Diğer panel özelleştirmeleri\n'
+      + '• Atanan görseller\n'
+      + '• Cam ve metal separatör\n'
+      + '• Mesh / Lightbox\n'
+      + '• Atanan renkler ve panel tipleri\n'
       + (illuminatedFoamCount > 0 ? `• ${illuminatedFoamCount} Işıklı Strafor sahneden silinecek\n` : '')
-      + '\nDiğer modül türleri, genişlikleri, sıraları ve FAZ 2 yerleşimleri korunacaktır.',
+      + '\nArka yüz panelleri, kaldırılmış paneller, modüllerin ölçüleri ve yerleşimi korunacaktır.',
   });
   if (!confirmed) return;
 
   const resetCandidates = currentModules.filter(
     (module) => module?.type !== 'illuminated-foam',
   );
-  const resetModules = resetCandidates.map((module) => createCatalogModuleState(
-    module,
-    { preservePlacement: true },
-  ));
+  // Modül yeniden kurulmaz: yalnız atamalar kalkar, arka yüz ve kaldırılmış paneller korunur (2026-11-20).
+  // Katalogdan kurulan kopya yalnız kalem rengi olmayan yüzeyin varsayılan rengi içindir.
+  const resetModules = resetCandidates.map((module) => {
+    const defaults = createCatalogModuleState(module, { preservePlacement: true });
+    return defaults ? clearModuleFeatures(module, defaults) : null;
+  });
   if (resetModules.some((module) => !module)) {
     selectionInfo.textContent = 'Bazı modül türleri varsayılan ayarlarına döndürülemedi.';
     return;
@@ -3792,7 +3874,7 @@ resetModuleFeaturesButton.addEventListener('click', async () => {
   syncColorEditorFromHex('#ffffff');
   selectionInfo.textContent = illuminatedFoamCount > 0
     ? `Tüm özellikler kaldırıldı. ${illuminatedFoamCount} Işıklı Strafor sahneden silindi; diğer modüllerin dizilimi ve yerleşimi korundu.`
-    : 'Tüm modüller varsayılan ayarlarına döndürüldü. Modül dizilimi ve yerleşimi korundu.';
+    : 'Panel atamaları kaldırıldı. Arka yüz panelleri, kaldırılmış paneller ve yerleşim korundu.';
 });
 
 function applyActiveColorToSelection({ showMissingSelection = false } = {}) {
@@ -4052,6 +4134,8 @@ function applyDesignSnapshot(snapshot) {
     syncProfileFinishSelect();
     // Profil rengi geri alınınca çerçeveler yeniden çizilir (değişmeyen modüller yeniden kurulmaz).
     profileFinishChanged = scene3d.setProfileFinish(currentStand.profileFinish);
+    syncPanelFinishSelect();
+    scene3d.setPanelFinish(currentStand.panelFinish);
   }
   moduleContextMenu.close();
   moduleContextMenu.closePicker();
@@ -4112,7 +4196,8 @@ function syncSceneAfterModuleChange(capturedContent) {
 function syncDesignHistoryButtons({ canUndo, canRedo }) {
   if (designUndoButton) designUndoButton.disabled = !canUndo;
   if (designRedoButton) designRedoButton.disabled = !canRedo;
-  // Renk / görsel değişimi sahneyi yeniden kurmaz; etiketler tasarım adımında tazelenir.
+  // Renk / görsel değişimi sahneyi yeniden kurmaz; etiketler ve panel tipi tasarım adımında tazelenir.
+  scene3d.refreshPanelFinishes();
   refreshPanelLabels();
   refreshSkeleton();
 }
@@ -4223,10 +4308,10 @@ async function showProjectCustomerName() {
   }
   try {
     const name = await loadCustomerDisplayName(activeCustomerId);
-    projectCustomerDisplay.textContent = name || TEMPORARY_CUSTOMER_LABEL;
+    projectCustomerDisplay.textContent = name || NO_CUSTOMER_LABEL;
   } catch (error) {
     reportError('Müşteri adı yüklenemedi', error);
-    projectCustomerDisplay.textContent = TEMPORARY_CUSTOMER_LABEL;
+    projectCustomerDisplay.textContent = NO_CUSTOMER_LABEL;
   }
 }
 
@@ -4243,6 +4328,8 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
   currentModules = (cloneProjectState(project.modules) || []).map(normalizeModuleItemState);
   // Açılış onarımı: binen ya da arada az boşluk kalan kısa paneller alttakinin tepesine oturur.
   seatWallShortStacks(currentModules);
+  // Eski snap'in şort ucuna kayık bıraktığı bağımsız dikmeler uç dikmesinin yerine oturur (2026-11-19).
+  seatStandaloneUprightsAtShortEnds(currentModules);
   currentStand = cloneProjectState(project.stand);
   syncBoothTypeHeading();
   setActiveWallLineHeightCm(activeWallHeightCm());
@@ -4269,6 +4356,8 @@ async function restoreProject(project, { historicalRevisionNumber = null, sessio
     syncStandStructureControls();
     syncProfileFinishSelect();
     scene3d.setProfileFinish(currentStand.profileFinish);
+    syncPanelFinishSelect();
+    scene3d.setPanelFinish(currentStand.panelFinish);
     const endSceneBuild = beginProjectOpenStep('scene-build');
     const stage = scene3d.createStage({
       widthCm: currentStand.xCm,

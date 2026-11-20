@@ -176,7 +176,7 @@ test('dikme ↑/↓ ile 10 cm adımla dikey taşınır; taban 0, tepe stand tava
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await exposeScene(page);
-  // upright_297 sahnede 300 cm: 350 cm standda taban 0…50; upright_346_5 sahnede 346,5: tepe tavana değince (3,5) durur.
+  // upright_297 sahnede 300 cm: 350 cm standda taban 0…50; upright_346_5 sahnede 350 cm (DB): tavana değer, yükselmez.
   await createIslandProject(page, 'E2E Dikme Dikey', [
     { itemKey: 'upright_297', place: { xCm: 150, yCm: 250, zCm: 0, rotationZDeg: 0, wallId: 'free' } },
     { itemKey: 'upright_346_5', place: { xCm: 350, yCm: 250, zCm: 0, rotationZDeg: 0, wallId: 'free' } },
@@ -196,9 +196,7 @@ test('dikme ↑/↓ ile 10 cm adımla dikey taşınır; taban 0, tepe stand tava
   point = await moduleScreenPoint(page, full.id);
   await page.mouse.dblclick(point.x, point.y);
   await page.keyboard.press('ArrowUp');
-  expect(zOf(await saveAndReadProject(page), full.id)).toBe(3.5);
-  await page.keyboard.press('ArrowUp');
-  expect(zOf(await saveAndReadProject(page), full.id)).toBe(3.5);
+  expect(zOf(await saveAndReadProject(page), full.id)).toBe(0);
   expect(errors).toEqual([]);
 });
 
@@ -280,9 +278,10 @@ test('profil kartı tek; bırakırken boy sorulur, seçilen boyun Item’ıyla k
   const dialog = page.getByRole('dialog', { name: 'Profil boyu' });
   await dropCatalogCard(page, 'profile_289');
   await expect(dialog).toBeVisible();
-  // Kartın boyu seçili; 9 boy (0081: 346,5), gerçek ve sahne boyu yazar.
+  // Kartın boyu seçili; DB'deki profil ailesinin 11 boyu (0081: 346,5; 437,5 ve 49,5 dahil), gerçek ve sahne boyu yazar.
   await expect(dialog.locator('select')).toHaveValue('profile_289');
-  await expect(dialog.locator('option')).toHaveCount(9);
+  await expect(dialog.locator('option')).toHaveCount(11);
+  await expect(dialog.locator('option[value="profile_437_5"]')).toHaveText('437,5 cm (sahnede 450 cm)');
   await expect(dialog.locator('option[value="profile_41_5"]')).toHaveText('41,5 cm (sahnede 50 cm)');
   await expect(dialog.locator('option[value="profile_487"]')).toHaveText('487 cm (sahnede 500 cm)');
   await dialog.locator('select').selectOption('profile_388');

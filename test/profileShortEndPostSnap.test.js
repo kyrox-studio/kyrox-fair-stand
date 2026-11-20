@@ -20,13 +20,14 @@ const cm = (value) => Math.round(value * 100) / 100 + 0;
 const UPRIGHT_SCENE = { widthCm: 10, depthCm: 10 };
 const STAND = { standType: 'back-wall', standXCm: 700, standYCm: 800 };
 
-// Sahnedeki 49,5 profil 50 × 10 × 10 (DB sahne ölçüsü); test kataloğunda sahne kaydı yok.
+// 50 cm'lik açıklığa giren profil: 41,5 (sahne 50 × 10 × 10). `profile_49_5` dikmeye girmeyen profildir
+// (sahne 50 = gerçek boy + 0,5; kullanıcı kararı 2026-11-20), bu senaryoda kullanılmaz.
 function profileState() {
-  return { type: 'profile', itemKey: 'profile_49_5', widthCm: 50, depthCm: 10, heightCm: 10 };
+  return { type: 'profile', itemKey: 'profile_41_5', widthCm: 50, depthCm: 10, heightCm: 10 };
 }
 
 function placed(id, itemKey, placement, overrides = {}) {
-  const moduleState = itemKey === 'profile_49_5' ? profileState() : createModuleStateFromCatalogKey(itemKey);
+  const moduleState = itemKey === 'profile_41_5' ? profileState() : createModuleStateFromCatalogKey(itemKey);
   Object.assign(moduleState, overrides);
   moduleState.id = id;
   moduleState.placement = { zCm: 0, wallId: 'free', ...placement };
@@ -67,7 +68,7 @@ function snapProfile(modules, pointerXCm, pointerYCm) {
 
 test('short ucunda dikme varsa o dikmedir: profil ortalanır, dikmenin yüzünde durur', () => {
   // Kullanıcı kararı 2026-11-12 ("dikme her yerde dikme"): short'un ucundaki bağımsız dikmede de
-  // profil dikmenin içine girmez. 49,5 profil (sahnede 50) dikmenin ön yüzünden (x 50) öne uzanır.
+  // profil dikmenin içine girmez. 41,5 profil (sahnede 50) dikmenin ön yüzünden (x 50) öne uzanır.
   const modules = frame();
   for (const [px, py, minY] of [[30, 420, 410], [35, 415, 410], [30, 220, 220], [35, 225, 220]]) {
     const { result, bounds } = snapProfile(modules, px, py);
@@ -89,8 +90,8 @@ function userFrame({ shortIds = ['s1', 's2'] } = {}) {
     placed('u-back', 'upright_346_5', { xCm: 50, yCm: 400, rotationZDeg: 0 }, UPRIGHT_SCENE),
     placed(shortIds[0], 'wall_200_short_2', { xCm: 55, yCm: 395, zCm: 200, rotationZDeg: 270 }),
     placed(shortIds[1], 'wall_200_short_1', { xCm: 55, yCm: 395, zCm: 300, rotationZDeg: 270 }),
-    // Dikmenin önünden devam eden 49,5 profil: ucu dikmenin yüzünde biter; köşe yine dikmedir.
-    placed(`${shortIds[0]}-p`, 'profile_49_5', { xCm: 55, yCm: 605, zCm: 340, rotationZDeg: 270 }),
+    // Dikmenin önünden devam eden 41,5 profil: ucu dikmenin yüzünde biter; köşe yine dikmedir.
+    placed(`${shortIds[0]}-p`, 'profile_41_5', { xCm: 55, yCm: 605, zCm: 340, rotationZDeg: 270 }),
   ];
 }
 
@@ -150,7 +151,7 @@ test('short ucundaki kesit karesinde profil çakışma sayılmaz; short gövdesi
 test('hizalı profilli grup stand kenarına sıfır taşınır', () => {
   const modules = frame();
   const group = { id: 'g', name: 'sol', locked: false };
-  const profiles = [415, 225].map((yCm, index) => placed(`p${index}`, 'profile_49_5', {
+  const profiles = [415, 225].map((yCm, index) => placed(`p${index}`, 'profile_41_5', {
     xCm: 10, yCm, zCm: 340, rotationZDeg: 0,
   }));
   const all = [...modules, ...profiles];
@@ -162,7 +163,7 @@ test('hizalı profilli grup stand kenarına sıfır taşınır', () => {
 });
 
 test('çizim: short ucundaki dikme short uç dikmesinin yerini alır, profil short iç yüzünde biter', () => {
-  const profiles = [415, 225].map((yCm, index) => placed(`p${index}`, 'profile_49_5', {
+  const profiles = [415, 225].map((yCm, index) => placed(`p${index}`, 'profile_41_5', {
     xCm: 10, yCm, zCm: 340, rotationZDeg: 0,
   }));
   const modules = [...frame(), ...profiles];
@@ -211,7 +212,7 @@ function snapFront(modules, pointerXCm, pointerYCm) {
 }
 
 function sideProfiles() {
-  return [415, 225].map((yCm, index) => placed(`p${index}`, 'profile_49_5', {
+  return [415, 225].map((yCm, index) => placed(`p${index}`, 'profile_41_5', {
     xCm: 10, yCm, zCm: 340, rotationZDeg: 0,
   }));
 }
@@ -230,7 +231,7 @@ test('profil–profil L köşesi dış yüzden hizalı: ön profil bazanın içi
   }
 });
 
-test('ön profil varken 49,5 profil de dış yüzden hizalı oturur', () => {
+test('ön profil varken 50 cm’lik profil (41,5) de dış yüzden hizalı oturur', () => {
   const front = placed('q', 'profile_190', { xCm: 15, yCm: 220, zCm: 340, rotationZDeg: 270 });
   front.type = 'profile';
   Object.assign(front, frontProfileState(), { id: 'q', placement: front.placement });

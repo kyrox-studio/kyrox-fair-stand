@@ -92,12 +92,14 @@ test('one metal group with a gap on the wall is listed as separate sheets', asyn
   await page.locator('#toggle-production-bom').click();
   const totals = page.locator('#production-bom-panel [data-bom-collapse-key="__totals__"]');
   await totals.locator('summary').click();
-  // Düzeltme öncesi: tek satır "1 x Metal Separatör 295 × 47 cm".
+  // Düzeltme öncesi: tek satır (boşluk dahil). Baskı ölçüsü panel sahne ölçüsünden (DB: 200 / 100 × 49,5;
+  // kesim payı, kullanıcı kararı 2026-11-20).
   const sheetRows = totals.locator('li', { hasText: /Metal Separatör .* cm - metre_kare/ });
   await expect(sheetRows).toHaveText([
-    '1 x Metal Separatör 197 × 47 cm - metre_kare',
-    '1 x Metal Separatör 98 × 47 cm - metre_kare',
+    '1 x Metal Separatör 200 × 49,5 cm - metre_kare',
+    '1 x Metal Separatör 100 × 49,5 cm - metre_kare',
   ]);
-  await expect(totals.locator('li', { hasText: '1,39 × Metal Separatör · metre_kare' })).toHaveCount(1);
+  // (200 + 100) × 49,5 / 10000 = 1,485 m² → listede 1,48.
+  await expect(totals.locator('li', { hasText: '1,48 × Metal Separatör · metre_kare' })).toHaveCount(1);
   expect(errors).toEqual([]);
 });

@@ -9,6 +9,7 @@ import {
   listCatalogItems,
 } from '../src/catalog.js';
 import { getItem, listRegisteredItems } from '../src/items.js';
+import { CATALOG_VISIBLE_COUNT } from './catalogFacts.mjs';
 
 const EXPECTED_CATEGORIES = Object.freeze([
   Object.freeze({ id: 1, catalogName: 'Panel & Duvar', catalogIndex: 1, itemCount: 4 }),
@@ -130,7 +131,7 @@ test('listCatalogGroups kategori sırası, adı ve Item sırasını korur', () =
     });
   });
 
-  assert.equal(visibleTotal, 35);
-  assert.equal(listCatalogItems().map((item) => item.itemKey).length, 35);
+  assert.equal(visibleTotal, CATALOG_VISIBLE_COUNT);
+  assert.equal(listCatalogItems().map((item) => item.itemKey).length, CATALOG_VISIBLE_COUNT);
   assert.deepEqual([...listCatalogItems().map((item) => item.itemKey)], groups.flatMap((group) => group.keys));
 });

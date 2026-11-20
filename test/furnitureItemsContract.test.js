@@ -157,11 +157,13 @@ for (const itemKey of Object.keys(EXPECTED)) {
 
     assert.equal(item.itemKey, itemKey);
     assert.equal(item.type, expected.type);
-    assert.equal(Object.hasOwn(item, 'unit'), false);
+    assert.equal(item.unit, 'adet'); // DB'de birim adet: listede kendi satırıyla sayılır (2026-11-20)
     assert.equal(Object.hasOwn(item, 'chairCount'), false);
     assert.equal(item.modelFile ?? null, expected.modelFile ?? null);
     if (expected.composition) {
-      assert.deepEqual(item.composition.items, expected.composition);
+      // DB reçete satırlarının sırası yoktur: küme içeriği sıradan bağımsız karşılaştırılır.
+      const sorted = (rows) => [...rows].sort((x, y) => String(x.itemKey).localeCompare(String(y.itemKey)));
+      assert.deepEqual(sorted(item.composition.items), sorted(expected.composition));
     } else {
       assert.equal(Object.hasOwn(item, 'composition'), false);
     }

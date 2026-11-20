@@ -190,7 +190,9 @@ export function applyBoxRunEntries(entries, modules, recipeOf) {
       const recipe = recipeOf(module.itemKey) ?? [];
       const panelCount = recipeQuantity(recipe, (line) => getItem(line.itemKey)?.type === 'panel');
       const perPanel = (key) => (panelCount > 0 ? recipeQuantity(recipe, (line) => line.itemKey === key) / panelCount : 0);
-      const droppedPanels = dropped.length || sides.size * boxRunInnerFaceKeys(family, 1).length;
+      // Kaldırılan / kumaşla kaplanan iç yüzün paneli ve aparatı kaldırma kuralında düşmüştür; yalnız duran
+      // iç yüzler burada düşer (2026-11-20).
+      const droppedPanels = innerIds.size ? dropped.length : sides.size * boxRunInnerFaceKeys(family, 1).length;
       for (const surface of dropped) lines = subtractLine(lines, surface.itemKey, 1);
       lines = subtractLine(lines, 'connector_start', perPanel('connector_start') * droppedPanels);
       lines = subtractLine(lines, 'connector_single', perPanel('connector_single') * droppedPanels);
@@ -202,6 +204,11 @@ export function applyBoxRunEntries(entries, modules, recipeOf) {
     const next = { ...entry, lines: Object.freeze(lines.map((line) => Object.freeze(line))) };
     Object.defineProperty(next, 'panelSurfaces', {
       value: Object.freeze(surfaces),
+      enumerable: false,
+    });
+    // İçte kalan yüz dizide zaten sayılmaz: kaldırılmış olsa da bir daha düşülmez.
+    Object.defineProperty(next, 'removedSurfaces', {
+      value: Object.freeze((entry.removedSurfaces ?? []).filter((surface) => !innerIds.has(surface?.id))),
       enumerable: false,
     });
     return Object.freeze(next);

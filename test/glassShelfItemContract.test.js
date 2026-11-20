@@ -27,8 +27,10 @@ test('glass_shelf uses canonical identity with verified 87.3 x 28.5 x 0.6 cm gla
 });
 
 test('showcase base recipes use canonical glass_shelf itemKey with verified 1/2 quantity parity', () => {
+  // DB (2026-11-20): 2 gözlü vitrinde cam raf gövde kaleminin (`showcase_2_body`) içinde, 1 adet.
+  const body = getItem('showcase_2_body');
+  assert.equal(body.composition.items.find((entry) => entry.itemKey === 'glass_shelf').quantity, 1);
   const cases = [
-    ['showcase-2', 1],
     ['showcase-3', 2],
   ];
 

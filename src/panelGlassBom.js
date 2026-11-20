@@ -1,5 +1,5 @@
 import { getItem, listEmbeddedRenderParts } from './items.js';
-import { resolveBoxFacePanelItemKey } from './designState.js';
+import { boxFaceBandIndex, resolveBoxFacePanelItemKey, showcasePanelStrips } from './designState.js';
 
 const STRAIGHT_PANEL_RE = /^panel_(48_5|98|147_5|197)$/;
 const CORNER_PANEL_RE = /^panel_corner_(42_5|92|142_5|192)$/;
@@ -36,6 +36,16 @@ function withPanelKey(surface, itemKey) {
   return { ...surface, itemKey };
 }
 
+// Vitrinde göz açıklığının bantları panel değildir (sahne de çizmez; `showcasePanelStrips`). Bant sırası
+// `stripIndex` olarak korunur (köşe bandı, depo içi).
+function panelStripsOf(moduleState) {
+  const indexed = moduleState.strips.map((strip, index) => (
+    strip && typeof strip === 'object' && !Number.isInteger(strip.stripIndex) ? { ...strip, stripIndex: index } : strip
+  ));
+  const kept = new Set(showcasePanelStrips(moduleState.strips, getItem(moduleState?.itemKey)));
+  return indexed.filter((_, index) => kept.has(moduleState.strips[index]));
+}
+
 function withRecipePanelKeys(surfaces, parts) {
   return surfaces.map((surface, index) => withPanelKey(surface, parts[index]?.itemKey));
 }
@@ -67,15 +77,18 @@ export function collectPanelSurfaces(moduleState) {
   const parts = recipePanelParts(moduleState);
   const surfaces = [];
   if (Array.isArray(moduleState?.strips)) {
-    surfaces.push(...withRecipePanelKeys(moduleState.strips, parts));
+    surfaces.push(...withRecipePanelKeys(panelStripsOf(moduleState), parts));
   }
   if (moduleState?.faces && typeof moduleState.faces === 'object') {
     const parent = moduleState?.itemKey ? getItem(moduleState.itemKey) : null;
     if (BOX_FACE_TYPES.has(parent?.type)) {
       // Baza / banko yüzü sıradan değil rolünden kimlik alır (ön geniş, yanlar dar; L'de sağ da geniş).
-      surfaces.push(...Object.entries(moduleState.faces).map(([faceKey, surface]) => (
-        withPanelKey(surface, resolveBoxFacePanelItemKey(faceKey, parent))
-      )));
+      surfaces.push(...Object.entries(moduleState.faces).map(([faceKey, surface]) => {
+        const keyed = withPanelKey(surface, resolveBoxFacePanelItemKey(faceKey, parent));
+        return keyed && typeof keyed === 'object' && !Number.isInteger(keyed.stripIndex)
+          ? { ...keyed, stripIndex: boxFaceBandIndex(faceKey) }
+          : keyed;
+      }));
     } else {
       surfaces.push(...withRecipePanelKeys(Object.values(moduleState.faces), parts));
     }

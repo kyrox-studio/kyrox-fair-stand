@@ -39,8 +39,8 @@ test('field profiles are self BOM ×1 and do not change parent wall recipe ×2',
   assert.equal(resolveSceneDimensions(getItem('profile_140_5')).widthCm, 150);
   assert.equal(resolveSceneDimensions(getItem('profile_91')).widthCm, 100);
   assert.equal(resolveSceneDimensions(getItem('profile_41_5')).widthCm, 50);
-  assert.equal(resolveSceneDimensions(getItem('profile_190')).depthCm, 8);
-  assert.equal(resolveSceneDimensions(getItem('profile_190')).heightCm, 8);
+  assert.equal(resolveSceneDimensions(getItem('profile_190')).depthCm, 10); // DB sahne kesiti
+  assert.equal(resolveSceneDimensions(getItem('profile_190')).heightCm, 10); // DB sahne kesiti
   assert.equal(resolveModuleContract('profile_190').bom.mode, 'self');
   const bom = resolveItemBom('profile_190');
   assert.equal(bom.length, 1);
@@ -60,7 +60,7 @@ test('profile uses wall_200 move/rotate/snap contract and does not nest into a n
   const behavior = getModuleBehavior(profile);
   assert.equal(profile.type, 'profile');
   assert.equal(profile.widthCm, 200);
-  assert.equal(profile.heightCm, 8);
+  assert.equal(profile.heightCm, 10); // DB sahne kesiti
   assert.equal(behavior.placement, 'wall');
   assert.equal(behavior.magneticSnap, 'standard');
   assert.equal(behavior.collision, 'segment');

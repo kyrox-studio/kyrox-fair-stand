@@ -11,8 +11,10 @@ test('F-028 feature reset removes illuminated foam and resets remaining modules'
   const handler = main.slice(start, end);
   assert.match(handler, /module\?\.type === 'illuminated-foam'/);
   assert.match(handler, /module\?\.type !== 'illuminated-foam'/);
-  assert.match(handler, /resetCandidates\.map\(\(module\) => createCatalogModuleState/);
-  assert.match(handler, /\{ preservePlacement: true \}/);
+  // 2026-11-20: modül yeniden kurulmaz, yalnız atamalar kalkar (arka yüz ve kaldırılmış panel korunur);
+  // katalogdan kurulan kopya yalnız varsayılan renk kaynağıdır.
+  assert.match(handler, /createCatalogModuleState\(module, \{ preservePlacement: true \}\)/);
+  assert.match(handler, /clearModuleFeatures\(module, defaults\)/);
   assert.match(handler, /selectedFoamModuleId = null/);
   assert.match(handler, /foamLightControls\) foamLightControls\.hidden = true/);
   assert.match(handler, /Işıklı Strafor sahneden silinecek/);

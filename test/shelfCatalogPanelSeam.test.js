@@ -25,6 +25,9 @@ import {
 } from './recipeParentItemKey.js';
 import { getStandInternalSeamHeightsCm, getStandStripMetrics } from '../src/stripOccupancy.js';
 
+// Raf sahne yüksekliği DB'den: tahta 3,5 cm (kullanıcı kararı 2026-11-20), sıra aralığı 50.
+const BOARD_H = getItem('shelf_100').sceneDimensions.heightCm;
+
 const SHELF_KEYS = Object.freeze(['shelf_100', 'shelf_150', 'shelf_200']);
 const REMOVED_WALL_SHELF_KEYS = Object.freeze([
   'wall_shelf_2_100',
@@ -56,7 +59,7 @@ test('raf kataloğu tek Raf kartı sunar; sıra kartları en dar üretim ürün�
     const state = createModuleStateFromDescriptor(getCatalogItem(key) ?? { itemKey: key });
     assert.equal(state.itemKey, index === 0 ? 'shelf_100' : `shelf_row_${index + 1}_100`);
     assert.equal(state.widthCm, 100);
-    assert.equal(state.heightCm, 1.8 + index * 50);
+    assert.equal(state.heightCm, BOARD_H + index * 50);
     assert.equal(state.shelfLightingOn, false);
     assert.equal(usesPanelSeamOverlaySnap(state), true);
     assert.equal(countsTowardWallCapacity(state), false);
@@ -169,9 +172,9 @@ test('G-I raf birleşime ve en üst kenara takılır; panel ortası ve zemin red
   assert.equal(valid.placement.wallId, 'back');
   assert.equal(
     valid.placement.zCm,
-    overlayZCmFromSeamHeight(100, 1.8),
+    overlayZCmFromSeamHeight(100, BOARD_H),
   );
-  assert.equal(valid.placement.zCm, 100 + 1.8 / 2 - WALL_OVERLAY_DEFAULT_CENTER_CM);
+  assert.equal(valid.placement.zCm, 100 + BOARD_H / 2 - WALL_OVERLAY_DEFAULT_CENTER_CM);
 
   const midPanel = snapPanelSeamOverlayPlacement({
     moduleState: shelf,
@@ -212,7 +215,7 @@ test('J shelf wall capacity’ye 100/150/200 cm eklemez', () => {
   shelf.placement = {
     xCm: 0,
     yCm: 0,
-    zCm: overlayZCmFromSeamHeight(150, 1.8),
+    zCm: overlayZCmFromSeamHeight(150, BOARD_H),
     rotationZDeg: 0,
     wallId: 'back',
   };

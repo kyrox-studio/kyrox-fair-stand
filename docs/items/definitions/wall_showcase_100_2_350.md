@@ -67,6 +67,7 @@
 - `test/catalogWidthFamily.test.js`
 - `test/flatPanelBackStrips.test.js`
 - `test/mapCatalogSeed.mjs`
+- `test/panelLabelsAllModules.test.js`
 - `test/relationshipBomJoints.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/shelfCatalogPanelSeam.test.js`

@@ -96,6 +96,7 @@ Alt kalem olarak kullanıldığı Item'lar: `wall_100_350`, `wall_150_350`, `wal
 - `test/upright3465ItemContract.test.js`
 - `test/uprightFieldPlacement.test.js`
 - `test/uprightIntrinsicProperties.test.js`
+- `test/uprightMergePlacement.test.js`
 - `test/variantFamilies.test.js`
 - `test/verticalMoveUprightHeight.test.js`
 - `test/wallCornerJoints.test.js`

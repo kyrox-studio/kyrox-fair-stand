@@ -51,9 +51,11 @@ const RECIPE = Object.freeze({
   // 50’lik ayırıcı ürün kararı (2026-10-19, 0071): bant başına 1 panel, 2B − 1 tekli → 350’de 13.
   wall_separator_50_350: { profile_41_5: 2, upright_346_5: 2, separator_panel_48_5: 7, connector_start: 2, connector_single: 13 },
   wall_separator_100_350: { profile_91: 2, upright_346_5: 2, separator_panel_98: 7, connector_start: 2, connector_single: 13 },
-  wall_separator_50_350_sarmasik: { profile_41_5: 2, upright_346_5: 2, separator_panel_48_5: 7, connector_start: 2, connector_single: 13 },
-  wall_separator_100_350_sarmasik: { profile_91: 2, upright_346_5: 2, separator_panel_98: 7, connector_start: 2, connector_single: 13 },
-  wall_showcase_100_2_350: { profile_91: 4, upright_346_5: 2, panel_98: 5, connector_start: 4, connector_single: 9, showcase_side_94_6_30: 2, showcase_horizontal_87_4_30: 2, glass_shelf: 1 },
+  // DB reçetesi (2026-11-20): sarmaşıklı separatör sarmaşık kalemini de taşır.
+  wall_separator_50_350_sarmasik: { profile_41_5: 2, upright_346_5: 2, separator_panel_48_5: 7, connector_start: 2, connector_single: 13, sarmasik: 1 },
+  wall_separator_100_350_sarmasik: { profile_91: 2, upright_346_5: 2, separator_panel_98: 7, connector_start: 2, connector_single: 13, sarmasik: 1 },
+  // DB reçetesi (2026-11-20): 2 gözlü vitrinin gövdesi tek kalem `showcase_2_body`.
+  wall_showcase_100_2_350: { profile_91: 4, upright_346_5: 2, panel_98: 5, connector_start: 4, connector_single: 9, showcase_2_body: 1 },
   wall_showcase_100_3_350: { profile_91: 4, upright_346_5: 2, panel_98: 4, connector_start: 4, connector_single: 7, showcase_side_143_5_30: 2, showcase_horizontal_87_4_30: 2, glass_shelf: 2 },
   wall_50_short_1: { profile_41_5: 2, upright_49_5: 2, panel_48_5: 1, connector_start: 2, connector_single: 3 },
   wall_100_short_1: { profile_91: 2, upright_49_5: 2, panel_98: 1, connector_start: 2, connector_single: 3 },
@@ -234,13 +236,17 @@ function lineMap(bom) {
   return Object.fromEntries(bom.lines.map((line) => [line.itemKey, line.quantity]).sort((a, b) => (a[0] < b[0] ? -1 : 1)));
 }
 
+// Her projeye eklenen üretim kalemi (DB: elektrik panosu); sahne kabulü bu satırı da sayar.
+const PROJECT_LINES = Object.freeze({ elektrik_panosu: 1 });
+const AREA_UNITS = new Set(['m2', 'metre_kare']);
+
 function assertBom(label, modules, expected, stand = null) {
   const bom = resolveProjectBom(modules, stand);
   for (const line of bom.lines) {
     assert.ok(line.quantity > 0, `${label} ${line.itemKey}`);
-    assert.equal(line.unit === 'm2' || line.unit === 'adet', true, `${label} ${line.itemKey} unit`);
+    assert.equal(AREA_UNITS.has(line.unit) || line.unit === 'adet', true, `${label} ${line.itemKey} unit`);
   }
-  assert.deepEqual(lineMap(bom), positive(expected), label);
+  assert.deepEqual(lineMap(bom), positive(add(expected, PROJECT_LINES)), label);
   return bom;
 }
 
@@ -451,7 +457,9 @@ test('field upright consumes one free short endpoint and keeps its own line', ()
   assertBom('body middle', [shortOf('a', 'wall_200_short_2'), post('post', { xCm: 96 })], alone('wall_200_short_2'));
   assertBom('z outside', [shortOf('a', 'wall_200_short_2'), post('post', { xCm: 196, zCm: 400 })], alone('wall_200_short_2'));
   assertBom('wrong footprint', [shortOf('a', 'wall_200_short_2'), post('post', { xCm: 196, yCm: 20 })], alone('wall_200_short_2'));
-  assertBom('top gap beyond 3.5 cm', [shortOf('a', 'wall_200_short_2'), post('post', { xCm: 196, heightCm: 340 })], add(RECIPE.wall_200_short_2, { upright_346_5: 1 }));
+  // Kullanıcı kararı 2026-11-20: Z'de örtüşen dikme kısa panelin ucunda birleşir, uzun olan kalır
+  // (eskiden dikme tepeye 3,5 cm'den fazla yetmiyorsa birleşmiyordu).
+  assertBom('top gap beyond 3.5 cm still merges, longer stays', [shortOf('a', 'wall_200_short_2'), post('post', { xCm: 196, heightCm: 340 })], bump(alone('wall_200_short_2'), 'upright_99', -1));
 });
 
 test('profile rails replace a covered short child profile by span and contact', () => {
@@ -555,19 +563,23 @@ test('panel glass and corner swaps stay on the participating straight panels', (
   assert.equal(lineMap(separatorCorner).panel_197 ?? 0, 0);
 });
 
+// Profil ve dikme sahne kesiti DB'den (2026-11-20: 10 cm).
+const PROFILE_H = getItem('profile_190').sceneDimensions.heightCm;
+const POST_W = getItem('upright_346_5').sceneDimensions.widthCm;
+
 test('save and load rebuilds the same final BOM from placement', () => {
   const scenes = [
     ['end', [place('a', 'wall_200_350', { heightCm: 350 }), place('b', 'wall_200_350', { xCm: 200, heightCm: 350 })], bump(bump(bump(add(RECIPE.wall_200_350, RECIPE.wall_200_350), 'upright_346_5', -1), 'connector_single', -14), 'connector_double', 7)],
     ['corner', [place('a', 'wall_200_350', { heightCm: 350 }), cornerOf('b', 'wall_150_350', 200, { heightCm: 350 })], swapKeys(bump(bump(bump(add(RECIPE.wall_200_350, RECIPE.wall_150_350), 'upright_346_5', -1), 'connector_single', -12), 'connector_corner', 12), ['panel_197', 'panel_147_5'])],
     ['tee', [place('host', 'wall_200_350', { heightCm: 350 }), cornerOf('branch', 'wall_100_350', 100, { heightCm: 350 })], swapKeys(bump(bump(bump(add(RECIPE.wall_200_350, RECIPE.wall_100_350), 'upright_346_5', -1), 'connector_single', -6), 'connector_corner', 6), ['panel_98'])],
-    ['wall short profile', [shortOf('wall', 'wall_100_short_1'), place('p', 'profile_190', { xCm: -45, zCm: 350, heightCm: 8 })], add(bump(RECIPE.wall_100_short_1, 'profile_91', -1), RECIPE.profile_190)],
-    ['wall short upright', [shortOf('a', 'wall_200_short_2'), place('post', 'upright_346_5', { xCm: 196, widthCm: 8, heightCm: 346.5 })], bump(add(RECIPE.wall_200_short_2, RECIPE.upright_346_5), 'upright_99', -1)],
+    ['wall short profile', [shortOf('wall', 'wall_100_short_1'), place('p', 'profile_190', { xCm: -45, zCm: 350, heightCm: PROFILE_H })], add(bump(RECIPE.wall_100_short_1, 'profile_91', -1), RECIPE.profile_190)],
+    ['wall short upright', [shortOf('a', 'wall_200_short_2'), place('post', 'upright_346_5', { xCm: 200 - POST_W / 2, widthCm: POST_W, heightCm: 346.5 })], bump(add(RECIPE.wall_200_short_2, RECIPE.upright_346_5), 'upright_99', -1)],
     ['multi', [
       place('left', 'wall_100_350', { heightCm: 350 }),
       shortOf('wall', 'wall_100_short_1', { xCm: 100 }),
       place('right', 'wall_100_350', { xCm: 200, heightCm: 350 }),
-      place('bottom', 'profile_140_5', { xCm: 80, zCm: 292, heightCm: 8 }),
-      place('top', 'profile_190', { xCm: 60, zCm: 350, heightCm: 8 }),
+      place('bottom', 'profile_140_5', { xCm: 80, zCm: 300 - PROFILE_H, heightCm: PROFILE_H }),
+      place('top', 'profile_190', { xCm: 60, zCm: 350, heightCm: PROFILE_H }),
     ], add(bump(bump(bump(bump(add(RECIPE.wall_100_350, RECIPE.wall_100_350, RECIPE.wall_100_short_1), 'upright_49_5', -2), 'connector_single', -4), 'connector_double', 2), 'profile_91', -2), RECIPE.profile_140_5, RECIPE.profile_190)],
   ];
   for (const [label, modules, expected] of scenes) {
@@ -586,8 +598,9 @@ test('negative contacts do not invent a BOM delta', () => {
   ], add(RECIPE.desk_banko_100, RECIPE.wall_50_350));
   assertBom('corner face miss', [place('a', 'wall_200_350', { heightCm: 350 }), cornerOf('b', 'wall_100_350', 100, { yCm: 10, heightCm: 350 })], add(RECIPE.wall_200_350, RECIPE.wall_100_350));
   const plant = resolveProjectBom([shortOf('wall', 'wall_100_short_2'), place('plant', 'extra_indoor_plant_1', { xCm: 100 })]);
-  assert.deepEqual(lineMap(plant), positive(RECIPE.wall_100_short_2));
-  assert.equal(plant.unresolved[0].itemKey, 'extra_indoor_plant_1');
+  // DB'de yapay çiçeğin birimi var (adet): kendi satırıyla listeye girer, kısa panelin satırlarını değiştirmez.
+  assert.deepEqual(lineMap(plant), positive(add(RECIPE.wall_100_short_2, { extra_indoor_plant_1: 1 }, PROJECT_LINES)));
+  assert.equal(plant.unresolved.some((entry) => entry.itemKey === 'extra_indoor_plant_1'), false);
 });
 
 test('live shelf composition reaches resolveProjectBom as board plus legs', () => {
@@ -608,24 +621,30 @@ test('live shelf composition reaches resolveProjectBom as board plus legs', () =
   }
 });
 
-test('floor and print layers do not change structural hardware', () => {
+test('floor and print layers: floor and foam keep hardware; lightbox replaces its panel', () => {
   const hardware = assertBom('floor plus wall', [place('wall', 'wall_200_350', { heightCm: 350 })], add(RECIPE.wall_200_350, { hali: 12 }), { xCm: 400, yCm: 300, itemKey: 'hali' });
-  assert.equal(hardware.lines.find((line) => line.itemKey === 'hali').unit, 'm2');
+  assert.equal(hardware.lines.find((line) => line.itemKey === 'hali').unit, 'metre_kare'); // DB birimi
   const bom = withProductionItems(() => resolveProjectBom([place('wall', 'wall_200_350', {
     heightCm: 350,
     strips: [{ stripIndex: 0, fabricGroupId: 'lb', fabricType: 'lightbox', itemKey: 'panel_197' }],
   })]));
   const structural = { ...lineMap(bom) };
   delete structural.lightbox_fabric;
-  assert.deepEqual(structural, positive(RECIPE.wall_200_350), 'lightbox hardware');
+  // Lightbox kaldırılan panelin yerine konur (kullanıcı kararı 2026-11-20): kaplanan en alt bandın paneli,
+  // iki yan tekli aparatı ve o yüzün başlangıçları düşer; profil ve dikme aynı.
+  assert.deepEqual(structural, positive(add(RECIPE.wall_200_350, { panel_197: -1, connector_single: -2, connector_start: -2 }, PROJECT_LINES)), 'lightbox hardware');
   const lightbox = bom.lines.find((line) => line.itemKey === 'lightbox_fabric');
   const lightboxSection = bom.printAreas.find((section) => section.id === 'lightbox');
   assert.equal(lightboxSection.lines.length, 1);
   assert.equal(lightbox.quantity, lightboxSection.totalAreaM2);
-  assert.equal(lightbox.quantity, 0.9259);
+  // Baskı / kumaş ölçüsü panelin sahne ölçüsüdür (kesim payı; 2026-11-20), alan boşsa Item ölçüsü.
+  const panel197 = getItem('panel_197');
+  const printW = panel197.sceneDimensions?.widthCm ?? panel197.dimensions.widthCm;
+  const printH = panel197.sceneDimensions?.heightCm ?? panel197.dimensions.heightCm;
+  assert.ok(Math.abs(lightbox.quantity - (printW * printH) / 10000) < 1e-9, String(lightbox.quantity));
   assert.equal(lightbox.unit, 'metre_kare');
   assert.equal(lightbox.name, 'Lightbox Bezi');
-  assert.equal(bom.lines.find((line) => line.itemKey === 'panel_197').quantity, 7);
+  assert.equal(bom.lines.find((line) => line.itemKey === 'panel_197').quantity, 6);
   assert.equal(bom.printAreas.some((section) => section.id === 'mesh'), false);
   const foam = withProductionItems(() => resolveProjectBom([
     place('foam', 'illuminated-foam', { widthCm: 200, heightCm: 50 }),

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.mjs';
 
@@ -5,6 +6,10 @@ import { createStageFromWizard, clickProjectAction } from './helpers/standSetup.
 // yazılır, proje açılır; kod (_H), panel sayısı ve sahnedeki tepe yüksekliği ölçülür.
 
 const HEIGHTS = [250, 300, 350, 400, 450, 500];
+
+// Ayırıcı reçetesindeki profilin sahne kesiti (DB'den üretilen test kataloğu).
+const CATALOG = JSON.parse(readFileSync(new URL('../test/fixtures/itemCatalogSeed.json', import.meta.url), 'utf8'));
+const PROFILE_SECTION_CM = Number(CATALOG.items.find((item) => item.item_key === 'profile_91').scene_dimensions.height_cm);
 
 // [katalog kodu, beklenen bant/şerit sayısı (B = H / 50)]
 const ITEMS = [
@@ -148,11 +153,11 @@ for (const wallHeight of HEIGHTS) {
       if (expectedStrips) expect(moduleState.strips?.length, label).toBe(expectedStrips(bands));
       // Tepe: her ürün (kısa duvar dahil) duvar tepesinde biter. Yüzey payı yükseklikten
       // bağımsızdır: panel ailesi +1,0 cm (üst panel yüzeyi çerçevenin üst kenarından 4 cm
-      // içeride biter, PANEL_FRAME_INSET_M), ayırıcı −3,0 cm (lata alanı üst profilin altında biter;
-      // kesit reçetedeki profil Item sahne ölçüsü, test kataloğunda 8 cm).
+      // içeride biter, PANEL_FRAME_INSET_M), ayırıcı +5 cm − profil kesiti (lata alanı üst profilin altında
+      // biter; kesit reçetedeki profil Item sahne ölçüsü, DB'de 10 cm → −5 cm).
       const top = tops[moduleState.id];
       expect(Number.isFinite(top), `${label} sahnede yüzey yok`).toBe(true);
-      const offsetM = /separator/.test(catalogKey) ? -0.030 : 0.010;
+      const offsetM = /separator/.test(catalogKey) ? 0.05 - PROFILE_SECTION_CM / 100 : 0.010;
       expect(Math.abs(top - (wallHeight / 100 + offsetM)), `${label} tepe ${top}`).toBeLessThan(0.005);
     });
     expect(errors).toEqual([]);

@@ -93,7 +93,7 @@ test('250 cm door and showcases match the product table, fixed parts stay', () =
   });
   assert.deepEqual(bomByKey('wall_showcase_100_2_250'), {
     profile_91: 4, upright_247_5: 2, panel_98: 3, connector_start: 4, connector_single: 5,
-    showcase_side_94_6_30: 2, showcase_horizontal_87_4_30: 2, glass_shelf: 1,
+    showcase_2_body: 1, // DB: 2 gözlü vitrin gövdesi tek kalem
   });
   // Not: 300 cm kapı 2 panel, 3 tekli ile başlar.
   assert.equal(bomByKey('wall_door_100_300').panel_98, 2);

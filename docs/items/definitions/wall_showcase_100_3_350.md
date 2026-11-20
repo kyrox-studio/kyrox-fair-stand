@@ -59,6 +59,7 @@
 - `backend/tests/modules/fair_stand/test_panel_separator_cards_migration.py`
 - `backend/tests/modules/fair_stand/test_variant_family_cards_migration.py`
 - `e2e/helpers/catalogWidth.mjs`
+- `e2e/panel-labels-all-modules.spec.mjs`
 - `e2e/wall-height-matrix.spec.mjs`
 - `e2e/wall-height.spec.mjs`
 - `e2e/wall-showcase-item-contract.spec.mjs`
@@ -66,6 +67,7 @@
 - `test/catalogPreviewConfig.test.js`
 - `test/catalogWidthFamily.test.js`
 - `test/itemCatalogFields.test.js`
+- `test/panelLabelsAllModules.test.js`
 - `test/relationshipBomJoints.test.js`
 - `test/sceneBomAcceptance.test.js`
 - `test/shelfCatalogPanelSeam.test.js`

@@ -122,7 +122,7 @@ test('varyant ailesi: seçili öğenin üyeleri panelde düğme, seçili olan i�
   assert.deepEqual(labels('wall_showcase_100_2_350'), ['Vitrin', 'wall_showcase_100_2_350', ['2 Gözlü', '3 Gözlü']]);
   assert.deepEqual(labels('shelf_row_2_150'), ['Raf', 'shelf_row_2', ['Tekli Raf', 'Çiftli Raf', "3'lü Raf"]]);
   assert.deepEqual(labels('shelf_100'), ['Raf', 'shelf_row_1', ['Tekli Raf', 'Çiftli Raf', "3'lü Raf"]]);
-  assert.deepEqual(labels('tv_55'), ['Ekran boyu', 'tv_55', ['42"', '55"', '65"']]);
+  assert.deepEqual(labels('tv_55'), ['Ekran boyu', 'tv_55', ['42"', '55"', '65"', '85"']]); // DB: 85" eklendi
   assert.deepEqual(labels('video_wall_3x3'), ['Video Wall düzeni', 'video_wall_3x3', ['2×2', '3×3']]);
   assert.deepEqual(labels('extra_long_planter_150'), ['Saksı ölçüsü', 'extra_long_planter_150', ['100 cm', '150 cm', '200 cm']]);
   assert.deepEqual(labels('desk_banko_200_l'), ['Köşe banko ölçüsü', 'desk_banko_200_l', ['100 cm', '150 cm', '200 cm']]);

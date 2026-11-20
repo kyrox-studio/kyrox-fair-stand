@@ -107,7 +107,7 @@ test('item-by-item migration is isolated to migrated Items across every recipe',
     assert.ok(recipe);
     for (const item of recipe.items) {
       const key = getRecipeItemKey(item);
-      if (key === 'connector_start' || key === 'connector_single' || key in uprightOccurrences || key === 'panel_197' || key in profileOccurrences || key in straightPanelOccurrences || key in baseTopOccurrences || key in counterTopOccurrences || key in separatorPanelOccurrences || key in shelfOccurrences || key in showcaseBoardOccurrences || key === 'glass_shelf' || key === 'shelf_leg' || key === 'door_leaf_100') {
+      if (key === 'connector_start' || key === 'connector_single' || key in uprightOccurrences || key === 'panel_197' || key in profileOccurrences || key in straightPanelOccurrences || key in baseTopOccurrences || key in counterTopOccurrences || key in separatorPanelOccurrences || key in shelfOccurrences || key in showcaseBoardOccurrences || key === 'glass_shelf' || key === 'shelf_leg' || key === 'door_leaf_100' || key === 'showcase_2_body' || key === 'sarmasik') {
         if (key === 'connector_start') startOccurrences += 1;
         if (key === 'connector_single') singleOccurrences += 1;
         if (key in uprightOccurrences) uprightOccurrences[key] += 1;
@@ -141,8 +141,9 @@ test('item-by-item migration is isolated to migrated Items across every recipe',
   assert.deepEqual(counterTopOccurrences, { counter_top_110_60: 2, counter_top_52_60: 1, counter_top_160_60: 2, counter_top_102_60: 1, counter_top_210_60: 2, counter_top_150_60: 1 });
   assert.deepEqual(separatorPanelOccurrences, { separator_panel_48_5: 1, separator_panel_98: 1 });
   assert.deepEqual(shelfOccurrences, { shelf_100: 0, shelf_150: 0, shelf_200: 0 });
-  assert.deepEqual(showcaseBoardOccurrences, { showcase_side_94_6_30: 1, showcase_side_143_5_30: 1, showcase_horizontal_87_4_30: 2 });
-  assert.equal(glassShelfOccurrences, 2);
+  // DB (2026-11-20): 2 gözlü vitrinin gövdesi tek kalem `showcase_2_body`; yan, yatay ve cam raf yalnız 3 gözlüde.
+  assert.deepEqual(showcaseBoardOccurrences, { showcase_side_94_6_30: 0, showcase_side_143_5_30: 1, showcase_horizontal_87_4_30: 1 });
+  assert.equal(glassShelfOccurrences, 1);
   assert.equal(shelfLegOccurrences, 0);
   assert.equal(doorLeafOccurrences, 1);
 });
@@ -180,16 +181,20 @@ test('production part catalog contains shelf sizes and shelf leg', () => {
   assert.equal(getItem('shelf_leg').name, 'Raf Ayağı');
 });
 
+// DB reçete satırlarının sıra sütunu yoktur (kayıt sırası); reçete sıradan bağımsız karşılaştırılır.
+const byKey = (items) => [...items].sort((a, b) => String(a.itemKey).localeCompare(String(b.itemKey)));
+const part = (expanded, itemKey) => expanded.items.find((item) => item.itemKey === itemKey).part;
+
 test('50 cm straight wall recipe matches the verified production recipe', () => {
   const recipe = getStraightWallRecipe(50);
 
-  assert.deepEqual(recipe.items, [
+  assert.deepEqual(byKey(recipe.items), byKey([
     { itemKey: 'profile_41_5', quantity: 2 },
     { itemKey: 'upright_346_5', quantity: 2, heightMatched: true },
     { itemKey: 'panel_48_5', quantity: 7, perBand: 1 },
     { itemKey: 'connector_start', quantity: 2 },
     { itemKey: 'connector_single', quantity: 13, perBand: 2 },
-  ]);
+  ]));
 });
 
 test('100/150/200 cm straight wall recipes preserve quantities and change verified sizes', () => {
@@ -213,14 +218,14 @@ test('100/150/200 cm straight wall recipes preserve quantities and change verifi
 
 test('100 cm door recipe matches verified production data', () => {
   const recipe = getModuleRecipe('door', 100);
-  assert.deepEqual(recipe.items, [
+  assert.deepEqual(byKey(recipe.items), byKey([
     { itemKey: 'profile_91', quantity: 1 },
     { itemKey: 'upright_346_5', quantity: 2, heightMatched: true },
     { itemKey: 'panel_98', quantity: 3, perBand: 1 },
     { itemKey: 'connector_start', quantity: 2 },
     { itemKey: 'connector_single', quantity: 5, perBand: 2 },
     { itemKey: 'door_leaf_100', quantity: 1 },
-  ]);
+  ]));
 });
 
 test('recipe lookup rejects unsupported nominal wall widths', () => {
@@ -232,17 +237,16 @@ test('recipe lookup rejects unsupported nominal wall widths', () => {
 test('expanded recipe resolves production part metadata without mutating source recipe', () => {
   const expanded = getExpandedStraightWallRecipe(200);
 
-  assert.equal(expanded.items[0].part.name, 'Profil 190');
-  assert.equal(expanded.items[1].part.dimensions.heightCm, 346.5);
-  assert.equal(expanded.items[2].part.dimensions.widthCm, 197);
-  assert.equal(getStraightWallRecipe(200).items[0].part, undefined);
+  assert.equal(part(expanded, 'profile_190').name, 'Profil 190');
+  assert.equal(part(expanded, 'upright_346_5').dimensions.heightCm, 346.5);
+  assert.equal(part(expanded, 'panel_197').dimensions.widthCm, 197);
+  assert.ok(getStraightWallRecipe(200).items.every((item) => item.part === undefined));
 });
 
 test('expanded door recipe resolves the door production part', () => {
   const expanded = getExpandedModuleRecipe('door', 100);
-  assert.equal(expanded.items.at(-1).itemKey, 'door_leaf_100');
-  assert.equal(expanded.items.at(-1).part.name, 'Ahşap Kapı Kanadı 100 × 200 cm');
-  assert.equal(expanded.items[2].part.dimensions.widthCm, 98);
+  assert.equal(part(expanded, 'door_leaf_100').name, getItem('door_leaf_100').name);
+  assert.equal(part(expanded, 'panel_98').dimensions.widthCm, 98);
 });
 
 test('silinen wall_shelf recipes getModuleRecipe shelf dalından çözülmez', () => {

@@ -9,6 +9,7 @@ import {
 } from '../src/catalog.js';
 import { getItem, listRegisteredItems } from '../src/items.js';
 import { isCatalogWidthFamilyDescriptor } from '../src/catalogWidthFamily.js';
+import { CATALOG_ITEM_COUNT, CATALOG_VISIBLE_COUNT } from './catalogFacts.mjs';
 
 const BASELINE = JSON.parse(
   readFileSync(new URL('./catalogProjectionBaseline.json', import.meta.url), 'utf8'),
@@ -34,10 +35,10 @@ test('listCatalogItems 35 görünür Item’ı Item kaydından üretir; hardcode
   const projected = listCatalogItems();
   const catalogSource = readFileSync(new URL('../src/catalog.js', import.meta.url), 'utf8');
 
-  assert.equal(items.length, 138);
-  assert.equal(visible.length, 35);
-  assert.equal(projected.length, 35);
-  assert.equal(new Set(projected.map((item) => item.itemKey)).size, 35);
+  assert.equal(items.length, CATALOG_ITEM_COUNT);
+  assert.equal(visible.length, CATALOG_VISIBLE_COUNT);
+  assert.equal(projected.length, CATALOG_VISIBLE_COUNT);
+  assert.equal(new Set(projected.map((item) => item.itemKey)).size, CATALOG_VISIBLE_COUNT);
   assert.deepEqual(projected.map((item) => item.itemKey), BASELINE.keys);
 
   const projectedKeys = new Set(projected.map((item) => item.itemKey));
@@ -69,7 +70,7 @@ test('yeni catalog projection yalnız itemKey / label / catalogPreview taşır',
     compared += 1;
   }
 
-  assert.equal(compared, 35);
+  assert.equal(compared, CATALOG_VISIBLE_COUNT);
   assert.deepEqual([...listCatalogItems().map((item) => item.itemKey)], BASELINE.keys);
 });
 

@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { getItem } from '../src/items.js';
 import assert from 'node:assert/strict';
 
 import {
@@ -15,6 +16,9 @@ import { PROJECT_ARCHIVE_VERSION } from '../src/projectImportValidation.js';
 
 const stand = { standType: 'island', xCm: 500, yCm: 500, itemKey: 'hali' };
 
+// Halının birimi DB'den (metre_kare).
+const HALI_UNIT = getItem('hali').unit;
+
 function quantities(bom) {
   return bom.lines
     .filter((line) => ['hali', 'karolaj', 'karolaj_yarim', 'parke-acik', 'parke-sari', 'parke-beton'].includes(line.itemKey))
@@ -27,7 +31,7 @@ test('500x500 hali plus 200x300 karolaj bills 19 m2 and 6 tiles', () => {
     floorArea: { xCm: 100, yCm: 100, widthCm: 200, depthCm: 300, itemKey: 'karolaj', color: null },
   });
   assert.deepEqual(quantities(bom), [
-    ['hali', 19, 'm2'],
+    ['hali', 19, HALI_UNIT],
     ['karolaj', 6, 'adet'],
   ]);
   assert.equal(bom.modules.length, 0);
@@ -36,7 +40,7 @@ test('500x500 hali plus 200x300 karolaj bills 19 m2 and 6 tiles', () => {
 
 test('a stand without floorArea keeps the legacy single-floor bill', () => {
   const hali = resolveProjectBom([], { xCm: 500, yCm: 400, itemKey: 'hali' });
-  assert.deepEqual(quantities(hali), [['hali', 20, 'm2']]);
+  assert.deepEqual(quantities(hali), [['hali', 20, HALI_UNIT]]);
 
   const even = resolveProjectBom([], { xCm: 500, yCm: 400, itemKey: 'karolaj' });
   assert.deepEqual(quantities(even), [['karolaj', 20, 'adet']]);
@@ -105,7 +109,7 @@ test('split floor counts karolaj pieces on the tile grid from the stand corner',
     floorArea: { xCm: 100, yCm: 100, widthCm: 150, depthCm: 100, itemKey: 'karolaj', color: null },
   });
   assert.deepEqual(quantities(area), [
-    ['hali', 23.5, 'm2'],
+    ['hali', 23.5, HALI_UNIT],
     ['karolaj', 1, 'adet'],
     ['karolaj_yarim', 1, 'adet'],
   ]);
@@ -119,7 +123,7 @@ test('split floor counts karolaj pieces on the tile grid from the stand corner',
   assert.deepEqual(quantities(base), [
     ['karolaj', 24, 'adet'],
     ['karolaj_yarim', 1, 'adet'],
-    ['hali', 0.5, 'm2'],
+    ['hali', 0.5, HALI_UNIT],
   ]);
 });
 
@@ -130,7 +134,7 @@ test('an override with the same Item does not split the legacy bill', () => {
     itemKey: 'hali',
     floorArea: { xCm: 100, yCm: 100, widthCm: 200, depthCm: 200, itemKey: 'hali' },
   });
-  assert.deepEqual(quantities(bom), [['hali', 25, 'm2']]);
+  assert.deepEqual(quantities(bom), [['hali', 25, HALI_UNIT]]);
 });
 
 test('floor area stays on the 50 cm grid and inside the stand', () => {

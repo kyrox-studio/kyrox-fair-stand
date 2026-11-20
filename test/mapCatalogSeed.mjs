@@ -218,6 +218,8 @@ function mapItem(row) {
   if (model) item.modelFile = model.relative_path;
   const screen = (row.assets || []).find((asset) => asset.asset_role === 'default_screen');
   if (screen) item.defaultScreenFile = screen.relative_path;
+  const texture = (row.assets || []).find((asset) => asset.asset_role === 'texture' && asset.is_active !== false);
+  if (texture) item.textureFile = texture.relative_path;
   if ((row.components || []).length || row.composition_mode) {
     const composition = {};
     if (row.composition_mode != null) composition.mode = row.composition_mode;
@@ -272,6 +274,6 @@ function mapItem(row) {
   assign('snapRequiresRuleCode', row.snap_requires_rule_code);
   assign('snapProvidesRuleCode', row.snap_provides_rule_code);
   applyItemSnapFields(item);
-  applyItemScenePose(item);
+  applyItemScenePose(item, { hasDefaultZ: row.default_z_cm != null });
   return item;
 }

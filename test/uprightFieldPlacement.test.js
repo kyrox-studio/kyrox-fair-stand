@@ -46,9 +46,9 @@ test('field upright_346_5 is self BOM ×1 and does not change parent wall recipe
   assert.equal(getCatalogItem('upright_346_5').itemKey, 'upright_346_5');
   assert.equal(getItem('upright_346_5').type, 'upright');
   const uprightScene = resolveSceneDimensions(getItem('upright_346_5'));
-  assert.equal(uprightScene.widthCm, 8);
-  assert.equal(uprightScene.depthCm, 8);
-  assert.equal(uprightScene.heightCm, 346.5);
+  assert.equal(uprightScene.widthCm, 10); // DB sahne kesiti
+  assert.equal(uprightScene.depthCm, 10);
+  assert.equal(uprightScene.heightCm, 350);
   assert.equal(resolveModuleContract('upright_346_5').bom.mode, 'self');
   const bom = resolveItemBom('upright_346_5');
   assert.equal(bom.length, 1);

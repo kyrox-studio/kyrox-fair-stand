@@ -49,8 +49,12 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 
 - `backend/tests/modules/fair_stand/test_item_length_parts_migration.py`
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
+- `e2e/upright-corner-drag.spec.mjs`
+- `e2e/zz-aska-gap.spec.mjs`
 - `test/mapCatalogSeed.mjs`
 - `test/standResizeWallHeight.test.js`
+- `test/uprightCornerDragAllStands.test.js`
+- `test/uprightMergePlacement.test.js`
 - `test/wallHeightProjectBom.test.js`
 - `test/wallHeightRecipe.test.js`
 - `test/wallShortRelationshipBom.test.js`

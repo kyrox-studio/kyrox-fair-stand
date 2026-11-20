@@ -115,7 +115,7 @@ test('wall + showcase end-to-end uses the locked single and double counts', () =
   assert.equal(qty(showcase2, 'connector_double'), 5);
   assert.equal(qty(showcase2, 'panel_48_5'), 7);
   assert.equal(qty(showcase2, 'panel_98'), 5);
-  assert.equal(qty(showcase2, 'glass_shelf'), 1);
+  assert.equal(qty(showcase2, 'showcase_2_body'), 1); // DB: 2 gözlü vitrin gövdesi tek kalem
 });
 
 test('a module on the back face takes no corner connectors: 20 single, 6 corner', () => {
@@ -254,7 +254,7 @@ test('showcase inner corner keeps wall width on profiles and showcase panels bec
   assert.equal(qty(showcase2, 'profile_91'), 4);
   assert.equal(qty(showcase2, 'panel_corner_192'), 7);
   assert.equal(qty(showcase2, 'panel_corner_92'), 5);
-  assert.equal(qty(showcase2, 'glass_shelf'), 1);
+  assert.equal(qty(showcase2, 'showcase_2_body'), 1); // DB: 2 gözlü vitrin gövdesi tek kalem
   assert.equal(qty(showcase2, 'connector_single'), 12);
   assert.equal(qty(showcase2, 'connector_corner'), 10);
   assert.equal(qty(showcase2, 'connector_start'), 6);

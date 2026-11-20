@@ -49,7 +49,7 @@ test('bootstrap item tulle_fabric is the visible square-metre plate', () => {
   assert.equal(item.defaultZCm, 350);
   assert.equal(item.dimensions.depthCm, 0.4);
   assert.equal(item.categoryId, 5);
-  assert.equal(item.previewId, 9);
+  assert.equal(item.previewId, 33); // DB: tülün kendi önizlemesi
   assert.equal(getModuleMoveSnapCm('tulle-fabric'), 10);
 });
 

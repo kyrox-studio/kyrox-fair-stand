@@ -27,7 +27,8 @@ test('shelf production Items use canonical identity and verified sunta dimension
       item.dimensions,
       { widthCm, depthCm: 38, heightCm: 1.8 },
     );
-    assert.deepEqual(item.sceneDimensions, { widthCm, heightCm: 1.8 });
+    // Sahne yüksekliği çizilen tahta (3,5 cm; kullanıcı kararı 2026-11-20), üretim tahtası 1,8.
+    assert.deepEqual(item.sceneDimensions, { widthCm, heightCm: 3.5 });
     assert.equal(item.material, 'sunta');
     assert.equal(item.defaultColor, EXPECTED_COLOR);
   }

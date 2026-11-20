@@ -47,6 +47,9 @@ Tekil Item: alt kalemi yoktur; BOM satırı kendisidir.
 - `test/boothTypes.test.js`
 - `test/floorArea.test.js`
 - `test/floorItemsContract.test.js`
+- `test/panelFinish.test.js`
+- `test/panelLabelsAllModules.test.js`
 - `test/profileFinish.test.js`
 - `test/projectBom.test.js`
 - `test/projectImportValidation.test.js`
+- `test/uprightMergePlacement.test.js`

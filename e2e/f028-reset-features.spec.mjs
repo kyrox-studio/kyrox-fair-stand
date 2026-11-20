@@ -35,6 +35,16 @@ async function seedIlluminatedFoam(page) {
       widthCm: module.widthCm,
       placement: module.placement ?? null,
     }));
+    // Arka yüzlü, bir paneli kaldırılmış ve atamalı duvar (2026-11-20 kuralı: yapı kalır, atamalar kalkar).
+    const wall = project.modules.find((module) => module.type === 'flat-panel' && (module.strips?.length ?? 0) >= 4);
+    if (!wall) throw new Error('Expected a flat-panel wall.');
+    wall.backStrips = wall.strips.map((strip, index) => ({ ...structuredClone(strip), id: `surface-f028-back-${index}`, color: '#123456' }));
+    wall.strips[1].removed = true;
+    wall.strips[0].color = '#c0392b';
+    wall.strips[2].isGlass = true;
+    wall.strips[3].panelFinish = 'panel_finish_mese';
+    wall.strips[3].fabricGroupId = 'fabric-f028';
+    wall.strips[3].fabricType = 'mesh';
     const sourcePlacement = project.modules[0].placement ?? {
       wallId: 'back', xCm: 0, yCm: 0, zCm: 0, rotationZDeg: 0,
     };
@@ -57,7 +67,7 @@ async function seedIlluminatedFoam(page) {
       tx.objectStore('projects').put(project);
     });
     db.close();
-    return { projectId: project.id, preserved };
+    return { projectId: project.id, preserved, wallId: wall.id, backCount: wall.backStrips.length };
   });
 }
 
@@ -97,7 +107,7 @@ test('Tüm Özellikleri Kaldır deletes illuminated foam and preserves other mod
   await page.getByRole('button', { name: 'Projeyi Oluştur' }).click();
   await expect(page.locator('#stage-result')).toContainText('L Stand Sol · 500 × 300 cm');
 
-  const { projectId, preserved } = await seedIlluminatedFoam(page);
+  const { projectId, preserved, wallId, backCount } = await seedIlluminatedFoam(page);
 
   // Reload bellek içi aktif projeyi temizler; F-020 ön uçuş kaydı,
   // gerçek açma akışı okumadan önce tohumlanmış kayıtlı projeyi ezmesin.
@@ -131,5 +141,15 @@ test('Tüm Özellikleri Kaldır deletes illuminated foam and preserves other mod
     widthCm: module.widthCm,
     placement: module.placement ?? null,
   }))).toEqual(preserved);
+  const wall = modules.find((module) => module.id === wallId);
+  expect(wall.backStrips).toHaveLength(backCount);
+  expect(wall.strips[1].removed).toBe(true);
+  expect(wall.strips[0].color).not.toBe('#c0392b');
+  expect(wall.backStrips.every((strip) => strip.color !== '#123456')).toBe(true);
+  for (const strip of [...wall.strips, ...wall.backStrips]) {
+    expect(strip.isGlass ?? false).toBe(false);
+    expect(strip.panelFinish).toBeUndefined();
+    expect(strip.fabricGroupId).toBeUndefined();
+  }
   expect(pageErrors).toEqual([]);
 });

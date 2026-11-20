@@ -8,7 +8,7 @@ import {
   createBaseModuleState,
   createCounterModuleState,
 } from '../src/designState.js';
-import { getItem, itemHasSceneRender, listRegisteredItems } from '../src/items.js';
+import { getItem, getItemType, itemHasSceneRender, listRegisteredItems } from '../src/items.js';
 
 const DESIGN_STATE_SOURCE = readFileSync(new URL('../src/designState.js', import.meta.url), 'utf8');
 
@@ -20,6 +20,14 @@ test('factory gates on item.isRender, not catalogVisible or type lists', () => {
   const virtual = [];
   const catalogHiddenButRenderable = [];
   for (const item of listRegisteredItems()) {
+    // Sahne davranışı olmayan tip (üretim / baskı kalemi) modül kurmaz, hata verir
+    // (`productionItemType.test.js`); diğer çizilmeyen Item'lar boş döner.
+    if (typeof getItemType(item.type)?.placement !== 'string') {
+      assert.equal(item.isRender, false, item.itemKey);
+      assert.throws(() => createModuleStateFromDescriptor(item), /has no scene behavior/, item.itemKey);
+      virtual.push(item.itemKey);
+      continue;
+    }
     const fromItem = createModuleStateFromDescriptor(item);
     const fromKey = createModuleStateFromCatalogKey(item.itemKey);
     if (item.isRender !== true) {
@@ -33,7 +41,7 @@ test('factory gates on item.isRender, not catalogVisible or type lists', () => {
     if (item.catalogVisible !== true) catalogHiddenButRenderable.push(item.itemKey);
   }
 
-  assert.equal(getItem('connector_start').isRender, true);
+  assert.equal(getItem('connector_start').isRender, false); // DB: aparat sahnede çizilmez
   assert.equal(getItem('connector_start').catalogVisible, false);
   assert.equal(createModuleStateFromDescriptor(getItem('connector_start')), null);
   assert.equal(createModuleStateFromCatalogKey('connector_start'), null);
@@ -66,8 +74,10 @@ test('recipe surfaces take embedded isRender part identity; catalog is not the d
   const base = createBaseModuleState(100);
   assert.equal(base.faces.front.itemKey, 'panel_98');
   assert.equal(getItem(base.faces.left.itemKey).type, 'panel');
-  assert.equal(wall.strips[0].widthCm, getItem(wall.strips[0].itemKey).dimensions.widthCm);
-  assert.equal(wall.strips[0].heightCm, getItem(wall.strips[0].itemKey).dimensions.heightCm);
+  // Bant yüzeyi panelin sahne ölçüsünü taşır (alan boşsa Item ölçüsü).
+  const stripItem = getItem(wall.strips[0].itemKey);
+  assert.equal(wall.strips[0].widthCm, stripItem.sceneDimensions?.widthCm ?? stripItem.dimensions.widthCm);
+  assert.equal(wall.strips[0].heightCm, stripItem.sceneDimensions?.heightCm ?? stripItem.dimensions.heightCm);
   // Stamp keeps BOM child identity/size on state; procedural base mesh uses module aperture instead.
   assert.equal(base.renderParts.tops[0].widthCm, getItem('base_top_107_50').dimensions.widthCm);
   assert.equal(base.renderParts.tops[0].heightCm, getItem('base_top_107_50').dimensions.heightCm);
@@ -77,7 +87,7 @@ test('recipe surfaces take embedded isRender part identity; catalog is not the d
   const banko = createCounterModuleState(100);
   assert.equal(getItem(banko.faces.frontLower.itemKey).isRender, true);
   assert.equal(banko.renderParts.tops[0].itemKey, 'counter_top_110_60');
-  assert.equal(getItem('connector_start').isRender, true);
+  assert.equal(getItem('connector_start').isRender, false); // DB: aparat sahnede çizilmez
   assert.equal(getItem('connector_start').catalogVisible, false);
   assert.equal(getItem('glass_shelf').isRender, true);
   assert.equal(getItem('video_wall_panel').isRender, true);

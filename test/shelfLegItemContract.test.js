@@ -15,6 +15,8 @@ test('shelf_leg is canonical without invented product metadata', () => {
     boothTypeKeys: ['maxima'],
     name: 'Raf Ayağı',
     type: 'shelf-accessory',
+    paintable: false, // DB alanları (2026-11-20)
+    preserveModelScale: false,
     unit: 'adet',
     defaultOpacity: 1,
     isRender: false,

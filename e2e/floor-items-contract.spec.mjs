@@ -37,12 +37,13 @@ async function saveAndReadProject(page) {
   });
 }
 
+// Zemin seçenekleri DB'deki zemin Item'larıdır (ad ve sıra katalogdan; test kataloğu DB'den üretilir, 2026-11-20).
 const floors = [
+  { itemKey: 'hali', label: 'RIP Halı' },
   { itemKey: 'karolaj', label: 'Karolaj · 100 × 100 cm' },
-  { itemKey: 'hali', label: 'Halı' },
-  { itemKey: 'parke-acik', label: 'Beyaz Meşe' },
-  { itemKey: 'parke-sari', label: 'Sarı Meşe' },
-  { itemKey: 'parke-beton', label: 'Beton Parke' },
+  { itemKey: 'parke-acik', label: 'Parke - Beyaz Meşe' },
+  { itemKey: 'parke-beton', label: 'Parke - Beton' },
+  { itemKey: 'parke-sari', label: 'Parke - Sarı Meşe' },
 ];
 
 test('floor select options match canonical floor Items', async ({ page }) => {

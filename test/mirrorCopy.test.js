@@ -98,5 +98,7 @@ test('aynalı kopya üretim listesine kendi parçalarıyla girer', () => {
   assert.equal(result.ok, true, result.message);
   const two = resolveProjectBom([base, ...result.clones]);
   const qty = (bom, key) => bom.lines.find((line) => line.itemKey === key)?.quantity ?? 0;
-  for (const line of one.lines) assert.equal(qty(two, line.itemKey), line.quantity * 2, line.itemKey);
+  // Proje başına bir kez eklenen kalem (elektrik panosu) kopyayla ikilenmez.
+  for (const line of one.lines.filter((entry) => entry.itemKey !== 'elektrik_panosu')) assert.equal(qty(two, line.itemKey), line.quantity * 2, line.itemKey);
+  assert.equal(qty(two, 'elektrik_panosu'), qty(one, 'elektrik_panosu'));
 });

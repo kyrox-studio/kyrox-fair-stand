@@ -19,6 +19,7 @@ import {
   SCENE_DIMENSION_FIELDS,
 } from '../src/items.js';
 import { getStandDimensions } from '../src/standDimensions.js';
+import { CATALOG_ITEM_COUNT } from './catalogFacts.mjs';
 
 const ITEMS_SOURCE = readFileSync(new URL('../src/items.js', import.meta.url), 'utf8');
 const CATALOG_SOURCE = readFileSync(new URL('../src/catalog.js', import.meta.url), 'utf8');
@@ -67,11 +68,12 @@ test('8. profile_190 dimensions ve scene width/depth/height', () => {
   assert.equal(item.dimensions.widthCm, 190);
   assert.equal(item.dimensions.depthCm, 8);
   assert.equal(item.dimensions.heightCm, 8);
-  assert.deepEqual(item.sceneDimensions, { widthCm: 200, depthCm: 8, heightCm: 8 });
+  // DB sahne kesiti 10 × 10 (2026-11-20: dikme ve profil sahne ölçüsüne göre).
+  assert.deepEqual(item.sceneDimensions, { widthCm: 200, depthCm: 10, heightCm: 10 });
   assert.deepEqual(resolveSceneDimensions(item), Object.freeze({
     widthCm: 200,
-    depthCm: 8,
-    heightCm: 8,
+    depthCm: 10,
+    heightCm: 10,
   }));
 });
 
@@ -80,8 +82,8 @@ test('9. profile factory Recipe’den scene width okumaz', () => {
   assert.doesNotMatch(DESIGN_STATE_SOURCE, /from ['"]\.\/moduleRecipes\.js['"]/);
   const profile = createProfileModuleState({ itemKey: 'profile_190' });
   assert.equal(profile.widthCm, 200);
-  assert.equal(profile.depthCm, 8);
-  assert.equal(profile.heightCm, 8);
+  assert.equal(profile.depthCm, 10);
+  assert.equal(profile.heightCm, 10);
 });
 
 test('10. Catalog profile width catalogWidthCm okumaz', () => {
@@ -111,18 +113,19 @@ test('17. same-field merge; cross-remap yok', () => {
 });
 
 test('18. 106 Item registry korunuyor', () => {
-  assert.equal(listRegisteredItems().length, 138);
+  assert.equal(listRegisteredItems().length, CATALOG_ITEM_COUNT);
 });
 
-test('upright_346_5 sceneDimensions placement 8×8×346.5', () => {
+test('upright_346_5 sceneDimensions placement 10×10×350 (DB sahne ölçüsü)', () => {
   const item = getItem('upright_346_5');
   assert.equal(item.dimensions.widthCm, 8);
   assert.equal(item.dimensions.heightCm, 346.5);
-  assert.deepEqual(item.sceneDimensions, { widthCm: 8, depthCm: 8, heightCm: 346.5 });
+  assert.deepEqual(item.sceneDimensions, { widthCm: 10, depthCm: 10, heightCm: 350 });
+  // Sahneye konan dikme sahne ölçüsünü taşır (dikmeler sahne ölçüsüne göre hareket eder, 2026-11-20).
   const state = createUprightModuleState();
-  assert.equal(state.widthCm, 8);
-  assert.equal(state.depthCm, 8);
-  assert.equal(state.heightCm, 346.5);
+  assert.equal(state.widthCm, 10);
+  assert.equal(state.depthCm, 10);
+  assert.equal(state.heightCm, 350);
 });
 
 test('MISSING_PHYSICAL_DIMENSIONS: connector/shelf_leg/hali tahmin edilmez', () => {

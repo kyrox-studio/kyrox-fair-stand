@@ -190,6 +190,24 @@ function ensureMissingRenderPartMeasure(surfaces, parentItem, partTypes) {
   });
 }
 
+// Baza / banko yüzünün bandı: bankonun üst yüzleri (`*Upper`) 1, diğer yüzler (bankonun alt yüzleri, bazanın
+// tek bantlı yüzleri) 0 = alt bant. Sahne de aynı ayrımı kullanır (`panelLevel`); listede alt banttaki yüz
+// kalkar ya da kumaşla kaplanırsa o yüzün başlangıç aparatları düşer (2026-11-20).
+export function boxFaceBandIndex(faceKey) {
+  return /Upper$/.test(String(faceKey ?? '')) ? 1 : 0;
+}
+
+// Vitrinde göz açıklığının bantları panel değildir (3 göz: 1–3, 2 göz: 2–3. bant); reçete panelleri kalan
+// bantlara sırayla düşer. Eskiden ilk bantlara düşüyordu: üstteki paneller kimliksiz kalıyor, panel tipi,
+// renk ve döküm onları görmüyordu (2026-11-20).
+export function showcasePanelStrips(strips, showcaseItem) {
+  if (!Array.isArray(strips)) return [];
+  const eyeCount = Number(showcaseItem?.eyeCount);
+  if (eyeCount !== 2 && eyeCount !== 3) return strips;
+  const openingStart = eyeCount === 3 ? 1 : 2;
+  return strips.filter((_, index) => index < openingStart || index >= openingStart + eyeCount);
+}
+
 function topRenderParts(parentItem) {
   return listEmbeddedRenderParts(parentItem)
     .filter((part) => part.type === 'base-top' || part.type === 'counter-top')
@@ -310,6 +328,54 @@ export function removePanelStrips(moduleState, panels = []) {
   return removed;
 }
 
+// "Tüm Özellikleri Kaldır" (kullanıcı kararı 2026-11-20): modül yeniden kurulmaz; her yüzeyden yalnız atamalar
+// kalkar: görsel, cam, metal separatör, Mesh / Lightbox, renk (katalog rengine döner), panele atanan panel tipi.
+// Yapı korunur: arka yüz panelleri, kaldırılmış paneller, ölçü, yer, kilit, grup. Yüzeyler modül türüne göre
+// değil, ağacın tamamı taranarak bulunur (yeni modül türleri de kapsanır).
+function isSurfaceLike(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+    && ((typeof value.id === 'string' && value.id.startsWith('surface')) || Object.hasOwn(value, 'imageAssetId'));
+}
+
+function collectSurfacePaths(node, path = '', out = new Map()) {
+  if (!node || typeof node !== 'object') return out;
+  if (Array.isArray(node)) {
+    node.forEach((child, index) => collectSurfacePaths(child, `${path}[${index}]`, out));
+    return out;
+  }
+  if (isSurfaceLike(node)) out.set(path, node);
+  for (const [key, child] of Object.entries(node)) {
+    if (key === 'placement' || key === 'imageTransform') continue;
+    collectSurfacePaths(child, path ? `${path}.${key}` : key, out);
+  }
+  return out;
+}
+
+/**
+ * @param {object} moduleState kayıttaki modül (değişmez; temizlenmiş kopya döner)
+ * @param {object|null} catalogDefaults katalogdan yeni kurulmuş aynı modül: kalem rengi olmayan yüzeyin rengi buradan
+ */
+export function clearModuleFeatures(moduleState, catalogDefaults = null) {
+  if (!moduleState || typeof moduleState !== 'object') return moduleState;
+  const next = structuredClone(moduleState);
+  const defaults = collectSurfacePaths(catalogDefaults);
+  for (const [path, surface] of collectSurfacePaths(next)) {
+    if (Object.hasOwn(surface, 'imageAssetId')) surface.imageAssetId = null;
+    if (Object.hasOwn(surface, 'imageTransform')) surface.imageTransform = createDefaultImageTransform();
+    REMOVED_PANEL_CLEARED_KEYS.forEach((key) => { delete surface[key]; });
+    delete surface.metalSeparatorGroupId;
+    clearFabricFields(surface);
+    delete surface.panelFinish;
+    if (Object.hasOwn(surface, 'color')) {
+      const item = surface.itemKey ? getItem(surface.itemKey) : null;
+      const fallback = defaults.get(path) ?? defaults.get(path.replace(/^backStrips/, 'strips'));
+      const color = Number.isInteger(item?.defaultColor) ? itemDefaultColorHex(item) : fallback?.color;
+      if (color) surface.color = color;
+    }
+  }
+  return next;
+}
+
 export function countRemovedPanels(moduleState) {
   return [...(moduleState?.strips ?? []), ...(moduleState?.backStrips ?? [])]
     .filter(isRemovedPanel).length;
@@ -416,7 +482,7 @@ export function createShowcaseModuleState(type, widthCm = 100, explicitItemKey =
       itemKey: bodyDefinition.sideItem.itemKey,
     },
   };
-  stampRenderParts(state.strips, showcaseItem, ['panel', 'separator-panel']);
+  stampRenderParts(showcasePanelStrips(state.strips, showcaseItem), showcaseItem, ['panel', 'separator-panel']);
   return applySceneFootprint(state, showcaseItem, ['widthCm']);
 }
 
@@ -1305,7 +1371,13 @@ export function normalizeModuleItemState(moduleState) {
   moduleState.itemKey = showcaseItem.itemKey;
   moduleState.eyeCount = Number(showcaseItem.eyeCount);
   applySceneFootprint(moduleState, showcaseItem, ['widthCm']);
-  ensureMissingRenderPartMeasure(moduleState.strips, showcaseItem, ['panel', 'separator-panel']);
+  // Göz açıklığı bandı panel değildir: eski kayıtta oraya düşmüş panel kimliği kalkar.
+  const panelStrips = showcasePanelStrips(moduleState.strips, showcaseItem);
+  (moduleState.strips ?? []).forEach((strip) => {
+    if (strip && typeof strip === 'object' && !panelStrips.includes(strip)
+      && PANEL_IDENTITY_TYPES.has(getItem(strip.itemKey)?.type)) delete strip.itemKey;
+  });
+  ensureMissingRenderPartMeasure(panelStrips, showcaseItem, ['panel', 'separator-panel']);
   if (!moduleState.bodySurface) {
     moduleState.bodySurface = {
       id: createId('surface'),
@@ -1396,6 +1468,8 @@ export function duplicateModuleState(moduleState) {
 export function applyColorOverride(surfaceState, color) {
   if (!surfaceState) return null;
   surfaceState.color = color;
+  // Renk atanınca panelin kendi tipi kalkar (panel tipi 2026-11-18; görsel atar gibi tek atama).
+  delete surfaceState.panelFinish;
   if ('imageAssetId' in surfaceState) {
     surfaceState.imageAssetId = null;
     surfaceState.imageTransform = createDefaultImageTransform();

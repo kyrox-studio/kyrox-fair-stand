@@ -54,6 +54,7 @@
 ## Testler
 
 - `backend/tests/modules/fair_stand/test_wall_short_cards_migration.py`
+- `e2e/panel-labels-all-modules.spec.mjs`
 - `e2e/short-panel-context-add.spec.mjs`
 - `e2e/wall-flat-panel-items-contract.spec.mjs`
 - `e2e/wall-height-matrix.spec.mjs`
@@ -65,6 +66,7 @@
 - `test/shortJointStructuralUpright.test.js`
 - `test/shortStackColumn.test.js`
 - `test/standaloneUprightWallEnd.test.js`
+- `test/uprightCornerDragAllStands.test.js`
 - `test/uprightFieldPlacement.test.js`
 - `test/wallShortCanonicalRename.test.js`
 - `test/wallShortProfileSnapCollision.test.js`
